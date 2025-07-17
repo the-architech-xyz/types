@@ -1,0 +1,29 @@
+{
+  "name": "architech-phase0-research",
+  "version": "0.1.0",
+  "description": "Phase 0 Research & Prototyping for The Architech CLI",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test:all": "npm run test:package-manager && npm run test:platform && npm run test:shadcn",
+    "test:package-manager": "node 2-package-manager/command-runner.js",
+    "test:platform": "node 3-cross-platform/test-platform.js",
+    "test:shadcn": "node 1-shadcn-automation/test-shadcn.js",
+    "test:quick": "npm run test:package-manager && npm run test:platform"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "cli",
+    "research",
+    "prototype",
+    "architech",
+    "phase0"
+  ],
+  "author": "The Architech Team",
+  "license": "MIT"
+} 

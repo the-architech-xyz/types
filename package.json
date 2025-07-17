@@ -1,0 +1,67 @@
+{
+  "name": "the-architech",
+  "version": "0.1.0",
+  "description": "Revolutionary AI-Powered Application Generator - Transforming weeks of work into minutes",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "architech": "./bin/architech.js",
+    "the-architech": "./bin/architech.js"
+  },
+  "scripts": {
+    "dev": "node bin/architech.js",
+    "build": "echo 'Building The Architech...' && mkdir -p dist && cp -r src/* dist/",
+    "test": "echo 'Running tests...'",
+    "start": "node bin/architech.js",
+    "link": "npm link",
+    "unlink": "npm unlink -g the-architech"
+  },
+  "keywords": [
+    "cli",
+    "generator",
+    "ai",
+    "nextjs",
+    "react",
+    "typescript",
+    "shadcn",
+    "tailwind",
+    "architecture",
+    "development",
+    "productivity"
+  ],
+  "author": "The Architech Team",
+  "license": "MIT",
+  "preferGlobal": true,
+  "dependencies": {
+    "commander": "^11.1.0",
+    "inquirer": "^8.2.6",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "execa": "^8.0.1",
+    "fs-extra": "^11.2.0",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "dist/",
+    "templates/",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/the-architech/cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/the-architech/cli/issues"
+  },
+  "homepage": "https://the-architech.dev",
+  "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
+}
