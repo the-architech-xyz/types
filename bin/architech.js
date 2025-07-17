@@ -10,6 +10,7 @@
 import { program } from 'commander';
 import chalk from 'chalk';
 import { createCommand } from '../src/commands/create.js';
+import { architechCommand } from '../src/commands/architech.js';
 import { displayBanner } from '../src/utils/banner.js';
 
 // Display banner for all commands
@@ -34,6 +35,18 @@ program
   .option('--no-install', 'Skip dependency installation')
   .option('-y, --yes', 'Skip interactive prompts and use defaults')
   .action(createCommand);
+
+// Architech command - Enterprise-grade monorepo structure
+program
+  .command('architech')
+  .description('🏛️  Create enterprise-grade monorepo with Turborepo & specialized packages')
+  .argument('[project-name]', 'Name of the project to create')
+  .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
+  .option('--no-git', 'Skip git repository initialization')
+  .option('--no-install', 'Skip dependency installation')
+  .option('-y, --yes', 'Skip interactive prompts and use defaults')
+  .option('--modules <modules>', 'Comma-separated list of modules to include (ui,db,auth,config)', 'ui,db,auth,config')
+  .action(architechCommand);
 
 // Add command - Future: Add modules to existing projects
 program
