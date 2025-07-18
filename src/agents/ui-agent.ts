@@ -167,7 +167,7 @@ export class UIAgent extends AbstractAgent {
       // Create CSS files
       await this.createCSSFiles(uiPackagePath, context);
       
-      // Install Shadcn/ui components
+      // Install Shadcn/ui components using commands (like the old .js version)
       await this.installShadcnComponents(uiPackagePath, context);
       
       // Create index exports
@@ -327,8 +327,6 @@ export class UIAgent extends AbstractAgent {
     for (const dir of directories) {
       await fsExtra.ensureDir(path.join(uiPackagePath, dir));
     }
-
-    // Note: components index file will be created by shadcn when components are added
   }
 
   private async createCSSFiles(uiPackagePath: string, context: AgentContext): Promise<void> {
@@ -342,102 +340,59 @@ export class UIAgent extends AbstractAgent {
   }
 
   private async installShadcnComponents(uiPackagePath: string, context: AgentContext): Promise<void> {
-    context.logger.info('Creating Shadcn/ui components...');
+    const originalCwd = process.cwd();
     
     try {
-      // Create base components manually using templates
+      process.chdir(uiPackagePath);
+      
+      // Initialize Shadcn first
+      try {
+        await context.runner.execCommand(['npx', 'shadcn', 'init', '--yes']);
+        context.logger.success('Shadcn initialized');
+      } catch (error) {
+        context.logger.warn(`Could not initialize Shadcn: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      
+      // Install base components using the local shadcn CLI
       const baseComponents = ['button', 'card', 'input', 'label'];
       
       for (const component of baseComponents) {
         try {
-          await this.createComponentFromTemplate(uiPackagePath, component, context);
-          context.logger.success(`Created ${component} component`);
+          // Use the local shadcn CLI (not npx)
+          await context.runner.execCommand(['npx', 'shadcn', 'add', component, '--yes']);
+          context.logger.success(`Installed ${component} component`);
         } catch (error) {
-          context.logger.warn(`Could not create ${component} component: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          // Create a placeholder component if template fails
+          context.logger.warn(`Could not install ${component} component: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          // Create a placeholder component if installation fails
           await this.createPlaceholderComponent(uiPackagePath, component, context);
         }
       }
       
-      context.logger.success('Shadcn/ui components created successfully');
-      
-    } catch (error) {
-      context.logger.warn(`Component creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      process.chdir(originalCwd);
     }
-  }
-
-  private async createComponentFromTemplate(uiPackagePath: string, componentName: string, context: AgentContext): Promise<void> {
-    const componentPath = path.join(uiPackagePath, 'components', 'ui', `${componentName}.tsx`);
-    
-    // Check if template exists
-    const templatePath = `components/ui/${componentName}.tsx.ejs`;
-    const fullTemplatePath = path.join(process.cwd(), 'src', 'templates', 'ui', templatePath);
-    
-    if (await fsExtra.pathExists(fullTemplatePath)) {
-      await this.templateService.renderAndWrite(
-        'ui',
-        templatePath,
-        componentPath,
-        {},
-        { logger: context.logger }
-      );
-    } else {
-      // If template doesn't exist, create a basic component
-      await this.createBasicComponent(uiPackagePath, componentName, context);
-    }
-  }
-
-  private async createBasicComponent(uiPackagePath: string, componentName: string, context: AgentContext): Promise<void> {
-    const componentPath = path.join(uiPackagePath, 'components', 'ui', `${componentName}.tsx`);
-    
-    const componentContent = `import React from 'react';
-import { cn } from '../../lib/utils';
-
-export interface ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props {
-  children?: React.ReactNode;
-  className?: string;
-}
-
-export const ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} = React.forwardRef<HTMLDivElement, ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props>(
-  ({ children, className, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={cn('${componentName}', className)}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
-);
-
-${componentName.charAt(0).toUpperCase() + componentName.slice(1)}.displayName = '${componentName.charAt(0).toUpperCase() + componentName.slice(1)}';
-`;
-    
-    await fsExtra.writeFile(componentPath, componentContent);
   }
 
   private async createPlaceholderComponent(uiPackagePath: string, componentName: string, context: AgentContext): Promise<void> {
     const componentPath = path.join(uiPackagePath, 'components', 'ui', `${componentName}.tsx`);
     
-    const placeholderContent = `import React from 'react';
+    const placeholderContent = `import * as React from "react"
+import { cn } from "../../lib/utils"
 
-export interface ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props {
-  children?: React.ReactNode;
-  className?: string;
-}
+export interface ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}({ 
-  children, 
-  className 
-}: ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props) {
-  return (
-    <div className={className}>
-      {children}
-    </div>
-  );
-}
+const ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} = React.forwardRef<HTMLDivElement, ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props>(
+  ({ className, ...props }, ref) => {
+    return (
+      <div
+        className={cn("${componentName}-component", className)}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+${componentName.charAt(0).toUpperCase() + componentName.slice(1)}.displayName = "${componentName.charAt(0).toUpperCase() + componentName.slice(1)}"
 
 export { ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} }`;
 

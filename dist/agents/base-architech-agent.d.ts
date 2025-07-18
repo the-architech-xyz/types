@@ -21,7 +21,11 @@ export declare class BaseArchitechAgent extends AbstractAgent {
     private createRootPackageJson;
     private createTurboConfig;
     private createNextJSApp;
+    private updateWebAppPackageJson;
+    private createWebAppESLintConfig;
     private createPackageDirectories;
+    private getPackageDependencies;
+    private createPackageTypeScriptConfig;
     private createRootConfigFiles;
     private initializeGit;
     private createReadme;

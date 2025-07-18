@@ -312,112 +312,183 @@ export class BaseArchitechAgent extends AbstractAgent {
     
     context.logger.info('Creating Next.js app structure...');
     
-    // Create Next.js app package.json
-    await templateService.renderAndWrite(
-      'base-architech',
-      'apps/web/package.json.ejs',
-      path.join(appPath, 'package.json'),
-      { projectName: context.projectName },
-      { logger: context.logger }
-    );
+    // Create Next.js app with create-next-app command (like the old .js version)
+    const createNextArgs = [
+      'web',
+      '--typescript',
+      '--tailwind',
+      '--eslint',
+      '--app',
+      '--src-dir',
+      '--import-alias', '@/*'
+    ];
 
-    // Create Next.js configuration
-    await templateService.renderAndWrite(
-      'base-architech',
-      'apps/web/next.config.js.ejs',
-      path.join(appPath, 'next.config.js'),
-      { projectName: context.projectName },
-      { logger: context.logger }
-    );
-
-    // Create TypeScript configuration
-    await templateService.renderAndWrite(
-      'base-architech',
-      'apps/web/tsconfig.json.ejs',
-      path.join(appPath, 'tsconfig.json'),
-      { projectName: context.projectName },
-      { logger: context.logger }
-    );
-
-    // Create basic app structure
-    await fsExtra.ensureDir(path.join(appPath, 'src', 'app'));
+    // Change to apps directory to run create-next-app
+    const originalCwd = process.cwd();
+    const appsPath = path.join(projectPath, 'apps');
     
-    // Create page.tsx
-    await templateService.renderAndWrite(
-      'base-architech',
-      'apps/web/src/app/page.tsx.ejs',
-      path.join(appPath, 'src', 'app', 'page.tsx'),
-      { projectName: context.projectName },
-      { logger: context.logger }
-    );
+    try {
+      process.chdir(appsPath);
+      await context.runner.execCommand(['npx', 'create-next-app@latest', ...createNextArgs, '--yes']);
+    } finally {
+      process.chdir(originalCwd);
+    }
 
-    // Create layout.tsx
-    await templateService.renderAndWrite(
-      'base-architech',
-      'apps/web/src/app/layout.tsx.ejs',
-      path.join(appPath, 'src', 'app', 'layout.tsx'),
-      { projectName: context.projectName },
-      { logger: context.logger }
-    );
+    // Always generate next.config.js
+    const nextConfigContent = `/** @type {import('next').NextConfig} */\nconst nextConfig = {\n  /* config options here */\n};\n\nmodule.exports = nextConfig;`;
+    await fsExtra.writeFile(path.join(appPath, 'next.config.js'), nextConfigContent);
+    // Remove next.config.ts if it exists
+    try { await fsExtra.remove(path.join(appPath, 'next.config.ts')); } catch {}
 
-    // Create globals.css with proper CSS variables
-    await templateService.renderAndWrite(
-      'base-architech',
-      'apps/web/src/app/globals.css.ejs',
-      path.join(appPath, 'src', 'app', 'globals.css'),
-      {},
-      { logger: context.logger }
-    );
+    // Update the web app's package.json for monorepo
+    await this.updateWebAppPackageJson(appPath, context);
+    
+    // Create ESLint config for web app
+    await this.createWebAppESLintConfig(appPath);
     
     context.logger.success('Next.js app structure created successfully');
   }
 
-  private async createPackageDirectories(projectPath: string): Promise<void> {
-    const packages = [
-      { name: 'ui', description: 'UI components and design system' },
-      { name: 'db', description: 'Database layer and ORM' },
-      { name: 'auth', description: 'Authentication and authorization' }
-    ];
+  private async updateWebAppPackageJson(appPath: string, context: AgentContext): Promise<void> {
+    const packageJsonPath = path.join(appPath, 'package.json');
+    
+    const webPackageJson = {
+      name: `@${context.projectName}/web`,
+      version: "0.1.0",
+      private: true,
+      scripts: {
+        "build": "next build",
+        "dev": "next dev",
+        "lint": "next lint",
+        "start": "next start",
+        "type-check": "tsc --noEmit",
+        "test": "echo 'No tests configured yet'",
+        "clean": "rm -rf .next out"
+      },
+      dependencies: {
+        "react": "^18",
+        "react-dom": "^18",
+        "next": "14.0.0"
+        // Workspace dependencies will be added after all packages are created
+      },
+      devDependencies: {
+        "typescript": "^5",
+        "@types/node": "^20",
+        "@types/react": "^18",
+        "@types/react-dom": "^18",
+        "autoprefixer": "^10",
+        "postcss": "^8",
+        "tailwindcss": "^3",
+        "eslint": "^8",
+        "eslint-config-next": "14.0.0"
+      }
+    };
 
+    await fsExtra.writeJSON(packageJsonPath, webPackageJson, { spaces: 2 });
+  }
+
+  private async createWebAppESLintConfig(appPath: string): Promise<void> {
+    const eslintConfig = {
+      extends: ["../../.eslintrc.json", "next/core-web-vitals"],
+      env: {
+        browser: true
+      }
+    };
+
+    await fsExtra.writeJSON(path.join(appPath, '.eslintrc.json'), eslintConfig, { spaces: 2 });
+  }
+
+  private async createPackageDirectories(projectPath: string): Promise<void> {
+    // Create basic package.json for each package directory
+    const packages = ['ui', 'db', 'auth'];
+    
     for (const pkg of packages) {
-      const packagePath = path.join(projectPath, 'packages', pkg.name);
+      const packagePath = path.join(projectPath, 'packages', pkg);
       const packageJson = {
-        name: `@${path.basename(projectPath)}/${pkg.name}`,
+        name: `@${path.basename(projectPath)}/${pkg}`,
         version: "0.1.0",
         private: true,
-        description: pkg.description,
+        description: `${pkg.charAt(0).toUpperCase() + pkg.slice(1)} package for ${path.basename(projectPath)}`,
         main: "index.ts",
         types: "index.ts",
         scripts: {
           "build": "tsc",
           "dev": "tsc --watch",
-          "lint": "eslint . --ext .ts",
-          "type-check": "tsc --noEmit"
+          "lint": "eslint . --ext .ts,.tsx",
+          "type-check": "tsc --noEmit",
+          "test": "echo 'No tests configured yet'",
+          "clean": "rm -rf dist"
         },
+        // Add workspace dependencies for cross-package imports
+        dependencies: this.getPackageDependencies(pkg, path.basename(projectPath)),
         devDependencies: {
-          "typescript": "^5.0.0"
+          "typescript": "^5.0.0",
+          "@types/node": "^20.0.0"
         }
       };
-
+      
       await fsExtra.writeJSON(path.join(packagePath, 'package.json'), packageJson, { spaces: 2 });
+      
+      // Create basic index file
+      const indexContent = `/**
+ * ${pkg.charAt(0).toUpperCase() + pkg.slice(1)} Package
+ * 
+ * This package will be configured by The Architech ${pkg.charAt(0).toUpperCase() + pkg.slice(1)} Agent.
+ */
 
-      // Create TypeScript config for package
-      const tsConfig = {
-        extends: "../../tsconfig.json",
-        compilerOptions: {
-          outDir: "./dist",
-          rootDir: "./",
-          declaration: true
-        },
-        include: ["**/*.ts", "**/*.tsx"],
-        exclude: ["node_modules", "dist"]
-      };
-
-      await fsExtra.writeJSON(path.join(packagePath, 'tsconfig.json'), tsConfig, { spaces: 2 });
-
-      // Create index file
-      await fsExtra.writeFile(path.join(packagePath, 'index.ts'), `// ${pkg.name} package exports\n`);
+export default {};
+`;
+      
+      await fsExtra.writeFile(path.join(packagePath, 'index.ts'), indexContent);
+      
+      // Create TypeScript configuration for each package
+      await this.createPackageTypeScriptConfig(packagePath, pkg);
     }
+  }
+
+  private getPackageDependencies(pkg: string, projectName: string): Record<string, string> {
+    const baseDeps: Record<string, string> = {};
+    
+    // Add cross-package dependencies using file: protocol for npm compatibility
+    switch (pkg) {
+      case 'auth':
+        baseDeps[`@${projectName}/db`] = "file:../db";
+        break;
+      case 'ui':
+        // UI package is standalone
+        break;
+      case 'db':
+        // DB package is standalone
+        break;
+    }
+    
+    return baseDeps;
+  }
+
+  private async createPackageTypeScriptConfig(packagePath: string, pkg: string): Promise<void> {
+    const tsConfig = {
+      extends: "../../tsconfig.json",
+      compilerOptions: {
+        outDir: "dist",
+        rootDir: ".",
+        baseUrl: ".",
+        paths: {
+          "@/*": ["./*"]
+        }
+      },
+      include: [
+        "**/*.ts",
+        "**/*.tsx"
+      ],
+      exclude: [
+        "node_modules",
+        "dist",
+        "**/*.test.ts",
+        "**/*.spec.ts"
+      ]
+    };
+    
+    await fsExtra.writeJSON(path.join(packagePath, 'tsconfig.json'), tsConfig, { spaces: 2 });
   }
 
   private async createRootConfigFiles(projectPath: string, context: AgentContext): Promise<void> {

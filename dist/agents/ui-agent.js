@@ -128,6 +128,9 @@ export class UIAgent extends AbstractAgent {
         try {
             // Update package.json with dependencies
             await this.updatePackageJson(uiPackagePath, context);
+            // Install dependencies first
+            context.logger.info('Installing UI package dependencies...');
+            await context.runner.install([], false, uiPackagePath);
             // Create Tailwind configuration
             await this.createTailwindConfig(uiPackagePath, context);
             // Create utility functions
@@ -138,7 +141,7 @@ export class UIAgent extends AbstractAgent {
             await this.createComponentStructure(uiPackagePath, context);
             // Create CSS files
             await this.createCSSFiles(uiPackagePath, context);
-            // Install Shadcn/ui components
+            // Install Shadcn/ui components using commands (like the old .js version)
             await this.installShadcnComponents(uiPackagePath, context);
             // Create index exports
             await this.createIndex(uiPackagePath, context);
@@ -245,7 +248,6 @@ export class UIAgent extends AbstractAgent {
         for (const dir of directories) {
             await fsExtra.ensureDir(path.join(uiPackagePath, dir));
         }
-        // Note: components index file will be created by shadcn when components are added
     }
     async createCSSFiles(uiPackagePath, context) {
         await this.templateService.renderAndWrite('ui', 'styles/globals.css.ejs', path.join(uiPackagePath, 'styles', 'globals.css'), {}, { logger: context.logger });
@@ -254,31 +256,25 @@ export class UIAgent extends AbstractAgent {
         const originalCwd = process.cwd();
         try {
             process.chdir(uiPackagePath);
-            // Install dependencies first
-            await context.runner.install([], false, uiPackagePath);
-            // Initialize Shadcn with non-interactive mode
+            // Initialize Shadcn first
             try {
-                // Create components.json manually instead of using shadcn init
-                const componentsJsonPath = path.join(uiPackagePath, 'components.json');
-                if (!await fsExtra.pathExists(componentsJsonPath)) {
-                    await this.createComponentsConfig(uiPackagePath, context);
-                }
-                context.logger.success('Shadcn configuration created');
+                await context.runner.execCommand(['npx', 'shadcn', 'init', '--yes']);
+                context.logger.success('Shadcn initialized');
             }
             catch (error) {
-                context.logger.warn(`Could not create shadcn config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                context.logger.warn(`Could not initialize Shadcn: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
-            // Install base components using shadcn add command
+            // Install base components using the local shadcn CLI
             const baseComponents = ['button', 'card', 'input', 'label'];
             for (const component of baseComponents) {
                 try {
-                    // Use shadcn add command to generate the component
-                    await context.runner.exec('shadcn@latest', ['add', component, '--yes'], uiPackagePath);
-                    context.logger.success(`Added ${component} component via shadcn`);
+                    // Use the local shadcn CLI (not npx)
+                    await context.runner.execCommand(['npx', 'shadcn', 'add', component, '--yes']);
+                    context.logger.success(`Installed ${component} component`);
                 }
                 catch (error) {
-                    context.logger.warn(`Could not add ${component} component: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    // Create a placeholder component if shadcn fails
+                    context.logger.warn(`Could not install ${component} component: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    // Create a placeholder component if installation fails
                     await this.createPlaceholderComponent(uiPackagePath, component, context);
                 }
             }
@@ -289,23 +285,23 @@ export class UIAgent extends AbstractAgent {
     }
     async createPlaceholderComponent(uiPackagePath, componentName, context) {
         const componentPath = path.join(uiPackagePath, 'components', 'ui', `${componentName}.tsx`);
-        const placeholderContent = `import React from 'react';
+        const placeholderContent = `import * as React from "react"
+import { cn } from "../../lib/utils"
 
-export interface ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props {
-  children?: React.ReactNode;
-  className?: string;
-}
+export interface ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}({ 
-  children, 
-  className 
-}: ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props) {
-  return (
-    <div className={className}>
-      {children}
-    </div>
-  );
-}
+const ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} = React.forwardRef<HTMLDivElement, ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props>(
+  ({ className, ...props }, ref) => {
+    return (
+      <div
+        className={cn("${componentName}-component", className)}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+${componentName.charAt(0).toUpperCase() + componentName.slice(1)}.displayName = "${componentName.charAt(0).toUpperCase() + componentName.slice(1)}"
 
 export { ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} }`;
         await fsExtra.writeFile(componentPath, placeholderContent);
