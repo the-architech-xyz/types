@@ -136,8 +136,9 @@ export const auth = betterAuth({
   },
 });
 
-export type Session = typeof auth.$Infer.Session;
-export type User = typeof auth.$Infer.User;`;
+// Use the correct type inference
+export type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
+export type User = Session extends { user: infer U } ? U : never;`;
 
     await writeFile(path.join(authPackagePath, 'auth.ts'), authConfigContent);
   }
