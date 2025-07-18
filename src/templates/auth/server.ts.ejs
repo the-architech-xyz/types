@@ -1,0 +1,21 @@
+import { auth } from "./auth";
+import { headers } from "next/headers";
+import { cache } from "react";
+
+export const getServerSession = cache(async () => {
+  const headersList = headers();
+  
+  return await auth.api.getSession({
+    headers: headersList,
+  });
+});
+
+export const requireAuth = async () => {
+  const session = await getServerSession();
+  
+  if (!session) {
+    throw new Error("Authentication required");
+  }
+  
+  return session;
+}; 

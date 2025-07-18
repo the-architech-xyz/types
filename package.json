@@ -10,11 +10,17 @@
   },
   "scripts": {
     "dev": "node bin/architech.js",
-    "build": "echo 'Building The Architech...' && mkdir -p dist && cp -r src/* dist/",
+    "build": "npm run clean && npm run compile && npm run copy-bin",
+    "compile": "tsc",
+    "clean": "rm -rf dist",
+    "copy-bin": "cp -r bin dist/",
     "test": "echo 'Running tests...'",
     "start": "node bin/architech.js",
     "link": "npm link",
-    "unlink": "npm unlink -g the-architech"
+    "unlink": "npm unlink -g the-architech",
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'Linting...'",
+    "format": "echo 'Formatting...'"
   },
   "keywords": [
     "cli",
@@ -33,16 +39,21 @@
   "license": "MIT",
   "preferGlobal": true,
   "dependencies": {
-    "commander": "^11.1.0",
-    "inquirer": "^8.2.6",
+    "@types/ejs": "^3.1.5",
     "chalk": "^4.1.2",
-    "ora": "^5.4.1",
+    "commander": "^11.1.0",
+    "ejs": "^3.1.10",
     "execa": "^8.0.1",
     "fs-extra": "^11.2.0",
+    "inquirer": "^8.2.6",
+    "ora": "^5.4.1",
     "path": "^0.12.7"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^9.0.8",
     "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   },
   "engines": {

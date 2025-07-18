@@ -9,9 +9,9 @@
 
 import { program } from 'commander';
 import chalk from 'chalk';
-import { createCommand } from '../dist/commands/create.js';
-import { architechCommand } from '../dist/commands/architech.js';
-import { displayBanner } from '../dist/utils/banner.js';
+import { createCommand } from './commands/create.js';
+import { architechCommand } from './commands/architech.js';
+import { displayBanner } from './utils/banner.js';
 
 // Display banner for all commands
 displayBanner();
