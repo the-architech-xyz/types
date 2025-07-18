@@ -29,9 +29,6 @@ export class UIAgent {
       // Update package.json with dependencies
       await this.updatePackageJson(uiPackagePath, config);
       
-      // Create ESLint config
-      await this.createESLintConfig(uiPackagePath);
-      
       // Create Tailwind configuration
       await this.createTailwindConfig(uiPackagePath);
       
@@ -47,10 +44,12 @@ export class UIAgent {
       // Create CSS files
       await this.createCSSFiles(uiPackagePath);
       
+      // Install Shadcn/ui components using the local CLI
+      await this.installShadcnComponents(uiPackagePath, runner);
+      
       // Create index exports
       await this.createIndex(uiPackagePath);
       
-      // Note: Component installation will be done after workspace setup
       spinner.succeed(chalk.green('✅ UI design system package configured'));
       
     } catch (error) {
@@ -74,19 +73,21 @@ export class UIAgent {
         "type-check": "tsc --noEmit"
       },
       dependencies: {
-        "tailwindcss": "^3.3.6",
+        "tailwindcss": "^3.4.0",
         "autoprefixer": "^10.4.16",
         "postcss": "^8.4.32",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.0.0",
-        "tailwind-merge": "^2.0.0",
+        "tailwind-merge": "^2.2.0",
         "lucide-react": "^0.294.0",
-        "@radix-ui/react-slot": "^1.0.2"
+        "@radix-ui/react-slot": "^1.0.2",
+        "tailwindcss-animate": "^1.0.7"
       },
       devDependencies: {
         "@types/react": "^18.2.37",
         "@types/react-dom": "^18.2.15",
-        "typescript": "^5.2.2"
+        "typescript": "^5.2.2",
+        "shadcn": "^2.9.2"
       },
       peerDependencies: {
         "react": "^18.0.0",
@@ -95,17 +96,6 @@ export class UIAgent {
     };
 
     await writeJSON(path.join(uiPackagePath, 'package.json'), packageJson, { spaces: 2 });
-  }
-
-  async createESLintConfig(uiPackagePath) {
-    const eslintConfig = {
-      extends: ["../../.eslintrc.json"],
-      env: {
-        browser: true
-      }
-    };
-
-    await writeJSON(path.join(uiPackagePath, '.eslintrc.json'), eslintConfig, { spaces: 2 });
   }
 
   async createTailwindConfig(uiPackagePath) {
@@ -206,8 +196,8 @@ export function cn(...inputs: ClassValue[]) {
       "rsc": true,
       "tsx": true,
       "tailwind": {
-        "config": "./tailwind.config.js",
-        "css": "./styles/globals.css",
+        "config": "tailwind.config.js",
+        "css": "styles/globals.css",
         "baseColor": "slate",
         "cssVariables": true,
         "prefix": ""
@@ -298,24 +288,35 @@ export function cn(...inputs: ClassValue[]) {
     await writeFile(path.join(uiPackagePath, 'styles', 'globals.css'), globalsCss);
   }
 
-  async installBaseComponents(uiPackagePath, runner) {
+  async installShadcnComponents(uiPackagePath, runner) {
     const originalCwd = process.cwd();
     
     try {
       process.chdir(uiPackagePath);
       
-      // Install required Shadcn/ui dependencies first
-      await runner.install(['tailwindcss-animate'], false, uiPackagePath);
+      // Install dependencies first (including shadcn CLI)
+      await runner.install([], false, uiPackagePath);
       
-      // Install base components
+      // Initialize Shadcn first
+      try {
+        await runner.exec('npx', ['shadcn', 'init', '--yes']);
+        console.log(chalk.green('✅ Shadcn initialized'));
+      } catch (error) {
+        console.log(chalk.yellow(`⚠️  Warning: Could not initialize Shadcn: ${error.message}`));
+      }
+      
+      // Install base components using the local shadcn CLI
       const baseComponents = ['button', 'card', 'input', 'label'];
       
       for (const component of baseComponents) {
         try {
-          await runner.exec('npx', ['shadcn-ui@latest', 'add', component, '--yes']);
+          // Use the local shadcn CLI (not npx)
+          await runner.exec('npx', ['shadcn', 'add', component, '--yes']);
+          console.log(chalk.green(`✅ Installed ${component} component`));
         } catch (error) {
-          // Continue if component installation fails
-          console.log(chalk.yellow(`⚠️  Warning: Could not install ${component} component`));
+          console.log(chalk.yellow(`⚠️  Warning: Could not install ${component} component: ${error.message}`));
+          // Create a placeholder component if installation fails
+          await this.createPlaceholderComponent(uiPackagePath, component);
         }
       }
       
@@ -324,19 +325,46 @@ export function cn(...inputs: ClassValue[]) {
     }
   }
 
+  async createPlaceholderComponent(uiPackagePath, componentName) {
+    const componentPath = path.join(uiPackagePath, 'components', 'ui', `${componentName}.tsx`);
+    
+    const placeholderContent = `import * as React from "react"
+import { cn } from "../../lib/utils"
+
+export interface ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props extends React.HTMLAttributes<HTMLDivElement> {}
+
+const ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} = React.forwardRef<HTMLDivElement, ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props>(
+  ({ className, ...props }, ref) => {
+    return (
+      <div
+        className={cn("${componentName}-component", className)}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+${componentName.charAt(0).toUpperCase() + componentName.slice(1)}.displayName = "${componentName.charAt(0).toUpperCase() + componentName.slice(1)}"
+
+export { ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} }`;
+
+    await writeFile(componentPath, placeholderContent);
+  }
+
   async createIndex(uiPackagePath) {
     const indexContent = `// UI Components
-// Note: To add Shadcn components, run: npx shadcn@latest add button card input label
-// export { Button } from "./components/ui/button";
-// export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/card";
-// export { Input } from "./components/ui/input";
-// export { Label } from "./components/ui/label";
+export { Button } from "./components/ui/button";
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/card";
+export { Input } from "./components/ui/input";
+export { Label } from "./components/ui/label";
 
 // Utilities
 export { cn } from "./lib/utils";
 
 // Styles
-import "./styles/globals.css";`;
+import "./styles/globals.css";
+
+// Note: To add more Shadcn components, run: npx shadcn add [component-name]`;
 
     await writeFile(path.join(uiPackagePath, 'index.ts'), indexContent);
   }

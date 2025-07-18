@@ -32,9 +32,6 @@ export class BaseArchitechAgent {
       // Create root package.json with workspace configuration
       await this.createRootPackageJson(projectPath, config);
       
-      // Create root-level configs (ESLint, TypeScript, Tailwind)
-      await this.createRootConfigs(projectPath);
-      
       // Create Turborepo configuration
       await this.createTurboConfig(projectPath);
       
@@ -44,13 +41,16 @@ export class BaseArchitechAgent {
       // Create package directories
       await this.createPackageDirectories(projectPath);
       
+      // Finalize workspace dependencies
+      await this.finalizeWorkspaceDependencies(projectPath, config);
+      
+      // Setup post-installation configuration
+      await this.setupPostInstallation(projectPath, config, runner);
+      
       // Initialize git repository
       if (!config.skipGit) {
         await this.initializeGit(projectPath, runner);
       }
-      
-      // Create comprehensive README
-      await this.createReadme(projectPath, config);
       
       spinner.succeed(chalk.green('✅ Base Architech structure created'));
       
@@ -61,6 +61,8 @@ export class BaseArchitechAgent {
   }
 
   async finalizeWorkspaceDependencies(projectPath, config) {
+    console.log(chalk.blue('🔗 Finalizing workspace dependencies...'));
+    
     // Update web app package.json with workspace dependencies
     const webAppPath = path.join(projectPath, 'apps', 'web');
     const packageJsonPath = path.join(webAppPath, 'package.json');
@@ -68,18 +70,298 @@ export class BaseArchitechAgent {
     try {
       const webPackageJson = await fsExtra.readJSON(packageJsonPath);
       
-      // Add workspace dependencies using file: protocol for npm compatibility
+      // Detect package manager to use correct protocol
+      const packageManager = await this.detectPackageManager(projectPath);
+      const protocol = this.getWorkspaceProtocol(packageManager);
+      
+      // Add workspace dependencies using appropriate protocol
       webPackageJson.dependencies = {
         ...webPackageJson.dependencies,
-        [`@${config.projectName}/ui`]: "file:../../packages/ui",
-        [`@${config.projectName}/db`]: "file:../../packages/db",
-        [`@${config.projectName}/auth`]: "file:../../packages/auth"
+        [`@${config.projectName}/ui`]: `${protocol}../../packages/ui`,
+        [`@${config.projectName}/db`]: `${protocol}../../packages/db`,
+        [`@${config.projectName}/auth`]: `${protocol}../../packages/auth`
       };
       
       await writeJSON(packageJsonPath, webPackageJson, { spaces: 2 });
+      console.log(chalk.green('✅ Workspace dependencies configured'));
+      
     } catch (error) {
       console.log(chalk.yellow('⚠️  Warning: Could not update workspace dependencies'));
     }
+  }
+
+  async detectPackageManager(projectPath) {
+    const lockFiles = {
+      'package-lock.json': 'npm',
+      'yarn.lock': 'yarn',
+      'pnpm-lock.yaml': 'pnpm',
+      'bun.lockb': 'bun'
+    };
+    
+    for (const [lockFile, manager] of Object.entries(lockFiles)) {
+      if (await fsExtra.pathExists(path.join(projectPath, lockFile))) {
+        return manager;
+      }
+    }
+    
+    return 'npm'; // Default fallback
+  }
+
+  getWorkspaceProtocol(packageManager) {
+    switch (packageManager) {
+      case 'npm':
+        return 'file:';
+      case 'yarn':
+      case 'pnpm':
+        return 'workspace:';
+      case 'bun':
+        return 'file:'; // Bun uses file: protocol for workspaces
+      default:
+        return 'file:';
+    }
+  }
+
+  async setupPostInstallation(projectPath, config, runner) {
+    console.log(chalk.blue('🔧 Setting up post-installation configuration...'));
+    
+    try {
+      // Create root-level configuration files
+      await this.createRootConfigFiles(projectPath, config);
+      
+      // Setup Shadcn/ui at root level for better integration
+      await this.setupRootShadcn(projectPath, config, runner);
+      
+      // Update TypeScript paths for better imports
+      await this.updateTypeScriptPaths(projectPath, config);
+      
+      console.log(chalk.green('✅ Post-installation setup completed'));
+      
+    } catch (error) {
+      console.log(chalk.yellow('⚠️  Warning: Post-installation setup failed'));
+    }
+  }
+
+  async createRootConfigFiles(projectPath, config) {
+    // Create root-level ESLint config
+    const rootEslintConfig = {
+      root: true,
+      extends: [
+        "next/core-web-vitals",
+        "@typescript-eslint/recommended",
+        "prettier"
+      ],
+      parser: "@typescript-eslint/parser",
+      plugins: ["@typescript-eslint", "import"],
+      rules: {
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
+        ],
+        "import/order": [
+          "error",
+          {
+            groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
+            "newlines-between": "always",
+            alphabetize: { order: "asc", caseInsensitive: true }
+          }
+        ]
+      },
+      ignorePatterns: [
+        "node_modules/",
+        ".next/",
+        "out/",
+        "build/",
+        "dist/",
+        "*.config.js"
+      ]
+    };
+    
+    await writeJSON(path.join(projectPath, '.eslintrc.json'), rootEslintConfig, { spaces: 2 });
+
+    // Create root-level Prettier config
+    const rootPrettierConfig = {
+      printWidth: 80,
+      tabWidth: 2,
+      useTabs: false,
+      semi: true,
+      singleQuote: true,
+      quoteProps: "as-needed",
+      jsxSingleQuote: true,
+      trailingComma: "es5",
+      bracketSpacing: true,
+      bracketSameLine: false,
+      arrowParens: "avoid",
+      endOfLine: "lf",
+      plugins: ["prettier-plugin-tailwindcss"]
+    };
+    
+    await writeJSON(path.join(projectPath, '.prettierrc.json'), rootPrettierConfig, { spaces: 2 });
+
+    // Create root-level TypeScript config
+    const rootTsConfig = {
+      compilerOptions: {
+        target: "es2022",
+        lib: ["dom", "dom.iterable", "es6"],
+        allowJs: true,
+        skipLibCheck: true,
+        strict: true,
+        noEmit: true,
+        esModuleInterop: true,
+        module: "esnext",
+        moduleResolution: "bundler",
+        resolveJsonModule: true,
+        isolatedModules: true,
+        jsx: "preserve",
+        incremental: true,
+        plugins: [{ name: "next" }],
+        baseUrl: ".",
+        paths: {
+          "@/*": ["./apps/web/src/*"],
+          "@/ui": ["./packages/ui"],
+          "@/db": ["./packages/db"],
+          "@/auth": ["./packages/auth"],
+          "@/config": ["./packages/config"]
+        }
+      },
+      include: [
+        "apps/web/next-env.d.ts",
+        "apps/web/**/*.ts",
+        "apps/web/**/*.tsx",
+        "packages/**/*.ts",
+        "packages/**/*.tsx",
+        ".next/types/**/*.ts"
+      ],
+      exclude: ["node_modules"]
+    };
+    
+    await writeJSON(path.join(projectPath, 'tsconfig.json'), rootTsConfig, { spaces: 2 });
+  }
+
+  async setupRootShadcn(projectPath, config, runner) {
+    // Create root-level components.json for better Shadcn integration
+    const rootComponentsConfig = {
+      "$schema": "https://ui.shadcn.com/schema.json",
+      "style": "default",
+      "rsc": true,
+      "tsx": true,
+      "tailwind": {
+        "config": "tailwind.config.js",
+        "css": "apps/web/src/app/globals.css",
+        "baseColor": "slate",
+        "cssVariables": true,
+        "prefix": ""
+      },
+      "aliases": {
+        "components": "@/components",
+        "utils": "@/lib/utils"
+      }
+    };
+    
+    await writeJSON(path.join(projectPath, 'components.json'), rootComponentsConfig, { spaces: 2 });
+
+    // Create root-level Tailwind config
+    const rootTailwindConfig = `/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./apps/web/src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./packages/ui/components/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+}`;
+
+    await writeFile(path.join(projectPath, 'tailwind.config.js'), rootTailwindConfig);
+  }
+
+  async updateTypeScriptPaths(projectPath, config) {
+    // Update web app TypeScript config to extend root config
+    const webAppPath = path.join(projectPath, 'apps', 'web');
+    const webTsConfig = {
+      extends: "../../tsconfig.json",
+      compilerOptions: {
+        plugins: [{ name: "next" }],
+        baseUrl: ".",
+        paths: {
+          "@/*": ["./src/*"],
+          "@/ui": ["../../packages/ui"],
+          "@/db": ["../../packages/db"],
+          "@/auth": ["../../packages/auth"],
+          "@/config": ["../../packages/config"]
+        }
+      },
+      include: [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts"
+      ]
+    };
+    
+    await writeJSON(path.join(webAppPath, 'tsconfig.json'), webTsConfig, { spaces: 2 });
   }
 
   async createDirectoryStructure(projectPath) {

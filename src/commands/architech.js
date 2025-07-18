@@ -21,6 +21,8 @@ import { BaseArchitechAgent } from '../agents/base-architech-agent.js';
 import { UIAgent } from '../agents/ui-agent.js';
 import { DBAgent } from '../agents/db-agent.js';
 import { AuthAgent } from '../agents/auth-agent.js';
+import { ConfigAgent } from '../agents/config-agent.js';
+import { ValidationAgent } from '../agents/validation-agent.js';
 
 const AVAILABLE_MODULES = {
   ui: {
@@ -62,13 +64,10 @@ export async function architechCommand(projectName, options) {
     // Step 5: Execute selected package agents
     await executePackageAgents(config, runner);
     
-    // Step 6: Finalize workspace dependencies
-    await finalizeWorkspaceDependencies(config, runner);
+    // Step 6: Run validation
+    await executeValidation(config, runner);
     
-    // Step 7: Post-installation setup
-    await postInstallationSetup(config, runner);
-    
-    // Step 8: Display success summary
+    // Step 7: Display success summary
     displayArchitechSummary(config);
     
   } catch (error) {
@@ -184,6 +183,13 @@ async function executePackageAgents(config, runner) {
       displayInfo(`✅ ${module.name} configured successfully`);
     }
   }
+}
+
+async function executeValidation(config, runner) {
+  displayInfo('🔍 Running validation...');
+  const validationAgent = new ValidationAgent();
+  await validationAgent.execute(config, runner);
+  displayInfo('✅ Validation completed successfully');
 }
 
 async function finalizeWorkspaceDependencies(config, runner) {
