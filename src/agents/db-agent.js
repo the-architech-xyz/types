@@ -39,6 +39,9 @@ export class DBAgent {
       // Update package.json with dependencies
       await this.updatePackageJson(dbPackagePath, config);
       
+      // Create ESLint config
+      await this.createESLintConfig(dbPackagePath);
+      
       // Create Drizzle configuration
       await this.createDrizzleConfig(dbPackagePath, dbConfig);
       
@@ -142,20 +145,27 @@ export class DBAgent {
         "db:studio": "drizzle-kit studio"
       },
       dependencies: {
-        "drizzle-orm": "^0.29.0",
-        "@neondatabase/serverless": "^0.6.0",
+        "drizzle-orm": "^0.44.3",
+        "@neondatabase/serverless": "^1.0.1",
         "postgres": "^3.4.3"
       },
       devDependencies: {
-        "drizzle-kit": "^0.20.4",
+        "drizzle-kit": "^0.31.4",
         "tsx": "^4.1.0",
-        "@types/postgres": "^3.0.0",
         "typescript": "^5.2.2",
         "dotenv": "^16.3.1"
       }
     };
 
     await writeJSON(path.join(dbPackagePath, 'package.json'), packageJson, { spaces: 2 });
+  }
+
+  async createESLintConfig(dbPackagePath) {
+    const eslintConfig = {
+      extends: ["../../.eslintrc.json"]
+    };
+
+    await writeJSON(path.join(dbPackagePath, '.eslintrc.json'), eslintConfig, { spaces: 2 });
   }
 
   async createDrizzleConfig(dbPackagePath, dbConfig) {
@@ -168,9 +178,9 @@ dotenv.config({ path: "../../.env.local" });
 export default {
   schema: "./schema/*",
   out: "./migrations",
-  driver: "pg",
+  dialect: "postgresql",
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL || "${dbConfig.connectionString}",
+    url: process.env.DATABASE_URL || "${dbConfig.connectionString}",
   },
   verbose: true,
   strict: true,

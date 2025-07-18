@@ -29,6 +29,9 @@ export class UIAgent {
       // Update package.json with dependencies
       await this.updatePackageJson(uiPackagePath, config);
       
+      // Create ESLint config
+      await this.createESLintConfig(uiPackagePath);
+      
       // Create Tailwind configuration
       await this.createTailwindConfig(uiPackagePath);
       
@@ -44,12 +47,10 @@ export class UIAgent {
       // Create CSS files
       await this.createCSSFiles(uiPackagePath);
       
-      // Install base Shadcn/ui components
-      await this.installBaseComponents(uiPackagePath, runner);
-      
       // Create index exports
       await this.createIndex(uiPackagePath);
       
+      // Note: Component installation will be done after workspace setup
       spinner.succeed(chalk.green('✅ UI design system package configured'));
       
     } catch (error) {
@@ -94,6 +95,17 @@ export class UIAgent {
     };
 
     await writeJSON(path.join(uiPackagePath, 'package.json'), packageJson, { spaces: 2 });
+  }
+
+  async createESLintConfig(uiPackagePath) {
+    const eslintConfig = {
+      extends: ["../../.eslintrc.json"],
+      env: {
+        browser: true
+      }
+    };
+
+    await writeJSON(path.join(uiPackagePath, '.eslintrc.json'), eslintConfig, { spaces: 2 });
   }
 
   async createTailwindConfig(uiPackagePath) {
@@ -314,10 +326,11 @@ export function cn(...inputs: ClassValue[]) {
 
   async createIndex(uiPackagePath) {
     const indexContent = `// UI Components
-export { Button } from "./components/ui/button";
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/card";
-export { Input } from "./components/ui/input";
-export { Label } from "./components/ui/label";
+// Note: To add Shadcn components, run: npx shadcn@latest add button card input label
+// export { Button } from "./components/ui/button";
+// export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/card";
+// export { Input } from "./components/ui/input";
+// export { Label } from "./components/ui/label";
 
 // Utilities
 export { cn } from "./lib/utils";

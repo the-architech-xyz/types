@@ -29,11 +29,11 @@ export class AuthAgent {
       // Update package.json with dependencies
       await this.updatePackageJson(authPackagePath, config);
       
+      // Create ESLint config
+      await this.createESLintConfig(authPackagePath);
+      
       // Create Better Auth configuration
       await this.createAuthConfig(authPackagePath, config);
-      
-      // Create auth schema for database
-      await this.createAuthSchema(authPackagePath);
       
       // Create auth utilities
       await this.createAuthUtils(authPackagePath);
@@ -73,10 +73,11 @@ export class AuthAgent {
         "type-check": "tsc --noEmit"
       },
       dependencies: {
-        "better-auth": "^0.1.0",
-        "@better-auth/drizzle": "^0.1.0",
-        "jose": "^5.1.0",
-        "bcryptjs": "^2.4.3"
+        "better-auth": "^1.2.12",
+        "@better-auth/utils": "^0.2.6",
+        "jose": "^6.0.11",
+        "bcryptjs": "^2.4.3",
+        "zod": "^3.24.1"
       },
       devDependencies: {
         "@types/bcryptjs": "^2.4.6",
@@ -91,22 +92,23 @@ export class AuthAgent {
     await writeJSON(path.join(authPackagePath, 'package.json'), packageJson, { spaces: 2 });
   }
 
+  async createESLintConfig(authPackagePath) {
+    const eslintConfig = {
+      extends: ["../../.eslintrc.json"]
+    };
+
+    await writeJSON(path.join(authPackagePath, '.eslintrc.json'), eslintConfig, { spaces: 2 });
+  }
+
   async createAuthConfig(authPackagePath, config) {
     const authConfigContent = `import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "@better-auth/drizzle";
 import { db } from "@${config.projectName}/db";
-import { users, accounts, sessions, verificationTokens } from "./schema";
 
 export const auth = betterAuth({
-  database: drizzleAdapter(db, {
-    provider: "pg",
-    schema: {
-      users,
-      accounts,
-      sessions, 
-      verificationTokens,
-    },
-  }),
+  database: {
+    type: "postgresql",
+    url: process.env.DATABASE_URL!,
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -138,60 +140,6 @@ export type Session = typeof auth.$Infer.Session;
 export type User = typeof auth.$Infer.User;`;
 
     await writeFile(path.join(authPackagePath, 'auth.ts'), authConfigContent);
-  }
-
-  async createAuthSchema(authPackagePath) {
-    await ensureDir(path.join(authPackagePath, 'schema'));
-    
-    const authSchemaContent = `import { pgTable, text, timestamp, primaryKey, integer } from "drizzle-orm/pg-core";
-
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  name: text("name"),
-  email: text("email").notNull(),
-  emailVerified: timestamp("email_verified"),
-  image: text("image"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const accounts = pgTable("accounts", {
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  type: text("type").notNull(),
-  provider: text("provider").notNull(),
-  providerAccountId: text("provider_account_id").notNull(),
-  refresh_token: text("refresh_token"),
-  access_token: text("access_token"),
-  expires_at: integer("expires_at"),
-  token_type: text("token_type"),
-  scope: text("scope"),
-  id_token: text("id_token"),
-  session_state: text("session_state"),
-}, (account) => ({
-  compoundKey: primaryKey({
-    columns: [account.provider, account.providerAccountId],
-  }),
-}));
-
-export const sessions = pgTable("sessions", {
-  sessionToken: text("session_token").notNull().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires").notNull(),
-});
-
-export const verificationTokens = pgTable("verification_tokens", {
-  identifier: text("identifier").notNull(),
-  token: text("token").notNull(),
-  expires: timestamp("expires").notNull(),
-}, (vt) => ({
-  compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-}));`;
-
-    await writeFile(path.join(authPackagePath, 'schema.ts'), authSchemaContent);
   }
 
   async createAuthUtils(authPackagePath) {
@@ -283,18 +231,13 @@ export const config = {
     const authProviderContent = `"use client";
 
 import { ReactNode } from "react";
-import { authClient } from "../client";
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  return (
-    <authClient.SessionProvider>
-      {children}
-    </authClient.SessionProvider>
-  );
+  return <>{children}</>;
 }`;
 
     await writeFile(path.join(authPackagePath, 'components', 'auth-provider.tsx'), authProviderContent);
@@ -378,7 +321,6 @@ export { getServerSession, requireAuth } from "./server";
 export { AuthProvider } from "./components/auth-provider";
 export { SignInButton } from "./components/sign-in-button";
 export { authMiddleware } from "./middleware";
-export * from "./schema";
 
 export type { Session, User } from "./auth";`;
 

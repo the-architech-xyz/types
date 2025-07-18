@@ -21,7 +21,6 @@ import { BaseArchitechAgent } from '../agents/base-architech-agent.js';
 import { UIAgent } from '../agents/ui-agent.js';
 import { DBAgent } from '../agents/db-agent.js';
 import { AuthAgent } from '../agents/auth-agent.js';
-import { ConfigAgent } from '../agents/config-agent.js';
 
 const AVAILABLE_MODULES = {
   ui: {
@@ -41,12 +40,6 @@ const AVAILABLE_MODULES = {
     description: 'Better Auth integration',
     dependencies: ['better-auth', '@better-auth/drizzle'],
     agent: AuthAgent
-  },
-  config: {
-    name: 'Config Package',
-    description: 'Shared ESLint/Prettier/TypeScript configs',
-    dependencies: ['@typescript-eslint/eslint-plugin', '@typescript-eslint/parser', 'prettier'],
-    agent: ConfigAgent
   }
 };
 
@@ -69,7 +62,13 @@ export async function architechCommand(projectName, options) {
     // Step 5: Execute selected package agents
     await executePackageAgents(config, runner);
     
-    // Step 6: Display success summary
+    // Step 6: Finalize workspace dependencies
+    await finalizeWorkspaceDependencies(config, runner);
+    
+    // Step 7: Post-installation setup
+    await postInstallationSetup(config, runner);
+    
+    // Step 8: Display success summary
     displayArchitechSummary(config);
     
   } catch (error) {
@@ -140,7 +139,7 @@ async function gatherArchitechConfig(projectName, options) {
   } else {
     // Non-interactive mode with defaults
     config.projectName = config.projectName || 'my-architech-app';
-    config.selectedModules = options.modules ? options.modules.split(',') : ['ui', 'db', 'auth', 'config'];
+    config.selectedModules = options.modules ? options.modules.split(',') : ['ui', 'db', 'auth'];
   }
 
   // Validate selected modules
@@ -184,6 +183,45 @@ async function executePackageAgents(config, runner) {
       
       displayInfo(`✅ ${module.name} configured successfully`);
     }
+  }
+}
+
+async function finalizeWorkspaceDependencies(config, runner) {
+  displayInfo('🔗 Finalizing workspace dependencies...');
+  
+  try {
+    const projectPath = path.resolve(process.cwd(), config.projectName);
+    const baseAgent = new BaseArchitechAgent();
+    
+    // Finalize workspace dependencies
+    await baseAgent.finalizeWorkspaceDependencies(projectPath, config);
+    
+    // Install dependencies to link workspaces
+    const originalCwd = process.cwd();
+    try {
+      process.chdir(projectPath);
+      await runner.install([], false, projectPath);
+    } finally {
+      process.chdir(originalCwd);
+    }
+    
+    displayInfo('✅ Workspace dependencies finalized');
+  } catch (error) {
+    displayInfo('⚠️  Warning: Could not finalize workspace dependencies');
+  }
+}
+
+async function postInstallationSetup(config, runner) {
+  displayInfo('🎨 Post-installation setup for Shadcn/ui...');
+  const projectPath = path.resolve(process.cwd(), config.projectName);
+  
+  try {
+    process.chdir(projectPath);
+    await runner.install(['@shadcn/ui'], false, projectPath);
+    displayInfo('✅ Shadcn/ui components installed successfully');
+  } catch (error) {
+    displayError(`Failed to install Shadcn/ui components: ${error.message}`);
+    process.exit(1);
   }
 }
 
