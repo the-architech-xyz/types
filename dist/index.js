@@ -46,6 +46,7 @@ import { displayBanner } from './utils/banner.js';
         .argument('[project-name]', 'Name of the project to create')
         .option('-t, --template <template>', 'Project template (nextjs, react, vue)', 'nextjs')
         .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
+        .option('--structure <structure>', 'Project structure (single-app, monorepo)', 'single-app')
         .option('--no-git', 'Skip git repository initialization')
         .option('--no-install', 'Skip dependency installation')
         .option('-y, --yes', 'Skip interactive prompts and use defaults')

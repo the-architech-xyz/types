@@ -402,7 +402,7 @@ export class OrchestratorAgent {
             switch (agentId) {
                 case 'base-project':
                     const { BaseProjectAgent } = await import('./base-project-agent.js');
-                    return new BaseProjectAgent();
+                    return new BaseProjectAgent(this.pluginSystem);
                 case 'db':
                     const { DBAgent } = await import('./db-agent.js');
                     return new DBAgent();

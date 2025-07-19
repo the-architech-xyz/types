@@ -1,17 +1,13 @@
 /**
- * Create Command - The Heart of The Architech
+ * Create Command - Main project generation command
  *
- * Orchestrates specialized AI agents to generate complete, production-ready
- * applications in minutes instead of weeks.
+ * Updated to use the new framework-agnostic and structure-agnostic approach.
  */
-import inquirer from 'inquirer';
+import * as path from 'path';
 import chalk from 'chalk';
-import path from 'path';
-import { existsSync } from 'fs';
+import inquirer from 'inquirer';
 import { CommandRunner } from '../utils/command-runner.js';
 import { ContextFactory } from '../utils/context-factory.js';
-import { displayError, displayInfo } from '../utils/banner.js';
-// Import our orchestrator agent
 import { OrchestratorAgent } from '../agents/orchestrator-agent.js';
 export async function createCommand(projectName, options = {}) {
     console.log(chalk.blue.bold('🎭 Initializing The Architech Generation Process...\n'));
@@ -40,6 +36,7 @@ async function gatherProjectConfig(projectName, options = {}) {
         skipGit: options.noGit || false,
         skipInstall: options.noInstall || false,
         useDefaults: options.yes || false,
+        structure: options.structure || 'single-app',
         userInput: ''
     };
     // If project name not provided or using interactive mode
@@ -83,67 +80,66 @@ async function gatherProjectConfig(projectName, options = {}) {
             },
             {
                 type: 'list',
-                name: 'packageManager',
-                message: chalk.yellow('📦 Which package manager would you like to use?'),
+                name: 'structure',
+                message: chalk.yellow('🏗️ Choose your project structure:'),
                 choices: [
-                    { name: 'Auto-detect (Recommended)', value: 'auto' },
-                    { name: 'npm', value: 'npm' },
-                    { name: 'yarn', value: 'yarn' },
-                    { name: 'pnpm', value: 'pnpm' },
-                    { name: 'bun', value: 'bun' }
+                    { name: 'Single Application - Simple and focused', value: 'single-app' },
+                    { name: 'Monorepo - Enterprise-grade with multiple packages', value: 'monorepo' }
                 ],
-                default: 'auto',
-                when: !options.yes && options.packageManager === 'auto'
+                default: 'single-app',
+                when: !options.yes
             },
             {
-                type: 'checkbox',
-                name: 'modules',
-                message: chalk.yellow('🧩 Select modules to include:'),
+                type: 'list',
+                name: 'packageManager',
+                message: chalk.yellow('📦 Choose your package manager:'),
                 choices: [
-                    { name: 'Best Practices (ESLint, Prettier, Husky)', value: 'best-practices', checked: true },
-                    { name: 'Design System (Tailwind, Shadcn/ui)', value: 'design-system', checked: true },
-                    { name: 'Database (Drizzle ORM, PostgreSQL)', value: 'database', checked: true },
-                    { name: 'Authentication (Better Auth)', value: 'authentication', checked: true },
-                    { name: 'Deployment (Docker, CI/CD)', value: 'deployment', checked: true },
-                    { name: 'Testing (Validation, Quality)', value: 'testing', checked: true }
+                    { name: 'npm - Default Node.js package manager', value: 'npm' },
+                    { name: 'yarn - Fast, reliable, and secure', value: 'yarn' },
+                    { name: 'pnpm - Fast, disk space efficient', value: 'pnpm' },
+                    { name: 'bun - All-in-one JavaScript runtime & toolkit', value: 'bun' },
+                    { name: 'Auto-detect (recommended)', value: 'auto' }
                 ],
-                when: !options.yes,
-                validate: (choices) => {
-                    if (choices.length === 0)
-                        return 'Please select at least one module';
-                    return true;
-                }
+                default: 'auto',
+                when: !options.yes
+            },
+            {
+                type: 'confirm',
+                name: 'skipGit',
+                message: chalk.yellow('🚫 Skip git repository initialization?'),
+                default: false,
+                when: !options.yes
+            },
+            {
+                type: 'confirm',
+                name: 'skipInstall',
+                message: chalk.yellow('🚫 Skip dependency installation?'),
+                default: false,
+                when: !options.yes
             }
         ]);
-        // Merge answers with config
-        config = { ...config, ...answers };
+        // Update config with user answers
+        config = {
+            ...config,
+            projectName: answers.projectName || config.projectName,
+            template: answers.template || config.template,
+            structure: answers.structure || config.structure,
+            packageManager: answers.packageManager || config.packageManager,
+            skipGit: answers.skipGit !== undefined ? answers.skipGit : config.skipGit,
+            skipInstall: answers.skipInstall !== undefined ? answers.skipInstall : config.skipInstall,
+            userInput: answers.userInput || config.userInput
+        };
     }
-    // Set defaults for non-interactive mode
-    if (options.yes) {
-        config.modules = ['best-practices', 'design-system', 'database', 'authentication', 'deployment', 'testing'];
-        config.template = config.template || 'nextjs-14';
-        config.userInput = config.userInput || 'A modern web application with Next.js, database, authentication, and deployment';
-    }
-    // Ensure we have a project name
-    if (!config.projectName) {
-        config.projectName = projectName || 'my-architech-app';
-    }
-    // Normalize template name
-    if (config.template === 'nextjs') {
-        config.template = 'nextjs-14';
+    // Set default modules for monorepo
+    if (config.structure === 'monorepo') {
+        config.modules = ['ui', 'db', 'auth', 'config'];
     }
     return config;
 }
 async function validateProject(config) {
     const projectPath = path.resolve(config.projectName);
-    if (existsSync(projectPath)) {
-        throw new Error(`Directory "${config.projectName}" already exists`);
-    }
-    displayInfo(`Creating project: ${config.projectName}`);
-    displayInfo(`Template: ${config.template}`);
-    displayInfo(`Modules: ${config.modules?.join(', ') || 'base project only'}`);
-    if (config.userInput) {
-        displayInfo(`Requirements: ${config.userInput}`);
+    if (await import('fs-extra').then(fs => fs.pathExists(projectPath))) {
+        throw new Error(`Project directory already exists: ${config.projectName}`);
     }
 }
 async function executeOrchestrator(config, runner) {
@@ -158,6 +154,7 @@ async function executeOrchestrator(config, runner) {
         verbose: true
     }, {
         template: config.template,
+        structure: config.structure,
         modules: config.modules,
         userInput: config.userInput,
         // Agent-specific configurations
@@ -190,55 +187,58 @@ async function executeOrchestrator(config, runner) {
     const orchestrator = new OrchestratorAgent();
     console.log(chalk.blue.bold('🎯 Orchestrator Agent starting...'));
     const result = await orchestrator.execute(context);
-    if (result.success) {
-        console.log(chalk.green('✅ Orchestrator completed successfully!'));
-        console.log(chalk.gray(`Duration: ${result.duration}ms`));
-        console.log(chalk.gray(`Artifacts: ${result.artifacts?.length || 0}`));
-        if (result.warnings && result.warnings.length > 0) {
-            console.log(chalk.yellow('\n⚠️  Warnings:'));
-            result.warnings.forEach(warning => {
-                console.log(chalk.yellow(`  • ${warning}`));
-            });
-        }
+    if (!result.success) {
+        const errorMessage = result.errors?.[0]?.message || 'Unknown error occurred';
+        throw new Error(`Orchestrator execution failed: ${errorMessage}`);
     }
-    else {
-        console.log(chalk.red('❌ Orchestrator failed!'));
-        if (result.errors) {
-            result.errors.forEach(error => {
-                console.log(chalk.red(`  • ${error.message}`));
-            });
-        }
-        throw new Error('Orchestrator execution failed');
-    }
+    console.log(chalk.green.bold('\n✅ Project generation completed successfully!'));
 }
 function displayProjectSummary(config) {
-    console.log(chalk.green.bold(`\n✨ The Architech has successfully generated your project '${config.projectName}'!\n`));
+    const structureText = config.structure === 'monorepo' ? 'Enterprise Monorepo' : 'Single Application';
+    console.log(chalk.green.bold(`\n✨ The Architech has successfully generated your ${structureText} '${config.projectName}'!\n`));
     console.log(chalk.cyan.bold('📊 GENERATION REPORT:'));
-    console.log(chalk.gray('─'.repeat(45)));
-    console.log(chalk.green(`✔ Template: ${config.template}`));
+    console.log(chalk.gray('─'.repeat(50)));
+    console.log(chalk.green(`✔ Project Type: ${structureText}`));
+    console.log(chalk.green(`✔ Framework: ${config.template}`));
     console.log(chalk.green(`✔ Package Manager: ${config.packageManager}`));
-    console.log(chalk.green(`✔ Modules: ${config.modules?.join(', ') || 'base project'}`));
     console.log(chalk.green(`✔ Project Structure: Complete`));
-    console.log(chalk.green(`✔ Dependencies: Installed`));
+    console.log(chalk.green(`✔ Dependencies: ${config.skipInstall ? 'Skipped' : 'Installed'}`));
     console.log(chalk.green(`✔ Configuration: Optimized`));
     console.log(chalk.green(`✔ AI Orchestration: Successful`));
+    if (config.structure === 'monorepo' && config.modules) {
+        console.log(chalk.green(`✔ Packages: ${config.modules.join(', ')}`));
+    }
     console.log(chalk.yellow.bold('\n⏱️  PRODUCTIVITY IMPACT:'));
-    console.log(chalk.gray('─'.repeat(45)));
-    console.log(chalk.white(`- Traditional Setup Time: 2-3 weeks`));
-    console.log(chalk.white(`- The Architech Time: ~3 minutes`));
-    console.log(chalk.white(`- Time Saved: 99.8%`));
+    console.log(chalk.gray('─'.repeat(50)));
+    console.log(chalk.white(`- Traditional Setup Time: 3-4 weeks`));
+    console.log(chalk.white(`- The Architech Time: ~5 minutes`));
+    console.log(chalk.white(`- Time Saved: 99.9%`));
     console.log(chalk.magenta.bold('\n🚀 NEXT STEPS:'));
-    console.log(chalk.gray('─'.repeat(45)));
+    console.log(chalk.gray('─'.repeat(50)));
     console.log(chalk.cyan(`1. cd ${config.projectName}`));
-    if (config.skipInstall) {
-        console.log(chalk.cyan(`2. ${config.packageManager === 'npm' ? 'npm install' : config.packageManager + ' install'}`));
-        console.log(chalk.cyan(`3. ${config.packageManager === 'npm' ? 'npm run dev' : config.packageManager === 'yarn' ? 'yarn dev' : config.packageManager + ' run dev'}`));
+    if (!config.skipInstall) {
+        console.log(chalk.cyan(`2. npm run dev`));
+        console.log(chalk.cyan(`3. Open http://localhost:3000`));
     }
     else {
-        console.log(chalk.cyan(`2. ${config.packageManager === 'npm' ? 'npm run dev' : config.packageManager === 'yarn' ? 'yarn dev' : config.packageManager + ' run dev'}`));
+        console.log(chalk.cyan(`2. npm install`));
+        console.log(chalk.cyan(`3. npm run dev`));
+        console.log(chalk.cyan(`4. Open http://localhost:3000`));
     }
-    console.log(chalk.green.bold('\n🎉 Happy coding! Your AI-generated project is ready to go!\n'));
-    console.log(chalk.gray('📚 Documentation: https://the-architech.dev/docs'));
-    console.log(chalk.gray('💬 Support: https://github.com/the-architech/cli/issues\n'));
+    if (config.structure === 'monorepo') {
+        console.log(chalk.blue.bold('\n🏗️  MONOREPO STRUCTURE:'));
+        console.log(chalk.gray('─'.repeat(50)));
+        console.log(chalk.white(`📁 apps/web - Main Next.js application`));
+        if (config.modules) {
+            config.modules.forEach(module => {
+                console.log(chalk.white(`📁 packages/${module} - ${module} package`));
+            });
+        }
+    }
+    console.log(chalk.green.bold('\n🎉 Happy coding! Your project is ready to build amazing things!\n'));
+}
+function displayError(message) {
+    console.error(chalk.red.bold('\n❌ Error:'), chalk.red(message));
+    console.log(chalk.yellow('\n💡 Need help? Check our documentation or open an issue on GitHub.'));
 }
 //# sourceMappingURL=create.js.map

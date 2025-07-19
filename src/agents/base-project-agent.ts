@@ -1,8 +1,8 @@
 /**
  * Base Project Agent - Foundation Builder
  * 
- * Responsible for creating the core project structure using framework-specific
- * generators like create-next-app, create-react-app, etc.
+ * Responsible for creating the core project structure using the new
+ * framework-agnostic and structure-agnostic approach.
  * 
  * Enhanced to integrate with the plugin system for modularity.
  */
@@ -13,6 +13,8 @@ import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { TemplateService, templateService } from '../utils/template-service.js';
 import { PluginSystem } from '../utils/plugin-system.js';
+import { ProjectStructureManager } from '../utils/project-structure-manager.js';
+import { ConfigurationManager } from '../utils/configuration-manager.js';
 import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
 import {
   AgentContext,
@@ -27,12 +29,14 @@ import {
 
 export class BaseProjectAgent extends AbstractAgent {
   private pluginSystem: PluginSystem;
-  private templateService: TemplateService;
+  private structureManager: ProjectStructureManager;
+  private configManager: ConfigurationManager;
 
-  constructor() {
+  constructor(pluginSystem: PluginSystem) {
     super();
-    this.pluginSystem = PluginSystem.getInstance();
-    this.templateService = templateService;
+    this.pluginSystem = pluginSystem;
+    this.structureManager = new ProjectStructureManager(templateService);
+    this.configManager = new ConfigurationManager();
   }
 
   // ============================================================================
@@ -43,27 +47,17 @@ export class BaseProjectAgent extends AbstractAgent {
     return {
       name: 'BaseProjectAgent',
       version: '2.0.0',
-      description: 'Creates the foundational project structure using framework-specific generators with plugin system',
+      description: 'Creates the foundational project structure using framework-agnostic approach',
       author: 'The Architech Team',
       category: AgentCategory.FOUNDATION,
-      tags: ['project', 'foundation', 'generator', 'framework', 'plugin-integration'],
+      tags: ['project', 'foundation', 'generator', 'framework-agnostic', 'structure-agnostic'],
       dependencies: [],
       conflicts: [],
       requirements: [
         {
           type: 'package',
-          name: 'create-next-app',
-          description: 'Next.js project generator'
-        },
-        {
-          type: 'package',
-          name: 'create-vite',
-          description: 'Vite project generator'
-        },
-        {
-          type: 'package',
-          name: 'nuxi',
-          description: 'Nuxt project generator'
+          name: 'fs-extra',
+          description: 'File system utilities'
         }
       ],
       license: 'MIT',
@@ -74,119 +68,64 @@ export class BaseProjectAgent extends AbstractAgent {
   protected getAgentCapabilities(): AgentCapability[] {
     return [
       {
-        name: 'create-nextjs-project',
-        description: 'Creates a Next.js project with TypeScript, Tailwind, and ESLint using plugin system',
+        name: 'create-project-structure',
+        description: 'Create project structure (single-app or monorepo)',
         parameters: [
           {
-            name: 'template',
+            name: 'projectName',
             type: 'string',
             required: true,
-            description: 'Next.js template version (nextjs-13, nextjs-14)',
-            validation: [
-              {
-                type: 'enum',
-                value: ['nextjs-13', 'nextjs-14'],
-                message: 'Template must be nextjs-13 or nextjs-14'
-              }
-            ]
+            description: 'Name of the project to create'
           },
           {
-            name: 'usePlugin',
-            type: 'boolean',
-            required: false,
-            description: 'Whether to use the Next.js plugin for core setup',
-            defaultValue: true
+            name: 'framework',
+            type: 'string',
+            required: true,
+            description: 'Framework to use (nextjs, react, vue)'
+          },
+          {
+            name: 'structure',
+            type: 'string',
+            required: true,
+            description: 'Project structure (single-app or monorepo)'
           }
         ],
         examples: [
           {
-            name: 'Create Next.js 14 project with plugin',
-            description: 'Creates a modern Next.js 14 project with App Router using plugin',
-            parameters: { template: 'nextjs-14', usePlugin: true },
-            expectedResult: 'Next.js project with TypeScript, Tailwind, and ESLint via plugin'
+            name: 'Create Next.js monorepo',
+            description: 'Create a Next.js monorepo with Turborepo',
+            parameters: {
+              projectName: 'my-app',
+              framework: 'nextjs-14',
+              structure: 'monorepo'
+            },
+            expectedResult: 'Project structure created successfully'
           }
         ],
         category: CapabilityCategory.SETUP
       },
       {
-        name: 'create-react-vite-project',
-        description: 'Creates a React project with Vite for fast development',
+        name: 'validate-project-structure',
+        description: 'Validate created project structure',
         parameters: [
           {
-            name: 'usePlugin',
-            type: 'boolean',
-            required: false,
-            description: 'Whether to use a React plugin for core setup',
-            defaultValue: false
+            name: 'projectPath',
+            type: 'string',
+            required: true,
+            description: 'Path to the project directory'
           }
         ],
         examples: [
           {
-            name: 'Create React + Vite project',
-            description: 'Creates a React project with Vite and TypeScript',
-            parameters: {},
-            expectedResult: 'React project with Vite, TypeScript, and modern tooling'
+            name: 'Validate monorepo structure',
+            description: 'Validate that all required directories and files exist',
+            parameters: {
+              projectPath: './my-app'
+            },
+            expectedResult: 'Structure validation passed'
           }
         ],
-        category: CapabilityCategory.SETUP
-      },
-      {
-        name: 'create-nuxt-project',
-        description: 'Creates a Nuxt 3 project with modern Vue.js features',
-        parameters: [
-          {
-            name: 'usePlugin',
-            type: 'boolean',
-            required: false,
-            description: 'Whether to use a Nuxt plugin for core setup',
-            defaultValue: false
-          }
-        ],
-        examples: [
-          {
-            name: 'Create Nuxt 3 project',
-            description: 'Creates a Nuxt 3 project with TypeScript and modern features',
-            parameters: {},
-            expectedResult: 'Nuxt 3 project with TypeScript and Vue 3 features'
-          }
-        ],
-        category: CapabilityCategory.SETUP
-      },
-      {
-        name: 'enhance-framework-setup',
-        description: 'Adds agent-specific enhancements to the framework setup',
-        parameters: [
-          {
-            name: 'performance',
-            type: 'boolean',
-            required: false,
-            description: 'Whether to add performance optimizations',
-            defaultValue: true
-          },
-          {
-            name: 'seo',
-            type: 'boolean',
-            required: false,
-            description: 'Whether to add SEO optimizations',
-            defaultValue: true
-          },
-          {
-            name: 'accessibility',
-            type: 'boolean',
-            required: false,
-            description: 'Whether to add accessibility features',
-            defaultValue: true
-          }
-        ],
-        examples: [
-          {
-            name: 'Add all enhancements',
-            description: 'Adds all agent-specific enhancements to the framework setup',
-            parameters: { performance: true, seo: true, accessibility: true },
-            expectedResult: 'Enhanced framework setup with performance, SEO, and accessibility features'
-          }
-        ],
-        category: CapabilityCategory.INTEGRATION
+        category: CapabilityCategory.VALIDATION
       }
     ];
   }
@@ -196,51 +135,44 @@ export class BaseProjectAgent extends AbstractAgent {
   // ============================================================================
 
   async validate(context: AgentContext): Promise<ValidationResult> {
-    const baseValidation = await super.validate(context);
-    
-    if (!baseValidation.valid) {
-      return baseValidation;
-    }
-
-    const errors: any[] = [];
+    const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Validate template
-    const template = context.config.template;
-    if (!template) {
-      errors.push({
-        field: 'template',
-        message: 'Template is required',
-        code: 'REQUIRED_FIELD',
-        severity: 'error'
-      });
-    } else if (!['nextjs-13', 'nextjs-14', 'react-vite', 'vue-nuxt'].includes(template)) {
-      errors.push({
-        field: 'template',
-        message: `Unsupported template: ${template}`,
-        code: 'UNSUPPORTED_TEMPLATE',
-        severity: 'error'
-      });
+    // Validate project name
+    if (!context.projectName || context.projectName.trim().length === 0) {
+      errors.push('Project name is required');
+    } else if (!/^[a-zA-Z0-9-_]+$/.test(context.projectName)) {
+      errors.push('Project name can only contain letters, numbers, hyphens, and underscores');
     }
 
-    // Check if project directory already exists
+    // Validate framework
+    const framework = context.config.template as string;
+    if (!framework) {
+      errors.push('Framework/template is required');
+    } else if (!['nextjs', 'nextjs-14', 'react', 'vue'].includes(framework)) {
+      errors.push(`Unsupported framework: ${framework}`);
+    }
+
+    // Validate project path
     if (existsSync(context.projectPath)) {
-      if (!context.options.force) {
-        errors.push({
-          field: 'projectPath',
-          message: `Project directory already exists: ${context.projectPath}`,
-          code: 'DIRECTORY_EXISTS',
-          severity: 'error'
-        });
-      } else {
-        warnings.push(`Project directory already exists and will be overwritten: ${context.projectPath}`);
-      }
+      errors.push(`Project directory already exists: ${context.projectPath}`);
+    }
+
+    // Validate package manager
+    if (!['npm', 'yarn', 'pnpm', 'bun', 'auto'].includes(context.packageManager)) {
+      warnings.push(`Unsupported package manager: ${context.packageManager}`);
     }
 
     return {
       valid: errors.length === 0,
-      errors,
-      warnings
+      errors: errors.map(error => ({
+        field: 'general',
+        message: error,
+        code: 'VALIDATION_ERROR',
+        severity: 'error' as const
+      })),
+      warnings,
+      ...(warnings.length > 0 && { suggestions: ['Consider using a supported package manager'] })
     };
   }
 
@@ -250,61 +182,75 @@ export class BaseProjectAgent extends AbstractAgent {
 
   protected async executeInternal(context: AgentContext): Promise<AgentResult> {
     const { projectName, projectPath, config } = context;
-    const template = config.template as string;
+    const framework = config.template as string;
+    const structure = config.structure as 'single-app' | 'monorepo' || 'monorepo';
     
-    context.logger.info(`Creating monorepo structure: ${projectName}`);
+    context.logger.info(`Creating ${structure} structure for ${framework}: ${projectName}`);
 
     try {
       // Start spinner for actual work
-      await this.startSpinner(`🔧 Creating monorepo structure for ${projectName}...`, context);
+      await this.startSpinner(`🔧 Creating ${structure} structure for ${projectName}...`, context);
 
-      // Step 1: Create the base monorepo structure using base-architech templates
-      await this.createBaseProjectStructure(context);
+      // Step 1: Create project configuration
+      const projectConfig = await this.createProjectConfiguration(context, structure);
 
-      // Step 2: Verify project structure
-      await this.verifyProjectStructure(context);
+      // Step 2: Create project structure
+      await this.createProjectStructure(context, projectConfig);
+
+      // Step 3: Validate project structure
+      await this.validateProjectStructure(context, projectConfig);
+
+      // Step 4: Save configuration
+      await this.saveProjectConfiguration(context, projectConfig);
 
       // Stop spinner and show success
-      this.succeedSpinner(`✅ Monorepo structure created successfully: ${projectName}`);
+      this.succeedSpinner(`✅ ${structure} structure created successfully: ${projectName}`);
 
       const artifacts: Artifact[] = [
         {
           type: 'directory',
           path: projectPath,
           metadata: {
-            framework: template,
-            features: ['monorepo', 'turborepo', 'typescript', 'packages'],
-            structure: 'enterprise'
+            framework,
+            features: projectConfig.features,
+            structure,
+            modules: projectConfig.modules
           }
+        },
+        {
+          type: 'config',
+          path: path.join(projectPath, '.architech.json'),
+          metadata: { type: 'project-configuration' }
         }
       ];
 
       return this.createSuccessResult(
         {
           projectPath,
-          framework: template,
-          structure: 'monorepo',
-          packages: ['ui', 'db', 'auth', 'config']
+          framework,
+          structure,
+          packages: projectConfig.modules,
+          features: projectConfig.features
         },
         artifacts,
         [
-          'Monorepo structure created',
-          'Turborepo configuration added',
-          'Package structure initialized',
-          'Ready for package-specific setup'
+          `${structure} structure created`,
+          'Configuration files generated',
+          'Project structure validated',
+          'Ready for framework-specific setup'
         ]
       );
 
     } catch (error) {
       // Stop spinner and show error
-      this.failSpinner(`❌ Failed to create monorepo structure`);
+      this.failSpinner(`❌ Failed to create ${structure} structure`);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`Failed to create monorepo: ${errorMessage}`, error as Error);
+      context.logger.error(`Failed to create project structure: ${errorMessage}`, error as Error);
       
       return this.createErrorResult(
         'PROJECT_CREATION_FAILED',
-        `Failed to create monorepo structure: ${errorMessage}`,
+        `Failed to create ${structure} structure: ${errorMessage}`,
         [],
         0,
         error
@@ -313,167 +259,138 @@ export class BaseProjectAgent extends AbstractAgent {
   }
 
   // ============================================================================
-  // BASE PROJECT STRUCTURE CREATION
+  // PROJECT CONFIGURATION
   // ============================================================================
 
-  private async createBaseProjectStructure(context: AgentContext): Promise<void> {
-    const { projectName, projectPath, packageManager } = context;
-    
-    context.logger.info('Creating base project structure using base-architech templates...');
+  private async createProjectConfiguration(
+    context: AgentContext,
+    structure: 'single-app' | 'monorepo'
+  ) {
+    const framework = context.config.template as string;
+    const userInput = context.config.userInput as string;
 
-    // Create project directory
-    await fsExtra.ensureDir(projectPath);
-
-    // Common template variables
-    const templateVars = {
-      projectName,
-      packageManager: packageManager || 'npm',
-      template: context.config.template || 'nextjs-14'
+    // Create configuration options
+    const configOptions = {
+      skipGit: context.options.skipGit,
+      skipInstall: context.options.skipInstall,
+      useDefaults: context.options.useDefaults,
+      verbose: context.options.verbose
     };
 
-    // Update spinner for file creation
-    this.updateSpinner(`📁 Creating root configuration files...`);
+    // Create project configuration
+    const projectConfig = this.configManager.createConfiguration(
+      context.projectName,
+      framework,
+      structure,
+      configOptions,
+      userInput
+    );
 
-    // Render root-level project files
-    await this.templateService.renderAndWrite('base-architech', 'package.json.ejs', path.join(projectPath, 'package.json'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'tsconfig.json.ejs', path.join(projectPath, 'tsconfig.json'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', '.eslintrc.json.ejs', path.join(projectPath, '.eslintrc.json'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', '.prettierrc.json.ejs', path.join(projectPath, '.prettierrc.json'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', '.gitignore.ejs', path.join(projectPath, '.gitignore'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'README.md.ejs', path.join(projectPath, 'README.md'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'turbo.json.ejs', path.join(projectPath, 'turbo.json'), templateVars);
-
-    // Update spinner for directory creation
-    this.updateSpinner(`📂 Creating monorepo directory structure...`);
-
-    // Create monorepo directory structure
-    const monorepoDirs = [
-      'apps',
-      'apps/web',
-      'apps/web/src',
-      'apps/web/src/app',
-      'apps/web/src/components',
-      'apps/web/src/lib',
-      'apps/web/public',
-      'packages',
-      'packages/ui',
-      'packages/db',
-      'packages/auth',
-      'docs'
-    ];
-
-    for (const dir of monorepoDirs) {
-      await fsExtra.ensureDir(path.join(projectPath, dir));
+    // Validate configuration
+    const validation = this.configManager.validateConfiguration(projectConfig);
+    if (!validation.valid) {
+      throw new Error(`Configuration validation failed: ${validation.errors.join(', ')}`);
     }
 
-    // Update spinner for web app files
-    this.updateSpinner(`🌐 Creating Next.js web application...`);
-
-    // Render apps/web files
-    const webAppPath = path.join(projectPath, 'apps/web');
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/package.json.ejs', path.join(webAppPath, 'package.json'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/tsconfig.json.ejs', path.join(webAppPath, 'tsconfig.json'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/next.config.js.ejs', path.join(webAppPath, 'next.config.js'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/tailwind.config.js.ejs', path.join(webAppPath, 'tailwind.config.js'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/postcss.config.mjs.ejs', path.join(webAppPath, 'postcss.config.mjs'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/next-env.d.ts.ejs', path.join(webAppPath, 'next-env.d.ts'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/.eslintrc.json.ejs', path.join(webAppPath, '.eslintrc.json'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/.gitignore.ejs', path.join(webAppPath, '.gitignore'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/README.md.ejs', path.join(webAppPath, 'README.md'), templateVars);
-
-    // Render apps/web/src/app files
-    const appPath = path.join(webAppPath, 'src/app');
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/src/app/layout.tsx.ejs', path.join(appPath, 'layout.tsx'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/src/app/page.tsx.ejs', path.join(appPath, 'page.tsx'), templateVars);
-    await this.templateService.renderAndWrite('base-architech', 'apps/web/src/app/globals.css.ejs', path.join(appPath, 'globals.css'), templateVars);
-
-    // Create components.json at root for Shadcn/ui
-    await this.templateService.renderAndWrite('base-architech', 'components.json.ejs', path.join(projectPath, 'components.json'), templateVars);
-
-    // Update spinner for package files
-    this.updateSpinner(`📦 Creating package configurations...`);
-
-    // Render packages structure
-    const packages = ['ui', 'db', 'auth'];
-    for (const pkg of packages) {
-      const packagePath = path.join(projectPath, 'packages', pkg);
-      
-      // Define package-specific dependencies
-      const packageDependencies = this.getPackageDependencies(pkg);
-      
-      await this.templateService.renderAndWrite('base-architech/packages', 'package.json.ejs', path.join(packagePath, 'package.json'), {
-        ...templateVars,
-        packageName: pkg,
-        dependencies: packageDependencies
-      });
-      await this.templateService.renderAndWrite('base-architech/packages', 'tsconfig.json.ejs', path.join(packagePath, 'tsconfig.json'), templateVars);
-      await this.templateService.renderAndWrite('base-architech/packages', 'index.ts.ejs', path.join(packagePath, 'index.ts'), {
-        ...templateVars,
-        packageName: pkg
-      });
-    }
-
-    context.logger.info('Base monorepo structure created successfully');
+    context.logger.info('Project configuration created successfully');
+    return projectConfig;
   }
+
+  // ============================================================================
+  // PROJECT STRUCTURE CREATION
+  // ============================================================================
+
+  private async createProjectStructure(
+    context: AgentContext,
+    projectConfig: any
+  ): Promise<void> {
+    // Get structure configuration
+    const structureConfig = this.configManager.getStructureConfig(projectConfig);
+
+    // Get template data
+    const templateData = this.configManager.getTemplateData(projectConfig);
+
+    // Create project structure
+    await this.structureManager.createStructure(
+      context.projectPath,
+      structureConfig,
+      templateData
+    );
+
+    context.logger.info('Project structure created successfully');
+  }
+
+  // ============================================================================
+  // PROJECT STRUCTURE VALIDATION
+  // ============================================================================
+
+  private async validateProjectStructure(
+    context: AgentContext,
+    projectConfig: any
+  ): Promise<void> {
+    // Get structure configuration
+    const structureConfig = this.configManager.getStructureConfig(projectConfig);
+
+    // Validate structure
+    const isValid = await this.structureManager.validateStructure(
+      context.projectPath,
+      structureConfig
+    );
+
+    if (!isValid) {
+      throw new Error('Project structure validation failed');
+    }
+
+    context.logger.info('Project structure validation passed');
+  }
+
+  // ============================================================================
+  // CONFIGURATION PERSISTENCE
+  // ============================================================================
+
+  private async saveProjectConfiguration(
+    context: AgentContext,
+    projectConfig: any
+  ): Promise<void> {
+    await this.configManager.saveConfiguration(
+      context.projectPath,
+      projectConfig
+    );
+
+    context.logger.info('Project configuration saved');
+  }
+
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
 
   private getPackageDependencies(packageName: string): Record<string, string> {
-    switch (packageName) {
-      case 'ui':
-        return {
-          'react': '^18.0.0',
-          'react-dom': '^18.0.0',
-          'tailwindcss': '^3.4.0',
-          'class-variance-authority': '^0.7.0',
-          'clsx': '^2.0.0',
-          'tailwind-merge': '^2.0.0'
-        };
-      case 'db':
-        return {
-          'drizzle-orm': '^0.29.0',
-          'drizzle-kit': '^0.20.0',
-          '@neondatabase/serverless': '^0.7.0'
-        };
-      case 'auth':
-        return {
-          'better-auth': '^0.5.0',
-          '@better-auth/drizzle': '^0.5.0'
-        };
-      default:
-        return {};
-    }
-  }
-
-  // ============================================================================
-  // UTILITY METHODS
-  // ============================================================================
-
-  private async verifyProjectStructure(context: AgentContext): Promise<void> {
-    const { projectPath } = context;
-    
-    // Verify that the project directory exists
-    if (!existsSync(projectPath)) {
-      throw new Error(`Project directory was not created: ${projectPath}`);
-    }
-
-    // Verify package.json exists
-    const packageJsonPath = path.join(projectPath, 'package.json');
-    if (!existsSync(packageJsonPath)) {
-      throw new Error(`package.json was not created: ${packageJsonPath}`);
-    }
-
-    context.logger.info('Project structure verification completed');
-  }
-
-  async rollback(context: AgentContext): Promise<void> {
-    const { projectPath } = context;
-    
-    try {
-      if (existsSync(projectPath)) {
-        await fsExtra.remove(projectPath);
-        context.logger.info(`Rolled back project creation: ${projectPath}`);
+    const dependencies: Record<string, Record<string, string>> = {
+      ui: {
+        'react': '^18.3.0',
+        'react-dom': '^18.3.0',
+        'tailwindcss': '^3.4.0',
+        'tailwindcss-animate': '^1.0.7',
+        'class-variance-authority': '^0.7.0',
+        'clsx': '^2.1.0',
+        'lucide-react': '^0.400.0',
+        'tailwind-merge': '^2.2.0'
+      },
+      db: {
+        'drizzle-orm': '^0.30.0',
+        'drizzle-kit': '^0.21.0',
+        '@neondatabase/serverless': '^0.9.0'
+      },
+      auth: {
+        'better-auth': '^0.20.0',
+        '@better-auth/drizzle': '^0.20.0'
+      },
+      config: {
+        '@types/node': '^20.0.0',
+        'typescript': '^5.4.0'
       }
-    } catch (error) {
-      context.logger.error(`Failed to rollback project creation: ${error}`);
-    }
+    };
+
+    return dependencies[packageName] || {};
   }
 } 

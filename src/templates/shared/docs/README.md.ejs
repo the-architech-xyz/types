@@ -1,0 +1,228 @@
+# <%= projectName %>
+
+<%= isMonorepo ? 'Enterprise monorepo' : 'Modern web application' %> built with Next.js, TypeScript, and Tailwind CSS.
+
+## 🚀 Features
+
+- **Next.js 14** - React framework with App Router and Server Components
+- **TypeScript** - Full type safety across the entire application
+- **Tailwind CSS** - Utility-first CSS framework with design system
+- **Shadcn/ui** - Beautiful and accessible UI components
+- **ESLint & Prettier** - Code quality and formatting
+- **Turborepo** - Fast, incremental builds and caching
+- **Modern Tooling** - Latest versions of all dependencies
+
+## 📦 Project Structure
+
+<% if (isMonorepo) { %>
+```
+<%= projectName %>/
+├── apps/
+│   └── web/                    # Next.js application
+│       ├── src/
+│       │   ├── app/           # App Router pages
+│       │   ├── components/    # React components
+│       │   └── lib/          # Utility functions
+│       └── public/           # Static assets
+├── packages/
+│   ├── ui/                    # Shared UI components
+│   ├── db/                    # Database layer
+│   └── auth/                  # Authentication system
+├── components.json            # Shadcn/ui configuration
+├── tailwind.config.ts         # Tailwind CSS configuration
+├── turbo.json                 # Turborepo configuration
+└── package.json              # Root package.json
+```
+<% } else { %>
+```
+<%= projectName %>/
+├── src/
+│   ├── app/                   # Next.js App Router
+│   │   ├── layout.tsx        # Root layout
+│   │   ├── page.tsx          # Home page
+│   │   └── globals.css       # Global styles
+│   ├── components/           # React components
+│   │   └── ui/              # Shadcn/ui components
+│   └── lib/                 # Utility functions
+├── public/                  # Static assets
+├── components.json          # Shadcn/ui configuration
+├── tailwind.config.ts       # Tailwind CSS configuration
+└── package.json            # Dependencies & scripts
+```
+<% } %>
+
+## 🛠️ Getting Started
+
+### Prerequisites
+
+- Node.js 18.0.0 or higher
+- <%= packageManager %> (or npm/yarn/pnpm)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/<%= projectName %>.git
+   cd <%= projectName %>
+   ```
+
+2. **Install dependencies**
+   ```bash
+   <%= packageManager === 'auto' ? 'npm' : packageManager %> install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your configuration
+   ```
+
+4. **Start the development server**
+   ```bash
+   <%= packageManager === 'auto' ? 'npm' : packageManager %> run dev
+   ```
+
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 📜 Available Scripts
+
+<% if (isMonorepo) { %>
+### Root Scripts (Monorepo)
+- `dev` - Start all development servers
+- `build` - Build all packages and applications
+- `lint` - Run ESLint on all packages
+- `lint:fix` - Fix ESLint errors automatically
+- `type-check` - Run TypeScript type checking
+- `format` - Format code with Prettier
+- `format:check` - Check code formatting
+- `clean` - Clean all build artifacts
+- `test` - Run tests across all packages
+- `db:generate` - Generate database types
+- `db:migrate` - Run database migrations
+- `db:studio` - Open database studio
+
+### App Scripts (apps/web)
+- `dev` - Start Next.js development server
+- `build` - Build for production
+- `start` - Start production server
+- `lint` - Run ESLint
+- `type-check` - Run TypeScript checks
+<% } else { %>
+### Development
+- `dev` - Start Next.js development server
+- `build` - Build for production
+- `start` - Start production server
+
+### Code Quality
+- `lint` - Run ESLint
+- `lint:fix` - Fix ESLint errors automatically
+- `type-check` - Run TypeScript type checking
+- `format` - Format code with Prettier
+- `format:check` - Check code formatting
+
+### Utilities
+- `clean` - Clean build artifacts
+- `test` - Run tests (placeholder)
+<% } %>
+
+## 🎨 UI Components
+
+This project uses [Shadcn/ui](https://ui.shadcn.com/) for beautiful, accessible UI components. Components are built on top of [Radix UI](https://www.radix-ui.com/) primitives and styled with Tailwind CSS.
+
+### Adding New Components
+
+```bash
+npx shadcn@latest add button
+npx shadcn@latest add card
+npx shadcn@latest add dialog
+```
+
+### Available Components
+
+- Button
+- Card
+- Dialog
+- Input
+- Label
+- Select
+- Textarea
+- And more...
+
+## 🗄️ Database
+
+<% if (isMonorepo) { %>
+The database layer is configured in the `packages/db` package using Drizzle ORM.
+
+### Database Scripts
+- `db:generate` - Generate database types
+- `db:migrate` - Run database migrations
+- `db:studio` - Open database studio
+<% } else { %>
+Database configuration can be added as needed. Common options include:
+- Drizzle ORM
+- Prisma
+- Supabase
+- PlanetScale
+<% } %>
+
+## 🔐 Authentication
+
+<% if (isMonorepo) { %>
+Authentication is configured in the `packages/auth` package using Better Auth.
+
+### Features
+- Secure session management
+- Multiple authentication providers
+- Role-based access control
+- Password reset functionality
+<% } else { %>
+Authentication can be implemented using:
+- NextAuth.js
+- Clerk
+- Supabase Auth
+- Custom solution
+<% } %>
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Deploy automatically
+
+### Other Platforms
+
+- **Netlify** - Static site hosting
+- **Railway** - Full-stack deployment
+- **Docker** - Containerized deployment
+
+## 📚 Documentation
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Shadcn/ui Documentation](https://ui.shadcn.com)
+<% if (isMonorepo) { %>
+- [Turborepo Documentation](https://turbo.build/repo/docs)
+<% } %>
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Generated with [The Architech](https://the-architech.dev) - Revolutionary AI-Powered Application Generator
+- Built with [Next.js](https://nextjs.org) - The React Framework
+- Styled with [Tailwind CSS](https://tailwindcss.com) - A utility-first CSS framework
+- Components from [Shadcn/ui](https://ui.shadcn.com) - Beautiful and accessible UI components 

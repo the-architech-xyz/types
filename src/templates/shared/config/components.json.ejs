@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "<%= isMonorepo ? 'apps/web/src/app/globals.css' : 'src/app/globals.css' %>",
+    "baseColor": "slate",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "<%= isMonorepo ? '@/components' : '@/components' %>",
+    "utils": "<%= isMonorepo ? '@/lib/utils' : '@/lib/utils' %>",
+    "ui": "<%= isMonorepo ? '@/components/ui' : '@/components/ui' %>"
+  }
+} 

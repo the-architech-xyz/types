@@ -1,15 +1,16 @@
 /**
- * Create Command - The Heart of The Architech
+ * Create Command - Main project generation command
  *
- * Orchestrates specialized AI agents to generate complete, production-ready
- * applications in minutes instead of weeks.
+ * Updated to use the new framework-agnostic and structure-agnostic approach.
  */
+import { ProjectStructure } from '../utils/project-structure-manager.js';
 export interface CreateOptions {
     template?: string;
     packageManager?: string;
     noGit?: boolean;
     noInstall?: boolean;
     yes?: boolean;
+    structure?: 'single-app' | 'monorepo';
 }
 export interface ProjectConfig {
     projectName: string;
@@ -18,6 +19,7 @@ export interface ProjectConfig {
     skipGit: boolean;
     skipInstall: boolean;
     useDefaults: boolean;
+    structure: ProjectStructure;
     modules?: string[];
     userInput?: string;
 }
