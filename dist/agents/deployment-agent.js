@@ -291,91 +291,94 @@ export class DeploymentAgent extends AbstractAgent {
     // ============================================================================
     async enhanceDeploymentPackage(projectPath, context, deploymentConfig) {
         context.logger.info('Adding agent-specific deployment enhancements...');
-        // Create deployment utilities directory
+        // Create deployment package structure
         const deploymentPath = path.join(projectPath, 'packages', 'deployment');
         await fsExtra.ensureDir(deploymentPath);
-        // Add enhanced deployment utilities
-        await this.createEnhancedDeploymentUtils(deploymentPath, context, deploymentConfig);
-        // Add health check utilities
-        await this.createHealthChecks(deploymentPath, context);
-        // Add AI-powered deployment features
-        await this.createAIFeatures(deploymentPath, context);
-        // Add development utilities
-        await this.createDevUtilities(deploymentPath, context);
-    }
-    async createEnhancedDeploymentUtils(deploymentPath, context, deploymentConfig) {
+        // Create basic utils
         const utilsPath = path.join(deploymentPath, 'utils');
         await fsExtra.ensureDir(utilsPath);
-        // Enhanced deployment utilities
-        await this.templateService.renderTemplate('deployment/enhanced-utils.ts', path.join(utilsPath, 'enhanced.ts'), {
-            projectName: context.projectName,
-            platform: deploymentConfig.platform
-        });
-        // Docker utilities
-        if (deploymentConfig.useDocker) {
-            await this.templateService.renderTemplate('deployment/docker-utils.ts', path.join(utilsPath, 'docker.ts'), {
-                projectName: context.projectName
-            });
-        }
-        // CI/CD utilities
-        if (deploymentConfig.useCI) {
-            await this.templateService.renderTemplate('deployment/ci-utils.ts', path.join(utilsPath, 'ci.ts'), {
-                projectName: context.projectName,
-                platform: deploymentConfig.platform
-            });
-        }
-        // Environment utilities
-        await this.templateService.renderTemplate('deployment/env-utils.ts', path.join(utilsPath, 'env.ts'), {
-            projectName: context.projectName
-        });
-    }
-    async createHealthChecks(deploymentPath, context) {
+        const enhancedUtilsContent = `// Enhanced deployment utilities for ${context.projectName}
+export function validateDeploymentConfig(config: any): { valid: boolean; issues: string[] } {
+  const issues: string[] = [];
+  
+  if (!config.platform) {
+    issues.push('Deployment platform is required');
+  }
+  
+  if (!config.environment) {
+    issues.push('Deployment environment is required');
+  }
+  
+  return {
+    valid: issues.length === 0,
+    issues
+  };
+}
+
+export function generateDeploymentScripts(platform: string): Record<string, string> {
+  const scripts: Record<string, string> = {
+    'build': 'turbo run build',
+    'start': 'turbo run start',
+    'dev': 'turbo run dev'
+  };
+  
+  switch (platform) {
+    case 'vercel':
+      scripts['deploy'] = 'vercel --prod';
+      break;
+    case 'netlify':
+      scripts['deploy'] = 'netlify deploy --prod';
+      break;
+    case 'railway':
+      scripts['deploy'] = 'railway up';
+      break;
+  }
+  
+  return scripts;
+}`;
+        await fsExtra.writeFile(path.join(utilsPath, 'enhanced.ts'), enhancedUtilsContent);
+        // Create basic health checks
         const healthPath = path.join(deploymentPath, 'health');
         await fsExtra.ensureDir(healthPath);
-        // Deployment health checker
-        await this.templateService.renderTemplate('deployment/deployment-health.ts', path.join(healthPath, 'deployment-health.ts'), {
-            projectName: context.projectName
-        });
-        // Container health checker
-        await this.templateService.renderTemplate('deployment/container-health.ts', path.join(healthPath, 'container-health.ts'), {
-            projectName: context.projectName
-        });
-        // CI/CD health checker
-        await this.templateService.renderTemplate('deployment/ci-health.ts', path.join(healthPath, 'ci-health.ts'), {
-            projectName: context.projectName
-        });
-    }
-    async createAIFeatures(deploymentPath, context) {
-        const aiPath = path.join(deploymentPath, 'ai');
-        await fsExtra.ensureDir(aiPath);
-        // AI-powered deployment optimization
-        await this.templateService.renderTemplate('deployment/ai-deployment-optimizer.ts', path.join(aiPath, 'deployment-optimizer.ts'), {
-            projectName: context.projectName
-        });
-        // AI-powered performance monitoring
-        await this.templateService.renderTemplate('deployment/ai-performance-monitor.ts', path.join(aiPath, 'performance-monitor.ts'), {
-            projectName: context.projectName
-        });
-        // AI-powered scaling recommendations
-        await this.templateService.renderTemplate('deployment/ai-scaling-recommendations.ts', path.join(aiPath, 'scaling-recommendations.ts'), {
-            projectName: context.projectName
-        });
-    }
-    async createDevUtilities(deploymentPath, context) {
+        const healthContent = `// Deployment health utilities for ${context.projectName}
+export class DeploymentHealthChecker {
+  static async checkDockerHealth(): Promise<{ healthy: boolean; issues: string[] }> {
+    const issues: string[] = [];
+    
+    // Add Docker health check logic here
+    
+    return {
+      healthy: issues.length === 0,
+      issues
+    };
+  }
+  
+  static async checkCIHealth(): Promise<{ healthy: boolean; issues: string[] }> {
+    const issues: string[] = [];
+    
+    // Add CI health check logic here
+    
+    return {
+      healthy: issues.length === 0,
+      issues
+    };
+  }
+}`;
+        await fsExtra.writeFile(path.join(healthPath, 'deployment-health.ts'), healthContent);
+        // Create basic dev utilities
         const devPath = path.join(deploymentPath, 'dev');
         await fsExtra.ensureDir(devPath);
-        // Development utilities
-        await this.templateService.renderTemplate('deployment/dev-utils.ts', path.join(devPath, 'utils.ts'), {
-            projectName: context.projectName
-        });
-        // Deployment playground
-        await this.templateService.renderTemplate('deployment/deployment-playground.ts', path.join(devPath, 'playground.ts'), {
-            projectName: context.projectName
-        });
-        // Configuration generator
-        await this.templateService.renderTemplate('deployment/config-generator.ts', path.join(devPath, 'config-generator.ts'), {
-            projectName: context.projectName
-        });
+        const devContent = `// Development utilities for ${context.projectName}
+export function generateDeploymentReport(config: any): string {
+  return \`Deployment Report for \${context.projectName}
+Platform: \${config.platform}
+Environment: \${config.environment}
+Docker: \${config.useDocker ? 'Enabled' : 'Disabled'}
+CI/CD: \${config.useCI ? 'Enabled' : 'Disabled'}
+Generated on: \${new Date().toISOString()}
+\`;
+}`;
+        await fsExtra.writeFile(path.join(devPath, 'utils.ts'), devContent);
     }
     // ============================================================================
     // CONFIGURATION
@@ -468,7 +471,7 @@ export class DeploymentAgent extends AbstractAgent {
         try {
             const workflowsDir = path.join(context.projectPath, '.github', 'workflows');
             await fsExtra.ensureDir(workflowsDir);
-            await this.templateService.renderAndWrite('deployment', 'ci.yml.ejs', path.join(workflowsDir, 'ci.yml'), {
+            await this.templateService.renderAndWrite('deployment', 'github-actions.yml.ejs', path.join(workflowsDir, 'ci.yml'), {
                 projectName: context.projectName,
                 platform: deploymentConfig.platform
             }, { logger: context.logger });

@@ -178,19 +178,12 @@ export abstract class AbstractAgent implements IAgent {
   }
 
   async prepare(context: AgentContext): Promise<void> {
-    // Start spinner for visual feedback
-    if (context.options.verbose) {
-      this.spinner = (await getOra())({
-        text: chalk.blue(`🔧 ${this.getMetadata().name} preparing...`),
-        color: 'blue'
-      }).start();
-    }
-
+    // Don't start spinner automatically - only during actual work
     context.logger.info(`Preparing agent: ${this.getMetadata().name}`);
   }
 
   async cleanup(context: AgentContext): Promise<void> {
-    // Stop spinner
+    // Stop spinner if it's running
     if (this.spinner) {
       this.spinner.stop();
       this.spinner = null;
@@ -406,6 +399,22 @@ export abstract class AbstractAgent implements IAgent {
   // ============================================================================
   // SPINNER MANAGEMENT
   // ============================================================================
+
+  protected async startSpinner(text: string, context: AgentContext): Promise<void> {
+    if (context.options.verbose && !this.spinner) {
+      this.spinner = (await getOra())({
+        text: chalk.blue(text),
+        color: 'blue'
+      }).start();
+    }
+  }
+
+  protected async stopSpinner(): Promise<void> {
+    if (this.spinner) {
+      this.spinner.stop();
+      this.spinner = null;
+    }
+  }
 
   protected updateSpinner(text: string): void {
     if (this.spinner) {

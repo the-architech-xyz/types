@@ -44,6 +44,8 @@ export declare abstract class AbstractAgent implements IAgent {
     protected isRecoverableError(code: string): boolean;
     protected getErrorSuggestion(code: string): string;
     protected getErrorNextSteps(code: string): string[];
+    protected startSpinner(text: string, context: AgentContext): Promise<void>;
+    protected stopSpinner(): Promise<void>;
     protected updateSpinner(text: string): void;
     protected succeedSpinner(text: string): void;
     protected failSpinner(text: string): void;

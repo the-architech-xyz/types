@@ -30,11 +30,6 @@ export declare class AuthAgent extends AbstractAgent {
     private displayAuthSetupInstructions;
     private executeBetterAuthPlugin;
     private enhanceAuthPackage;
-    private createSecurityUtils;
-    private createMonitoringUtils;
-    private createAIFeatures;
-    private createEnhancedAuthUtils;
-    private createDevUtilities;
     private manualSetup;
     rollback(context: AgentContext): Promise<void>;
 }

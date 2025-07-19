@@ -357,12 +357,14 @@ export class AuthAgent extends AbstractAgent {
                 message: 'Session duration in days:',
                 default: 7,
                 validate: (input) => {
+                    if (!input || isNaN(input)) {
+                        return 'Please enter a valid number';
+                    }
                     if (input < 1 || input > 30) {
                         return 'Session duration must be between 1 and 30 days';
                     }
                     return true;
-                },
-                filter: (input) => input * 24 * 60 * 60 // Convert to seconds
+                }
             }
         ];
         const inquirer = await getInquirer();
@@ -370,7 +372,7 @@ export class AuthAgent extends AbstractAgent {
         return {
             providers: answers.providers,
             requireEmailVerification: answers.requireEmailVerification,
-            sessionDuration: answers.sessionDuration
+            sessionDuration: answers.sessionDuration * 24 * 60 * 60 // Convert days to seconds
         };
     }
     async updatePackageJson(authPackagePath, context) {
@@ -543,104 +545,86 @@ export class AuthAgent extends AbstractAgent {
     // ============================================================================
     async enhanceAuthPackage(authPackagePath, context, authConfig) {
         context.logger.info('Adding agent-specific enhancements to auth package...');
-        // Add security utilities
-        await this.createSecurityUtils(authPackagePath, context);
-        // Add monitoring utilities
-        await this.createMonitoringUtils(authPackagePath, context);
-        // Add AI-powered auth features
-        await this.createAIFeatures(authPackagePath, context);
-        // Add enhanced auth utilities
-        await this.createEnhancedAuthUtils(authPackagePath, context);
-        // Add development utilities
-        await this.createDevUtilities(authPackagePath, context);
-    }
-    async createSecurityUtils(authPackagePath, context) {
-        const securityPath = path.join(authPackagePath, 'lib', 'security');
+        // Create basic directory structure
+        const libPath = path.join(authPackagePath, 'lib');
+        await fsExtra.ensureDir(libPath);
+        // Create basic security utilities (without templates for now)
+        const securityPath = path.join(libPath, 'security');
         await fsExtra.ensureDir(securityPath);
-        // Rate limiting utilities
-        await this.templateService.renderTemplate('auth/rate-limiting.ts', path.join(securityPath, 'rate-limiting.ts'), {
-            projectName: context.projectName
-        });
-        // Password strength checker
-        await this.templateService.renderTemplate('auth/password-strength.ts', path.join(securityPath, 'password-strength.ts'), {
-            projectName: context.projectName
-        });
-        // Session security utilities
-        await this.templateService.renderTemplate('auth/session-security.ts', path.join(securityPath, 'session-security.ts'), {
-            projectName: context.projectName
-        });
-        // CSRF protection utilities
-        await this.templateService.renderTemplate('auth/csrf-protection.ts', path.join(securityPath, 'csrf-protection.ts'), {
-            projectName: context.projectName
-        });
+        // Create a basic rate limiting utility
+        const rateLimitingContent = `// Rate limiting utilities for ${context.projectName}
+export class RateLimiter {
+  private attempts = new Map<string, number[]>();
+  
+  constructor(private maxAttempts: number = 5, private windowMs: number = 15 * 60 * 1000) {}
+  
+  isAllowed(identifier: string): boolean {
+    const now = Date.now();
+    const userAttempts = this.attempts.get(identifier) || [];
+    const recentAttempts = userAttempts.filter(time => now - time < this.windowMs);
+    
+    if (recentAttempts.length >= this.maxAttempts) {
+      return false;
     }
-    async createMonitoringUtils(authPackagePath, context) {
-        const monitoringPath = path.join(authPackagePath, 'lib', 'monitoring');
+    
+    recentAttempts.push(now);
+    this.attempts.set(identifier, recentAttempts);
+    return true;
+  }
+  
+  reset(identifier: string): void {
+    this.attempts.delete(identifier);
+  }
+}`;
+        await fsExtra.writeFile(path.join(securityPath, 'rate-limiting.ts'), rateLimitingContent);
+        // Create basic monitoring utilities
+        const monitoringPath = path.join(libPath, 'monitoring');
         await fsExtra.ensureDir(monitoringPath);
-        // Auth event logger
-        await this.templateService.renderTemplate('auth/auth-logger.ts', path.join(monitoringPath, 'auth-logger.ts'), {
-            projectName: context.projectName
-        });
-        // Security audit utilities
-        await this.templateService.renderTemplate('auth/security-audit.ts', path.join(monitoringPath, 'security-audit.ts'), {
-            projectName: context.projectName
-        });
-        // Performance monitoring
-        await this.templateService.renderTemplate('auth/performance-monitor.ts', path.join(monitoringPath, 'performance-monitor.ts'), {
-            projectName: context.projectName
-        });
-    }
-    async createAIFeatures(authPackagePath, context) {
-        const aiPath = path.join(authPackagePath, 'lib', 'ai');
-        await fsExtra.ensureDir(aiPath);
-        // AI-powered fraud detection
-        await this.templateService.renderTemplate('auth/ai-fraud-detection.ts', path.join(aiPath, 'fraud-detection.ts'), {
-            projectName: context.projectName
-        });
-        // AI-powered risk assessment
-        await this.templateService.renderTemplate('auth/ai-risk-assessment.ts', path.join(aiPath, 'risk-assessment.ts'), {
-            projectName: context.projectName
-        });
-        // AI-powered user behavior analysis
-        await this.templateService.renderTemplate('auth/ai-behavior-analysis.ts', path.join(aiPath, 'behavior-analysis.ts'), {
-            projectName: context.projectName
-        });
-    }
-    async createEnhancedAuthUtils(authPackagePath, context) {
-        const utilsPath = path.join(authPackagePath, 'lib', 'utils');
+        const monitoringContent = `// Auth monitoring utilities for ${context.projectName}
+export class AuthLogger {
+  static log(event: string, data?: any) {
+    console.log(\`[AUTH] \${event}\`, data || '');
+  }
+  
+  static error(event: string, error?: any) {
+    console.error(\`[AUTH ERROR] \${event}\`, error || '');
+  }
+}`;
+        await fsExtra.writeFile(path.join(monitoringPath, 'auth-logger.ts'), monitoringContent);
+        // Create basic utils
+        const utilsPath = path.join(libPath, 'utils');
         await fsExtra.ensureDir(utilsPath);
-        // Enhanced auth utilities
-        await this.templateService.renderTemplate('auth/enhanced-auth-utils.ts', path.join(utilsPath, 'enhanced.ts'), {
-            projectName: context.projectName
-        });
-        // Provider utilities
-        await this.templateService.renderTemplate('auth/provider-utils.ts', path.join(utilsPath, 'providers.ts'), {
-            projectName: context.projectName
-        });
-        // Session utilities
-        await this.templateService.renderTemplate('auth/session-utils.ts', path.join(utilsPath, 'session.ts'), {
-            projectName: context.projectName
-        });
-        // Permission utilities
-        await this.templateService.renderTemplate('auth/permission-utils.ts', path.join(utilsPath, 'permissions.ts'), {
-            projectName: context.projectName
-        });
-    }
-    async createDevUtilities(authPackagePath, context) {
-        const devPath = path.join(authPackagePath, 'lib', 'dev');
-        await fsExtra.ensureDir(devPath);
-        // Development utilities
-        await this.templateService.renderTemplate('auth/dev-utils.ts', path.join(devPath, 'utils.ts'), {
-            projectName: context.projectName
-        });
-        // Auth playground
-        await this.templateService.renderTemplate('auth/auth-playground.tsx', path.join(devPath, 'playground.tsx'), {
-            projectName: context.projectName
-        });
-        // Testing utilities
-        await this.templateService.renderTemplate('auth/testing-utils.ts', path.join(devPath, 'testing.ts'), {
-            projectName: context.projectName
-        });
+        const utilsContent = `// Enhanced auth utilities for ${context.projectName}
+export function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+  return emailRegex.test(email);
+}
+
+export function validatePassword(password: string): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (password.length < 8) {
+    errors.push('Password must be at least 8 characters long');
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+  
+  if (!/\\d/.test(password)) {
+    errors.push('Password must contain at least one number');
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}`;
+        await fsExtra.writeFile(path.join(utilsPath, 'enhanced.ts'), utilsContent);
     }
     // ============================================================================
     // FALLBACK MANUAL SETUP

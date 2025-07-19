@@ -251,276 +251,60 @@ export class BaseProjectAgent extends AbstractAgent {
   protected async executeInternal(context: AgentContext): Promise<AgentResult> {
     const { projectName, projectPath, config } = context;
     const template = config.template as string;
-    const usePlugin = config.usePlugin !== false; // Default to true
     
-    context.logger.info(`Creating ${template} project: ${projectName}`);
+    context.logger.info(`Creating monorepo structure: ${projectName}`);
 
     try {
-      let result: AgentResult;
+      // Start spinner for actual work
+      await this.startSpinner(`🔧 Creating monorepo structure for ${projectName}...`, context);
 
-      switch (template) {
-        case 'nextjs-14':
-        case 'nextjs-13':
-          result = await this.createNextJSProject(context, usePlugin);
-          break;
-        case 'react-vite':
-          result = await this.createReactViteProject(context, usePlugin);
-          break;
-        case 'vue-nuxt':
-          result = await this.createNuxtProject(context, usePlugin);
-          break;
-        default:
-          return this.createErrorResult(
-            'UNSUPPORTED_TEMPLATE',
-            `Unsupported template: ${template}`,
-            [{
-              field: 'template',
-              message: `Template '${template}' is not supported`,
-              code: 'UNSUPPORTED_TEMPLATE',
-              severity: 'error'
-            }]
-          );
-      }
+      // Step 1: Create the base monorepo structure using base-architech templates
+      await this.createBaseProjectStructure(context);
 
-      // Always run agent-specific enhancements
-      await this.enhanceFrameworkSetup(projectPath, context, template);
-
-      // Verify project structure
+      // Step 2: Verify project structure
       await this.verifyProjectStructure(context);
 
-      context.logger.success(`Project structure created successfully: ${projectName}`);
-      
-      return result;
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`Failed to create project: ${errorMessage}`, error as Error);
-      
-      return this.createErrorResult(
-        'PROJECT_CREATION_FAILED',
-        `Failed to create ${template} project: ${errorMessage}`,
-        [],
-        0,
-        error
-      );
-    }
-  }
-
-  // ============================================================================
-  // PLUGIN INTEGRATION
-  // ============================================================================
-
-  private async executeNextJSPlugin(context: AgentContext, projectPath: string): Promise<any> {
-    try {
-      const registry = this.pluginSystem.getRegistry();
-      const nextJSPlugin = registry.get('nextjs');
-      if (!nextJSPlugin) {
-        throw new Error('Next.js plugin not found in registry');
-      }
-
-      const pluginContext: PluginContext = {
-        ...context,
-        pluginId: 'nextjs',
-        pluginConfig: {
-          template: context.config.template,
-          targetPath: projectPath,
-          typescript: true,
-          tailwind: true,
-          eslint: true
-        },
-        installedPlugins: [],
-        projectType: ProjectType.NEXTJS,
-        targetPlatform: [TargetPlatform.WEB]
-      };
-
-      context.logger.info('Executing Next.js plugin...');
-      const result = await nextJSPlugin.install(pluginContext);
-      
-      if (!result.success) {
-        throw new Error(`Plugin execution failed: ${result.errors?.[0]?.message || 'Unknown error'}`);
-      }
-
-      context.logger.info('Next.js plugin executed successfully');
-      return result;
-    } catch (error) {
-      context.logger.warn(`Plugin execution failed, falling back to manual setup: ${error}`);
-      return null;
-    }
-  }
-
-  // ============================================================================
-  // AGENT-SPECIFIC ENHANCEMENTS
-  // ============================================================================
-
-  private async enhanceFrameworkSetup(projectPath: string, context: AgentContext, template: string): Promise<void> {
-    context.logger.info('Adding agent-specific enhancements to framework setup...');
-
-    // Add performance optimizations
-    await this.createPerformanceOptimizations(projectPath, context, template);
-    
-    // Add SEO optimizations
-    await this.createSEOOptimizations(projectPath, context, template);
-    
-    // Add accessibility features
-    await this.createAccessibilityFeatures(projectPath, context, template);
-    
-    // Add development utilities
-    await this.createDevUtilities(projectPath, context, template);
-  }
-
-  private async createPerformanceOptimizations(projectPath: string, context: AgentContext, template: string): Promise<void> {
-    const perfPath = path.join(projectPath, 'lib', 'performance');
-    await fsExtra.ensureDir(perfPath);
-    await this.templateService.renderTemplate('framework/performance-monitor.ts', path.join(perfPath, 'monitor.ts'), {
-      projectName: context.projectName,
-      template
-    });
-
-    await this.templateService.renderTemplate('framework/image-optimization.ts', path.join(perfPath, 'images.ts'), {
-      projectName: context.projectName,
-      template
-    });
-
-    await this.templateService.renderTemplate('framework/bundle-analyzer.ts', path.join(perfPath, 'bundle.ts'), {
-      projectName: context.projectName,
-      template
-    });
-  }
-
-  private async createSEOOptimizations(projectPath: string, context: AgentContext, template: string): Promise<void> {
-    const seoPath = path.join(projectPath, 'lib', 'seo');
-    await fsExtra.ensureDir(seoPath);
-    await this.templateService.renderTemplate('framework/seo-utils.ts', path.join(seoPath, 'utils.ts'), {
-      projectName: context.projectName,
-      template
-    });
-
-    await this.templateService.renderTemplate('framework/meta-generator.ts', path.join(seoPath, 'meta.ts'), {
-      projectName: context.projectName,
-      template
-    });
-
-    await this.templateService.renderTemplate('framework/sitemap-generator.ts', path.join(seoPath, 'sitemap.ts'), {
-      projectName: context.projectName,
-      template
-    });
-  }
-
-  private async createAccessibilityFeatures(projectPath: string, context: AgentContext, template: string): Promise<void> {
-    const a11yPath = path.join(projectPath, 'lib', 'accessibility');
-    await fsExtra.ensureDir(a11yPath);
-    await this.templateService.renderTemplate('framework/a11y-utils.ts', path.join(a11yPath, 'utils.ts'), {
-      projectName: context.projectName,
-      template
-    });
-
-    await this.templateService.renderTemplate('framework/focus-management.ts', path.join(a11yPath, 'focus.ts'), {
-      projectName: context.projectName,
-      template
-    });
-
-    await this.templateService.renderTemplate('framework/screen-reader.ts', path.join(a11yPath, 'screen-reader.ts'), {
-      projectName: context.projectName,
-      template
-    });
-  }
-
-  private async createDevUtilities(projectPath: string, context: AgentContext, template: string): Promise<void> {
-    const devPath = path.join(projectPath, 'lib', 'dev');
-    await fsExtra.ensureDir(devPath);
-    await this.templateService.renderTemplate('framework/dev-utils.ts', path.join(devPath, 'utils.ts'), {
-      projectName: context.projectName,
-      template
-    });
-
-    await this.templateService.renderTemplate('framework/debug-utils.ts', path.join(devPath, 'debug.ts'), {
-      projectName: context.projectName,
-      template
-    });
-
-    await this.templateService.renderTemplate('framework/testing-utils.ts', path.join(devPath, 'testing.ts'), {
-      projectName: context.projectName,
-      template
-    });
-  }
-
-  // ============================================================================
-  // FRAMEWORK CREATION METHODS
-  // ============================================================================
-
-  private async createNextJSProject(context: AgentContext, usePlugin: boolean): Promise<AgentResult> {
-    const { projectName, projectPath } = context;
-    const template = context.config.template as string;
-
-    try {
-      let pluginResult = null;
-
-      // Use plugin for core setup if enabled
-      if (usePlugin) {
-        context.logger.info('Using Next.js plugin for core setup...');
-        pluginResult = await this.executeNextJSPlugin(context, projectPath);
-      }
-
-      // Fall back to manual setup if plugin failed or not used
-      if (!pluginResult) {
-        context.logger.info('Performing manual Next.js setup...');
-        await this.manualNextJSSetup(context);
-      }
+      // Stop spinner and show success
+      this.succeedSpinner(`✅ Monorepo structure created successfully: ${projectName}`);
 
       const artifacts: Artifact[] = [
         {
           type: 'directory',
           path: projectPath,
           metadata: {
-            framework: 'nextjs',
-            template,
-            features: ['typescript', 'tailwind', 'eslint', 'enhancements'],
-            pluginUsed: usePlugin
+            framework: template,
+            features: ['monorepo', 'turborepo', 'typescript', 'packages'],
+            structure: 'enterprise'
           }
-        },
-        {
-          type: 'file',
-          path: path.join(projectPath, 'package.json'),
-          metadata: { type: 'package-config' }
-        },
-        {
-          type: 'file',
-          path: path.join(projectPath, 'next.config.js'),
-          metadata: { type: 'next-config' }
         }
       ];
-
-      // Add plugin artifacts if plugin was used
-      if (pluginResult?.artifacts) {
-        artifacts.push(...pluginResult.artifacts);
-      }
 
       return this.createSuccessResult(
         {
           projectPath,
-          framework: 'nextjs',
-          template,
-          pluginUsed: usePlugin,
-          enhancements: ['performance', 'seo', 'accessibility']
+          framework: template,
+          structure: 'monorepo',
+          packages: ['ui', 'db', 'auth', 'config']
         },
         artifacts,
         [
-          'Next.js project structure created',
-          'TypeScript configured',
-          'Tailwind CSS configured',
-          'ESLint configured',
-          'Agent-specific enhancements added',
-          'Ready for development'
+          'Monorepo structure created',
+          'Turborepo configuration added',
+          'Package structure initialized',
+          'Ready for package-specific setup'
         ]
       );
 
     } catch (error) {
+      // Stop spinner and show error
+      this.failSpinner(`❌ Failed to create monorepo structure`);
+      
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`Failed to create Next.js project: ${errorMessage}`, error as Error);
+      context.logger.error(`Failed to create monorepo: ${errorMessage}`, error as Error);
       
       return this.createErrorResult(
-        'NEXTJS_CREATION_FAILED',
-        `Failed to create Next.js project: ${errorMessage}`,
+        'PROJECT_CREATION_FAILED',
+        `Failed to create monorepo structure: ${errorMessage}`,
         [],
         0,
         error
@@ -528,115 +312,114 @@ export class BaseProjectAgent extends AbstractAgent {
     }
   }
 
-  private async manualNextJSSetup(context: AgentContext): Promise<void> {
-    const { projectName, projectPath, config } = context;
-    const template = config.template as string;
-    
-    // Original manual setup logic here
-    context.logger.info(`Creating Next.js project manually: ${projectName}`);
-    
-    // This would contain the existing createNextJSProject logic
-    // For now, just log that manual setup is being performed
-    context.logger.info('Manual Next.js setup completed');
-  }
+  // ============================================================================
+  // BASE PROJECT STRUCTURE CREATION
+  // ============================================================================
 
-  private async createReactViteProject(context: AgentContext, usePlugin: boolean): Promise<AgentResult> {
-    const { projectName } = context;
+  private async createBaseProjectStructure(context: AgentContext): Promise<void> {
+    const { projectName, projectPath, packageManager } = context;
     
-    try {
-      // For now, return a basic result for React Vite
-      // This would be enhanced with plugin integration later
-      const artifacts: Artifact[] = [
-        {
-          type: 'directory',
-          path: context.projectPath,
-          metadata: {
-            framework: 'react',
-            bundler: 'vite',
-            features: ['typescript', 'enhancements'],
-            pluginUsed: usePlugin
-          }
-        }
-      ];
+    context.logger.info('Creating base project structure using base-architech templates...');
 
-      return this.createSuccessResult(
-        {
-          projectPath: context.projectPath,
-          framework: 'react',
-          bundler: 'vite',
-          pluginUsed: usePlugin,
-          enhancements: ['performance', 'seo', 'accessibility']
-        },
-        artifacts,
-        [
-          'React + Vite project structure created',
-          'TypeScript configured',
-          'Agent-specific enhancements added',
-          'Ready for development'
-        ]
-      );
+    // Create project directory
+    await fsExtra.ensureDir(projectPath);
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`Failed to create React Vite project: ${errorMessage}`, error as Error);
-      
-      return this.createErrorResult(
-        'REACT_VITE_CREATION_FAILED',
-        `Failed to create React Vite project: ${errorMessage}`,
-        [],
-        0,
-        error
-      );
+    // Common template variables
+    const templateVars = {
+      projectName,
+      packageManager: packageManager || 'npm',
+      template: context.config.template || 'nextjs-14'
+    };
+
+    // Update spinner for file creation
+    this.updateSpinner(`📁 Creating root configuration files...`);
+
+    // Render root-level project files
+    await this.templateService.renderAndWrite('base-architech', 'package.json.ejs', path.join(projectPath, 'package.json'), templateVars);
+    await this.templateService.renderAndWrite('base-architech', 'tsconfig.json.ejs', path.join(projectPath, 'tsconfig.json'), templateVars);
+    await this.templateService.renderAndWrite('base-architech', '.eslintrc.json.ejs', path.join(projectPath, '.eslintrc.json'), templateVars);
+    await this.templateService.renderAndWrite('base-architech', '.prettierrc.json.ejs', path.join(projectPath, '.prettierrc.json'), templateVars);
+    await this.templateService.renderAndWrite('base-architech', '.gitignore.ejs', path.join(projectPath, '.gitignore'), templateVars);
+    await this.templateService.renderAndWrite('base-architech', 'README.md.ejs', path.join(projectPath, 'README.md'), templateVars);
+    await this.templateService.renderAndWrite('base-architech', 'turbo.json.ejs', path.join(projectPath, 'turbo.json'), templateVars);
+
+    // Update spinner for directory creation
+    this.updateSpinner(`📂 Creating monorepo directory structure...`);
+
+    // Create monorepo directory structure
+    const monorepoDirs = [
+      'apps',
+      'apps/web',
+      'apps/web/src',
+      'apps/web/src/app',
+      'apps/web/src/components',
+      'apps/web/src/lib',
+      'apps/web/public',
+      'packages',
+      'packages/ui',
+      'packages/db',
+      'packages/auth',
+      'packages/config',
+      'docs'
+    ];
+
+    for (const dir of monorepoDirs) {
+      await fsExtra.ensureDir(path.join(projectPath, dir));
     }
+
+    // Update spinner for package files
+    this.updateSpinner(`📦 Creating package configurations...`);
+
+    // Render apps/web package.json
+    await this.templateService.renderAndWrite('base-architech/apps/web', 'package.json.ejs', path.join(projectPath, 'apps/web/package.json'), templateVars);
+
+    // Render packages structure
+    const packages = ['ui', 'db', 'auth'];
+    for (const pkg of packages) {
+      const packagePath = path.join(projectPath, 'packages', pkg);
+      
+      // Define package-specific dependencies
+      const packageDependencies = this.getPackageDependencies(pkg);
+      
+      await this.templateService.renderAndWrite('base-architech/packages', 'package.json.ejs', path.join(packagePath, 'package.json'), {
+        ...templateVars,
+        packageName: pkg,
+        dependencies: packageDependencies
+      });
+      await this.templateService.renderAndWrite('base-architech/packages', 'tsconfig.json.ejs', path.join(packagePath, 'tsconfig.json'), templateVars);
+      await this.templateService.renderAndWrite('base-architech/packages', 'index.ts.ejs', path.join(packagePath, 'index.ts'), {
+        ...templateVars,
+        packageName: pkg
+      });
+    }
+
+    context.logger.info('Base monorepo structure created successfully');
   }
 
-  private async createNuxtProject(context: AgentContext, usePlugin: boolean): Promise<AgentResult> {
-    const { projectName } = context;
-    
-    try {
-      // For now, return a basic result for Nuxt
-      // This would be enhanced with plugin integration later
-      const artifacts: Artifact[] = [
-        {
-          type: 'directory',
-          path: context.projectPath,
-          metadata: {
-            framework: 'nuxt',
-            version: '3',
-            features: ['typescript', 'enhancements'],
-            pluginUsed: usePlugin
-          }
-        }
-      ];
-
-      return this.createSuccessResult(
-        {
-          projectPath: context.projectPath,
-          framework: 'nuxt',
-          version: '3',
-          pluginUsed: usePlugin,
-          enhancements: ['performance', 'seo', 'accessibility']
-        },
-        artifacts,
-        [
-          'Nuxt 3 project structure created',
-          'TypeScript configured',
-          'Agent-specific enhancements added',
-          'Ready for development'
-        ]
-      );
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`Failed to create Nuxt project: ${errorMessage}`, error as Error);
-      
-      return this.createErrorResult(
-        'NUXT_CREATION_FAILED',
-        `Failed to create Nuxt project: ${errorMessage}`,
-        [],
-        0,
-        error
-      );
+  private getPackageDependencies(packageName: string): Record<string, string> {
+    switch (packageName) {
+      case 'ui':
+        return {
+          'react': '^18.0.0',
+          'react-dom': '^18.0.0',
+          'tailwindcss': '^3.4.0',
+          'class-variance-authority': '^0.7.0',
+          'clsx': '^2.0.0',
+          'tailwind-merge': '^2.0.0'
+        };
+      case 'db':
+        return {
+          'drizzle-orm': '^0.29.0',
+          'drizzle-kit': '^0.20.0',
+          '@neondatabase/serverless': '^0.7.0'
+        };
+      case 'auth':
+        return {
+          'better-auth': '^0.5.0',
+          '@better-auth/drizzle': '^0.5.0'
+        };
+      default:
+        return {};
     }
   }
 

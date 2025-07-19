@@ -16,16 +16,8 @@ export declare class BaseProjectAgent extends AbstractAgent {
     protected getAgentCapabilities(): AgentCapability[];
     validate(context: AgentContext): Promise<ValidationResult>;
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
-    private executeNextJSPlugin;
-    private enhanceFrameworkSetup;
-    private createPerformanceOptimizations;
-    private createSEOOptimizations;
-    private createAccessibilityFeatures;
-    private createDevUtilities;
-    private createNextJSProject;
-    private manualNextJSSetup;
-    private createReactViteProject;
-    private createNuxtProject;
+    private createBaseProjectStructure;
+    private getPackageDependencies;
     private verifyProjectStructure;
     rollback(context: AgentContext): Promise<void>;
 }

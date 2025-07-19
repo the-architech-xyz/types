@@ -21,10 +21,6 @@ export declare class ValidationAgent extends AbstractAgent {
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     private executeValidationPlugins;
     private enhanceValidationPackage;
-    private createEnhancedValidationUtils;
-    private createHealthChecks;
-    private createAIFeatures;
-    private createDevUtilities;
     validate(context: AgentContext): Promise<ValidationResult>;
     rollback(context: AgentContext): Promise<void>;
     private runValidationChecks;

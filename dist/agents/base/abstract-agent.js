@@ -107,17 +107,11 @@ export class AbstractAgent {
         };
     }
     async prepare(context) {
-        // Start spinner for visual feedback
-        if (context.options.verbose) {
-            this.spinner = (await getOra())({
-                text: chalk.blue(`🔧 ${this.getMetadata().name} preparing...`),
-                color: 'blue'
-            }).start();
-        }
+        // Don't start spinner automatically - only during actual work
         context.logger.info(`Preparing agent: ${this.getMetadata().name}`);
     }
     async cleanup(context) {
-        // Stop spinner
+        // Stop spinner if it's running
         if (this.spinner) {
             this.spinner.stop();
             this.spinner = null;
@@ -282,6 +276,20 @@ export class AbstractAgent {
     // ============================================================================
     // SPINNER MANAGEMENT
     // ============================================================================
+    async startSpinner(text, context) {
+        if (context.options.verbose && !this.spinner) {
+            this.spinner = (await getOra())({
+                text: chalk.blue(text),
+                color: 'blue'
+            }).start();
+        }
+    }
+    async stopSpinner() {
+        if (this.spinner) {
+            this.spinner.stop();
+            this.spinner = null;
+        }
+    }
     updateSpinner(text) {
         if (this.spinner) {
             this.spinner.text = chalk.blue(text);

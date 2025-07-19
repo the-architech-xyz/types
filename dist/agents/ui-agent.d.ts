@@ -24,16 +24,12 @@ export declare class UIAgent extends AbstractAgent {
     private createUtilities;
     private createComponentStructure;
     private createCSSFiles;
+    private createIndex;
     private installShadcnComponents;
     private createPlaceholderComponent;
-    private createIndex;
     private executeShadcnPlugin;
     private enhanceUIPackage;
-    private createEnhancedUtilities;
-    private createHealthChecks;
-    private createAIFeatures;
-    private createEnhancedComponentStructure;
-    private createEnhancedComponent;
+    private createBasicComponents;
     private createDevUtilities;
     private manualSetup;
     rollback(context: AgentContext): Promise<void>;

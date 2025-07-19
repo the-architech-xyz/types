@@ -20,10 +20,6 @@ export declare class DeploymentAgent extends AbstractAgent {
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     private executeDeploymentPlugins;
     private enhanceDeploymentPackage;
-    private createEnhancedDeploymentUtils;
-    private createHealthChecks;
-    private createAIFeatures;
-    private createDevUtilities;
     private getDeploymentConfig;
     validate(context: AgentContext): Promise<ValidationResult>;
     private createDockerfile;
