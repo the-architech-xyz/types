@@ -359,7 +359,6 @@ export class BaseProjectAgent extends AbstractAgent {
       'packages/ui',
       'packages/db',
       'packages/auth',
-      'packages/config',
       'docs'
     ];
 
@@ -367,11 +366,32 @@ export class BaseProjectAgent extends AbstractAgent {
       await fsExtra.ensureDir(path.join(projectPath, dir));
     }
 
+    // Update spinner for web app files
+    this.updateSpinner(`🌐 Creating Next.js web application...`);
+
+    // Render apps/web files
+    const webAppPath = path.join(projectPath, 'apps/web');
+    await this.templateService.renderAndWrite('base-architech/apps/web', 'package.json.ejs', path.join(webAppPath, 'package.json'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web', 'tsconfig.json.ejs', path.join(webAppPath, 'tsconfig.json'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web', 'next.config.js.ejs', path.join(webAppPath, 'next.config.js'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web', 'tailwind.config.js.ejs', path.join(webAppPath, 'tailwind.config.js'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web', 'postcss.config.mjs.ejs', path.join(webAppPath, 'postcss.config.mjs'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web', 'next-env.d.ts.ejs', path.join(webAppPath, 'next-env.d.ts'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web', '.eslintrc.json.ejs', path.join(webAppPath, '.eslintrc.json'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web', '.gitignore.ejs', path.join(webAppPath, '.gitignore'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web', 'README.md.ejs', path.join(webAppPath, 'README.md'), templateVars);
+
+    // Render apps/web/src/app files
+    const appPath = path.join(webAppPath, 'src/app');
+    await this.templateService.renderAndWrite('base-architech/apps/web/src/app', 'layout.tsx.ejs', path.join(appPath, 'layout.tsx'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web/src/app', 'page.tsx.ejs', path.join(appPath, 'page.tsx'), templateVars);
+    await this.templateService.renderAndWrite('base-architech/apps/web/src/app', 'globals.css.ejs', path.join(appPath, 'globals.css'), templateVars);
+
+    // Create components.json at root for Shadcn/ui
+    await this.templateService.renderAndWrite('base-architech', 'components.json.ejs', path.join(projectPath, 'components.json'), templateVars);
+
     // Update spinner for package files
     this.updateSpinner(`📦 Creating package configurations...`);
-
-    // Render apps/web package.json
-    await this.templateService.renderAndWrite('base-architech/apps/web', 'package.json.ejs', path.join(projectPath, 'apps/web/package.json'), templateVars);
 
     // Render packages structure
     const packages = ['ui', 'db', 'auth'];

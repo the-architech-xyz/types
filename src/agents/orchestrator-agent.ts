@@ -295,7 +295,7 @@ export class OrchestratorAgent implements IAgent {
     phases.push({
       name: 'Project Foundation',
       description: 'Setup project structure and core configuration',
-      agents: ['config', 'base-project'],
+      agents: ['base-project'],
       plugins: ['nextjs'],
       order: 1,
       dependencies: []
@@ -330,42 +330,12 @@ export class OrchestratorAgent implements IAgent {
       phases.push({
         name: 'UI/Design System',
         description: 'Setup Shadcn/ui design system',
-        agents: ['design-system'],
+        agents: ['ui'],
         plugins: ['shadcn-ui'],
         order: 4,
         dependencies: ['Project Foundation']
       });
     }
-
-    // Phase 5: Testing
-    phases.push({
-      name: 'Testing',
-      description: 'Setup testing framework and configuration',
-      agents: ['validation'],
-      plugins: [],
-      order: 5,
-      dependencies: ['Project Foundation']
-    });
-
-    // Phase 6: Deployment
-    phases.push({
-      name: 'Deployment',
-      description: 'Setup deployment configuration',
-      agents: ['deployment'],
-      plugins: [],
-      order: 6,
-      dependencies: ['Project Foundation']
-    });
-
-    // Phase 7: Best Practices
-    phases.push({
-      name: 'Best Practices',
-      description: 'Apply code quality and best practices',
-      agents: ['best-practices'],
-      plugins: [],
-      order: 7,
-      dependencies: ['Project Foundation']
-    });
 
     // Calculate estimated duration
     const estimatedDuration = phases.reduce((total, phase) => total + 30, 0); // 30 seconds per phase
@@ -520,31 +490,7 @@ export class OrchestratorAgent implements IAgent {
     const artifacts: any[] = [];
     const warnings: string[] = [];
 
-    // Execute plugins for this phase
-    for (const pluginId of phase.plugins) {
-      const plugin = this.pluginSystem.getRegistry().get(pluginId);
-      if (plugin) {
-        const pluginContext = {
-          ...context,
-          pluginId,
-          pluginConfig: this.getPluginConfig(pluginId, context),
-          installedPlugins: [],
-          projectType: ProjectType.NEXTJS,
-          targetPlatform: [TargetPlatform.WEB]
-        };
-
-        const result = await plugin.install(pluginContext);
-        
-        if (result.success) {
-          artifacts.push(...result.artifacts);
-          warnings.push(...result.warnings);
-        } else {
-          warnings.push(`Plugin ${pluginId} failed: ${result.errors.map((e: any) => e.message).join(', ')}`);
-        }
-      }
-    }
-
-    // Execute agents for this phase
+    // Execute agents for this phase (agents will handle plugin execution)
     for (const agentId of phase.agents) {
       try {
         this.logger.info(`Executing agent: ${agentId}`);
@@ -601,16 +547,6 @@ export class OrchestratorAgent implements IAgent {
         case 'ui':
           const { UIAgent } = await import('./ui-agent.js');
           return new UIAgent();
-        case 'validation':
-          const { ValidationAgent } = await import('./validation-agent.js');
-          return new ValidationAgent();
-        case 'deployment':
-          const { DeploymentAgent } = await import('./deployment-agent.js');
-          return new DeploymentAgent();
-        case 'config':
-        case 'best-practices':
-          // For now, return null for these agents as they're integrated into others
-          return null;
         default:
           this.logger.warn(`Unknown agent: ${agentId}`);
           return null;

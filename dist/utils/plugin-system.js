@@ -6,7 +6,7 @@
  */
 import { PluginRegistryImpl } from './plugin-registry.js';
 import { PluginManagerImpl } from './plugin-manager.js';
-import { ShadcnUIPlugin } from '../plugins/ui/shadcn-ui-plugin.js';
+import { ShadcnUIPlugin } from '../plugins/ui/shadcn-ui.js';
 import { DrizzlePlugin } from '../plugins/db/drizzle-plugin.js';
 import { BetterAuthPlugin } from '../plugins/auth/better-auth-plugin.js';
 import { NextJSPlugin } from '../plugins/framework/nextjs-plugin.js';

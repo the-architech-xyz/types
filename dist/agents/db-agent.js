@@ -244,7 +244,23 @@ export class DBAgent extends AbstractAgent {
         if (!result.success) {
             throw new Error(`Drizzle plugin failed: ${result.errors.map(e => e.message).join(', ')}`);
         }
+        // Write plugin artifacts to filesystem
+        await this.writePluginArtifacts(result.artifacts, context);
         return result;
+    }
+    async writePluginArtifacts(artifacts, context) {
+        for (const artifact of artifacts) {
+            if (artifact.type === 'file' && artifact.content) {
+                const filePath = artifact.path;
+                const content = artifact.content;
+                // Ensure directory exists
+                const dir = path.dirname(filePath);
+                await fsExtra.ensureDir(dir);
+                // Write file
+                await fsExtra.writeFile(filePath, content);
+                context.logger.info(`Created file: ${filePath}`);
+            }
+        }
     }
     // ============================================================================
     // AGENT ENHANCEMENTS
@@ -292,11 +308,27 @@ export class DBAgent extends AbstractAgent {
         try {
             // Generate schema based on requirements
             const schemaContent = await this.generateSchemaContent(dbConfig.schema, context);
-            await fsExtra.writeFile(path.join(dbPackagePath, 'schema/custom.ts'), schemaContent);
+            // Create the schema directory
+            const schemaDir = path.join(dbPackagePath, 'schema');
+            await fsExtra.ensureDir(schemaDir);
+            // Create custom schema file
+            await fsExtra.writeFile(path.join(schemaDir, 'custom.ts'), schemaContent);
+            // Update the main schema index to include custom schema
+            const mainSchemaContent = `// Main schema exports
+export * from './custom';
+
+// Export core schema types
+export type { DatabaseSchema } from './custom';`;
+            await fsExtra.writeFile(path.join(schemaDir, 'main.ts'), mainSchemaContent);
             artifacts.push({
                 type: 'file',
                 path: path.join(dbPackagePath, 'schema/custom.ts'),
                 metadata: { type: 'custom-schema', tables: dbConfig.schema }
+            });
+            artifacts.push({
+                type: 'file',
+                path: path.join(dbPackagePath, 'schema/main.ts'),
+                metadata: { type: 'schema-index' }
             });
         }
         catch (error) {
@@ -369,6 +401,7 @@ ${baseFields},
         await fsExtra.ensureDir(utilsDir);
         const enhancedUtils = `import { db } from '../index';
 import { eq, and, or } from 'drizzle-orm';
+import { users, posts, comments } from '../schema/custom';
 
 // Enhanced database utilities
 export class DatabaseUtils {
@@ -384,12 +417,12 @@ export class DatabaseUtils {
 
   static async create<T>(table: any, data: any): Promise<T> {
     const result = await db.insert(table).values(data).returning();
-    return result[0];
+    return (result as any[])[0];
   }
 
   static async update<T>(table: any, id: number, data: any): Promise<T | null> {
     const result = await db.update(table).set(data).where(eq(table.id, id)).returning();
-    return result[0] || null;
+    return (result as any[])[0] || null;
   }
 
   static async delete(table: any, id: number): Promise<boolean> {
@@ -442,7 +475,7 @@ export class DatabaseHealth {
 
         // Get PostgreSQL version
         const versionResult = await db.execute('SELECT version()');
-        version = versionResult.rows[0]?.version || 'unknown';
+        version = (versionResult.rows[0] as any)?.version || 'unknown';
       } catch (error) {
         console.error('Failed to get database stats:', error);
       }
@@ -469,47 +502,61 @@ export class DatabaseSeeder {
       isActive: true
     }));
 
-    return await db.insert(users).values(userData).returning();
+    const createdUsers = await db.insert(users).values(userData).returning();
+    console.log(\`Created \${createdUsers.length} users\`);
+    return createdUsers;
   }
 
   static async seedPosts(userIds: number[], count: number = 20) {
     const postData = Array.from({ length: count }, (_, i) => ({
       title: \`Post \${i + 1}\`,
-      content: \`This is the content for post \${i + 1}.\`,
-      authorId: userIds[Math.floor(Math.random() * userIds.length)],
+      content: \`This is the content for post \${i + 1}. It contains some sample text.\`,
+      authorId: userIds[i % userIds.length],
       published: Math.random() > 0.3
     }));
 
-    return await db.insert(posts).values(postData).returning();
+    const createdPosts = await db.insert(posts).values(postData).returning();
+    console.log(\`Created \${createdPosts.length} posts\`);
+    return createdPosts;
   }
 
   static async seedComments(userIds: number[], postIds: number[], count: number = 50) {
     const commentData = Array.from({ length: count }, (_, i) => ({
       content: \`Comment \${i + 1} on this post.\`,
-      authorId: userIds[Math.floor(Math.random() * userIds.length)],
-      postId: postIds[Math.floor(Math.random() * postIds.length)]
+      authorId: userIds[i % userIds.length],
+      postId: postIds[i % postIds.length]
     }));
 
-    return await db.insert(comments).values(commentData).returning();
+    const createdComments = await db.insert(comments).values(commentData).returning();
+    console.log(\`Created \${createdComments.length} comments\`);
+    return createdComments;
   }
 
   static async seedAll() {
-    console.log('🌱 Starting database seeding...');
+    console.log('Starting database seeding...');
     
-    const createdUsers = await this.seedUsers(10);
-    console.log(\`✅ Created \${createdUsers.length} users\`);
-    
-    const createdPosts = await this.seedPosts(createdUsers.map(u => u.id), 20);
-    console.log(\`✅ Created \${createdPosts.length} posts\`);
-    
-    const createdComments = await this.seedComments(
-      createdUsers.map(u => u.id), 
-      createdPosts.map(p => p.id), 
-      50
-    );
-    console.log(\`✅ Created \${createdComments.length} comments\`);
-    
-    console.log('🎉 Database seeding completed!');
+    try {
+      // Seed users first
+      const createdUsers = await this.seedUsers(10);
+      
+      // Seed posts
+      const createdPosts = await this.seedPosts(
+        createdUsers.map((u: any) => u.id), 
+        20
+      );
+      
+      // Seed comments
+      await this.seedComments(
+        createdUsers.map((u: any) => u.id),
+        createdPosts.map((p: any) => p.id),
+        50
+      );
+      
+      console.log('Database seeding completed successfully!');
+    } catch (error) {
+      console.error('Database seeding failed:', error);
+      throw error;
+    }
   }
 }`;
         await fsExtra.writeFile(path.join(utilsDir, 'seed.ts'), seedingUtils);

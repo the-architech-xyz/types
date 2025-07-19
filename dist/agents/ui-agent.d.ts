@@ -1,36 +1,20 @@
 /**
- * UI Agent - Design System Package Generator
+ * UI Agent - Design System Orchestrator
  *
- * Sets up the packages/ui design system with:
- * - Tailwind CSS configuration
- * - Shadcn/ui integration
- * - Shared UI components
- * - Utility functions for styling
- *
- * Enhanced to integrate with the plugin system for modularity.
+ * The brain for UI/design system decisions and plugin orchestration.
+ * Handles user interaction, decision making, and coordinates the Shadcn/ui plugin.
+ * Pure orchestrator - no direct installation logic.
  */
+import { AgentContext, AgentResult, AgentMetadata, ValidationResult } from '../types/agent.js';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class UIAgent extends AbstractAgent {
-    private templateService;
     private pluginSystem;
+    private templateService;
     constructor();
     protected getAgentMetadata(): AgentMetadata;
-    protected getAgentCapabilities(): AgentCapability[];
+    protected getAgentCapabilities(): never[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     validate(context: AgentContext): Promise<ValidationResult>;
-    private updatePackageJson;
-    private createTailwindConfig;
-    private createUtilities;
-    private createComponentStructure;
-    private createCSSFiles;
-    private createIndex;
-    private installShadcnComponents;
-    private createPlaceholderComponent;
-    private executeShadcnPlugin;
-    private enhanceUIPackage;
-    private createBasicComponents;
-    private createDevUtilities;
-    private manualSetup;
+    private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;
 }
