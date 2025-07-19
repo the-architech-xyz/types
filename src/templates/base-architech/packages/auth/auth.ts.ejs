@@ -1,0 +1,27 @@
+import { betterAuth } from "better-auth";
+
+export const auth = betterAuth({
+  database: {
+    type: "postgresql",
+    url: process.env.DATABASE_URL!,
+  },
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: true,
+  },
+  session: {
+    cookieName: "better-auth.session_token",
+    maxAge: 604800, // 7 days
+    updateAge: 60 * 60 * 24, // 24 hours
+  },
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: process.env.NODE_ENV === "production" ? process.env.AUTH_DOMAIN : undefined,
+    },
+  },
+});
+
+// Use the correct type inference
+export type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
+export type User = Session extends { user: infer U } ? U : never; 

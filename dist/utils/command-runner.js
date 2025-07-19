@@ -155,7 +155,14 @@ export class CommandRunner {
                 stdio: options.silent ? 'pipe' : 'inherit',
                 shell: true,
                 cwd: options.cwd || process.cwd(),
-                env: { ...process.env, ...options.env }
+                env: {
+                    ...process.env,
+                    ...options.env,
+                    // Force non-interactive mode for common tools
+                    CI: 'true',
+                    FORCE_COLOR: '1',
+                    NODE_ENV: 'production'
+                }
             };
             const childProcess = spawn(command, args, spawnOptions);
             let stdout = '';
@@ -210,6 +217,35 @@ export class CommandRunner {
         const installCmd = isDev ? this.commands.installDev : this.commands.install;
         const fullCmd = packages.length > 0 ? [...installCmd, ...packages] : installCmd;
         return this.execCommand(fullCmd, { cwd });
+    }
+    async installNonInteractive(packages = [], isDev = false, cwd = process.cwd()) {
+        const installCmd = isDev ? this.commands.installDev : this.commands.install;
+        const fullCmd = packages.length > 0 ? [...installCmd, ...packages] : installCmd;
+        // Add non-interactive flags based on package manager
+        const nonInteractiveFlags = this.getNonInteractiveFlags();
+        const finalCmd = [...fullCmd, ...nonInteractiveFlags];
+        return this.execCommand(finalCmd, {
+            cwd,
+            env: {
+                CI: 'true',
+                FORCE_COLOR: '1',
+                NODE_ENV: 'production'
+            }
+        });
+    }
+    getNonInteractiveFlags() {
+        switch (this.packageManager) {
+            case 'npm':
+                return ['--yes', '--silent'];
+            case 'yarn':
+                return ['--silent'];
+            case 'pnpm':
+                return ['--silent'];
+            case 'bun':
+                return ['--silent'];
+            default:
+                return ['--yes', '--silent'];
+        }
     }
     async runScript(scriptName, cwd = process.cwd()) {
         const runCmd = [...this.commands.run, scriptName];

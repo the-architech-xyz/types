@@ -7,25 +7,26 @@
  * - Database schema definitions
  * - Migration scripts and utilities
  *
- * Migrated to the new standardized agent interface for robustness and extensibility.
+ * Enhanced to integrate with the Drizzle plugin and orchestrator agent pattern.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class DBAgent extends AbstractAgent {
     private templateService;
+    private pluginSystem;
     constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
-    validate(context: AgentContext): Promise<ValidationResult>;
+    private executeDrizzlePlugin;
+    private enhanceDatabaseSetup;
+    private generateCustomSchema;
+    private generateSchemaContent;
+    private generateTableDefinition;
+    private createEnhancedUtils;
+    private createHealthChecks;
+    private createSeedingUtils;
     private getDatabaseConfig;
-    private updatePackageJson;
-    private createESLintConfig;
-    private createDrizzleConfig;
-    private createDatabaseSchema;
-    private createDatabaseConnection;
-    private createMigrationUtils;
-    private createEnvConfig;
-    private displayDatabaseSetupInstructions;
+    validate(context: AgentContext): Promise<ValidationResult>;
     rollback(context: AgentContext): Promise<void>;
 }

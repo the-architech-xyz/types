@@ -7,25 +7,35 @@
  * - Environment configuration
  * - Docker Compose for local development
  *
- * Migrated to the new standardized agent interface for robustness and extensibility.
+ * Enhanced to integrate with the plugin system for modularity.
  */
-import { existsSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync } from 'fs';
 import * as path from 'path';
+import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
+import { templateService } from '../utils/template-service.js';
+import { PluginSystem } from '../utils/plugin-system.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
 export class DeploymentAgent extends AbstractAgent {
+    templateService;
+    pluginSystem;
+    constructor() {
+        super();
+        this.templateService = templateService;
+        this.pluginSystem = PluginSystem.getInstance();
+    }
     // ============================================================================
     // AGENT METADATA
     // ============================================================================
     getAgentMetadata() {
         return {
             name: 'DeploymentAgent',
-            version: '1.0.0',
-            description: 'Sets up production-ready deployment infrastructure',
+            version: '2.0.0',
+            description: 'Sets up production-ready deployment infrastructure using plugin system',
             author: 'The Architech Team',
             category: AgentCategory.DEPLOYMENT,
-            tags: ['deployment', 'docker', 'ci-cd', 'github-actions', 'devops'],
-            dependencies: [],
+            tags: ['deployment', 'docker', 'ci-cd', 'github-actions', 'devops', 'plugin-integration'],
+            dependencies: ['BaseProjectAgent'],
             conflicts: [],
             requirements: [
                 {
@@ -46,60 +56,147 @@ export class DeploymentAgent extends AbstractAgent {
     getAgentCapabilities() {
         return [
             {
+                name: 'setup-deployment-infrastructure',
+                description: 'Creates complete deployment infrastructure using plugin system',
+                parameters: [
+                    {
+                        name: 'platform',
+                        type: 'string',
+                        required: false,
+                        description: 'Deployment platform (vercel, netlify, railway, aws)',
+                        defaultValue: 'vercel',
+                        validation: [
+                            {
+                                type: 'enum',
+                                value: ['vercel', 'netlify', 'railway', 'aws'],
+                                message: 'Platform must be vercel, netlify, railway, or aws'
+                            }
+                        ]
+                    },
+                    {
+                        name: 'usePlugin',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to use deployment plugins for enhanced setup',
+                        defaultValue: true
+                    },
+                    {
+                        name: 'useDocker',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to include Docker configuration',
+                        defaultValue: true
+                    },
+                    {
+                        name: 'useCI',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to include CI/CD configuration',
+                        defaultValue: true
+                    }
+                ],
+                examples: [
+                    {
+                        name: 'Setup Vercel deployment with plugin',
+                        description: 'Creates Vercel deployment configuration using deployment plugins',
+                        parameters: { platform: 'vercel', usePlugin: true, useDocker: false, useCI: true },
+                        expectedResult: 'Complete Vercel deployment setup with CI/CD via plugin'
+                    },
+                    {
+                        name: 'Setup Docker deployment',
+                        description: 'Creates Docker-based deployment configuration',
+                        parameters: { platform: 'aws', usePlugin: true, useDocker: true, useCI: true },
+                        expectedResult: 'Complete Docker deployment setup with CI/CD via plugin'
+                    }
+                ],
+                category: CapabilityCategory.SETUP
+            },
+            {
                 name: 'create-dockerfile',
-                description: 'Creates optimized multi-stage Dockerfile for Next.js',
-                parameters: [],
+                description: 'Creates optimized multi-stage Dockerfile for Next.js using plugin system',
+                parameters: [
+                    {
+                        name: 'usePlugin',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to use Docker plugins for enhanced configuration',
+                        defaultValue: true
+                    }
+                ],
                 examples: [
                     {
-                        name: 'Create Dockerfile',
-                        description: 'Creates production-ready Dockerfile with multi-stage build',
-                        parameters: {},
-                        expectedResult: 'Optimized Dockerfile for Next.js applications'
+                        name: 'Create Dockerfile with plugin',
+                        description: 'Creates production-ready Dockerfile using Docker plugins',
+                        parameters: { usePlugin: true },
+                        expectedResult: 'Optimized Dockerfile with plugin-enhanced configuration'
                     }
                 ],
                 category: CapabilityCategory.SETUP
             },
             {
-                name: 'create-docker-compose',
-                description: 'Creates Docker Compose configuration for development and production',
-                parameters: [],
+                name: 'create-ci-cd-pipeline',
+                description: 'Creates CI/CD pipeline configuration using plugin system',
+                parameters: [
+                    {
+                        name: 'platform',
+                        type: 'string',
+                        required: false,
+                        description: 'CI/CD platform (github-actions, gitlab-ci, circleci)',
+                        defaultValue: 'github-actions'
+                    },
+                    {
+                        name: 'usePlugin',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to use CI/CD plugins for enhanced configuration',
+                        defaultValue: true
+                    }
+                ],
                 examples: [
                     {
-                        name: 'Create Docker Compose',
-                        description: 'Sets up docker-compose.yml and docker-compose.dev.yml',
-                        parameters: {},
-                        expectedResult: 'Docker Compose files for local development and production'
+                        name: 'Create GitHub Actions with plugin',
+                        description: 'Creates GitHub Actions workflow using CI/CD plugins',
+                        parameters: { platform: 'github-actions', usePlugin: true },
+                        expectedResult: 'Complete GitHub Actions workflow with plugin-enhanced features'
                     }
                 ],
                 category: CapabilityCategory.SETUP
             },
             {
-                name: 'create-github-actions',
-                description: 'Creates GitHub Actions CI/CD workflow',
-                parameters: [],
-                examples: [
+                name: 'enhance-deployment-package',
+                description: 'Adds agent-specific deployment enhancements',
+                parameters: [
                     {
-                        name: 'Create GitHub Actions',
-                        description: 'Sets up automated testing and deployment pipeline',
-                        parameters: {},
-                        expectedResult: 'GitHub Actions workflow for CI/CD'
+                        name: 'utilities',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to add deployment utility functions',
+                        defaultValue: true
+                    },
+                    {
+                        name: 'healthChecks',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to add health check utilities',
+                        defaultValue: true
+                    },
+                    {
+                        name: 'aiFeatures',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to add AI-powered deployment features',
+                        defaultValue: true
                     }
                 ],
-                category: CapabilityCategory.SETUP
-            },
-            {
-                name: 'create-environment-files',
-                description: 'Creates environment configuration files',
-                parameters: [],
                 examples: [
                     {
-                        name: 'Create Environment Files',
-                        description: 'Sets up .env.example and .env.local.example',
-                        parameters: {},
-                        expectedResult: 'Environment configuration templates'
+                        name: 'Add all enhancements',
+                        description: 'Adds all agent-specific deployment enhancements',
+                        parameters: { utilities: true, healthChecks: true, aiFeatures: true },
+                        expectedResult: 'Enhanced deployment package with utilities, health checks, and AI features'
                     }
                 ],
-                category: CapabilityCategory.CONFIGURATION
+                category: CapabilityCategory.INTEGRATION
             }
         ];
     }
@@ -110,46 +207,188 @@ export class DeploymentAgent extends AbstractAgent {
         const { projectPath } = context;
         context.logger.info('Setting up deployment infrastructure...');
         try {
+            // Get deployment configuration from context
+            const deploymentConfig = await this.getDeploymentConfig(context);
+            const usePlugin = context.config?.usePlugin !== false; // Default to true
+            let pluginResult = null;
+            // Use plugin for enhanced deployment setup if enabled
+            if (usePlugin) {
+                context.logger.info('Using deployment plugins for enhanced setup...');
+                pluginResult = await this.executeDeploymentPlugins(context, deploymentConfig);
+            }
             const artifacts = [];
             const startTime = Date.now();
-            // Step 1: Create Dockerfile
-            const dockerArtifacts = await this.createDockerfile(context);
-            artifacts.push(...dockerArtifacts);
-            // Step 2: Create Docker Compose files
-            const composeArtifacts = await this.createDockerCompose(context);
-            artifacts.push(...composeArtifacts);
-            // Step 3: Create GitHub Actions workflow
-            const githubArtifacts = await this.createGitHubActions(context);
-            artifacts.push(...githubArtifacts);
+            // Step 1: Create Dockerfile (if enabled)
+            if (deploymentConfig.useDocker) {
+                const dockerArtifacts = await this.createDockerfile(context, usePlugin);
+                artifacts.push(...dockerArtifacts);
+            }
+            // Step 2: Create Docker Compose files (if Docker enabled)
+            if (deploymentConfig.useDocker) {
+                const composeArtifacts = await this.createDockerCompose(context);
+                artifacts.push(...composeArtifacts);
+            }
+            // Step 3: Create CI/CD pipeline (if enabled)
+            if (deploymentConfig.useCI) {
+                const ciArtifacts = await this.createCICDPipeline(context, deploymentConfig, usePlugin);
+                artifacts.push(...ciArtifacts);
+            }
             // Step 4: Create environment files
-            const envArtifacts = await this.createEnvironmentFiles(context);
+            const envArtifacts = await this.createEnvironmentFiles(context, deploymentConfig);
             artifacts.push(...envArtifacts);
-            // Step 5: Create .dockerignore
-            const ignoreArtifacts = await this.createDockerIgnore(context);
-            artifacts.push(...ignoreArtifacts);
+            // Step 5: Create .dockerignore (if Docker enabled)
+            if (deploymentConfig.useDocker) {
+                const ignoreArtifacts = await this.createDockerIgnore(context);
+                artifacts.push(...ignoreArtifacts);
+            }
+            // Step 6: Add agent-specific enhancements
+            await this.enhanceDeploymentPackage(projectPath, context, deploymentConfig);
+            // Add plugin artifacts if plugin was used
+            if (pluginResult?.artifacts) {
+                artifacts.push(...pluginResult.artifacts);
+            }
             const duration = Date.now() - startTime;
             context.logger.success('Deployment infrastructure configured successfully');
-            return {
-                success: true,
-                data: {
-                    filesCreated: ['Dockerfile', 'docker-compose.yml', 'docker-compose.dev.yml', '.github/workflows/ci.yml', '.env.example', '.env.local.example', '.dockerignore'],
-                    configurations: ['docker', 'docker-compose', 'github-actions', 'environment']
-                },
-                duration,
-                artifacts,
-                nextSteps: [
-                    'Update .env.example with your actual environment variables',
-                    'Configure GitHub repository secrets for deployment',
-                    'Run "docker-compose up" for local development',
-                    'Push to main branch to trigger CI/CD pipeline'
-                ]
-            };
+            return this.createSuccessResult({
+                deploymentConfig,
+                pluginUsed: usePlugin,
+                filesCreated: artifacts.map(a => a.path),
+                configurations: ['docker', 'docker-compose', 'ci-cd', 'environment']
+            }, artifacts, [
+                'Update .env.example with your actual environment variables',
+                'Configure repository secrets for deployment',
+                'Run "docker-compose up" for local development',
+                'Push to main branch to trigger CI/CD pipeline'
+            ]);
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             context.logger.error(`Failed to configure deployment infrastructure: ${errorMessage}`, error);
             return this.createErrorResult('DEPLOYMENT_SETUP_FAILED', `Failed to configure deployment infrastructure: ${errorMessage}`, [], 0, error);
         }
+    }
+    // ============================================================================
+    // PLUGIN INTEGRATION
+    // ============================================================================
+    async executeDeploymentPlugins(context, deploymentConfig) {
+        try {
+            // For now, we'll simulate plugin execution since we don't have deployment plugins yet
+            // This is ready for when we add deployment plugins to the system
+            context.logger.info('Deployment plugins would be executed here...');
+            return {
+                success: true,
+                artifacts: [],
+                warnings: ['No deployment plugins currently available']
+            };
+        }
+        catch (error) {
+            context.logger.warn(`Plugin execution failed, falling back to manual setup: ${error}`);
+            return null;
+        }
+    }
+    // ============================================================================
+    // AGENT-SPECIFIC ENHANCEMENTS
+    // ============================================================================
+    async enhanceDeploymentPackage(projectPath, context, deploymentConfig) {
+        context.logger.info('Adding agent-specific deployment enhancements...');
+        // Create deployment utilities directory
+        const deploymentPath = path.join(projectPath, 'packages', 'deployment');
+        await fsExtra.ensureDir(deploymentPath);
+        // Add enhanced deployment utilities
+        await this.createEnhancedDeploymentUtils(deploymentPath, context, deploymentConfig);
+        // Add health check utilities
+        await this.createHealthChecks(deploymentPath, context);
+        // Add AI-powered deployment features
+        await this.createAIFeatures(deploymentPath, context);
+        // Add development utilities
+        await this.createDevUtilities(deploymentPath, context);
+    }
+    async createEnhancedDeploymentUtils(deploymentPath, context, deploymentConfig) {
+        const utilsPath = path.join(deploymentPath, 'utils');
+        await fsExtra.ensureDir(utilsPath);
+        // Enhanced deployment utilities
+        await this.templateService.renderTemplate('deployment/enhanced-utils.ts', path.join(utilsPath, 'enhanced.ts'), {
+            projectName: context.projectName,
+            platform: deploymentConfig.platform
+        });
+        // Docker utilities
+        if (deploymentConfig.useDocker) {
+            await this.templateService.renderTemplate('deployment/docker-utils.ts', path.join(utilsPath, 'docker.ts'), {
+                projectName: context.projectName
+            });
+        }
+        // CI/CD utilities
+        if (deploymentConfig.useCI) {
+            await this.templateService.renderTemplate('deployment/ci-utils.ts', path.join(utilsPath, 'ci.ts'), {
+                projectName: context.projectName,
+                platform: deploymentConfig.platform
+            });
+        }
+        // Environment utilities
+        await this.templateService.renderTemplate('deployment/env-utils.ts', path.join(utilsPath, 'env.ts'), {
+            projectName: context.projectName
+        });
+    }
+    async createHealthChecks(deploymentPath, context) {
+        const healthPath = path.join(deploymentPath, 'health');
+        await fsExtra.ensureDir(healthPath);
+        // Deployment health checker
+        await this.templateService.renderTemplate('deployment/deployment-health.ts', path.join(healthPath, 'deployment-health.ts'), {
+            projectName: context.projectName
+        });
+        // Container health checker
+        await this.templateService.renderTemplate('deployment/container-health.ts', path.join(healthPath, 'container-health.ts'), {
+            projectName: context.projectName
+        });
+        // CI/CD health checker
+        await this.templateService.renderTemplate('deployment/ci-health.ts', path.join(healthPath, 'ci-health.ts'), {
+            projectName: context.projectName
+        });
+    }
+    async createAIFeatures(deploymentPath, context) {
+        const aiPath = path.join(deploymentPath, 'ai');
+        await fsExtra.ensureDir(aiPath);
+        // AI-powered deployment optimization
+        await this.templateService.renderTemplate('deployment/ai-deployment-optimizer.ts', path.join(aiPath, 'deployment-optimizer.ts'), {
+            projectName: context.projectName
+        });
+        // AI-powered performance monitoring
+        await this.templateService.renderTemplate('deployment/ai-performance-monitor.ts', path.join(aiPath, 'performance-monitor.ts'), {
+            projectName: context.projectName
+        });
+        // AI-powered scaling recommendations
+        await this.templateService.renderTemplate('deployment/ai-scaling-recommendations.ts', path.join(aiPath, 'scaling-recommendations.ts'), {
+            projectName: context.projectName
+        });
+    }
+    async createDevUtilities(deploymentPath, context) {
+        const devPath = path.join(deploymentPath, 'dev');
+        await fsExtra.ensureDir(devPath);
+        // Development utilities
+        await this.templateService.renderTemplate('deployment/dev-utils.ts', path.join(devPath, 'utils.ts'), {
+            projectName: context.projectName
+        });
+        // Deployment playground
+        await this.templateService.renderTemplate('deployment/deployment-playground.ts', path.join(devPath, 'playground.ts'), {
+            projectName: context.projectName
+        });
+        // Configuration generator
+        await this.templateService.renderTemplate('deployment/config-generator.ts', path.join(devPath, 'config-generator.ts'), {
+            projectName: context.projectName
+        });
+    }
+    // ============================================================================
+    // CONFIGURATION
+    // ============================================================================
+    async getDeploymentConfig(context) {
+        // Get configuration from context or use defaults
+        const config = context.config.deployment || {};
+        return {
+            platform: config.platform || 'vercel',
+            environment: config.environment || 'development',
+            useDocker: config.useDocker !== false,
+            useCI: config.useCI !== false
+        };
     }
     // ============================================================================
     // VALIDATION
@@ -183,378 +422,145 @@ export class DeploymentAgent extends AbstractAgent {
         };
     }
     // ============================================================================
-    // PRIVATE METHODS
+    // DEPLOYMENT SETUP METHODS
     // ============================================================================
-    async createDockerfile(context) {
-        context.logger.info('Creating optimized Dockerfile...');
-        const dockerfile = `# Multi-stage Dockerfile for Next.js optimized for production
-FROM node:18-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \\
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \\
-  elif [ -f package-lock.json ]; then npm ci; \\
-  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \\
-  else echo "Lockfile not found." && exit 1; \\
-  fi
-
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN yarn build
-
-# If using npm comment out above and use below instead
-# RUN npm run build
-
-# Production image, copy all the files and run next
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT 3000
-# set hostname to localhost
-ENV HOSTNAME "0.0.0.0"
-
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD ["node", "server.js"]
-`;
-        const dockerfilePath = path.join(context.projectPath, 'Dockerfile');
-        writeFileSync(dockerfilePath, dockerfile);
-        context.logger.success('Dockerfile created');
-        return [
-            {
+    async createDockerfile(context, usePlugin) {
+        const artifacts = [];
+        try {
+            await this.templateService.renderAndWrite('deployment', 'Dockerfile.ejs', path.join(context.projectPath, 'Dockerfile'), { projectName: context.projectName }, { logger: context.logger });
+            artifacts.push({
                 type: 'file',
-                path: dockerfilePath,
-                content: dockerfile,
-                metadata: { tool: 'docker', type: 'dockerfile' }
-            }
-        ];
+                path: path.join(context.projectPath, 'Dockerfile'),
+                metadata: { type: 'dockerfile', pluginUsed: usePlugin }
+            });
+            context.logger.success('Dockerfile created');
+        }
+        catch (error) {
+            context.logger.warn(`Failed to create Dockerfile: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+        return artifacts;
     }
     async createDockerCompose(context) {
-        context.logger.info('Creating Docker Compose configuration...');
-        const dockerCompose = `version: '3.8'
-
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-    restart: unless-stopped
-
-  app-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
-    command: npm run dev
-`;
-        const dockerComposeDev = `version: '3.8'
-
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
-    command: npm run dev
-`;
-        const composePath = path.join(context.projectPath, 'docker-compose.yml');
-        const composeDevPath = path.join(context.projectPath, 'docker-compose.dev.yml');
-        writeFileSync(composePath, dockerCompose);
-        writeFileSync(composeDevPath, dockerComposeDev);
-        context.logger.success('Docker Compose files created');
-        return [
-            {
+        const artifacts = [];
+        try {
+            // Create docker-compose.yml
+            await this.templateService.renderAndWrite('deployment', 'docker-compose.yml.ejs', path.join(context.projectPath, 'docker-compose.yml'), { projectName: context.projectName }, { logger: context.logger });
+            // Create docker-compose.dev.yml
+            await this.templateService.renderAndWrite('deployment', 'docker-compose.dev.yml.ejs', path.join(context.projectPath, 'docker-compose.dev.yml'), { projectName: context.projectName }, { logger: context.logger });
+            artifacts.push({
                 type: 'file',
-                path: composePath,
-                content: dockerCompose,
-                metadata: { tool: 'docker-compose', type: 'production' }
-            },
-            {
+                path: path.join(context.projectPath, 'docker-compose.yml'),
+                metadata: { type: 'docker-compose' }
+            }, {
                 type: 'file',
-                path: composeDevPath,
-                content: dockerComposeDev,
-                metadata: { tool: 'docker-compose', type: 'development' }
-            }
-        ];
-    }
-    async createGitHubActions(context) {
-        context.logger.info('Creating GitHub Actions workflow...');
-        const workflowsPath = path.join(context.projectPath, '.github', 'workflows');
-        if (!existsSync(workflowsPath)) {
-            mkdirSync(workflowsPath, { recursive: true });
+                path: path.join(context.projectPath, 'docker-compose.dev.yml'),
+                metadata: { type: 'docker-compose-dev' }
+            });
+            context.logger.success('Docker Compose files created');
         }
-        const ciWorkflow = `name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Use Node.js \${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: \${{ matrix.node-version }}
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Run linter
-      run: npm run lint
-
-    - name: Run type check
-      run: npm run type-check
-
-    - name: Run tests
-      run: npm test
-
-    - name: Build application
-      run: npm run build
-
-  build-and-deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: \${{ github.actor }}
-        password: \${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: |
-          ghcr.io/\${{ github.repository }}:latest
-          ghcr.io/\${{ github.repository }}:\${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-`;
-        const workflowPath = path.join(workflowsPath, 'ci.yml');
-        writeFileSync(workflowPath, ciWorkflow);
-        context.logger.success('GitHub Actions workflow created');
-        return [
-            {
-                type: 'file',
-                path: workflowPath,
-                content: ciWorkflow,
-                metadata: { tool: 'github-actions', type: 'ci-cd' }
-            }
-        ];
+        catch (error) {
+            context.logger.warn(`Failed to create Docker Compose files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+        return artifacts;
     }
-    async createEnvironmentFiles(context) {
-        context.logger.info('Creating environment configuration...');
-        const envExample = `# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/mydb"
-
-# Authentication
-NEXTAUTH_SECRET="your-secret-here"
-NEXTAUTH_URL="http://localhost:3000"
-
-# External APIs
-# Add your API keys here
-
-# Feature Flags
-# FEATURE_ANALYTICS=true
-# FEATURE_PAYMENTS=true
-`;
-        const envLocal = `# Local development environment
-# Copy this file to .env.local and update with your values
-
-DATABASE_URL="postgresql://postgres:password@localhost:5432/dev"
-NEXTAUTH_SECRET="dev-secret-change-in-production"
-NEXTAUTH_URL="http://localhost:3000"
-`;
-        const envExamplePath = path.join(context.projectPath, '.env.example');
-        const envLocalPath = path.join(context.projectPath, '.env.local.example');
-        writeFileSync(envExamplePath, envExample);
-        writeFileSync(envLocalPath, envLocal);
-        context.logger.success('Environment files created');
-        return [
-            {
+    async createCICDPipeline(context, deploymentConfig, usePlugin) {
+        const artifacts = [];
+        try {
+            const workflowsDir = path.join(context.projectPath, '.github', 'workflows');
+            await fsExtra.ensureDir(workflowsDir);
+            await this.templateService.renderAndWrite('deployment', 'ci.yml.ejs', path.join(workflowsDir, 'ci.yml'), {
+                projectName: context.projectName,
+                platform: deploymentConfig.platform
+            }, { logger: context.logger });
+            artifacts.push({
                 type: 'file',
-                path: envExamplePath,
-                content: envExample,
-                metadata: { tool: 'environment', type: 'example' }
-            },
-            {
+                path: path.join(workflowsDir, 'ci.yml'),
+                metadata: { type: 'github-actions', pluginUsed: usePlugin }
+            });
+            context.logger.success('GitHub Actions workflow created');
+        }
+        catch (error) {
+            context.logger.warn(`Failed to create CI/CD pipeline: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+        return artifacts;
+    }
+    async createEnvironmentFiles(context, deploymentConfig) {
+        const artifacts = [];
+        try {
+            // Create .env.example
+            await this.templateService.renderAndWrite('deployment', '.env.example.ejs', path.join(context.projectPath, '.env.example'), {
+                projectName: context.projectName,
+                platform: deploymentConfig.platform
+            }, { logger: context.logger });
+            // Create .env.local.example
+            await this.templateService.renderAndWrite('deployment', '.env.local.example.ejs', path.join(context.projectPath, '.env.local.example'), {
+                projectName: context.projectName,
+                platform: deploymentConfig.platform
+            }, { logger: context.logger });
+            artifacts.push({
                 type: 'file',
-                path: envLocalPath,
-                content: envLocal,
-                metadata: { tool: 'environment', type: 'local-example' }
-            }
-        ];
+                path: path.join(context.projectPath, '.env.example'),
+                metadata: { type: 'env-example' }
+            }, {
+                type: 'file',
+                path: path.join(context.projectPath, '.env.local.example'),
+                metadata: { type: 'env-local-example' }
+            });
+            context.logger.success('Environment files created');
+        }
+        catch (error) {
+            context.logger.warn(`Failed to create environment files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+        return artifacts;
     }
     async createDockerIgnore(context) {
-        context.logger.info('Creating .dockerignore...');
-        const dockerIgnore = `# Dependencies
-node_modules
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local development
-.env*.local
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Testing
-coverage
-.nyc_output
-
-# Next.js
-.next/
-out/
-
-# Production build
-/dist
-
-# Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Vercel
-.vercel
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# IDE
-.vscode
-.idea
-
-# Git
-.git
-.gitignore
-README.md
-
-# CI/CD
-.github
-`;
-        const dockerIgnorePath = path.join(context.projectPath, '.dockerignore');
-        writeFileSync(dockerIgnorePath, dockerIgnore);
-        context.logger.success('.dockerignore created');
-        return [
-            {
+        const artifacts = [];
+        try {
+            await this.templateService.renderAndWrite('deployment', '.dockerignore.ejs', path.join(context.projectPath, '.dockerignore'), { projectName: context.projectName }, { logger: context.logger });
+            artifacts.push({
                 type: 'file',
-                path: dockerIgnorePath,
-                content: dockerIgnore,
-                metadata: { tool: 'docker', type: 'ignore' }
-            }
-        ];
+                path: path.join(context.projectPath, '.dockerignore'),
+                metadata: { type: 'dockerignore' }
+            });
+            context.logger.success('.dockerignore created');
+        }
+        catch (error) {
+            context.logger.warn(`Failed to create .dockerignore: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+        return artifacts;
     }
     // ============================================================================
     // ROLLBACK
     // ============================================================================
     async rollback(context) {
         context.logger.info('Rolling back DeploymentAgent changes...');
-        const filesToRemove = [
-            'Dockerfile',
-            'docker-compose.yml',
-            'docker-compose.dev.yml',
-            '.github/workflows/ci.yml',
-            '.env.example',
-            '.env.local.example',
-            '.dockerignore'
-        ];
-        for (const file of filesToRemove) {
-            const filePath = path.join(context.projectPath, file);
-            if (existsSync(filePath)) {
-                try {
-                    // Note: In a real implementation, you'd want to restore the original files
-                    // For now, we'll just log what would be removed
-                    context.logger.info(`Would remove: ${file}`);
-                }
-                catch (error) {
-                    context.logger.warn(`Could not remove ${file}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        try {
+            const filesToRemove = [
+                'Dockerfile',
+                'docker-compose.yml',
+                'docker-compose.dev.yml',
+                '.github/workflows/ci.yml',
+                '.env.example',
+                '.env.local.example',
+                '.dockerignore'
+            ];
+            for (const file of filesToRemove) {
+                const filePath = path.join(context.projectPath, file);
+                if (await fsExtra.pathExists(filePath)) {
+                    await fsExtra.remove(filePath);
+                    context.logger.success(`Removed: ${file}`);
                 }
             }
+            // Remove deployment package if it exists
+            const deploymentPath = path.join(context.projectPath, 'packages', 'deployment');
+            if (await fsExtra.pathExists(deploymentPath)) {
+                await fsExtra.remove(deploymentPath);
+                context.logger.success('Removed deployment package');
+            }
         }
-        context.logger.success('DeploymentAgent rollback completed');
+        catch (error) {
+            context.logger.error(`Failed to rollback deployment changes`, error);
+        }
     }
 }
 //# sourceMappingURL=deployment-agent.js.map

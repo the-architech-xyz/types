@@ -13,12 +13,18 @@
     "next": "^14.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "@next/font": "^14.0.0"
+    "@<%= projectName %>/ui": "file:../../packages/ui",
+    "@<%= projectName %>/db": "file:../../packages/db",
+    "@<%= projectName %>/auth": "file:../../packages/auth"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@tailwindcss/postcss": "^4.1.11",
+    "tailwindcss": "^4.1.11",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6"
   }
 } 

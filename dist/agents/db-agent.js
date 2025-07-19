@@ -7,27 +7,23 @@
  * - Database schema definitions
  * - Migration scripts and utilities
  *
- * Migrated to the new standardized agent interface for robustness and extensibility.
+ * Enhanced to integrate with the Drizzle plugin and orchestrator agent pattern.
  */
 import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { templateService } from '../utils/template-service.js';
+import { PluginSystem } from '../utils/plugin-system.js';
+import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
-// Dynamic import for inquirer
-let inquirerModule = null;
-async function getInquirer() {
-    if (!inquirerModule) {
-        inquirerModule = await import('inquirer');
-    }
-    return inquirerModule.default;
-}
 export class DBAgent extends AbstractAgent {
     templateService;
+    pluginSystem;
     constructor() {
         super();
         this.templateService = templateService;
+        this.pluginSystem = PluginSystem.getInstance();
     }
     // ============================================================================
     // AGENT METADATA
@@ -89,6 +85,20 @@ export class DBAgent extends AbstractAgent {
                         required: false,
                         description: 'Database connection string',
                         defaultValue: ''
+                    },
+                    {
+                        name: 'schema',
+                        type: 'array',
+                        required: false,
+                        description: 'Database schema tables to create',
+                        defaultValue: ['users', 'posts', 'comments']
+                    },
+                    {
+                        name: 'migrations',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Enable database migrations',
+                        defaultValue: true
                     }
                 ],
                 examples: [
@@ -120,6 +130,27 @@ export class DBAgent extends AbstractAgent {
                     }
                 ],
                 category: CapabilityCategory.GENERATION
+            },
+            {
+                name: 'design-schema',
+                description: 'AI-powered database schema design',
+                parameters: [
+                    {
+                        name: 'requirements',
+                        type: 'string',
+                        required: true,
+                        description: 'Natural language schema requirements'
+                    }
+                ],
+                examples: [
+                    {
+                        name: 'Design user management schema',
+                        description: 'Creates schema for user authentication and profiles',
+                        parameters: { requirements: 'User authentication with profiles, roles, and permissions' },
+                        expectedResult: 'Complete schema with users, roles, and permissions tables'
+                    }
+                ],
+                category: CapabilityCategory.GENERATION
             }
         ];
     }
@@ -131,22 +162,14 @@ export class DBAgent extends AbstractAgent {
         const dbPackagePath = path.join(projectPath, 'packages', 'db');
         context.logger.info(`Setting up database package: ${projectName}/packages/db`);
         try {
-            // Get database configuration
+            // Get database configuration from context or user input
             const dbConfig = await this.getDatabaseConfig(context);
-            // Update package.json with dependencies
-            await this.updatePackageJson(dbPackagePath, context);
-            // Create ESLint config
-            await this.createESLintConfig(dbPackagePath);
-            // Create Drizzle configuration
-            await this.createDrizzleConfig(dbPackagePath, dbConfig);
-            // Create database schema
-            await this.createDatabaseSchema(dbPackagePath);
-            // Create database connection
-            await this.createDatabaseConnection(dbPackagePath);
-            // Create migration utilities
-            await this.createMigrationUtils(dbPackagePath);
-            // Create environment configuration
-            await this.createEnvConfig(projectPath, dbConfig);
+            // Step 1: Execute Drizzle plugin for core setup
+            const pluginResult = await this.executeDrizzlePlugin(context, dbConfig);
+            // Step 2: Enhance with agent-specific features
+            const agentResult = await this.enhanceDatabaseSetup(dbPackagePath, dbConfig, context);
+            // Step 3: Generate custom schema based on requirements
+            const schemaResult = await this.generateCustomSchema(dbPackagePath, dbConfig, context);
             const artifacts = [
                 {
                     type: 'directory',
@@ -155,54 +178,359 @@ export class DBAgent extends AbstractAgent {
                         package: 'db',
                         orm: 'drizzle',
                         database: dbConfig.provider,
-                        features: ['orm', 'migrations', 'schema']
+                        features: ['orm', 'migrations', 'schema', 'ai-design']
                     }
                 },
-                {
-                    type: 'file',
-                    path: path.join(dbPackagePath, 'package.json'),
-                    metadata: { type: 'package-config' }
-                },
-                {
-                    type: 'file',
-                    path: path.join(dbPackagePath, 'drizzle.config.ts'),
-                    metadata: { type: 'drizzle-config' }
-                },
-                {
-                    type: 'file',
-                    path: path.join(dbPackagePath, 'schema/index.ts'),
-                    metadata: { type: 'database-schema' }
-                }
+                ...pluginResult.artifacts,
+                ...agentResult.artifacts,
+                ...schemaResult.artifacts
             ];
-            context.logger.success(`Database package configured successfully`);
-            // Display setup instructions
-            this.displayDatabaseSetupInstructions(dbConfig);
-            return this.createSuccessResult({
-                dbPackagePath,
-                provider: dbConfig.provider,
-                connectionString: dbConfig.connectionString
-            }, artifacts, [
-                'Database package structure created',
-                'Drizzle ORM configured',
-                'Schema definitions created',
-                'Migration utilities ready',
-                'Environment variables configured'
-            ]);
+            return {
+                success: true,
+                data: {
+                    databaseConfig: dbConfig,
+                    pluginResult,
+                    agentResult,
+                    schemaResult
+                },
+                artifacts,
+                warnings: [
+                    ...pluginResult.warnings,
+                    ...agentResult.warnings,
+                    ...schemaResult.warnings
+                ],
+                duration: Date.now() - (context.state.get('startTime') || Date.now())
+            };
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            context.logger.error(`Failed to configure database package: ${errorMessage}`, error);
-            return this.createErrorResult('DB_PACKAGE_SETUP_FAILED', `Failed to configure database package: ${errorMessage}`, [], 0, error);
+            context.logger.error(`Failed to setup database package: ${errorMessage}`, error);
+            return {
+                success: false,
+                errors: [
+                    {
+                        code: 'DATABASE_SETUP_FAILED',
+                        message: `Failed to setup database package: ${errorMessage}`,
+                        details: error,
+                        recoverable: false,
+                        timestamp: new Date()
+                    }
+                ],
+                duration: Date.now() - (context.state.get('startTime') || Date.now())
+            };
         }
+    }
+    // ============================================================================
+    // PLUGIN INTEGRATION
+    // ============================================================================
+    async executeDrizzlePlugin(context, dbConfig) {
+        context.logger.info('Executing Drizzle plugin for core database setup...');
+        const drizzlePlugin = this.pluginSystem.getRegistry().get('drizzle');
+        if (!drizzlePlugin) {
+            throw new Error('Drizzle plugin not found');
+        }
+        const pluginContext = {
+            ...context,
+            pluginId: 'drizzle',
+            pluginConfig: {
+                provider: dbConfig.provider,
+                connectionString: dbConfig.connectionString
+            },
+            installedPlugins: [],
+            projectType: ProjectType.NEXTJS,
+            targetPlatform: [TargetPlatform.WEB]
+        };
+        const result = await drizzlePlugin.install(pluginContext);
+        if (!result.success) {
+            throw new Error(`Drizzle plugin failed: ${result.errors.map(e => e.message).join(', ')}`);
+        }
+        return result;
+    }
+    // ============================================================================
+    // AGENT ENHANCEMENTS
+    // ============================================================================
+    async enhanceDatabaseSetup(dbPackagePath, dbConfig, context) {
+        context.logger.info('Enhancing database setup with agent-specific features...');
+        const artifacts = [];
+        const warnings = [];
+        try {
+            // Create enhanced database utilities
+            await this.createEnhancedUtils(dbPackagePath, context);
+            // Create database health checks
+            await this.createHealthChecks(dbPackagePath, context);
+            // Create database seeding utilities
+            if (dbConfig.migrations) {
+                await this.createSeedingUtils(dbPackagePath, context);
+            }
+            artifacts.push({
+                type: 'file',
+                path: path.join(dbPackagePath, 'utils/enhanced.ts'),
+                metadata: { type: 'enhanced-utils' }
+            }, {
+                type: 'file',
+                path: path.join(dbPackagePath, 'utils/health.ts'),
+                metadata: { type: 'health-checks' }
+            });
+            if (dbConfig.migrations) {
+                artifacts.push({
+                    type: 'file',
+                    path: path.join(dbPackagePath, 'utils/seed.ts'),
+                    metadata: { type: 'seeding-utils' }
+                });
+            }
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            warnings.push(`Enhanced setup failed: ${errorMessage}`);
+        }
+        return { artifacts, warnings };
+    }
+    async generateCustomSchema(dbPackagePath, dbConfig, context) {
+        context.logger.info('Generating custom database schema...');
+        const artifacts = [];
+        const warnings = [];
+        try {
+            // Generate schema based on requirements
+            const schemaContent = await this.generateSchemaContent(dbConfig.schema, context);
+            await fsExtra.writeFile(path.join(dbPackagePath, 'schema/custom.ts'), schemaContent);
+            artifacts.push({
+                type: 'file',
+                path: path.join(dbPackagePath, 'schema/custom.ts'),
+                metadata: { type: 'custom-schema', tables: dbConfig.schema }
+            });
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            warnings.push(`Schema generation failed: ${errorMessage}`);
+        }
+        return { artifacts, warnings };
+    }
+    // ============================================================================
+    // SCHEMA GENERATION
+    // ============================================================================
+    async generateSchemaContent(schema, context) {
+        // AI-powered schema generation based on table names
+        const tableDefinitions = schema.map(tableName => this.generateTableDefinition(tableName));
+        return `import { pgTable, serial, text, timestamp, boolean, integer, json } from 'drizzle-orm/pg-core';
+
+// Custom schema generated by DBAgent
+${tableDefinitions.join('\n\n')}
+
+// Export all tables
+export const tables = {
+${schema.map(table => `  ${table},`).join('\n')}
+};
+
+// Export types
+export type DatabaseSchema = typeof tables;
+`;
+    }
+    generateTableDefinition(tableName) {
+        // Generate table definition based on table name
+        const baseFields = `  id: serial('id').primaryKey(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()`;
+        switch (tableName.toLowerCase()) {
+            case 'users':
+                return `export const users = pgTable('users', {
+${baseFields},
+  email: text('email').notNull().unique(),
+  name: text('name'),
+  avatar: text('avatar'),
+  isActive: boolean('is_active').default(true),
+});`;
+            case 'posts':
+                return `export const posts = pgTable('posts', {
+${baseFields},
+  title: text('title').notNull(),
+  content: text('content'),
+  authorId: integer('author_id').references(() => users.id),
+  published: boolean('published').default(false),
+});`;
+            case 'comments':
+                return `export const comments = pgTable('comments', {
+${baseFields},
+  content: text('content').notNull(),
+  authorId: integer('author_id').references(() => users.id),
+  postId: integer('post_id').references(() => posts.id),
+});`;
+            default:
+                return `export const ${tableName} = pgTable('${tableName}', {
+${baseFields},
+  // Add custom fields for ${tableName}
+});`;
+        }
+    }
+    // ============================================================================
+    // UTILITY CREATION
+    // ============================================================================
+    async createEnhancedUtils(dbPackagePath, context) {
+        const utilsDir = path.join(dbPackagePath, 'utils');
+        await fsExtra.ensureDir(utilsDir);
+        const enhancedUtils = `import { db } from '../index';
+import { eq, and, or } from 'drizzle-orm';
+
+// Enhanced database utilities
+export class DatabaseUtils {
+  // Generic CRUD operations
+  static async findById<T>(table: any, id: number): Promise<T | null> {
+    const result = await db.select().from(table).where(eq(table.id, id));
+    return result[0] || null;
+  }
+
+  static async findByField<T>(table: any, field: any, value: any): Promise<T[]> {
+    return await db.select().from(table).where(eq(field, value));
+  }
+
+  static async create<T>(table: any, data: any): Promise<T> {
+    const result = await db.insert(table).values(data).returning();
+    return result[0];
+  }
+
+  static async update<T>(table: any, id: number, data: any): Promise<T | null> {
+    const result = await db.update(table).set(data).where(eq(table.id, id)).returning();
+    return result[0] || null;
+  }
+
+  static async delete(table: any, id: number): Promise<boolean> {
+    const result = await db.delete(table).where(eq(table.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Transaction utilities
+  static async transaction<T>(callback: () => Promise<T>): Promise<T> {
+    return await db.transaction(callback);
+  }
+}`;
+        await fsExtra.writeFile(path.join(utilsDir, 'enhanced.ts'), enhancedUtils);
+    }
+    async createHealthChecks(dbPackagePath, context) {
+        const utilsDir = path.join(dbPackagePath, 'utils');
+        await fsExtra.ensureDir(utilsDir);
+        const healthChecks = `import { db } from '../index';
+
+// Database health check utilities
+export class DatabaseHealth {
+  static async checkConnection(): Promise<boolean> {
+    try {
+      await db.execute('SELECT 1');
+      return true;
+    } catch (error) {
+      console.error('Database connection check failed:', error);
+      return false;
+    }
+  }
+
+  static async getStats(): Promise<{
+    connection: boolean;
+    tables: string[];
+    version: string;
+  }> {
+    const connection = await this.checkConnection();
+    let tables: string[] = [];
+    let version = 'unknown';
+
+    if (connection) {
+      try {
+        // Get table list
+        const tableResult = await db.execute(\`
+          SELECT table_name 
+          FROM information_schema.tables 
+          WHERE table_schema = 'public'
+        \`);
+        tables = tableResult.rows.map((row: any) => row.table_name);
+
+        // Get PostgreSQL version
+        const versionResult = await db.execute('SELECT version()');
+        version = versionResult.rows[0]?.version || 'unknown';
+      } catch (error) {
+        console.error('Failed to get database stats:', error);
+      }
+    }
+
+    return { connection, tables, version };
+  }
+}`;
+        await fsExtra.writeFile(path.join(utilsDir, 'health.ts'), healthChecks);
+    }
+    async createSeedingUtils(dbPackagePath, context) {
+        const utilsDir = path.join(dbPackagePath, 'utils');
+        await fsExtra.ensureDir(utilsDir);
+        const seedingUtils = `import { db } from '../index';
+import { users, posts, comments } from '../schema/custom';
+
+// Database seeding utilities
+export class DatabaseSeeder {
+  static async seedUsers(count: number = 10) {
+    const userData = Array.from({ length: count }, (_, i) => ({
+      email: \`user\${i + 1}@example.com\`,
+      name: \`User \${i + 1}\`,
+      avatar: \`https://api.dicebear.com/7.x/avataaars/svg?seed=user\${i + 1}\`,
+      isActive: true
+    }));
+
+    return await db.insert(users).values(userData).returning();
+  }
+
+  static async seedPosts(userIds: number[], count: number = 20) {
+    const postData = Array.from({ length: count }, (_, i) => ({
+      title: \`Post \${i + 1}\`,
+      content: \`This is the content for post \${i + 1}.\`,
+      authorId: userIds[Math.floor(Math.random() * userIds.length)],
+      published: Math.random() > 0.3
+    }));
+
+    return await db.insert(posts).values(postData).returning();
+  }
+
+  static async seedComments(userIds: number[], postIds: number[], count: number = 50) {
+    const commentData = Array.from({ length: count }, (_, i) => ({
+      content: \`Comment \${i + 1} on this post.\`,
+      authorId: userIds[Math.floor(Math.random() * userIds.length)],
+      postId: postIds[Math.floor(Math.random() * postIds.length)]
+    }));
+
+    return await db.insert(comments).values(commentData).returning();
+  }
+
+  static async seedAll() {
+    console.log('🌱 Starting database seeding...');
+    
+    const createdUsers = await this.seedUsers(10);
+    console.log(\`✅ Created \${createdUsers.length} users\`);
+    
+    const createdPosts = await this.seedPosts(createdUsers.map(u => u.id), 20);
+    console.log(\`✅ Created \${createdPosts.length} posts\`);
+    
+    const createdComments = await this.seedComments(
+      createdUsers.map(u => u.id), 
+      createdPosts.map(p => p.id), 
+      50
+    );
+    console.log(\`✅ Created \${createdComments.length} comments\`);
+    
+    console.log('🎉 Database seeding completed!');
+  }
+}`;
+        await fsExtra.writeFile(path.join(utilsDir, 'seed.ts'), seedingUtils);
+    }
+    // ============================================================================
+    // CONFIGURATION
+    // ============================================================================
+    async getDatabaseConfig(context) {
+        // Get configuration from context or use defaults
+        const config = context.config.database || {};
+        return {
+            provider: config.provider || 'neon',
+            connectionString: config.connectionString || 'NEON_DATABASE_URL_PLACEHOLDER',
+            schema: config.schema || ['users', 'posts', 'comments'],
+            migrations: config.migrations !== false
+        };
     }
     // ============================================================================
     // VALIDATION
     // ============================================================================
     async validate(context) {
-        const baseValidation = await super.validate(context);
-        if (!baseValidation.valid) {
-            return baseValidation;
-        }
         const errors = [];
         const warnings = [];
         // Check if DB package directory exists
@@ -220,6 +548,18 @@ export class DBAgent extends AbstractAgent {
         if (!existsSync(packagesPath)) {
             warnings.push('Packages directory not found - this agent is designed for monorepo structures');
         }
+        // Check for conflicting ORMs
+        const packageJsonPath = path.join(context.projectPath, 'package.json');
+        if (existsSync(packageJsonPath)) {
+            const packageJson = await fsExtra.readJSON(packageJsonPath);
+            const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
+            if (dependencies.prisma) {
+                warnings.push('Prisma detected - consider using only one ORM to avoid conflicts');
+            }
+            if (dependencies.typeorm) {
+                warnings.push('TypeORM detected - consider using only one ORM to avoid conflicts');
+            }
+        }
         return {
             valid: errors.length === 0,
             errors,
@@ -227,187 +567,20 @@ export class DBAgent extends AbstractAgent {
         };
     }
     // ============================================================================
-    // DATABASE CONFIGURATION
-    // ============================================================================
-    async getDatabaseConfig(context) {
-        if (context.options.useDefaults) {
-            return {
-                provider: 'neon',
-                connectionString: 'NEON_DATABASE_URL_PLACEHOLDER'
-            };
-        }
-        context.logger.info('🗄️  Database Configuration');
-        const inquirer = await getInquirer();
-        const { provider } = await inquirer.prompt([
-            {
-                type: 'list',
-                name: 'provider',
-                message: 'Choose your database provider:',
-                choices: [
-                    { name: 'Neon PostgreSQL (Recommended - Serverless)', value: 'neon' },
-                    { name: 'Local PostgreSQL', value: 'local' },
-                    { name: 'Vercel Postgres', value: 'vercel' }
-                ],
-                default: 'neon'
-            }
-        ]);
-        let connectionString = '';
-        if (provider === 'neon') {
-            context.logger.info('📋 To set up Neon PostgreSQL:');
-            context.logger.info('1. Go to https://neon.tech');
-            context.logger.info('2. Create a new project');
-            context.logger.info('3. Copy your connection string');
-            context.logger.info('4. Paste it below (or leave empty to configure later)');
-            const { neonUrl } = await inquirer.prompt([
-                {
-                    type: 'input',
-                    name: 'neonUrl',
-                    message: 'Neon connection string (optional):',
-                    validate: (input) => {
-                        if (!input)
-                            return true;
-                        if (!input.startsWith('postgresql://')) {
-                            return 'Connection string should start with postgresql://';
-                        }
-                        return true;
-                    }
-                }
-            ]);
-            connectionString = neonUrl || 'NEON_DATABASE_URL_PLACEHOLDER';
-        }
-        else if (provider === 'local') {
-            connectionString = 'postgresql://localhost:5432/myapp';
-        }
-        else if (provider === 'vercel') {
-            connectionString = 'POSTGRES_URL_PLACEHOLDER';
-        }
-        return { provider, connectionString };
-    }
-    // ============================================================================
-    // PACKAGE SETUP METHODS
-    // ============================================================================
-    async updatePackageJson(dbPackagePath, context) {
-        const packageJson = {
-            name: `@${context.projectName}/db`,
-            version: "0.1.0",
-            private: true,
-            description: "Database layer with Drizzle ORM",
-            main: "index.ts",
-            types: "index.ts",
-            scripts: {
-                "build": "tsc",
-                "dev": "tsc --watch",
-                "lint": "eslint . --ext .ts",
-                "type-check": "tsc --noEmit",
-                "db:generate": "drizzle-kit generate:pg",
-                "db:migrate": "tsx migrate.ts",
-                "db:push": "drizzle-kit push:pg",
-                "db:studio": "drizzle-kit studio"
-            },
-            dependencies: {
-                "drizzle-orm": "^0.44.3",
-                "@neondatabase/serverless": "^1.0.1",
-                "postgres": "^3.4.3"
-            },
-            devDependencies: {
-                "drizzle-kit": "^0.31.4",
-                "tsx": "^4.1.0",
-                "typescript": "^5.2.2",
-                "dotenv": "^16.3.1"
-            }
-        };
-        await fsExtra.writeJSON(path.join(dbPackagePath, 'package.json'), packageJson, { spaces: 2 });
-        context.logger.success(`Package.json updated for database package`);
-    }
-    async createESLintConfig(dbPackagePath) {
-        const eslintConfig = {
-            extends: ["../../.eslintrc.json"]
-        };
-        await fsExtra.writeJSON(path.join(dbPackagePath, '.eslintrc.json'), eslintConfig, { spaces: 2 });
-    }
-    async createDrizzleConfig(dbPackagePath, dbConfig) {
-        const templateData = { connectionString: dbConfig.connectionString };
-        const content = await this.templateService.renderTemplate('db', 'drizzle.config.ts.ejs', templateData);
-        await fsExtra.writeFile(path.join(dbPackagePath, 'drizzle.config.ts'), content);
-    }
-    async createDatabaseSchema(dbPackagePath) {
-        await fsExtra.ensureDir(path.join(dbPackagePath, 'schema'));
-        // Create example users table schema
-        const usersContent = await this.templateService.renderTemplate('db', 'schema/users.ts.ejs', {});
-        await fsExtra.writeFile(path.join(dbPackagePath, 'schema', 'users.ts'), usersContent);
-        // Create index file
-        const indexContent = await this.templateService.renderTemplate('db', 'schema/index.ts.ejs', {});
-        await fsExtra.writeFile(path.join(dbPackagePath, 'schema', 'index.ts'), indexContent);
-    }
-    async createDatabaseConnection(dbPackagePath) {
-        const content = await this.templateService.renderTemplate('db', 'index.ts.ejs', {});
-        await fsExtra.writeFile(path.join(dbPackagePath, 'index.ts'), content);
-    }
-    async createMigrationUtils(dbPackagePath) {
-        const content = await this.templateService.renderTemplate('db', 'migrate.ts.ejs', {});
-        await fsExtra.writeFile(path.join(dbPackagePath, 'migrate.ts'), content);
-    }
-    async createEnvConfig(projectPath, dbConfig) {
-        const envPath = path.join(projectPath, '.env.local');
-        const envContent = `# Database Configuration
-DATABASE_URL="${dbConfig.connectionString}"
-
-# Neon PostgreSQL (if using Neon)
-# NEON_DATABASE_URL="your-neon-connection-string"
-
-# Vercel Postgres (if using Vercel)
-# POSTGRES_URL="your-vercel-postgres-url"
-# POSTGRES_PRISMA_URL="your-vercel-postgres-prisma-url"
-# POSTGRES_URL_NON_POOLING="your-vercel-postgres-non-pooling-url"
-# POSTGRES_USER="your-vercel-postgres-user"
-# POSTGRES_HOST="your-vercel-postgres-host"
-# POSTGRES_PASSWORD="your-vercel-postgres-password"
-# POSTGRES_DATABASE="your-vercel-postgres-database"`;
-        await fsExtra.writeFile(envPath, envContent);
-    }
-    displayDatabaseSetupInstructions(dbConfig) {
-        console.log('\n🗄️  Database Setup Instructions:');
-        console.log('=====================================');
-        if (dbConfig.provider === 'neon') {
-            console.log('1. Go to https://neon.tech and create a new project');
-            console.log('2. Copy your connection string');
-            console.log('3. Update your .env.local file with the DATABASE_URL');
-            console.log('4. Run: npm run db:generate (to generate migrations)');
-            console.log('5. Run: npm run db:push (to push schema to database)');
-        }
-        else if (dbConfig.provider === 'local') {
-            console.log('1. Make sure PostgreSQL is running locally');
-            console.log('2. Create a database: createdb myapp');
-            console.log('3. Update your .env.local file with the DATABASE_URL');
-            console.log('4. Run: npm run db:generate (to generate migrations)');
-            console.log('5. Run: npm run db:push (to push schema to database)');
-        }
-        else if (dbConfig.provider === 'vercel') {
-            console.log('1. Set up Vercel Postgres in your Vercel dashboard');
-            console.log('2. Copy the connection details to your .env.local file');
-            console.log('3. Run: npm run db:generate (to generate migrations)');
-            console.log('4. Run: npm run db:push (to push schema to database)');
-        }
-        console.log('\n📚 Useful commands:');
-        console.log('- npm run db:studio (open Drizzle Studio)');
-        console.log('- npm run db:migrate (run migrations)');
-        console.log('- npm run db:generate (generate new migrations)');
-    }
-    // ============================================================================
     // ROLLBACK
     // ============================================================================
     async rollback(context) {
         const dbPackagePath = path.join(context.projectPath, 'packages', 'db');
-        context.logger.warn(`Rolling back DBAgent - removing database package: ${dbPackagePath}`);
+        context.logger.warn(`Rolling back database package: ${dbPackagePath}`);
         try {
-            // Remove the created database package directory
             if (existsSync(dbPackagePath)) {
                 await context.runner.execCommand(['rm', '-rf', dbPackagePath], { silent: true });
                 context.logger.success(`Database package removed: ${dbPackagePath}`);
             }
         }
         catch (error) {
-            context.logger.error(`Failed to remove database package: ${dbPackagePath}`, error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            context.logger.error(`Failed to remove database package: ${errorMessage}`, error);
         }
     }
 }

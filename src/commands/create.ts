@@ -10,14 +10,11 @@ import chalk from 'chalk';
 import path from 'path';
 import { existsSync } from 'fs';
 import { CommandRunner } from '../utils/command-runner.js';
+import { ContextFactory } from '../utils/context-factory.js';
 import { displaySuccess, displayError, displayInfo } from '../utils/banner.js';
 
-// Import our specialized agents
-import { BaseProjectAgent } from '../agents/base-project-agent.js';
-// TODO: Migrate these agents to TypeScript
-// import { BestPracticesAgent } from '../agents/best-practices-agent.js';
-// import { DesignSystemAgent } from '../agents/design-system-agent.js';
-// import { DeploymentAgent } from '../agents/deployment-agent.js';
+// Import our orchestrator agent
+import { OrchestratorAgent } from '../agents/orchestrator-agent.js';
 
 export interface CreateOptions {
   template?: string;
@@ -35,6 +32,7 @@ export interface ProjectConfig {
   skipInstall: boolean;
   useDefaults: boolean;
   modules?: string[];
+  userInput?: string;
 }
 
 export async function createCommand(projectName?: string, options: CreateOptions = {}): Promise<void> {
@@ -50,8 +48,8 @@ export async function createCommand(projectName?: string, options: CreateOptions
     // Step 3: Initialize command runner
     const runner = new CommandRunner(config.packageManager as any, { verbose: true });
     
-    // Step 4: Execute specialized agents
-    await executeAgents(config, runner);
+    // Step 4: Execute orchestrator agent
+    await executeOrchestrator(config, runner);
     
     // Step 5: Display success summary
     displayProjectSummary(config);
@@ -69,7 +67,8 @@ async function gatherProjectConfig(projectName?: string, options: CreateOptions 
     packageManager: options.packageManager || 'auto',
     skipGit: options.noGit || false,
     skipInstall: options.noInstall || false,
-    useDefaults: options.yes || false
+    useDefaults: options.yes || false,
+    userInput: ''
   };
 
   // If project name not provided or using interactive mode
@@ -88,6 +87,14 @@ async function gatherProjectConfig(projectName?: string, options: CreateOptions 
           }
           return true;
         }
+      },
+      {
+        type: 'input',
+        name: 'userInput',
+        message: chalk.yellow('🤖 Describe your project requirements (optional):'),
+        default: '',
+        when: !options.yes,
+        description: 'Describe what you want to build, e.g., "A blog with authentication, database, and modern UI"'
       },
       {
         type: 'list',
@@ -123,7 +130,10 @@ async function gatherProjectConfig(projectName?: string, options: CreateOptions 
         choices: [
           { name: 'Best Practices (ESLint, Prettier, Husky)', value: 'best-practices', checked: true },
           { name: 'Design System (Tailwind, Shadcn/ui)', value: 'design-system', checked: true },
-          { name: 'Deployment (Docker, CI/CD)', value: 'deployment', checked: true }
+          { name: 'Database (Drizzle ORM, PostgreSQL)', value: 'database', checked: true },
+          { name: 'Authentication (Better Auth)', value: 'authentication', checked: true },
+          { name: 'Deployment (Docker, CI/CD)', value: 'deployment', checked: true },
+          { name: 'Testing (Validation, Quality)', value: 'testing', checked: true }
         ],
         when: !options.yes,
         validate: (choices: string[]) => {
@@ -139,8 +149,9 @@ async function gatherProjectConfig(projectName?: string, options: CreateOptions 
 
   // Set defaults for non-interactive mode
   if (options.yes) {
-    config.modules = ['best-practices', 'design-system', 'deployment'];
+    config.modules = ['best-practices', 'design-system', 'database', 'authentication', 'deployment', 'testing'];
     config.template = config.template || 'nextjs-14';
+    config.userInput = config.userInput || 'A modern web application with Next.js, database, authentication, and deployment';
   }
 
   // Ensure we have a project name
@@ -166,139 +177,83 @@ async function validateProject(config: ProjectConfig): Promise<void> {
   displayInfo(`Creating project: ${config.projectName}`);
   displayInfo(`Template: ${config.template}`);
   displayInfo(`Modules: ${config.modules?.join(', ') || 'base project only'}`);
+  if (config.userInput) {
+    displayInfo(`Requirements: ${config.userInput}`);
+  }
 }
 
-async function executeAgents(config: ProjectConfig, runner: CommandRunner): Promise<void> {
+async function executeOrchestrator(config: ProjectConfig, runner: CommandRunner): Promise<void> {
   const projectPath = path.resolve(config.projectName);
   
-  console.log(chalk.magenta.bold('\n🤖 Deploying Specialized AI Agents...\n'));
+  console.log(chalk.magenta.bold('\n🤖 Deploying AI Orchestrator Agent...\n'));
   
-  // Create logger for agents
-  const logger = {
-    info: (message: string) => console.log(chalk.blue(`ℹ️  ${message}`)),
-    warn: (message: string) => console.log(chalk.yellow(`⚠️  ${message}`)),
-    error: (message: string) => console.log(chalk.red(`❌ ${message}`)),
-    debug: (message: string) => console.log(chalk.gray(`🔍 ${message}`)),
-    success: (message: string) => console.log(chalk.green(`✅ ${message}`)),
-    log: (level: string, message: string) => console.log(`${message}`)
-  };
-  
-  // Agent 1: Base Project Agent
-  console.log(chalk.blue.bold('🏗️  Base Project Agent starting...'));
-  const baseAgent = new BaseProjectAgent();
-  await baseAgent.execute({
-    projectName: config.projectName,
-    projectPath,
-    packageManager: config.packageManager,
-    options: {
+  // Create context using the factory
+  const context = ContextFactory.createContext(
+    config.projectName,
+    {
+      packageManager: config.packageManager,
       skipGit: config.skipGit,
       skipInstall: config.skipInstall,
       useDefaults: config.useDefaults,
       verbose: true
     },
-    config: {
-      template: config.template
-    },
-    runner,
-    logger,
-    state: new Map(),
-    dependencies: [],
-    environment: {
-      nodeVersion: process.version,
-      platform: process.platform,
-      arch: process.arch,
-      cwd: process.cwd(),
-      env: process.env as Record<string, string>
+    {
+      template: config.template,
+      modules: config.modules,
+      userInput: config.userInput,
+      // Agent-specific configurations
+      ui: {
+        components: ['button', 'card', 'input', 'label', 'dialog'],
+        theme: 'slate',
+        usePlugin: true
+      },
+      database: {
+        provider: 'neon',
+        schema: ['users', 'posts', 'comments'],
+        migrations: true
+      },
+      authentication: {
+        providers: ['email', 'github'],
+        requireEmailVerification: true,
+        sessionDuration: 604800
+      },
+      deployment: {
+        platform: 'vercel',
+        useDocker: true,
+        useCI: true
+      },
+      validation: {
+        strictMode: false,
+        usePlugin: true
+      }
     }
-  });
-  console.log(chalk.green('✅ Base project structure created\n'));
+  );
+
+  // Create and execute orchestrator agent
+  const orchestrator = new OrchestratorAgent();
   
-  // Execute selected modules
-  if (config.modules?.includes('best-practices')) {
-    console.log(chalk.blue.bold('📋 Best Practices Agent starting...'));
-    // const practicesAgent = new BestPracticesAgent();
-    // await practicesAgent.execute({
-    //   projectName: config.projectName,
-    //   projectPath,
-    //   packageManager: config.packageManager,
-    //   options: {
-    //     skipGit: config.skipGit,
-    //     skipInstall: config.skipInstall,
-    //     useDefaults: config.useDefaults,
-    //     verbose: true
-    //   },
-    //   config: {},
-    //   runner,
-    //   logger,
-    //   state: new Map(),
-    //   dependencies: [],
-    //   environment: {
-    //     nodeVersion: process.version,
-    //     platform: process.platform,
-    //     arch: process.arch,
-    //     cwd: process.cwd(),
-    //     env: process.env as Record<string, string>
-    //   }
-    // });
-    console.log(chalk.green('✅ Code quality tools configured\n'));
-  }
-  
-  if (config.modules?.includes('design-system')) {
-    console.log(chalk.blue.bold('🎨 Design System Agent starting...'));
-    // const designAgent = new DesignSystemAgent();
-    // await designAgent.execute({
-    //   projectName: config.projectName,
-    //   projectPath,
-    //   packageManager: config.packageManager,
-    //   options: {
-    //     skipGit: config.skipGit,
-    //     skipInstall: config.skipInstall,
-    //     useDefaults: config.useDefaults,
-    //     verbose: true
-    //   },
-    //   config: {},
-    //   runner,
-    //   logger,
-    //   state: new Map(),
-    //   dependencies: [],
-    //   environment: {
-    //     nodeVersion: process.version,
-    //     platform: process.platform,
-    //     arch: process.arch,
-    //     cwd: process.cwd(),
-    //     env: process.env as Record<string, string>
-    //   }
-    // });
-    console.log(chalk.green('✅ Design system implemented\n'));
-  }
-  
-  if (config.modules?.includes('deployment')) {
-    console.log(chalk.blue.bold('🚀 Deployment Agent starting...'));
-    // const deploymentAgent = new DeploymentAgent();
-    // await deploymentAgent.execute({
-    //   projectName: config.projectName,
-    //   projectPath,
-    //   packageManager: config.packageManager,
-    //   options: {
-    //     skipGit: config.skipGit,
-    //     skipInstall: config.skipInstall,
-    //     useDefaults: config.useDefaults,
-    //     verbose: true
-    //   },
-    //   config: {},
-    //   runner,
-    //   logger,
-    //   state: new Map(),
-    //   dependencies: [],
-    //   environment: {
-    //     nodeVersion: process.version,
-    //     platform: process.platform,
-    //     arch: process.arch,
-    //     cwd: process.cwd(),
-    //     env: process.env as Record<string, string>
-    //   }
-    // });
-    console.log(chalk.green('✅ Deployment configuration ready\n'));
+  console.log(chalk.blue.bold('🎯 Orchestrator Agent starting...'));
+  const result = await orchestrator.execute(context);
+
+  if (result.success) {
+    console.log(chalk.green('✅ Orchestrator completed successfully!'));
+    console.log(chalk.gray(`Duration: ${result.duration}ms`));
+    console.log(chalk.gray(`Artifacts: ${result.artifacts?.length || 0}`));
+    
+    if (result.warnings && result.warnings.length > 0) {
+      console.log(chalk.yellow('\n⚠️  Warnings:'));
+      result.warnings.forEach(warning => {
+        console.log(chalk.yellow(`  • ${warning}`));
+      });
+    }
+  } else {
+    console.log(chalk.red('❌ Orchestrator failed!'));
+    if (result.errors) {
+      result.errors.forEach(error => {
+        console.log(chalk.red(`  • ${error.message}`));
+      });
+    }
+    throw new Error('Orchestrator execution failed');
   }
 }
 
@@ -313,6 +268,7 @@ function displayProjectSummary(config: ProjectConfig): void {
   console.log(chalk.green(`✔ Project Structure: Complete`));
   console.log(chalk.green(`✔ Dependencies: Installed`));
   console.log(chalk.green(`✔ Configuration: Optimized`));
+  console.log(chalk.green(`✔ AI Orchestration: Successful`));
   
   console.log(chalk.yellow.bold('\n⏱️  PRODUCTIVITY IMPACT:'));
   console.log(chalk.gray('─'.repeat(45)));

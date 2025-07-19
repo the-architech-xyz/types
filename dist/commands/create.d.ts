@@ -19,5 +19,6 @@ export interface ProjectConfig {
     skipInstall: boolean;
     useDefaults: boolean;
     modules?: string[];
+    userInput?: string;
 }
 export declare function createCommand(projectName?: string, options?: CreateOptions): Promise<void>;

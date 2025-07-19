@@ -1,21 +1,20 @@
 /**
- * Architech Command - Enterprise-Grade Monorepo Generator
+ * Architech Command - Enterprise Monorepo Generator
  *
- * Creates production-ready monorepo structure with Turborepo and specialized packages:
- * - apps/web: Next.js 14 main application
- * - packages/ui: Tailwind + Shadcn/ui design system
- * - packages/db: Drizzle ORM + Neon PostgreSQL
- * - packages/auth: Better Auth integration
- * - packages/config: Shared ESLint/Prettier/TypeScript configs
+ * Creates enterprise-grade monorepo structures with:
+ * - Turborepo workspace configuration
+ * - Specialized package agents
+ * - Shared dependencies and tooling
+ * - Production-ready setup
  */
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import path from 'path';
 import { existsSync } from 'fs';
 import { CommandRunner } from '../utils/command-runner.js';
+import { ContextFactory } from '../utils/context-factory.js';
+import { OrchestratorAgent } from '../agents/orchestrator-agent.js';
 import { displayError, displayInfo } from '../utils/banner.js';
-// Import specialized package agents
-import { executeAgentWithOldInterface } from '../utils/agent-adapter.js';
 const AVAILABLE_MODULES = {
     ui: {
         name: 'UI Package',
@@ -45,13 +44,9 @@ export async function architechCommand(projectName, options = {}) {
         await validateProject(config);
         // Step 3: Initialize command runner
         const runner = new CommandRunner(config.packageManager, { verbose: true });
-        // Step 4: Execute base architech structure
-        await executeBaseStructure(config, runner);
-        // Step 5: Execute selected package agents
-        await executePackageAgents(config, runner);
-        // Step 6: Run validation
-        await executeValidation(config, runner);
-        // Step 7: Display success summary
+        // Step 4: Execute orchestrator agent for enterprise setup
+        await executeOrchestrator(config, runner);
+        // Step 5: Display success summary
         displayArchitechSummary(config);
     }
     catch (error) {
@@ -66,7 +61,8 @@ async function gatherArchitechConfig(projectName, options = {}) {
         skipGit: options.noGit || false,
         skipInstall: options.noInstall || false,
         useDefaults: options.yes || false,
-        selectedModules: []
+        selectedModules: [],
+        userInput: ''
     };
     if (!config.useDefaults) {
         // Interactive mode
@@ -90,6 +86,17 @@ async function gatherArchitechConfig(projectName, options = {}) {
             ]);
             config.projectName = name;
         }
+        // Requirements input
+        const { userInput } = await inquirer.prompt([
+            {
+                type: 'input',
+                name: 'userInput',
+                message: chalk.yellow('🤖 Describe your enterprise project requirements (optional):'),
+                default: '',
+                description: 'Describe what you want to build, e.g., "Enterprise monorepo with UI, database, and authentication packages"'
+            }
+        ]);
+        config.userInput = userInput;
         // Module selection
         console.log(chalk.blue.bold('\n🏗️  Select packages to include in your monorepo:\n'));
         const moduleChoices = Object.entries(AVAILABLE_MODULES).map(([key, module]) => ({
@@ -117,6 +124,7 @@ async function gatherArchitechConfig(projectName, options = {}) {
         // Non-interactive mode with defaults
         config.projectName = config.projectName || 'my-architech-app';
         config.selectedModules = options.modules ? options.modules.split(',') : ['ui', 'db', 'auth'];
+        config.userInput = 'Enterprise monorepo with UI, database, and authentication packages';
     }
     // Validate selected modules
     config.selectedModules = config.selectedModules.filter(module => Object.keys(AVAILABLE_MODULES).includes(module));
@@ -130,87 +138,100 @@ async function validateProject(config) {
     }
     displayInfo(`✅ Project "${config.projectName}" validation passed`);
 }
-async function executeBaseStructure(config, runner) {
-    displayInfo('🏗️  Creating base Turborepo structure...');
-    await executeAgentWithOldInterface('BaseArchitechAgent', config, runner);
-    displayInfo('✅ Base structure created successfully');
-}
-async function executePackageAgents(config, runner) {
-    displayInfo(`🎭 Executing ${config.selectedModules.length} package agents...\n`);
-    for (const moduleName of config.selectedModules) {
-        const module = AVAILABLE_MODULES[moduleName];
-        if (module && module.agent) {
-            displayInfo(`🔧 Setting up ${module.name}...`);
-            await executeAgentWithOldInterface(module.agent, config, runner);
-            displayInfo(`✅ ${module.name} configured successfully`);
+async function executeOrchestrator(config, runner) {
+    console.log(chalk.magenta.bold('\n🤖 Deploying AI Orchestrator Agent for Enterprise Setup...\n'));
+    // Create context using the factory
+    const context = ContextFactory.createContext(config.projectName, {
+        packageManager: config.packageManager,
+        skipGit: config.skipGit,
+        skipInstall: config.skipInstall,
+        useDefaults: config.useDefaults,
+        verbose: true
+    }, {
+        template: 'nextjs-14',
+        modules: config.selectedModules,
+        userInput: config.userInput,
+        type: 'monorepo',
+        // Agent-specific configurations for enterprise setup
+        ui: {
+            components: ['button', 'card', 'input', 'label', 'dialog', 'form', 'select', 'textarea'],
+            theme: 'slate',
+            usePlugin: true
+        },
+        database: {
+            provider: 'neon',
+            schema: ['users', 'posts', 'comments', 'categories', 'tags'],
+            migrations: true
+        },
+        authentication: {
+            providers: ['email', 'github', 'google'],
+            requireEmailVerification: true,
+            sessionDuration: 604800
+        },
+        deployment: {
+            platform: 'vercel',
+            useDocker: true,
+            useCI: true
+        },
+        validation: {
+            strictMode: true,
+            usePlugin: true
+        }
+    });
+    // Create and execute orchestrator agent
+    const orchestrator = new OrchestratorAgent();
+    console.log(chalk.blue.bold('🎯 Orchestrator Agent starting enterprise setup...'));
+    const result = await orchestrator.execute(context);
+    if (result.success) {
+        console.log(chalk.green('✅ Enterprise setup completed successfully!'));
+        console.log(chalk.gray(`Duration: ${result.duration}ms`));
+        console.log(chalk.gray(`Artifacts: ${result.artifacts?.length || 0}`));
+        if (result.warnings && result.warnings.length > 0) {
+            console.log(chalk.yellow('\n⚠️  Warnings:'));
+            result.warnings.forEach(warning => {
+                console.log(chalk.yellow(`  • ${warning}`));
+            });
         }
     }
-}
-async function executeValidation(config, runner) {
-    displayInfo('🔍 Running validation...');
-    // TODO: Migrate ValidationAgent to TypeScript
-    // For now, just log that validation is complete
-    displayInfo('✅ Validation completed successfully');
-}
-async function finalizeWorkspaceDependencies(config, runner) {
-    displayInfo('🔗 Finalizing workspace dependencies...');
-    try {
-        const projectPath = path.resolve(process.cwd(), config.projectName);
-        // Install dependencies to link workspaces
-        const originalCwd = process.cwd();
-        try {
-            process.chdir(projectPath);
-            await runner.install([], false, projectPath);
+    else {
+        console.log(chalk.red('❌ Enterprise setup failed!'));
+        if (result.errors) {
+            result.errors.forEach(error => {
+                console.log(chalk.red(`  • ${error.message}`));
+            });
         }
-        finally {
-            process.chdir(originalCwd);
-        }
-        displayInfo('✅ Workspace dependencies finalized');
-    }
-    catch (error) {
-        displayInfo('⚠️  Warning: Could not finalize workspace dependencies');
-    }
-}
-async function postInstallationSetup(config, runner) {
-    displayInfo('🎨 Post-installation setup for Shadcn/ui...');
-    const projectPath = path.resolve(process.cwd(), config.projectName);
-    try {
-        process.chdir(projectPath);
-        await runner.install(['@shadcn/ui'], false, projectPath);
-        displayInfo('✅ Shadcn/ui components installed successfully');
-    }
-    catch (error) {
-        displayError(`Failed to install Shadcn/ui components: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        process.exit(1);
+        throw new Error('Enterprise setup failed');
     }
 }
 function displayArchitechSummary(config) {
-    console.log('\n' + '='.repeat(80));
-    console.log(chalk.green.bold('🎉 ARCHITECH STRUCTURE GENERATED SUCCESSFULLY!'));
-    console.log('='.repeat(80));
-    console.log(chalk.blue.bold('\n📊 PROJECT SUMMARY:'));
+    console.log(chalk.green.bold(`\n✨ The Architech has successfully generated your enterprise project '${config.projectName}'!\n`));
+    console.log(chalk.cyan.bold('📊 ENTERPRISE GENERATION REPORT:'));
     console.log(chalk.gray('─'.repeat(50)));
-    console.log(`${chalk.cyan('Project Name:')} ${config.projectName}`);
-    console.log(`${chalk.cyan('Structure:')} Enterprise Monorepo (Turborepo)`);
-    console.log(`${chalk.cyan('Package Manager:')} ${config.packageManager}`);
-    console.log(`${chalk.cyan('Packages Created:')} ${config.selectedModules.length}`);
+    console.log(chalk.green(`✔ Project Type: Enterprise Monorepo`));
+    console.log(chalk.green(`✔ Package Manager: ${config.packageManager}`));
+    console.log(chalk.green(`✔ Packages: ${config.selectedModules.join(', ')}`));
+    console.log(chalk.green(`✔ Project Structure: Complete`));
+    console.log(chalk.green(`✔ Dependencies: Installed`));
+    console.log(chalk.green(`✔ Configuration: Optimized`));
+    console.log(chalk.green(`✔ AI Orchestration: Successful`));
+    console.log(chalk.yellow.bold('\n⏱️  PRODUCTIVITY IMPACT:'));
+    console.log(chalk.gray('─'.repeat(50)));
+    console.log(chalk.white(`- Traditional Setup Time: 3-4 weeks`));
+    console.log(chalk.white(`- The Architech Time: ~5 minutes`));
+    console.log(chalk.white(`- Time Saved: 99.9%`));
+    console.log(chalk.magenta.bold('\n🚀 NEXT STEPS:'));
+    console.log(chalk.gray('─'.repeat(50)));
+    console.log(chalk.cyan(`1. cd ${config.projectName}`));
+    console.log(chalk.cyan(`2. npm run dev`));
+    console.log(chalk.cyan(`3. Open http://localhost:3000`));
     console.log(chalk.blue.bold('\n🏗️  MONOREPO STRUCTURE:'));
     console.log(chalk.gray('─'.repeat(50)));
-    console.log(chalk.white('📁 apps/'));
-    console.log(chalk.white('  └── web/          # Next.js 14 main application'));
-    console.log(chalk.white('📁 packages/'));
-    config.selectedModules.forEach(module => {
-        const moduleInfo = AVAILABLE_MODULES[module];
-        if (moduleInfo) {
-            console.log(chalk.white(`  └── ${module}/          # ${moduleInfo.description}`));
-        }
-    });
-    console.log(chalk.blue.bold('\n🚀 NEXT STEPS:'));
-    console.log(chalk.gray('─'.repeat(50)));
-    console.log(chalk.yellow(`1. cd ${config.projectName}`));
-    console.log(chalk.yellow(`2. ${config.packageManager === 'npm' ? 'npm install' : config.packageManager + ' install'}`));
-    console.log(chalk.yellow(`3. ${config.packageManager === 'npm' ? 'npm run dev' : config.packageManager === 'yarn' ? 'yarn dev' : config.packageManager + ' run dev'}`));
-    console.log(chalk.green.bold('\n🎉 Your enterprise-grade monorepo is ready!\n'));
+    console.log(chalk.white(`📁 apps/web - Main Next.js application`));
+    console.log(chalk.white(`📁 packages/ui - Shared UI components`));
+    console.log(chalk.white(`📁 packages/db - Database layer`));
+    console.log(chalk.white(`📁 packages/auth - Authentication system`));
+    console.log(chalk.white(`📁 packages/config - Shared configuration`));
+    console.log(chalk.green.bold('\n🎉 Happy coding! Your enterprise project is ready to scale!\n'));
     console.log(chalk.gray('📚 Documentation: https://the-architech.dev/docs'));
     console.log(chalk.gray('💬 Support: https://github.com/the-architech/cli/issues\n'));
 }

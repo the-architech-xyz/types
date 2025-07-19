@@ -1,0 +1,25 @@
+{
+  "name": "@<%= projectName %>/<%= packageName %>",
+  "version": "0.1.0",
+  "private": true,
+  "description": "<%= packageName.charAt(0).toUpperCase() + packageName.slice(1) %> package for <%= projectName %>",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint . --ext .ts,.tsx",
+    "type-check": "tsc --noEmit",
+    "test": "echo 'No tests configured yet'",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+<% Object.entries(dependencies).forEach(([dep, version], index, array) => { %>
+    "<%= dep %>": "<%= version %>"<%= index < array.length - 1 ? ',' : '' %>
+<% }); %>
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+} 

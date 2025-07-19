@@ -7,12 +7,13 @@
  * - Social login providers
  * - Session management utilities
  *
- * Migrated to the new standardized agent interface for robustness and extensibility.
+ * Enhanced to integrate with the plugin system for modularity.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class AuthAgent extends AbstractAgent {
     private templateService;
+    private pluginSystem;
     constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
@@ -27,5 +28,13 @@ export declare class AuthAgent extends AbstractAgent {
     private createIndex;
     private updateEnvConfig;
     private displayAuthSetupInstructions;
+    private executeBetterAuthPlugin;
+    private enhanceAuthPackage;
+    private createSecurityUtils;
+    private createMonitoringUtils;
+    private createAIFeatures;
+    private createEnhancedAuthUtils;
+    private createDevUtilities;
+    private manualSetup;
     rollback(context: AgentContext): Promise<void>;
 }

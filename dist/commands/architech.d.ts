@@ -1,12 +1,11 @@
 /**
- * Architech Command - Enterprise-Grade Monorepo Generator
+ * Architech Command - Enterprise Monorepo Generator
  *
- * Creates production-ready monorepo structure with Turborepo and specialized packages:
- * - apps/web: Next.js 14 main application
- * - packages/ui: Tailwind + Shadcn/ui design system
- * - packages/db: Drizzle ORM + Neon PostgreSQL
- * - packages/auth: Better Auth integration
- * - packages/config: Shared ESLint/Prettier/TypeScript configs
+ * Creates enterprise-grade monorepo structures with:
+ * - Turborepo workspace configuration
+ * - Specialized package agents
+ * - Shared dependencies and tooling
+ * - Production-ready setup
  */
 interface ArchitechOptions {
     packageManager?: string;

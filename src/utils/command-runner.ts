@@ -193,7 +193,14 @@ export class CommandRunner {
         stdio: options.silent ? 'pipe' : 'inherit',
         shell: true,
         cwd: options.cwd || process.cwd(),
-        env: { ...process.env, ...options.env }
+        env: { 
+          ...process.env, 
+          ...options.env,
+          // Force non-interactive mode for common tools
+          CI: 'true',
+          FORCE_COLOR: '1',
+          NODE_ENV: 'production'
+        }
       };
 
       const childProcess: ChildProcess = spawn(command, args, spawnOptions);
@@ -257,6 +264,39 @@ export class CommandRunner {
     const fullCmd = packages.length > 0 ? [...installCmd, ...packages] : installCmd;
     
     return this.execCommand(fullCmd, { cwd });
+  }
+
+  async installNonInteractive(packages: string[] = [], isDev = false, cwd = process.cwd()): Promise<CommandResult> {
+    const installCmd = isDev ? this.commands.installDev : this.commands.install;
+    const fullCmd = packages.length > 0 ? [...installCmd, ...packages] : installCmd;
+    
+    // Add non-interactive flags based on package manager
+    const nonInteractiveFlags = this.getNonInteractiveFlags();
+    const finalCmd = [...fullCmd, ...nonInteractiveFlags];
+    
+    return this.execCommand(finalCmd, { 
+      cwd,
+      env: {
+        CI: 'true',
+        FORCE_COLOR: '1',
+        NODE_ENV: 'production'
+      }
+    });
+  }
+
+  private getNonInteractiveFlags(): string[] {
+    switch (this.packageManager) {
+      case 'npm':
+        return ['--yes', '--silent'];
+      case 'yarn':
+        return ['--silent'];
+      case 'pnpm':
+        return ['--silent'];
+      case 'bun':
+        return ['--silent'];
+      default:
+        return ['--yes', '--silent'];
+    }
   }
 
   async runScript(scriptName: string, cwd = process.cwd()): Promise<CommandResult> {

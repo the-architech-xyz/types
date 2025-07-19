@@ -7,7 +7,7 @@
  * - Shared UI components
  * - Utility functions for styling
  * 
- * Migrated to the new standardized agent interface for robustness and extensibility.
+ * Enhanced to integrate with the plugin system for modularity.
  */
 
 import { existsSync } from 'fs';
@@ -15,6 +15,8 @@ import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { TemplateService, templateService } from '../utils/template-service.js';
+import { PluginSystem } from '../utils/plugin-system.js';
+import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
 import {
   AgentContext,
   AgentResult,
@@ -28,10 +30,12 @@ import {
 
 export class UIAgent extends AbstractAgent {
   private templateService: TemplateService;
+  private pluginSystem: PluginSystem;
 
   constructor() {
     super();
     this.templateService = templateService;
+    this.pluginSystem = PluginSystem.getInstance();
   }
 
   // ============================================================================
@@ -41,11 +45,11 @@ export class UIAgent extends AbstractAgent {
   protected getAgentMetadata(): AgentMetadata {
     return {
       name: 'UIAgent',
-      version: '1.0.0',
-      description: 'Sets up the UI design system package with Tailwind CSS and Shadcn/ui',
+      version: '2.0.0',
+      description: 'Sets up the UI design system package with Tailwind CSS and Shadcn/ui using plugin system',
       author: 'The Architech Team',
       category: AgentCategory.UI,
-      tags: ['ui', 'design-system', 'tailwind', 'shadcn', 'components'],
+      tags: ['ui', 'design-system', 'tailwind', 'shadcn', 'components', 'plugin-integration'],
       dependencies: ['BaseProjectAgent'],
       conflicts: [],
       requirements: [
@@ -74,7 +78,7 @@ export class UIAgent extends AbstractAgent {
     return [
       {
         name: 'setup-design-system',
-        description: 'Creates a complete design system with Tailwind CSS and Shadcn/ui',
+        description: 'Creates a complete design system with Tailwind CSS and Shadcn/ui using plugin system',
         parameters: [
           {
             name: 'components',
@@ -89,44 +93,95 @@ export class UIAgent extends AbstractAgent {
             required: false,
             description: 'Tailwind theme configuration',
             defaultValue: 'slate'
+          },
+          {
+            name: 'usePlugin',
+            type: 'boolean',
+            required: false,
+            description: 'Whether to use the Shadcn/ui plugin for core setup',
+            defaultValue: true
           }
         ],
         examples: [
           {
-            name: 'Setup basic design system',
-            description: 'Creates a design system with default components',
-            parameters: {},
-            expectedResult: 'Complete UI package with Tailwind and Shadcn/ui'
+            name: 'Setup basic design system with plugin',
+            description: 'Creates a design system using the Shadcn/ui plugin',
+            parameters: { usePlugin: true },
+            expectedResult: 'Complete UI package with Tailwind and Shadcn/ui via plugin'
           },
           {
             name: 'Setup with custom components',
             description: 'Creates a design system with specific components',
             parameters: { 
               components: ['button', 'card', 'input', 'label', 'dialog', 'dropdown-menu'],
-              theme: 'zinc'
+              theme: 'zinc',
+              usePlugin: true
             },
-            expectedResult: 'UI package with custom components and theme'
+            expectedResult: 'UI package with custom components and theme via plugin'
           }
         ],
         category: CapabilityCategory.SETUP
       },
       {
         name: 'install-shadcn-components',
-        description: 'Installs specific Shadcn/ui components',
+        description: 'Installs specific Shadcn/ui components using plugin system',
         parameters: [
           {
             name: 'componentNames',
             type: 'array',
             required: true,
             description: 'Array of component names to install'
+          },
+          {
+            name: 'usePlugin',
+            type: 'boolean',
+            required: false,
+            description: 'Whether to use the Shadcn/ui plugin for installation',
+            defaultValue: true
           }
         ],
         examples: [
           {
-            name: 'Install form components',
-            description: 'Installs form-related Shadcn/ui components',
-            parameters: { componentNames: ['input', 'label', 'button', 'form'] },
-            expectedResult: 'Form components installed and configured'
+            name: 'Install form components via plugin',
+            description: 'Installs form-related Shadcn/ui components using plugin',
+            parameters: { componentNames: ['input', 'label', 'button', 'form'], usePlugin: true },
+            expectedResult: 'Form components installed and configured via plugin'
+          }
+        ],
+        category: CapabilityCategory.INTEGRATION
+      },
+      {
+        name: 'enhance-ui-package',
+        description: 'Adds agent-specific enhancements to the UI package',
+        parameters: [
+          {
+            name: 'utilities',
+            type: 'boolean',
+            required: false,
+            description: 'Whether to add utility functions',
+            defaultValue: true
+          },
+          {
+            name: 'healthChecks',
+            type: 'boolean',
+            required: false,
+            description: 'Whether to add health check utilities',
+            defaultValue: true
+          },
+          {
+            name: 'aiFeatures',
+            type: 'boolean',
+            required: false,
+            description: 'Whether to add AI-powered component generation',
+            defaultValue: true
+          }
+        ],
+        examples: [
+          {
+            name: 'Add all enhancements',
+            description: 'Adds all agent-specific enhancements to the UI package',
+            parameters: { utilities: true, healthChecks: true, aiFeatures: true },
+            expectedResult: 'Enhanced UI package with utilities, health checks, and AI features'
           }
         ],
         category: CapabilityCategory.INTEGRATION
@@ -145,33 +200,21 @@ export class UIAgent extends AbstractAgent {
     context.logger.info(`Setting up UI design system package: ${projectName}/packages/ui`);
 
     try {
-      // Update package.json with dependencies
-      await this.updatePackageJson(uiPackagePath, context);
-      
-      // Install dependencies first
-      context.logger.info('Installing UI package dependencies...');
-      await context.runner.install([], false, uiPackagePath);
-      
-      // Create Tailwind configuration
-      await this.createTailwindConfig(uiPackagePath, context);
-      
-      // Create utility functions
-      await this.createUtilities(uiPackagePath, context);
-      
-      // Create components.json for Shadcn/ui
-      await this.createComponentsConfig(uiPackagePath, context);
-      
-      // Create base components directory structure
-      await this.createComponentStructure(uiPackagePath, context);
-      
-      // Create CSS files
-      await this.createCSSFiles(uiPackagePath, context);
-      
-      // Install Shadcn/ui components using commands (like the old .js version)
-      await this.installShadcnComponents(uiPackagePath, context);
-      
-      // Create index exports
-      await this.createIndex(uiPackagePath, context);
+      // Get parameters from context config
+      const components = context.config?.components || ['button', 'card', 'input', 'label'];
+      const theme = context.config?.theme || 'slate';
+      const usePlugin = context.config?.usePlugin !== false; // Default to true
+
+      let pluginResult = null;
+
+      // Use plugin for core setup if enabled
+      if (usePlugin) {
+        context.logger.info('Using Shadcn/ui plugin for core setup...');
+        pluginResult = await this.executeShadcnPlugin(context, uiPackagePath, components, theme);
+      }
+
+      // Always run agent-specific enhancements
+      await this.enhanceUIPackage(uiPackagePath, context);
 
       const artifacts: Artifact[] = [
         {
@@ -181,7 +224,8 @@ export class UIAgent extends AbstractAgent {
             package: 'ui',
             framework: 'tailwind',
             components: 'shadcn',
-            features: ['design-system', 'components', 'utilities']
+            features: ['design-system', 'components', 'utilities', 'enhancements'],
+            pluginUsed: usePlugin
           }
         },
         {
@@ -193,38 +237,40 @@ export class UIAgent extends AbstractAgent {
           type: 'file',
           path: path.join(uiPackagePath, 'tailwind.config.js'),
           metadata: { type: 'tailwind-config' }
-        },
-        {
-          type: 'file',
-          path: path.join(uiPackagePath, 'components.json'),
-          metadata: { type: 'shadcn-config' }
         }
       ];
 
-      context.logger.success(`UI design system package configured successfully`);
-      
+      // Add plugin artifacts if plugin was used
+      if (pluginResult?.artifacts) {
+        artifacts.push(...pluginResult.artifacts);
+      }
+
       return this.createSuccessResult(
-        { 
-          uiPackagePath,
-          components: ['button', 'card', 'input', 'label'],
-          theme: 'slate'
+        {
+          packagePath: uiPackagePath,
+          components,
+          framework: 'tailwind',
+          designSystem: 'shadcn',
+          pluginUsed: usePlugin,
+          enhancements: ['utilities', 'health-checks', 'ai-features']
         },
         artifacts,
         [
           'UI package structure created',
           'Tailwind CSS configured',
           'Shadcn/ui components installed',
+          'Agent-specific enhancements added',
           'Ready for component development'
         ]
       );
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`Failed to configure UI package: ${errorMessage}`, error as Error);
+      context.logger.error(`Failed to setup UI package: ${errorMessage}`, error as Error);
       
       return this.createErrorResult(
-        'UI_PACKAGE_SETUP_FAILED',
-        `Failed to configure UI package: ${errorMessage}`,
+        'UI_SETUP_FAILED',
+        `Failed to setup UI package: ${errorMessage}`,
         [],
         0,
         error
@@ -306,16 +352,6 @@ export class UIAgent extends AbstractAgent {
     );
   }
 
-  private async createComponentsConfig(uiPackagePath: string, context: AgentContext): Promise<void> {
-    await this.templateService.renderAndWrite(
-      'ui',
-      'components.json.ejs',
-      path.join(uiPackagePath, 'components.json'),
-      {},
-      { logger: context.logger }
-    );
-  }
-
   private async createComponentStructure(uiPackagePath: string, context: AgentContext): Promise<void> {
     const directories = [
       'components',
@@ -341,25 +377,25 @@ export class UIAgent extends AbstractAgent {
 
   private async installShadcnComponents(uiPackagePath: string, context: AgentContext): Promise<void> {
     const originalCwd = process.cwd();
+    const projectPath = context.projectPath;
     
     try {
-      process.chdir(uiPackagePath);
+      // Change to project root directory for Shadcn commands
+      process.chdir(projectPath);
       
-      // Initialize Shadcn first
-      try {
-        await context.runner.execCommand(['npx', 'shadcn', 'init', '--yes']);
-        context.logger.success('Shadcn initialized');
-      } catch (error) {
-        context.logger.warn(`Could not initialize Shadcn: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-      
-      // Install base components using the local shadcn CLI
+      // Install base components using the root-level Shadcn configuration
       const baseComponents = ['button', 'card', 'input', 'label'];
       
       for (const component of baseComponents) {
         try {
-          // Use the local shadcn CLI (not npx)
-          await context.runner.execCommand(['npx', 'shadcn', 'add', component, '--yes']);
+          // Use the root-level shadcn CLI with non-interactive options
+          await context.runner.execCommand(['npx', 'shadcn', 'add', component, '--yes'], {
+            env: {
+              ...process.env,
+              CI: 'true', // Force non-interactive mode
+              FORCE_COLOR: '1'
+            }
+          });
           context.logger.success(`Installed ${component} component`);
         } catch (error) {
           context.logger.warn(`Could not install ${component} component: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -376,27 +412,13 @@ export class UIAgent extends AbstractAgent {
   private async createPlaceholderComponent(uiPackagePath: string, componentName: string, context: AgentContext): Promise<void> {
     const componentPath = path.join(uiPackagePath, 'components', 'ui', `${componentName}.tsx`);
     
-    const placeholderContent = `import * as React from "react"
-import { cn } from "../../lib/utils"
-
-export interface ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props extends React.HTMLAttributes<HTMLDivElement> {}
-
-const ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} = React.forwardRef<HTMLDivElement, ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props>(
-  ({ className, ...props }, ref) => {
-    return (
-      <div
-        className={cn("${componentName}-component", className)}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-${componentName.charAt(0).toUpperCase() + componentName.slice(1)}.displayName = "${componentName.charAt(0).toUpperCase() + componentName.slice(1)}"
-
-export { ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} }`;
-
-    await fsExtra.writeFile(componentPath, placeholderContent);
+    await this.templateService.renderAndWrite(
+      'ui/components/ui',
+      'placeholder.tsx.ejs',
+      componentPath,
+      { componentName },
+      { logger: context.logger }
+    );
   }
 
   private async createIndex(uiPackagePath: string, context: AgentContext): Promise<void> {
@@ -407,6 +429,280 @@ export { ${componentName.charAt(0).toUpperCase() + componentName.slice(1)} }`;
       {},
       { logger: context.logger }
     );
+  }
+
+  // ============================================================================
+  // PLUGIN INTEGRATION
+  // ============================================================================
+
+  private async executeShadcnPlugin(
+    context: AgentContext, 
+    uiPackagePath: string, 
+    components: string[], 
+    theme: string
+  ): Promise<any> {
+    try {
+      const registry = this.pluginSystem.getRegistry();
+      const shadcnPlugin = registry.get('shadcn-ui');
+      if (!shadcnPlugin) {
+        throw new Error('Shadcn/ui plugin not found in registry');
+      }
+
+      const pluginContext: PluginContext = {
+        ...context,
+        pluginId: 'shadcn-ui',
+        pluginConfig: {
+          components,
+          theme,
+          targetPath: uiPackagePath
+        },
+        installedPlugins: [],
+        projectType: ProjectType.NEXTJS,
+        targetPlatform: [TargetPlatform.WEB]
+      };
+
+      context.logger.info('Executing Shadcn/ui plugin...');
+      const result = await shadcnPlugin.install(pluginContext);
+      
+      if (!result.success) {
+        throw new Error(`Plugin execution failed: ${result.errors?.[0]?.message || 'Unknown error'}`);
+      }
+
+      context.logger.info('Shadcn/ui plugin executed successfully');
+      return result;
+    } catch (error) {
+      context.logger.warn(`Plugin execution failed, falling back to manual setup: ${error}`);
+      // Fall back to manual setup
+      await this.manualSetup(uiPackagePath, context, components, theme);
+      return null;
+    }
+  }
+
+  // ============================================================================
+  // AGENT-SPECIFIC ENHANCEMENTS
+  // ============================================================================
+
+  private async enhanceUIPackage(uiPackagePath: string, context: AgentContext): Promise<void> {
+    context.logger.info('Adding agent-specific enhancements to UI package...');
+
+    // Add utility functions
+    await this.createEnhancedUtilities(uiPackagePath, context);
+    
+    // Add health check utilities
+    await this.createHealthChecks(uiPackagePath, context);
+    
+    // Add AI-powered component generation utilities
+    await this.createAIFeatures(uiPackagePath, context);
+    
+    // Add enhanced component structure
+    await this.createEnhancedComponentStructure(uiPackagePath, context);
+    
+    // Add development utilities
+    await this.createDevUtilities(uiPackagePath, context);
+  }
+
+  private async createEnhancedUtilities(uiPackagePath: string, context: AgentContext): Promise<void> {
+    const utilsPath = path.join(uiPackagePath, 'lib', 'utils');
+    await fsExtra.ensureDir(utilsPath);
+
+    // Enhanced cn utility with better type safety
+    await this.templateService.renderTemplate('ui/enhanced-cn.ts', path.join(utilsPath, 'cn.ts'), {
+      projectName: context.projectName
+    });
+
+    // Color utilities
+    await this.templateService.renderTemplate('ui/color-utils.ts', path.join(utilsPath, 'colors.ts'), {
+      projectName: context.projectName
+    });
+
+    // Spacing utilities
+    await this.templateService.renderTemplate('ui/spacing-utils.ts', path.join(utilsPath, 'spacing.ts'), {
+      projectName: context.projectName
+    });
+
+    // Animation utilities
+    await this.templateService.renderTemplate('ui/animation-utils.ts', path.join(utilsPath, 'animations.ts'), {
+      projectName: context.projectName
+    });
+  }
+
+  private async createHealthChecks(uiPackagePath: string, context: AgentContext): Promise<void> {
+    const healthPath = path.join(uiPackagePath, 'lib', 'health');
+    await fsExtra.ensureDir(healthPath);
+
+    // Component health checker
+    await this.templateService.renderTemplate('ui/component-health.ts', path.join(healthPath, 'component-health.ts'), {
+      projectName: context.projectName
+    });
+
+    // Style health checker
+    await this.templateService.renderTemplate('ui/style-health.ts', path.join(healthPath, 'style-health.ts'), {
+      projectName: context.projectName
+    });
+
+    // Accessibility health checker
+    await this.templateService.renderTemplate('ui/accessibility-health.ts', path.join(healthPath, 'accessibility.ts'), {
+      projectName: context.projectName
+    });
+  }
+
+  private async createAIFeatures(uiPackagePath: string, context: AgentContext): Promise<void> {
+    const aiPath = path.join(uiPackagePath, 'lib', 'ai');
+    await fsExtra.ensureDir(aiPath);
+
+    // AI component generator
+    await this.templateService.renderTemplate('ui/ai-component-generator.ts', path.join(aiPath, 'component-generator.ts'), {
+      projectName: context.projectName
+    });
+
+    // AI style analyzer
+    await this.templateService.renderTemplate('ui/ai-style-analyzer.ts', path.join(aiPath, 'style-analyzer.ts'), {
+      projectName: context.projectName
+    });
+
+    // AI accessibility checker
+    await this.templateService.renderTemplate('ui/ai-accessibility-checker.ts', path.join(aiPath, 'accessibility-checker.ts'), {
+      projectName: context.projectName
+    });
+  }
+
+  private async createEnhancedComponentStructure(uiPackagePath: string, context: AgentContext): Promise<void> {
+    const componentsPath = path.join(uiPackagePath, 'components');
+    
+    // Create enhanced component structure
+    const structure = [
+      'ui/button',
+      'ui/card',
+      'ui/input',
+      'ui/label',
+      'ui/dialog',
+      'ui/dropdown-menu',
+      'ui/form',
+      'ui/select',
+      'ui/textarea',
+      'ui/checkbox',
+      'ui/radio-group',
+      'ui/switch',
+      'ui/tabs',
+      'ui/accordion',
+      'ui/alert',
+      'ui/avatar',
+      'ui/badge',
+      'ui/breadcrumb',
+      'ui/calendar',
+      'ui/carousel',
+      'ui/command',
+      'ui/context-menu',
+      'ui/hover-card',
+      'ui/menubar',
+      'ui/navigation-menu',
+      'ui/pagination',
+      'ui/popover',
+      'ui/progress',
+      'ui/scroll-area',
+      'ui/separator',
+      'ui/sheet',
+      'ui/skeleton',
+      'ui/slider',
+      'ui/table',
+      'ui/toast',
+      'ui/toggle',
+      'ui/tooltip'
+    ];
+
+    for (const componentPath of structure) {
+      const fullPath = path.join(componentsPath, componentPath);
+      await fsExtra.ensureDir(fullPath);
+      
+      // Create enhanced component files
+      await this.createEnhancedComponent(fullPath, componentPath.split('/').pop()!, context);
+    }
+  }
+
+  private async createEnhancedComponent(componentPath: string, componentName: string, context: AgentContext): Promise<void> {
+    const pascalName = componentName.charAt(0).toUpperCase() + componentName.slice(1);
+    
+    // Enhanced component with better TypeScript support
+    await this.templateService.renderTemplate('ui/enhanced-component.tsx', path.join(componentPath, `${componentName}.tsx`), {
+      componentName: pascalName,
+      projectName: context.projectName
+    });
+
+    // Component story for Storybook
+    await this.templateService.renderTemplate('ui/component-story.ts', path.join(componentPath, `${componentName}.stories.tsx`), {
+      componentName: pascalName,
+      projectName: context.projectName
+    });
+
+    // Component test
+    await this.templateService.renderTemplate('ui/component-test.tsx', path.join(componentPath, `${componentName}.test.tsx`), {
+      componentName: pascalName,
+      projectName: context.projectName
+    });
+
+    // Component documentation
+    await this.templateService.renderTemplate('ui/component-docs.mdx', path.join(componentPath, `${componentName}.mdx`), {
+      componentName: pascalName,
+      projectName: context.projectName
+    });
+  }
+
+  private async createDevUtilities(uiPackagePath: string, context: AgentContext): Promise<void> {
+    const devPath = path.join(uiPackagePath, 'lib', 'dev');
+    await fsExtra.ensureDir(devPath);
+
+    // Development utilities
+    await this.templateService.renderTemplate('ui/dev-utils.ts', path.join(devPath, 'utils.ts'), {
+      projectName: context.projectName
+    });
+
+    // Component playground
+    await this.templateService.renderTemplate('ui/component-playground.tsx', path.join(devPath, 'playground.tsx'), {
+      projectName: context.projectName
+    });
+
+    // Style guide generator
+    await this.templateService.renderTemplate('ui/style-guide-generator.ts', path.join(devPath, 'style-guide.ts'), {
+      projectName: context.projectName
+    });
+  }
+
+  // ============================================================================
+  // FALLBACK MANUAL SETUP
+  // ============================================================================
+
+  private async manualSetup(
+    uiPackagePath: string, 
+    context: AgentContext, 
+    components: string[], 
+    theme: string
+  ): Promise<void> {
+    context.logger.info('Performing manual UI setup...');
+    
+    // Update package.json with dependencies
+    await this.updatePackageJson(uiPackagePath, context);
+    
+    // Install dependencies first
+    context.logger.info('Installing UI package dependencies...');
+    await context.runner.installNonInteractive([], false, uiPackagePath);
+    
+    // Create Tailwind configuration
+    await this.createTailwindConfig(uiPackagePath, context);
+    
+    // Create utility functions
+    await this.createUtilities(uiPackagePath, context);
+    
+    // Create base components directory structure
+    await this.createComponentStructure(uiPackagePath, context);
+    
+    // Create CSS files
+    await this.createCSSFiles(uiPackagePath, context);
+    
+    // Install Shadcn/ui components using root-level configuration
+    await this.installShadcnComponents(uiPackagePath, context);
+    
+    // Create index exports
+    await this.createIndex(uiPackagePath, context);
   }
 
   // ============================================================================

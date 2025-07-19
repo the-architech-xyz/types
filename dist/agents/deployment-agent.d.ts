@@ -7,18 +7,28 @@
  * - Environment configuration
  * - Docker Compose for local development
  *
- * Migrated to the new standardized agent interface for robustness and extensibility.
+ * Enhanced to integrate with the plugin system for modularity.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class DeploymentAgent extends AbstractAgent {
+    private templateService;
+    private pluginSystem;
+    constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
+    private executeDeploymentPlugins;
+    private enhanceDeploymentPackage;
+    private createEnhancedDeploymentUtils;
+    private createHealthChecks;
+    private createAIFeatures;
+    private createDevUtilities;
+    private getDeploymentConfig;
     validate(context: AgentContext): Promise<ValidationResult>;
     private createDockerfile;
     private createDockerCompose;
-    private createGitHubActions;
+    private createCICDPipeline;
     private createEnvironmentFiles;
     private createDockerIgnore;
     rollback(context: AgentContext): Promise<void>;

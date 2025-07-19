@@ -7,12 +7,13 @@
  * - Shared UI components
  * - Utility functions for styling
  *
- * Migrated to the new standardized agent interface for robustness and extensibility.
+ * Enhanced to integrate with the plugin system for modularity.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class UIAgent extends AbstractAgent {
     private templateService;
+    private pluginSystem;
     constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
@@ -21,11 +22,19 @@ export declare class UIAgent extends AbstractAgent {
     private updatePackageJson;
     private createTailwindConfig;
     private createUtilities;
-    private createComponentsConfig;
     private createComponentStructure;
     private createCSSFiles;
     private installShadcnComponents;
     private createPlaceholderComponent;
     private createIndex;
+    private executeShadcnPlugin;
+    private enhanceUIPackage;
+    private createEnhancedUtilities;
+    private createHealthChecks;
+    private createAIFeatures;
+    private createEnhancedComponentStructure;
+    private createEnhancedComponent;
+    private createDevUtilities;
+    private manualSetup;
     rollback(context: AgentContext): Promise<void>;
 }

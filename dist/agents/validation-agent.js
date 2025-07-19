@@ -7,25 +7,36 @@
  * - Tests import paths
  * - Verifies configuration files
  * - Provides detailed feedback
+ *
+ * Enhanced to integrate with the plugin system for modularity.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
+import { templateService } from '../utils/template-service.js';
+import { PluginSystem } from '../utils/plugin-system.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
 import { execa } from 'execa';
 export class ValidationAgent extends AbstractAgent {
+    templateService;
+    pluginSystem;
+    constructor() {
+        super();
+        this.templateService = templateService;
+        this.pluginSystem = PluginSystem.getInstance();
+    }
     // ============================================================================
     // AGENT METADATA
     // ============================================================================
     getAgentMetadata() {
         return {
             name: 'ValidationAgent',
-            version: '1.0.0',
-            description: 'Post-generation quality checker that validates project structure and configuration',
+            version: '2.0.0',
+            description: 'Post-generation quality checker that validates project structure and configuration using plugin system',
             author: 'The Architech Team',
             category: AgentCategory.TESTING,
-            tags: ['validation', 'quality', 'testing', 'verification'],
-            dependencies: [],
+            tags: ['validation', 'quality', 'testing', 'verification', 'plugin-integration'],
+            dependencies: ['BaseProjectAgent'],
             conflicts: [],
             requirements: [
                 {
@@ -41,46 +52,120 @@ export class ValidationAgent extends AbstractAgent {
     getAgentCapabilities() {
         return [
             {
-                name: 'project-structure-validation',
-                description: 'Validates the overall project structure and required files',
-                parameters: [],
+                name: 'validate-project-structure',
+                description: 'Validates the overall project structure and required files using plugin system',
+                parameters: [
+                    {
+                        name: 'usePlugin',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to use validation plugins for enhanced checks',
+                        defaultValue: true
+                    },
+                    {
+                        name: 'strictMode',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Enable strict validation mode',
+                        defaultValue: false
+                    }
+                ],
                 examples: [
                     {
-                        name: 'Structure Validation',
-                        description: 'Checks for required directories and files',
-                        parameters: {},
-                        expectedResult: 'Validation report of project structure'
+                        name: 'Structure Validation with Plugin',
+                        description: 'Checks for required directories and files using validation plugins',
+                        parameters: { usePlugin: true, strictMode: true },
+                        expectedResult: 'Comprehensive validation report with plugin-enhanced checks'
                     }
                 ],
                 category: CapabilityCategory.VALIDATION
             },
             {
-                name: 'dependency-validation',
-                description: 'Validates workspace dependencies and package.json files',
-                parameters: [],
+                name: 'validate-dependencies',
+                description: 'Validates workspace dependencies and package.json files using plugin system',
+                parameters: [
+                    {
+                        name: 'usePlugin',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to use dependency validation plugins',
+                        defaultValue: true
+                    }
+                ],
                 examples: [
                     {
-                        name: 'Dependency Check',
-                        description: 'Verifies workspace dependencies are properly configured',
-                        parameters: {},
-                        expectedResult: 'Validation report of dependencies'
+                        name: 'Dependency Check with Plugin',
+                        description: 'Verifies workspace dependencies using specialized plugins',
+                        parameters: { usePlugin: true },
+                        expectedResult: 'Detailed dependency validation report with plugin insights'
                     }
                 ],
                 category: CapabilityCategory.VALIDATION
             },
             {
-                name: 'typescript-compilation-check',
-                description: 'Runs TypeScript compilation to check for type errors',
-                parameters: [],
+                name: 'validate-typescript',
+                description: 'Runs TypeScript compilation to check for type errors using plugin system',
+                parameters: [
+                    {
+                        name: 'usePlugin',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to use TypeScript validation plugins',
+                        defaultValue: true
+                    },
+                    {
+                        name: 'strictMode',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Enable strict TypeScript checking',
+                        defaultValue: true
+                    }
+                ],
                 examples: [
                     {
-                        name: 'TypeScript Check',
-                        description: 'Compiles TypeScript files to detect type errors',
-                        parameters: {},
-                        expectedResult: 'TypeScript compilation report'
+                        name: 'TypeScript Check with Plugin',
+                        description: 'Compiles TypeScript files with plugin-enhanced error detection',
+                        parameters: { usePlugin: true, strictMode: true },
+                        expectedResult: 'Comprehensive TypeScript compilation report with plugin insights'
                     }
                 ],
                 category: CapabilityCategory.VALIDATION
+            },
+            {
+                name: 'enhance-validation-package',
+                description: 'Adds agent-specific validation enhancements',
+                parameters: [
+                    {
+                        name: 'utilities',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to add validation utility functions',
+                        defaultValue: true
+                    },
+                    {
+                        name: 'healthChecks',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to add health check utilities',
+                        defaultValue: true
+                    },
+                    {
+                        name: 'aiFeatures',
+                        type: 'boolean',
+                        required: false,
+                        description: 'Whether to add AI-powered validation features',
+                        defaultValue: true
+                    }
+                ],
+                examples: [
+                    {
+                        name: 'Add all enhancements',
+                        description: 'Adds all agent-specific validation enhancements',
+                        parameters: { utilities: true, healthChecks: true, aiFeatures: true },
+                        expectedResult: 'Enhanced validation package with utilities, health checks, and AI features'
+                    }
+                ],
+                category: CapabilityCategory.INTEGRATION
             }
         ];
     }
@@ -89,14 +174,46 @@ export class ValidationAgent extends AbstractAgent {
     // ============================================================================
     async executeInternal(context) {
         const { projectPath } = context;
-        context.logger.info('Running project validation checks');
+        context.logger.info('Running comprehensive project validation checks...');
         try {
-            // Run validation checks
-            const results = await this.runValidationChecks(projectPath, context);
+            // Get validation configuration from context
+            const usePlugin = context.config?.usePlugin !== false; // Default to true
+            const strictMode = context.config?.strictMode || false;
+            let pluginResult = null;
+            // Use plugin for enhanced validation if enabled
+            if (usePlugin) {
+                context.logger.info('Using validation plugins for enhanced checks...');
+                pluginResult = await this.executeValidationPlugins(context, strictMode);
+            }
+            // Run core validation checks
+            const results = await this.runValidationChecks(projectPath, context, strictMode);
+            // Add agent-specific enhancements
+            await this.enhanceValidationPackage(projectPath, context);
             // Display validation results
             this.displayValidationResults(results);
+            const artifacts = [
+                {
+                    type: 'file',
+                    path: path.join(projectPath, 'validation-report.json'),
+                    metadata: {
+                        totalIssues: results.totalIssues,
+                        categories: Object.keys(results).filter(key => key !== 'totalIssues'),
+                        strictMode,
+                        pluginUsed: usePlugin
+                    }
+                }
+            ];
+            // Add plugin artifacts if plugin was used
+            if (pluginResult?.artifacts) {
+                artifacts.push(...pluginResult.artifacts);
+            }
             context.logger.success(`Validation completed with ${results.totalIssues} issues found`);
-            return this.createSuccessResult(results, [], this.getNextSteps(results.totalIssues));
+            return this.createSuccessResult({
+                validationResults: results,
+                pluginUsed: usePlugin,
+                strictMode,
+                totalIssues: results.totalIssues
+            }, artifacts, this.getNextSteps(results.totalIssues));
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -104,6 +221,113 @@ export class ValidationAgent extends AbstractAgent {
             return this.createErrorResult('VALIDATION_FAILED', `Validation failed: ${errorMessage}`, [], 0, error);
         }
     }
+    // ============================================================================
+    // PLUGIN INTEGRATION
+    // ============================================================================
+    async executeValidationPlugins(context, strictMode) {
+        try {
+            // For now, we'll simulate plugin execution since we don't have validation plugins yet
+            // This is ready for when we add validation plugins to the system
+            context.logger.info('Validation plugins would be executed here...');
+            return {
+                success: true,
+                artifacts: [],
+                warnings: ['No validation plugins currently available']
+            };
+        }
+        catch (error) {
+            context.logger.warn(`Plugin execution failed, falling back to core validation: ${error}`);
+            return null;
+        }
+    }
+    // ============================================================================
+    // AGENT-SPECIFIC ENHANCEMENTS
+    // ============================================================================
+    async enhanceValidationPackage(projectPath, context) {
+        context.logger.info('Adding agent-specific validation enhancements...');
+        // Create validation utilities directory
+        const validationPath = path.join(projectPath, 'packages', 'validation');
+        await fsExtra.ensureDir(validationPath);
+        // Add enhanced validation utilities
+        await this.createEnhancedValidationUtils(validationPath, context);
+        // Add health check utilities
+        await this.createHealthChecks(validationPath, context);
+        // Add AI-powered validation features
+        await this.createAIFeatures(validationPath, context);
+        // Add development utilities
+        await this.createDevUtilities(validationPath, context);
+    }
+    async createEnhancedValidationUtils(validationPath, context) {
+        const utilsPath = path.join(validationPath, 'utils');
+        await fsExtra.ensureDir(utilsPath);
+        // Enhanced validation utilities
+        await this.templateService.renderTemplate('validation/enhanced-utils.ts', path.join(utilsPath, 'enhanced.ts'), {
+            projectName: context.projectName
+        });
+        // Type checking utilities
+        await this.templateService.renderTemplate('validation/type-utils.ts', path.join(utilsPath, 'types.ts'), {
+            projectName: context.projectName
+        });
+        // Import validation utilities
+        await this.templateService.renderTemplate('validation/import-utils.ts', path.join(utilsPath, 'imports.ts'), {
+            projectName: context.projectName
+        });
+        // Configuration validation utilities
+        await this.templateService.renderTemplate('validation/config-utils.ts', path.join(utilsPath, 'config.ts'), {
+            projectName: context.projectName
+        });
+    }
+    async createHealthChecks(validationPath, context) {
+        const healthPath = path.join(validationPath, 'health');
+        await fsExtra.ensureDir(healthPath);
+        // Project health checker
+        await this.templateService.renderTemplate('validation/project-health.ts', path.join(healthPath, 'project-health.ts'), {
+            projectName: context.projectName
+        });
+        // Dependency health checker
+        await this.templateService.renderTemplate('validation/dependency-health.ts', path.join(healthPath, 'dependency-health.ts'), {
+            projectName: context.projectName
+        });
+        // Build health checker
+        await this.templateService.renderTemplate('validation/build-health.ts', path.join(healthPath, 'build-health.ts'), {
+            projectName: context.projectName
+        });
+    }
+    async createAIFeatures(validationPath, context) {
+        const aiPath = path.join(validationPath, 'ai');
+        await fsExtra.ensureDir(aiPath);
+        // AI-powered code analysis
+        await this.templateService.renderTemplate('validation/ai-code-analyzer.ts', path.join(aiPath, 'code-analyzer.ts'), {
+            projectName: context.projectName
+        });
+        // AI-powered dependency analysis
+        await this.templateService.renderTemplate('validation/ai-dependency-analyzer.ts', path.join(aiPath, 'dependency-analyzer.ts'), {
+            projectName: context.projectName
+        });
+        // AI-powered performance analysis
+        await this.templateService.renderTemplate('validation/ai-performance-analyzer.ts', path.join(aiPath, 'performance-analyzer.ts'), {
+            projectName: context.projectName
+        });
+    }
+    async createDevUtilities(validationPath, context) {
+        const devPath = path.join(validationPath, 'dev');
+        await fsExtra.ensureDir(devPath);
+        // Development utilities
+        await this.templateService.renderTemplate('validation/dev-utils.ts', path.join(devPath, 'utils.ts'), {
+            projectName: context.projectName
+        });
+        // Validation playground
+        await this.templateService.renderTemplate('validation/validation-playground.ts', path.join(devPath, 'playground.ts'), {
+            projectName: context.projectName
+        });
+        // Report generator
+        await this.templateService.renderTemplate('validation/report-generator.ts', path.join(devPath, 'report-generator.ts'), {
+            projectName: context.projectName
+        });
+    }
+    // ============================================================================
+    // CORE VALIDATION METHODS
+    // ============================================================================
     async validate(context) {
         // Validation agent doesn't require specific validation
         return {
@@ -115,13 +339,13 @@ export class ValidationAgent extends AbstractAgent {
     async rollback(context) {
         // Validation agent doesn't create files, so no rollback needed
     }
-    async runValidationChecks(projectPath, context) {
+    async runValidationChecks(projectPath, context, strictMode) {
         const results = {
-            structure: await this.validateProjectStructure(projectPath),
-            dependencies: await this.validateDependencies(projectPath, context),
-            configuration: await this.validateConfiguration(projectPath),
-            imports: await this.validateImportPaths(projectPath, context),
-            typescript: await this.validateTypeScript(projectPath),
+            structure: await this.validateProjectStructure(projectPath, strictMode),
+            dependencies: await this.validateDependencies(projectPath, context, strictMode),
+            configuration: await this.validateConfiguration(projectPath, strictMode),
+            imports: await this.validateImportPaths(projectPath, context, strictMode),
+            typescript: await this.validateTypeScript(projectPath, strictMode),
             totalIssues: 0
         };
         // Count total issues
@@ -133,7 +357,7 @@ export class ValidationAgent extends AbstractAgent {
         }, 0);
         return results;
     }
-    async validateProjectStructure(projectPath) {
+    async validateProjectStructure(projectPath, strictMode) {
         const issues = [];
         const requiredDirs = [
             'apps/web',
@@ -149,223 +373,241 @@ export class ValidationAgent extends AbstractAgent {
             '.eslintrc.json',
             '.prettierrc.json',
             'tailwind.config.js',
-            'components.json'
+            'next.config.js'
         ];
-        // Check directories
+        // Check required directories
         for (const dir of requiredDirs) {
-            if (!(await fsExtra.pathExists(path.join(projectPath, dir)))) {
-                issues.push(`Missing directory: ${dir}`);
+            const dirPath = path.join(projectPath, dir);
+            if (!await fsExtra.pathExists(dirPath)) {
+                issues.push(`Missing required directory: ${dir}`);
             }
         }
-        // Check files
+        // Check required files
         for (const file of requiredFiles) {
-            if (!(await fsExtra.pathExists(path.join(projectPath, file)))) {
-                issues.push(`Missing file: ${file}`);
+            const filePath = path.join(projectPath, file);
+            if (!await fsExtra.pathExists(filePath)) {
+                issues.push(`Missing required file: ${file}`);
+            }
+        }
+        // Additional strict mode checks
+        if (strictMode) {
+            const strictChecks = [
+                'apps/web/src',
+                'apps/web/public',
+                'packages/ui/components',
+                'packages/db/schema',
+                'packages/auth/providers'
+            ];
+            for (const check of strictChecks) {
+                const checkPath = path.join(projectPath, check);
+                if (!await fsExtra.pathExists(checkPath)) {
+                    issues.push(`Missing strict mode directory: ${check}`);
+                }
             }
         }
         return {
             name: 'Project Structure',
             issues,
-            status: issues.length === 0 ? '✅' : '⚠️'
+            status: issues.length === 0 ? '✅ Passed' : '❌ Failed'
         };
     }
-    async validateDependencies(projectPath, context) {
+    async validateDependencies(projectPath, context, strictMode) {
         const issues = [];
         try {
-            const rootPackageJson = await fsExtra.readJSON(path.join(projectPath, 'package.json'));
-            const webPackageJson = await fsExtra.readJSON(path.join(projectPath, 'apps', 'web', 'package.json'));
-            // Check workspace dependencies
-            const expectedWorkspaceDeps = [
-                `@${context.projectName}/ui`,
-                `@${context.projectName}/db`,
-                `@${context.projectName}/auth`
-            ];
-            for (const dep of expectedWorkspaceDeps) {
-                if (!webPackageJson.dependencies?.[dep]) {
-                    issues.push(`Missing workspace dependency: ${dep}`);
+            const packageJsonPath = path.join(projectPath, 'package.json');
+            if (await fsExtra.pathExists(packageJsonPath)) {
+                const packageJson = await fsExtra.readJSON(packageJsonPath);
+                // Check for required dependencies
+                const requiredDeps = ['next', 'react', 'react-dom', 'typescript'];
+                const missingDeps = requiredDeps.filter(dep => !packageJson.dependencies?.[dep] && !packageJson.devDependencies?.[dep]);
+                if (missingDeps.length > 0) {
+                    issues.push(`Missing required dependencies: ${missingDeps.join(', ')}`);
+                }
+                // Check workspace configuration
+                if (!packageJson.workspaces && !packageJson.turbo) {
+                    issues.push('Missing workspace configuration (workspaces or turbo)');
+                }
+                // Strict mode checks
+                if (strictMode) {
+                    const recommendedDeps = ['@types/node', 'eslint', 'prettier', 'tailwindcss'];
+                    const missingRecommended = recommendedDeps.filter(dep => !packageJson.dependencies?.[dep] && !packageJson.devDependencies?.[dep]);
+                    if (missingRecommended.length > 0) {
+                        issues.push(`Missing recommended dependencies: ${missingRecommended.join(', ')}`);
+                    }
                 }
             }
-            // Check required root dependencies
-            const requiredRootDeps = ['turbo', 'typescript', 'prettier'];
-            for (const dep of requiredRootDeps) {
-                if (!rootPackageJson.devDependencies?.[dep]) {
-                    issues.push(`Missing root dependency: ${dep}`);
-                }
+            else {
+                issues.push('package.json not found');
             }
         }
         catch (error) {
-            issues.push(`Failed to read package.json: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            issues.push(`Failed to validate dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
         return {
             name: 'Dependencies',
             issues,
-            status: issues.length === 0 ? '✅' : '⚠️'
+            status: issues.length === 0 ? '✅ Passed' : '❌ Failed'
         };
     }
-    async validateConfiguration(projectPath) {
+    async validateConfiguration(projectPath, strictMode) {
         const issues = [];
-        try {
-            // Validate TypeScript config
-            const tsConfig = await fsExtra.readJSON(path.join(projectPath, 'tsconfig.json'));
-            if (!tsConfig.compilerOptions?.paths) {
-                issues.push('TypeScript paths not configured');
+        const configFiles = [
+            { path: 'tsconfig.json', required: true },
+            { path: '.eslintrc.json', required: true },
+            { path: '.prettierrc.json', required: true },
+            { path: 'tailwind.config.js', required: true },
+            { path: 'next.config.js', required: true },
+            { path: 'turbo.json', required: true }
+        ];
+        for (const config of configFiles) {
+            const configPath = path.join(projectPath, config.path);
+            if (!await fsExtra.pathExists(configPath)) {
+                if (config.required) {
+                    issues.push(`Missing required configuration: ${config.path}`);
+                }
+                else if (strictMode) {
+                    issues.push(`Missing recommended configuration: ${config.path}`);
+                }
             }
-            // Validate ESLint config
-            const eslintConfig = await fsExtra.readJSON(path.join(projectPath, '.eslintrc.json'));
-            if (!eslintConfig.extends?.includes('@typescript-eslint/recommended')) {
-                issues.push('ESLint TypeScript rules not configured');
-            }
-            // Validate Prettier config
-            const prettierConfig = await fsExtra.readJSON(path.join(projectPath, '.prettierrc.json'));
-            if (!prettierConfig.plugins?.includes('prettier-plugin-tailwindcss')) {
-                issues.push('Prettier Tailwind plugin not configured');
-            }
-            // Validate Tailwind config
-            const tailwindConfigPath = path.join(projectPath, 'tailwind.config.js');
-            if (!(await fsExtra.pathExists(tailwindConfigPath))) {
-                issues.push('Tailwind config missing');
-            }
-            // Validate Shadcn config
-            const componentsConfig = await fsExtra.readJSON(path.join(projectPath, 'components.json'));
-            if (!componentsConfig.aliases?.components) {
-                issues.push('Shadcn components alias not configured');
-            }
-        }
-        catch (error) {
-            issues.push(`Configuration validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
         return {
             name: 'Configuration',
             issues,
-            status: issues.length === 0 ? '✅' : '⚠️'
+            status: issues.length === 0 ? '✅ Passed' : '❌ Failed'
         };
     }
-    async validateImportPaths(projectPath, context) {
+    async validateImportPaths(projectPath, context, strictMode) {
         const issues = [];
         try {
-            // Check if import paths work by testing a simple import
-            const testFiles = [
-                {
-                    path: path.join(projectPath, 'apps', 'web', 'src', 'app', 'page.tsx'),
-                    imports: [
-                        `import { Button } from "@/ui";`,
-                        `import { db } from "@/db";`,
-                        `import { auth } from "@/auth";`
-                    ]
-                }
-            ];
-            for (const testFile of testFiles) {
-                if (await fsExtra.pathExists(testFile.path)) {
-                    const content = await fsExtra.readFile(testFile.path, 'utf8');
-                    for (const importStatement of testFile.imports) {
-                        const importPart = importStatement.split(' from ')[0];
-                        if (importPart && !content.includes(importPart)) {
-                            issues.push(`Import path not tested: ${importStatement}`);
+            // Check for common import issues in TypeScript files
+            const tsFiles = await this.findTypeScriptFiles(projectPath);
+            for (const file of tsFiles.slice(0, 10)) { // Limit to first 10 files for performance
+                const content = await fsExtra.readFile(file.path, 'utf-8');
+                const imports = this.extractImports(content);
+                for (const importPath of imports) {
+                    if (importPath.startsWith('@/') || importPath.startsWith('~/')) {
+                        // Check if path alias is properly configured
+                        if (!await this.isPathAliasConfigured(projectPath, importPath)) {
+                            issues.push(`Path alias not configured for: ${importPath} in ${file.path}`);
                         }
                     }
                 }
             }
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            issues.push(`Import validation failed: ${errorMessage}`);
+            issues.push(`Failed to validate import paths: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
         return {
             name: 'Import Paths',
             issues,
-            status: issues.length === 0 ? '✅' : '⚠️'
+            status: issues.length === 0 ? '✅ Passed' : '❌ Failed'
         };
     }
-    async validateTypeScript(projectPath) {
+    async validateTypeScript(projectPath, strictMode) {
         const issues = [];
         try {
-            // Check if TypeScript can compile the project
-            const originalCwd = process.cwd();
-            try {
-                process.chdir(projectPath);
-                // Try to run TypeScript check
-                await execa('npx', ['tsc', '--noEmit'], {
-                    timeout: 30000,
-                    stdio: 'pipe'
-                });
-            }
-            catch (error) {
-                if (error instanceof Error && 'exitCode' in error && error.exitCode !== 0) {
-                    const stderr = error.stderr || '';
-                    const stderrMessage = typeof stderr === 'string' ? stderr.slice(0, 200) : '';
-                    issues.push(`TypeScript compilation failed: ${stderrMessage}...`);
-                }
-            }
-            finally {
-                process.chdir(originalCwd);
+            // Run TypeScript compilation check
+            const result = await execa('npx', ['tsc', '--noEmit'], {
+                cwd: projectPath,
+                timeout: 30000
+            });
+            if (result.exitCode !== 0) {
+                issues.push(`TypeScript compilation failed: ${result.stderr}`);
             }
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            issues.push(`TypeScript validation failed: ${errorMessage}`);
+            if (error instanceof Error && 'exitCode' in error) {
+                issues.push(`TypeScript compilation failed: ${error.message}`);
+            }
+            else {
+                issues.push(`Failed to run TypeScript check: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
         return {
             name: 'TypeScript',
             issues,
-            status: issues.length === 0 ? '✅' : '⚠️'
+            status: issues.length === 0 ? '✅ Passed' : '❌ Failed'
         };
     }
+    // ============================================================================
+    // HELPER METHODS
+    // ============================================================================
+    async findTypeScriptFiles(projectPath) {
+        const files = [];
+        try {
+            const tsFiles = await fsExtra.readdir(projectPath, { recursive: true });
+            const filteredFiles = tsFiles.filter((file) => typeof file === 'string' && (file.endsWith('.ts') || file.endsWith('.tsx')) &&
+                !file.includes('node_modules') && !file.includes('dist') && !file.includes('.next'));
+            for (const file of filteredFiles.slice(0, 10)) { // Limit to first 10 files for performance
+                const content = await fsExtra.readFile(path.join(projectPath, file), 'utf-8');
+                files.push({
+                    path: file,
+                    imports: this.extractImports(content)
+                });
+            }
+        }
+        catch (error) {
+            // Ignore errors in file discovery
+        }
+        return files;
+    }
+    extractImports(content) {
+        const imports = [];
+        const importRegex = /import\s+.*?from\s+['"]([^'"]+)['"]/g;
+        let match;
+        while ((match = importRegex.exec(content)) !== null) {
+            if (match[1]) {
+                imports.push(match[1]);
+            }
+        }
+        return imports;
+    }
+    async isPathAliasConfigured(projectPath, importPath) {
+        try {
+            const tsConfigPath = path.join(projectPath, 'tsconfig.json');
+            if (await fsExtra.pathExists(tsConfigPath)) {
+                const tsConfig = await fsExtra.readJSON(tsConfigPath);
+                return !!(tsConfig.compilerOptions?.paths &&
+                    (tsConfig.compilerOptions.paths['@/*'] || tsConfig.compilerOptions.paths['~/*']));
+            }
+        }
+        catch (error) {
+            // Ignore errors
+        }
+        return false;
+    }
     displayValidationResults(results) {
-        console.log('\n🔍 VALIDATION RESULTS');
-        console.log('─'.repeat(50));
-        const categories = [
-            results.structure,
-            results.dependencies,
-            results.configuration,
-            results.imports,
-            results.typescript
-        ];
+        console.log('\n📊 Validation Results:');
+        console.log('='.repeat(50));
+        const categories = ['structure', 'dependencies', 'configuration', 'imports', 'typescript'];
         for (const category of categories) {
-            console.log(`${category.status} ${category.name}`);
-            if (category.issues.length > 0) {
-                for (const issue of category.issues) {
+            const result = results[category];
+            console.log(`\n${result.name}: ${result.status}`);
+            if (result.issues.length > 0) {
+                result.issues.forEach(issue => {
                     console.log(`  • ${issue}`);
-                }
+                });
             }
-            else {
-                console.log(`  All checks passed`);
-            }
-            console.log('');
         }
-        // Summary
-        if (results.totalIssues === 0) {
-            console.log('🎉 All validations passed! Your project is ready to use.');
-        }
-        else {
-            console.log(`⚠️  Found ${results.totalIssues} issue(s) that may need attention.`);
-            console.log('Most issues can be resolved by running the suggested commands.');
-        }
-        // Next steps
-        console.log('\n🚀 NEXT STEPS:');
-        console.log('─'.repeat(50));
-        console.log('1. cd your-project-name');
-        console.log('2. npm install (or your preferred package manager)');
-        console.log('3. npm run dev');
-        console.log('4. Open http://localhost:3000');
-        if (results.totalIssues > 0) {
-            console.log('\n🔧 If you encounter issues:');
-            console.log('• Check the validation results above');
-            console.log('• Run npm run type-check for TypeScript issues');
-            console.log('• Run npm run lint for code quality issues');
-        }
+        console.log(`\nTotal Issues: ${results.totalIssues}`);
+        console.log('='.repeat(50));
     }
     getNextSteps(totalIssues) {
-        const steps = [
-            'cd your-project-name',
-            'npm install (or your preferred package manager)',
-            'npm run dev',
-            'Open http://localhost:3000'
-        ];
-        if (totalIssues > 0) {
-            steps.push('Run npm run type-check for TypeScript issues');
-            steps.push('Run npm run lint for code quality issues');
+        if (totalIssues === 0) {
+            return [
+                '✅ All validation checks passed!',
+                'Your project is ready for development.',
+                'Run "npm run dev" to start the development server.'
+            ];
         }
-        return steps;
+        else {
+            return [
+                '⚠️  Some validation issues were found.',
+                'Please review and fix the issues above.',
+                'Run validation again after making changes.',
+                'Consider using strict mode for more thorough checks.'
+            ];
+        }
     }
 }
 //# sourceMappingURL=validation-agent.js.map

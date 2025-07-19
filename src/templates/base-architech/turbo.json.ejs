@@ -4,26 +4,44 @@
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": ["^type-check"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^test"],
+      "outputs": ["coverage/**"]
+    },
     "clean": {
       "cache": false
     },
     "db:generate": {
-      "cache": false
+      "dependsOn": ["^db:generate"],
+      "outputs": ["migrations/**"]
     },
     "db:migrate": {
-      "cache": false
+      "dependsOn": ["^db:migrate"],
+      "outputs": []
     },
     "db:studio": {
-      "cache": false
+      "cache": false,
+      "persistent": true
+    },
+    "format": {
+      "outputs": []
+    },
+    "format:check": {
+      "outputs": []
     }
   }
 } 

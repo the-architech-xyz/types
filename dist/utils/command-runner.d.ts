@@ -37,6 +37,8 @@ export declare class CommandRunner {
     getVersion(): Promise<string>;
     createProject(projectName: string, framework?: string, options?: string[]): Promise<CommandResult>;
     install(packages?: string[], isDev?: boolean, cwd?: string): Promise<CommandResult>;
+    installNonInteractive(packages?: string[], isDev?: boolean, cwd?: string): Promise<CommandResult>;
+    private getNonInteractiveFlags;
     runScript(scriptName: string, cwd?: string): Promise<CommandResult>;
     exec(toolName: string, args?: string[], cwd?: string): Promise<CommandResult>;
     initProject(projectPath: string, framework?: string, options?: Record<string, unknown>): Promise<CommandResult>;

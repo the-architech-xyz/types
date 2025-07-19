@@ -9,6 +9,7 @@ import { program } from 'commander';
 import chalk from 'chalk';
 import { createCommand } from './commands/create.js';
 import { architechCommand } from './commands/architech.js';
+import { pluginsCommand } from './commands/plugins.js';
 import { displayBanner } from './utils/banner.js';
 // Display banner for all commands
 displayBanner();
@@ -41,6 +42,8 @@ program
     .option('-y, --yes', 'Skip interactive prompts and use defaults')
     .option('--modules <modules>', 'Comma-separated list of modules to include (ui,db,auth,config)', 'ui,db,auth,config')
     .action(architechCommand);
+// Plugins command - Plugin management
+program.addCommand(pluginsCommand());
 // Add command - Future: Add modules to existing projects
 program
     .command('add')
@@ -98,6 +101,8 @@ program.on('--help', () => {
     console.log(chalk.blue('\n🎯 Examples:'));
     console.log('  $ architech create my-app');
     console.log('  $ architech create my-app --template nextjs --package-manager yarn');
+    console.log('  $ architech plugins list');
+    console.log('  $ architech plugins install shadcn-ui');
     console.log('  $ architech add auth');
     console.log('  $ architech list --templates');
     console.log(chalk.blue('\n🚀 Get started:'));
