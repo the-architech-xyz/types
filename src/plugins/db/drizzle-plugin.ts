@@ -76,19 +76,19 @@ export class DrizzlePlugin implements IPlugin {
       dependencies.push(
         {
           name: 'drizzle-orm',
-          version: '^0.44.3',
+          version: '^0.45.0',
           type: 'production' as const,
           category: PluginCategory.DATABASE
         },
         {
           name: '@neondatabase/serverless',
-          version: '^1.0.1',
+          version: '^1.1.0',
           type: 'production' as const,
           category: PluginCategory.DATABASE
         },
         {
           name: 'drizzle-kit',
-          version: '^0.31.4',
+          version: '^0.32.0',
           type: 'development' as const,
           category: PluginCategory.DATABASE
         }
@@ -96,44 +96,58 @@ export class DrizzlePlugin implements IPlugin {
 
       // Generate technology artifacts
       const packageJson = this.generatePackageJson(projectName);
+      const packageJsonPath = path.join(dbPackagePath, 'package.json');
+      await fsExtra.ensureDir(path.dirname(packageJsonPath));
+      await fsExtra.writeFile(packageJsonPath, packageJson);
       artifacts.push({
         type: 'file',
-        path: path.join(dbPackagePath, 'package.json'),
+        path: packageJsonPath,
         content: packageJson
       });
 
       const eslintConfig = this.generateESLintConfig();
+      const eslintPath = path.join(dbPackagePath, '.eslintrc.json');
+      await fsExtra.writeFile(eslintPath, eslintConfig);
       artifacts.push({
         type: 'file',
-        path: path.join(dbPackagePath, '.eslintrc.json'),
+        path: eslintPath,
         content: eslintConfig
       });
 
       const drizzleConfig = this.generateDrizzleConfig(dbConfig);
+      const drizzleConfigPath = path.join(dbPackagePath, 'drizzle.config.ts');
+      await fsExtra.writeFile(drizzleConfigPath, drizzleConfig);
       artifacts.push({
         type: 'file',
-        path: path.join(dbPackagePath, 'drizzle.config.ts'),
+        path: drizzleConfigPath,
         content: drizzleConfig
       });
 
       const databaseSchema = this.generateDatabaseSchema();
+      const schemaPath = path.join(dbPackagePath, 'schema/index.ts');
+      await fsExtra.ensureDir(path.dirname(schemaPath));
+      await fsExtra.writeFile(schemaPath, databaseSchema);
       artifacts.push({
         type: 'file',
-        path: path.join(dbPackagePath, 'schema/index.ts'),
+        path: schemaPath,
         content: databaseSchema
       });
 
       const databaseConnection = this.generateDatabaseConnection();
+      const indexPath = path.join(dbPackagePath, 'index.ts');
+      await fsExtra.writeFile(indexPath, databaseConnection);
       artifacts.push({
         type: 'file',
-        path: path.join(dbPackagePath, 'index.ts'),
+        path: indexPath,
         content: databaseConnection
       });
 
       const migrationUtils = this.generateMigrationUtils();
+      const migratePath = path.join(dbPackagePath, 'migrate.ts');
+      await fsExtra.writeFile(migratePath, migrationUtils);
       artifacts.push({
         type: 'file',
-        path: path.join(dbPackagePath, 'migrate.ts'),
+        path: migratePath,
         content: migrationUtils
       });
 

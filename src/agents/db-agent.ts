@@ -283,27 +283,7 @@ export class DBAgent extends AbstractAgent {
       throw new Error(`Drizzle plugin failed: ${result.errors.map(e => e.message).join(', ')}`);
     }
 
-    // Write plugin artifacts to filesystem
-    await this.writePluginArtifacts(result.artifacts, context);
-
     return result;
-  }
-
-  private async writePluginArtifacts(artifacts: any[], context: AgentContext): Promise<void> {
-    for (const artifact of artifacts) {
-      if (artifact.type === 'file' && artifact.content) {
-        const filePath = artifact.path;
-        const content = artifact.content;
-        
-        // Ensure directory exists
-        const dir = path.dirname(filePath);
-        await fsExtra.ensureDir(dir);
-        
-        // Write file
-        await fsExtra.writeFile(filePath, content);
-        context.logger.info(`Created file: ${filePath}`);
-      }
-    }
   }
 
   // ============================================================================

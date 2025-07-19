@@ -179,22 +179,23 @@ export class ShadcnUIPlugin {
                 "type-check": "tsc --noEmit"
             },
             dependencies: {
-                "react": "^18.0.0",
-                "react-dom": "^18.0.0",
-                "tailwindcss": "^3.3.6",
+                "react": "^18.3.1",
+                "react-dom": "^18.3.1",
+                "tailwindcss": "^3.4.17",
                 "class-variance-authority": "^0.7.0",
-                "clsx": "^2.0.0",
-                "tailwind-merge": "^2.0.0",
-                "lucide-react": "^0.294.0",
+                "clsx": "^2.1.1",
+                "tailwind-merge": "^2.5.4",
+                "lucide-react": "^0.468.0",
                 "@radix-ui/react-slot": "^1.0.2",
-                "@radix-ui/react-label": "^2.0.2"
+                "@radix-ui/react-label": "^2.0.2",
+                "tailwindcss-animate": "^1.0.7"
             },
             devDependencies: {
-                "@types/react": "^18.0.0",
-                "@types/react-dom": "^18.0.0",
-                "typescript": "^5.0.0",
-                "autoprefixer": "^10.4.16",
-                "postcss": "^8.4.32"
+                "@types/react": "^18.3.12",
+                "@types/react-dom": "^18.3.1",
+                "typescript": "^5.8.3",
+                "autoprefixer": "^10.4.21",
+                "postcss": "^8.5.6"
             }
         };
         await fsExtra.writeJSON(path.join(uiPackagePath, 'package.json'), packageJson, { spaces: 2 });

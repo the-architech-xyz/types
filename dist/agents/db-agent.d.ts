@@ -19,7 +19,6 @@ export declare class DBAgent extends AbstractAgent {
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     private executeDrizzlePlugin;
-    private writePluginArtifacts;
     private enhanceDatabaseSetup;
     private generateCustomSchema;
     private generateSchemaContent;
