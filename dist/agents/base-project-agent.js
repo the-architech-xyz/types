@@ -258,22 +258,13 @@ npm run dev
     async createSingleAppStructure(context) {
         const { projectPath, projectName } = context;
         context.logger.info('Creating single-app structure...');
-        // For single-app, we only create the project directory
-        // FrameworkAgent will handle creating the Next.js project structure
-        await fsExtra.ensureDir(projectPath);
-        // Create README
-        const readme = `# ${projectName}
-
-This is a single-app project.
-
-## Development
-
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
-`;
-        await fsExtra.writeFile(path.join(projectPath, 'README.md'), readme);
+        // For single-app, we DON'T create the project directory
+        // FrameworkAgent will handle creating the complete Next.js project structure
+        // This avoids conflicts with create-next-app
+        // Only create the parent directory if it doesn't exist
+        const parentDir = path.dirname(projectPath);
+        await fsExtra.ensureDir(parentDir);
+        context.logger.info('Single-app structure prepared - FrameworkAgent will create the project directory');
         context.logger.success('Single-app structure created successfully');
     }
     async createProjectConfiguration(context, structure) {
@@ -290,8 +281,16 @@ npm run dev
             plugins: [],
             agents: []
         };
-        const configPath = path.join(projectPath, '.architech.json');
-        await fsExtra.writeJSON(configPath, architechConfig, { spaces: 2 });
+        if (structure === 'monorepo') {
+            // For monorepo, create the config file immediately
+            const configPath = path.join(projectPath, '.architech.json');
+            await fsExtra.writeJSON(configPath, architechConfig, { spaces: 2 });
+        }
+        else {
+            // For single-app, store the config to be created after FrameworkAgent runs
+            context.state.set('architechConfig', architechConfig);
+            context.state.set('architechConfigPath', path.join(projectPath, '.architech.json'));
+        }
     }
 }
 //# sourceMappingURL=base-project-agent.js.map

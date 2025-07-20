@@ -6,6 +6,7 @@
  * Pure orchestrator - delegates all technology implementation to plugins.
  */
 import * as path from 'path';
+import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../utils/plugin-system.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
@@ -154,7 +155,7 @@ export class FrameworkAgent extends AbstractAgent {
             context.logger.info(`🔍 FrameworkAgent: About to execute framework plugin: ${framework}`);
             const pluginResult = await this.executeFrameworkPlugin(context, framework, installPath);
             context.logger.info(`🔍 FrameworkAgent: Plugin execution completed successfully`);
-            // Step 3: Post-process installation if needed
+            // Step 3: Post-process based on project structure
             if (structure === 'single-app') {
                 await this.postProcessSingleApp(context, installPath);
             }
@@ -233,9 +234,15 @@ export class FrameworkAgent extends AbstractAgent {
     }
     async postProcessSingleApp(context, installPath) {
         context.logger.info('Post-processing single-app installation...');
+        // Create .architech.json file if it was stored by BaseProjectAgent
+        const architechConfig = context.state.get('architechConfig');
+        const architechConfigPath = context.state.get('architechConfigPath');
+        if (architechConfig && architechConfigPath) {
+            await fsExtra.writeJSON(architechConfigPath, architechConfig, { spaces: 2 });
+            context.logger.info('Created .architech.json configuration file');
+        }
         // For single-app, the framework is installed in the root
         // We can add any single-app specific customizations here
-        // For now, just log that post-processing is complete
         context.logger.success('Single-app post-processing completed');
     }
     getProjectType(framework) {

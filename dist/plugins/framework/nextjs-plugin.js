@@ -61,9 +61,10 @@ export class NextJSPlugin {
                 else {
                     // For single-app, we need to handle this differently
                     context.logger.info(`Directory ${projectPath} exists for single-app, using temporary directory approach...`);
-                    // Create Next.js project in a temporary directory
-                    const tempDir = path.join(path.dirname(projectPath), `${projectName}-temp`);
-                    const cliArgs = this.buildCreateNextAppArgs(pluginConfig);
+                    // Create Next.js project in a temporary directory with a different name
+                    const tempDir = path.join(path.dirname(projectPath), `${projectName}-temp-${Date.now()}`);
+                    const tempProjectName = 'temp-nextjs-app'; // Use a different name to avoid conflicts
+                    const cliArgs = this.buildCreateNextAppArgs({ ...pluginConfig, projectName: tempProjectName });
                     const parentDir = path.dirname(tempDir);
                     // Create Next.js project in temp directory
                     await this.runner.execCommand([...this.runner.getCreateCommand(), ...cliArgs], { cwd: parentDir });
@@ -83,7 +84,7 @@ export class NextJSPlugin {
                         }
                     }
                     // Move Next.js project contents to target directory
-                    const tempProjectPath = path.join(tempDir, projectName);
+                    const tempProjectPath = path.join(tempDir, tempProjectName);
                     if (await fsExtra.pathExists(tempProjectPath)) {
                         const tempContents = await fsExtra.readdir(tempProjectPath);
                         for (const item of tempContents) {

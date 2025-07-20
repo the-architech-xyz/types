@@ -306,25 +306,15 @@ npm run dev
     
     context.logger.info('Creating single-app structure...');
     
-    // For single-app, we only create the project directory
-    // FrameworkAgent will handle creating the Next.js project structure
-    await fsExtra.ensureDir(projectPath);
+    // For single-app, we DON'T create the project directory
+    // FrameworkAgent will handle creating the complete Next.js project structure
+    // This avoids conflicts with create-next-app
     
-    // Create README
-    const readme = `# ${projectName}
-
-This is a single-app project.
-
-## Development
-
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
-`;
+    // Only create the parent directory if it doesn't exist
+    const parentDir = path.dirname(projectPath);
+    await fsExtra.ensureDir(parentDir);
     
-    await fsExtra.writeFile(path.join(projectPath, 'README.md'), readme);
-    
+    context.logger.info('Single-app structure prepared - FrameworkAgent will create the project directory');
     context.logger.success('Single-app structure created successfully');
   }
 
@@ -344,7 +334,14 @@ npm run dev
       agents: []
     };
 
-    const configPath = path.join(projectPath, '.architech.json');
-    await fsExtra.writeJSON(configPath, architechConfig, { spaces: 2 });
+    if (structure === 'monorepo') {
+      // For monorepo, create the config file immediately
+      const configPath = path.join(projectPath, '.architech.json');
+      await fsExtra.writeJSON(configPath, architechConfig, { spaces: 2 });
+    } else {
+      // For single-app, store the config to be created after FrameworkAgent runs
+      context.state.set('architechConfig', architechConfig);
+      context.state.set('architechConfigPath', path.join(projectPath, '.architech.json'));
+    }
   }
 } 
