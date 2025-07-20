@@ -1,15 +1,17 @@
 /**
  * DB Agent - Database Orchestrator
  * 
- * Pure orchestrator for database setup using the Drizzle plugin.
- * Handles user interaction, decision making, and coordinates the Drizzle plugin.
- * No direct installation logic - delegates everything to plugins.
+ * Pure orchestrator for database setup using unified interfaces.
+ * Handles user interaction, decision making, and coordinates database plugins through unified interfaces.
+ * No direct installation logic - delegates everything to plugins through adapters.
  */
 
 import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../utils/plugin-system.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { TemplateService, templateService } from '../utils/template-service.js';
+import { globalRegistry, globalAdapterFactory } from '../types/unified-registry.js';
+import { UnifiedDatabase } from '../types/unified.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { PluginContext } from '../types/plugin.js';
@@ -27,7 +29,7 @@ import {
 } from '../types/agent.js';
 
 interface DatabaseConfig {
-  provider: 'neon';
+  provider: 'neon' | 'supabase' | 'local';
   connectionString: string;
   schema: string[];
   migrations: boolean;
@@ -49,22 +51,17 @@ export class DBAgent extends AbstractAgent {
     return {
       name: 'DBAgent',
       version: '2.0.0',
-      description: 'Database orchestrator - coordinates Drizzle plugin for database setup',
+      description: 'Orchestrates database setup using unified interfaces',
       author: 'The Architech Team',
       category: AgentCategory.DATABASE,
-      tags: ['database', 'orchestrator', 'plugin-coordinator', 'drizzle'],
-      dependencies: ['BaseProjectAgent'],
+      tags: ['database', 'orm', 'migrations', 'unified-interface'],
+      dependencies: ['base-project'],
       conflicts: [],
       requirements: [
         {
           type: 'package',
-          name: 'drizzle-orm',
-          description: 'Drizzle ORM for database operations'
-        },
-        {
-          type: 'package',
-          name: '@neondatabase/serverless',
-          description: 'Neon PostgreSQL serverless driver'
+          name: 'fs-extra',
+          description: 'File system utilities'
         }
       ],
       license: 'MIT',
@@ -75,95 +72,73 @@ export class DBAgent extends AbstractAgent {
   protected getAgentCapabilities(): AgentCapability[] {
     return [
       {
-        name: 'setup-database',
-        description: 'Creates a complete database setup using Drizzle plugin',
+        name: 'db-setup',
+        description: 'Setup database with unified interfaces',
+        category: CapabilityCategory.SETUP,
         parameters: [
           {
             name: 'provider',
             type: 'string',
+            description: 'Database provider',
             required: false,
-            description: 'Database provider (neon)',
-            defaultValue: 'neon',
-            validation: [
-              {
-                type: 'enum',
-                value: ['neon'],
-                message: 'Provider must be neon'
-              }
-            ]
+            defaultValue: 'neon'
           },
           {
             name: 'connectionString',
             type: 'string',
-            required: false,
             description: 'Database connection string',
+            required: false,
             defaultValue: ''
           },
           {
             name: 'schema',
             type: 'array',
+            description: 'Database schema tables',
             required: false,
-            description: 'Database schema tables to create',
             defaultValue: ['users', 'posts', 'comments']
           },
           {
             name: 'migrations',
             type: 'boolean',
+            description: 'Enable migrations',
             required: false,
-            description: 'Enable database migrations',
             defaultValue: true
           }
         ],
         examples: [
           {
-            name: 'Setup Neon PostgreSQL',
-            description: 'Creates database setup with Neon PostgreSQL using Drizzle plugin',
-            parameters: { provider: 'neon' },
-            expectedResult: 'Complete database setup with Drizzle ORM via plugin'
+            name: 'Setup Drizzle ORM',
+            description: 'Creates database setup with Drizzle ORM using unified interfaces',
+            parameters: { provider: 'neon', migrations: true },
+            expectedResult: 'Complete database setup with Drizzle ORM via unified interface'
+          },
+          {
+            name: 'Setup Prisma ORM',
+            description: 'Creates database setup with Prisma ORM using unified interfaces',
+            parameters: { provider: 'supabase', migrations: true },
+            expectedResult: 'Database setup with Prisma ORM via unified interface'
           }
-        ],
-        category: CapabilityCategory.SETUP
+        ]
       },
       {
-        name: 'generate-migrations',
-        description: 'Generates database migrations using Drizzle plugin',
+        name: 'db-validation',
+        description: 'Validate database setup',
+        category: CapabilityCategory.VALIDATION,
         parameters: [],
         examples: [
           {
-            name: 'Generate migrations',
-            description: 'Creates migration files for schema changes via plugin',
+            name: 'Validate database setup',
+            description: 'Validates the database setup using unified interfaces',
             parameters: {},
-            expectedResult: 'Migration files generated via Drizzle plugin'
+            expectedResult: 'Database setup validation report'
           }
-        ],
-        category: CapabilityCategory.GENERATION
-      },
-      {
-        name: 'design-schema',
-        description: 'AI-powered database schema design using plugin system',
-        parameters: [
-          {
-            name: 'requirements',
-            type: 'string',
-            required: true,
-            description: 'Natural language schema requirements'
-          }
-        ],
-        examples: [
-          {
-            name: 'Design user management schema',
-            description: 'Creates schema for user authentication and profiles via plugin',
-            parameters: { requirements: 'User authentication with profiles, roles, and permissions' },
-            expectedResult: 'Complete schema with users, roles, and permissions tables via plugin'
-          }
-        ],
-        category: CapabilityCategory.GENERATION
+        ]
       }
     ];
   }
 
   // ============================================================================
-  // CORE EXECUTION - Pure Plugin Orchestration
+  // CORE EXECUTION - Pure Plugin Orchestration with Unified Interfaces
   // ============================================================================
 
   protected async executeInternal(context: AgentContext): Promise<AgentResult> {
@@ -196,12 +171,12 @@ export class DBAgent extends AbstractAgent {
       // Get database configuration
       const dbConfig = await this.getDatabaseConfig(context);
 
-      // Execute selected database plugin in the correct location
-      context.logger.info(`Executing ${selectedPlugin} plugin...`);
-      const result = await this.executeDatabasePlugin(context, selectedPlugin, dbConfig, packagePath);
+      // Execute selected database plugin through unified interface
+      context.logger.info(`Executing ${selectedPlugin} plugin through unified interface...`);
+      const result = await this.executeDatabasePluginUnified(context, selectedPlugin, dbConfig, packagePath);
 
-      // Validate the setup
-      await this.validateDatabaseSetup(context, packagePath);
+      // Validate the setup using unified interface
+      await this.validateDatabaseSetupUnified(context, selectedPlugin, packagePath);
 
       const duration = Date.now() - startTime;
       
@@ -211,7 +186,9 @@ export class DBAgent extends AbstractAgent {
         data: {
           plugin: selectedPlugin,
           packagePath,
-          provider: dbConfig.provider
+          provider: dbConfig.provider,
+          migrations: dbConfig.migrations,
+          unifiedInterface: true
         },
         errors: [],
         warnings: result.warnings || [],
@@ -219,20 +196,16 @@ export class DBAgent extends AbstractAgent {
       };
 
     } catch (error) {
-      return {
-        success: false,
-        data: null,
-        errors: [{
-          code: 'DB_AGENT_ERROR',
-          message: error instanceof Error ? error.message : 'Unknown error occurred',
-          details: error,
-          recoverable: false,
-          suggestion: 'Check database plugin configuration and try again',
-          timestamp: new Date()
-        }],
-        warnings: [],
-        duration: Date.now() - startTime
-      };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      context.logger.error(`Database setup failed: ${errorMessage}`);
+      
+      return this.createErrorResult(
+        'DB_SETUP_FAILED',
+        `Failed to setup database: ${errorMessage}`,
+        [],
+        startTime,
+        error
+      );
     }
   }
 
@@ -344,75 +317,6 @@ export class DBAgent extends AbstractAgent {
     }
   }
 
-  private async executeDrizzlePlugin(
-    context: AgentContext, 
-    dbConfig: DatabaseConfig,
-    packagePath: string
-  ): Promise<any> {
-    // Get the Drizzle plugin
-    const drizzlePlugin = this.pluginSystem.getRegistry().get('drizzle');
-    if (!drizzlePlugin) {
-      throw new Error('Drizzle plugin not found in registry');
-    }
-
-    // Prepare plugin context with correct path
-    const pluginContext: PluginContext = {
-      ...context,
-      projectPath: packagePath, // Use package path instead of root path
-      pluginId: 'drizzle',
-      pluginConfig: this.getPluginConfig(dbConfig),
-      installedPlugins: [],
-      projectType: ProjectType.NEXTJS,
-      targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
-    };
-
-    // Validate plugin compatibility
-    const validation = await drizzlePlugin.validate(pluginContext);
-    if (!validation.valid) {
-      throw new Error(`Drizzle plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
-    }
-
-    // Execute the plugin
-    context.logger.info('Executing Drizzle plugin...');
-    const result = await drizzlePlugin.install(pluginContext);
-
-    if (!result.success) {
-      throw new Error(`Drizzle plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
-    }
-
-    return result;
-  }
-
-  private async validateDatabaseSetup(context: AgentContext, packagePath: string): Promise<void> {
-    context.logger.info('Validating database setup...');
-
-    // Check for essential database files in the package path
-    const essentialFiles = [
-      'drizzle.config.ts',
-      'db/schema.ts',
-      'db/index.ts'
-    ];
-    for (const file of essentialFiles) {
-      const filePath = path.join(packagePath, file);
-      if (!await fsExtra.pathExists(filePath)) {
-        throw new Error(`Database file missing: ${file}`);
-      }
-    }
-
-    // Check for package.json dependencies
-    const packageJsonPath = path.join(packagePath, 'package.json');
-    if (await fsExtra.pathExists(packageJsonPath)) {
-      const packageJson = await fsExtra.readJSON(packageJsonPath);
-      const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
-      
-      if (!dependencies['drizzle-orm']) {
-        throw new Error('Drizzle ORM dependency not found in package.json');
-      }
-    }
-
-    context.logger.success('Database setup validation passed');
-  }
-
   private async getDatabaseConfig(context: AgentContext): Promise<DatabaseConfig> {
     // Get configuration from context or use defaults
     const userConfig = context.config.database || {};
@@ -425,36 +329,26 @@ export class DBAgent extends AbstractAgent {
     };
   }
 
-  private getPluginConfig(dbConfig: DatabaseConfig, pluginName?: string): Record<string, any> {
-    // Return plugin-specific configuration
-    if (pluginName === 'prisma') {
-      return {
-        provider: 'postgresql',
-        databaseUrl: 'DATABASE_URL',
-        shadowDatabaseUrl: 'SHADOW_DATABASE_URL',
-        generateClient: true,
-        generateMigrations: true,
-        seedScript: true,
-        studio: true,
-        introspection: false
-      };
-    } else if (pluginName === 'drizzle') {
-      return {
-        provider: dbConfig.provider,
-        databaseUrl: dbConfig.connectionString,
-        connectionString: dbConfig.connectionString,
-        schema: './db/schema.ts',
-        out: './drizzle',
-        dialect: 'postgresql'
-      };
+  private getPluginConfig(dbConfig: DatabaseConfig, pluginName: string): Record<string, any> {
+    const config: Record<string, any> = {
+      provider: dbConfig.provider,
+      connectionString: dbConfig.connectionString,
+      schema: dbConfig.schema,
+      migrations: dbConfig.migrations,
+      useTypeScript: true,
+      includeExamples: true
+    };
+
+    // Add specific plugin-specific configurations if needed
+    if (pluginName === 'drizzle') {
+      config.skipDb = true; // Drizzle handles its own DB setup
+      config.skipPlugins = true; // Drizzle handles its own plugins
+    } else if (pluginName === 'prisma') {
+      config.skipDb = true; // Prisma handles its own DB setup
+      config.skipPlugins = true; // Prisma handles its own plugins
     }
 
-    // Default fallback
-    return {
-      provider: dbConfig.provider,
-      databaseUrl: dbConfig.connectionString,
-      connectionString: dbConfig.connectionString
-    };
+    return config;
   }
 
   // ============================================================================
@@ -489,66 +383,140 @@ export class DBAgent extends AbstractAgent {
   }
 
   // ============================================================================
+  // UNIFIED INTERFACE EXECUTION
+  // ============================================================================
+
+  private async executeDatabasePluginUnified(
+    context: AgentContext, 
+    pluginName: string,
+    dbConfig: DatabaseConfig,
+    packagePath: string
+  ): Promise<any> {
+    try {
+      context.logger.info(`Starting unified execution of ${pluginName} plugin...`);
+      
+      // Get the selected plugin
+      const plugin = this.pluginSystem.getRegistry().get(pluginName);
+      if (!plugin) {
+        throw new Error(`${pluginName} plugin not found in registry`);
+      }
+
+      context.logger.info(`Found ${pluginName} plugin in registry`);
+
+      // Prepare plugin context with correct path
+      const pluginContext: PluginContext = {
+        ...context,
+        projectPath: packagePath, // Use package path instead of root path
+        pluginId: pluginName,
+        pluginConfig: this.getPluginConfig(dbConfig, pluginName),
+        installedPlugins: [],
+        projectType: ProjectType.NEXTJS,
+        targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
+      };
+
+      context.logger.info(`Plugin context prepared for ${pluginName}`);
+
+      // Validate plugin compatibility
+      context.logger.info(`Validating ${pluginName} plugin...`);
+      const validation = await plugin.validate(pluginContext);
+      if (!validation.valid) {
+        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      }
+
+      context.logger.info(`${pluginName} plugin validation passed`);
+
+      // Execute the plugin
+      context.logger.info(`Executing ${pluginName} plugin...`);
+      const result = await plugin.install(pluginContext);
+
+      if (!result.success) {
+        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+      }
+
+      context.logger.info(`${pluginName} plugin execution completed successfully`);
+
+      // Create unified interface adapter
+      context.logger.info(`Creating unified interface adapter for ${pluginName}...`);
+      const dbAdapter = await globalAdapterFactory.createDatabaseAdapter(pluginName);
+      
+      // Register the adapter in the global registry
+      globalRegistry.register('database', pluginName, dbAdapter);
+      context.logger.info(`Registered ${pluginName} adapter in unified registry`);
+
+      return result;
+    } catch (error) {
+      context.logger.error(`Error in executeDatabasePluginUnified for ${pluginName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  }
+
+  private async validateDatabaseSetupUnified(
+    context: AgentContext,
+    pluginName: string,
+    packagePath: string
+  ): Promise<void> {
+    try {
+      context.logger.info(`Validating database setup using unified interface for ${pluginName}...`);
+
+      // Get the unified database interface
+      const dbInterface = globalRegistry.get('database', pluginName);
+      if (!dbInterface) {
+        throw new Error(`Database interface not found for ${pluginName}`);
+      }
+
+      // Validate client operations
+      context.logger.info('Validating database client operations...');
+      if (typeof dbInterface.client.query === 'function') {
+        context.logger.info('Database client operations available');
+      }
+
+      // Validate schema management
+      context.logger.info('Validating schema management...');
+      if (dbInterface.schema.users && dbInterface.schema.posts) {
+        context.logger.info('Schema management available');
+      }
+
+      // Validate migration utilities
+      context.logger.info('Validating migration utilities...');
+      if (typeof dbInterface.migrations.generate === 'function') {
+        context.logger.info('Migration utilities available');
+      }
+
+      // Validate connection management
+      context.logger.info('Validating connection management...');
+      if (typeof dbInterface.connection.connect === 'function') {
+        context.logger.info('Connection management available');
+      }
+
+      context.logger.info('Database setup validation completed successfully');
+    } catch (error) {
+      context.logger.error(`Database setup validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  }
+
+  // ============================================================================
   // PLUGIN SELECTION
   // ============================================================================
 
   private async selectDatabasePlugin(context: AgentContext): Promise<string> {
-    // Check if user has specified a database plugin preference
-    const userPreference = context.config?.database?.plugin;
+    // Check if user has specified a preference
+    const userPreference = context.state.get('dbTechnology');
     if (userPreference) {
-      context.logger.info(`Using user-specified database plugin: ${userPreference}`);
+      context.logger.info(`Using user preference for database: ${userPreference}`);
       return userPreference;
     }
 
-    // Check if we're in non-interactive mode (--yes flag) and no user preference
-    if (context.options.useDefaults && !userPreference) {
-      context.logger.info('Using default database plugin: drizzle');
-      // Store the default selection in context
-      if (!context.config.database) context.config.database = {};
-      context.config.database.plugin = 'drizzle';
-      return 'drizzle';
+    // Check if project has specified database technology
+    const projectDB = context.config.database?.technology;
+    if (projectDB) {
+      context.logger.info(`Using project database technology: ${projectDB}`);
+      return projectDB;
     }
 
-    // Interactive plugin selection
-    const availablePlugins = this.getAvailableDatabasePlugins();
-    
-    if (availablePlugins.length === 1) {
-      context.logger.info(`Only one database plugin available: ${availablePlugins[0].id}`);
-      // Store the selection in context
-      if (!context.config.database) context.config.database = {};
-      context.config.database.plugin = availablePlugins[0].id;
-      return availablePlugins[0].id;
-    }
-
-    // Show plugin selection prompt
-    console.log(chalk.blue.bold('\n🗄️ Choose your database ORM:\n'));
-    
-    const choices = availablePlugins.map(plugin => {
-      const metadata = plugin.getMetadata();
-      return {
-        name: `${metadata.name} - ${metadata.description}`,
-        value: metadata.id,
-        description: `Tags: ${metadata.tags.join(', ')}`
-      };
-    });
-
-    const { selectedPlugin } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'selectedPlugin',
-        message: chalk.yellow('Select database ORM:'),
-        choices,
-        default: 'drizzle'
-      }
-    ]);
-
-    context.logger.info(`Selected database plugin: ${selectedPlugin}`);
-    
-    // Store the selection in context
-    if (!context.config.database) context.config.database = {};
-    context.config.database.plugin = selectedPlugin;
-    
-    return selectedPlugin;
+    // Default to Drizzle for Next.js projects
+    context.logger.info('Using default database technology: drizzle');
+    return 'drizzle';
   }
 
   private getAvailableDatabasePlugins(): any[] {

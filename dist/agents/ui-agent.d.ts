@@ -2,17 +2,16 @@
  * UI Agent - Design System Orchestrator
  *
  * The brain for UI/design system decisions and plugin orchestration.
- * Handles user interaction, decision making, and coordinates the Shadcn/ui plugin.
+ * Handles user interaction, decision making, and coordinates UI plugins through unified interfaces.
  * Pure orchestrator - no direct installation logic.
  */
-import { AgentContext, AgentResult, AgentMetadata, ValidationResult } from '../types/agent.js';
+import { AgentContext, AgentResult, AgentMetadata, ValidationResult, AgentCapability } from '../types/agent.js';
 import { AbstractAgent } from './base/abstract-agent.js';
 export declare class UIAgent extends AbstractAgent {
     private pluginSystem;
-    private templateService;
     constructor();
     protected getAgentMetadata(): AgentMetadata;
-    protected getAgentCapabilities(): never[];
+    protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     validate(context: AgentContext): Promise<ValidationResult>;
     private getPackagePath;
@@ -20,8 +19,8 @@ export declare class UIAgent extends AbstractAgent {
     private selectUIPlugin;
     private getAvailableUIPlugins;
     private getUIConfig;
-    private executeUIPlugin;
-    private validateUISetup;
+    private executeUIPluginUnified;
+    private validateUISetupUnified;
     private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;
 }

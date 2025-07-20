@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Package Manager](https://img.shields.io/badge/package%20manager-agnostic-blue)](https://www.npmjs.com/)
 
-The Architech CLI is a revolutionary command-line tool that automates the creation of production-ready applications through AI-powered specialized agents and a modular plugin architecture. What traditionally takes weeks of manual setup is now accomplished in minutes.
+The Architech CLI is a revolutionary command-line tool that automates the creation of production-ready applications through AI-powered specialized agents and a modular plugin architecture with unified interfaces. What traditionally takes weeks of manual setup is now accomplished in minutes.
 
 ## 🚀 Quick Start
 
@@ -21,42 +21,56 @@ The Architech CLI is a revolutionary command-line tool that automates the creati
 npm install -g the-architech
 
 # Or run directly with npx
-npx the-architech create my-app
+npx the-architech new my-app
 ```
 
 ### Basic Usage
 
 ```bash
 # Interactive mode (recommended)
-architech create
+architech new
 
 # Quick generation with defaults
-architech create my-app --yes
+architech new my-app --yes
 
 # Custom template and package manager
-architech create my-app --template nextjs-14 --package-manager yarn
+architech new my-app --template nextjs-14 --package-manager yarn
 
 # Generate enterprise monorepo
-architech create my-enterprise --monorepo --yes
+architech new my-enterprise --monorepo --yes
 ```
 
 ## 🎯 Core Concept
 
-The Architech CLI implements an **AI-powered agent architecture** with a modular plugin system:
+The Architech CLI implements a **three-layer unified interface architecture**:
 
-- **🤖 Orchestrator Agent**: AI-powered project planning and coordination
-- **🏗️ Framework Agent**: Creates application foundation (Next.js, React, Vue)
-- **🎨 UI Agent**: Sets up design systems and UI components
-- **🗄️ Database Agent**: Configures databases and ORMs
-- **🔐 Auth Agent**: Implements authentication systems
-- **✅ Validation Agent**: Ensures code quality and best practices
-- **🚀 Deployment Agent**: Prepares production infrastructure
+### 🤖 **Agents (The "Brain")**
+AI-powered decision makers that orchestrate the entire process:
+- **Orchestrator Agent**: AI-powered project planning and coordination
+- **Framework Agent**: Creates application foundation (Next.js, React, Vue)
+- **UI Agent**: Sets up design systems and UI components
+- **Database Agent**: Configures databases and ORMs
+- **Auth Agent**: Implements authentication systems
+- **Validation Agent**: Ensures code quality and best practices
 
-## 🛠️ How It Works
+### 🛠️ **Plugins (The "Hands")**
+Technology-specific implementations that do the actual work:
+- **Next.js Plugin**: Creates Next.js projects with `create-next-app`
+- **Shadcn/ui Plugin**: Installs and configures UI components
+- **Drizzle Plugin**: Sets up database schemas and migrations
+- **Better Auth Plugin**: Configures authentication systems
+
+### 🔄 **Adapters (The "Translator")**
+Unified interfaces that make all technologies look the same:
+- **UnifiedAuth**: Same API for Better Auth, NextAuth, Clerk, etc.
+- **UnifiedUI**: Same API for Shadcn/ui, Tamagui, Chakra UI, etc.
+- **UnifiedDatabase**: Same API for Drizzle, Prisma, Supabase, etc.
+
+## 🏗️ How It Works
 
 ### 1. Project Initialization
 ```bash
-architech create my-app
+architech new my-app
 ```
 
 The CLI starts with AI-powered project analysis and planning:
@@ -78,66 +92,60 @@ const plan = await orchestrator.analyzeProject(requirements);
 await orchestrator.executePlan(plan);
 ```
 
-### 3. Specialized Agent Execution
+### 3. Three-Layer Execution
 
-Each agent handles specific aspects with plugin integration:
+Each agent works through the unified interface system:
 
-#### 🤖 Orchestrator Agent
-- AI-powered project planning and analysis
-- Plugin compatibility assessment
-- Agent coordination and execution
-- Project validation and health checks
+#### **Layer 1: Agent Decision Making**
+```typescript
+// AuthAgent decides which auth system to use
+const selectedPlugin = await this.selectAuthPlugin(context);
+// Returns: 'better-auth', 'nextauth', 'clerk', etc.
+```
 
-#### 🏗️ Framework Agent
-- Creates Next.js project with `create-next-app`
-- Configures TypeScript, Tailwind CSS, ESLint
-- Sets up App Router and src directory structure
-- Integrates with Next.js plugin for advanced features
+#### **Layer 2: Plugin Implementation**
+```typescript
+// BetterAuthPlugin does the actual work
+const result = await plugin.install(pluginContext);
+// Installs packages, creates files, configures auth
+```
 
-#### 🎨 UI Agent
-- Installs and configures Shadcn/ui components
-- Sets up Tailwind CSS with custom utilities
-- Creates design system foundation
-- Integrates with UI plugin for component management
+#### **Layer 3: Adapter Translation**
+```typescript
+// BetterAuthAdapter provides unified interface
+const authAdapter = await globalAdapterFactory.createAuthAdapter('better-auth');
+globalRegistry.register('auth', 'better-auth', authAdapter);
 
-#### 🗄️ Database Agent
-- Configures Drizzle ORM with PostgreSQL
-- Sets up database schemas and migrations
-- Creates database utilities and helpers
-- Integrates with Database plugin for ORM features
+// Now all auth systems look the same
+const authInterface = globalRegistry.get('auth', 'better-auth');
+await authInterface.client.signIn('email', { email, password });
+```
 
-#### 🔐 Auth Agent
-- Implements Better Auth authentication
-- Configures security best practices
-- Sets up user management systems
-- Integrates with Auth plugin for advanced features
+### 4. Unified Interface System
 
-#### ✅ Validation Agent
-- Configures ESLint with strict TypeScript rules
-- Sets up Prettier for code formatting
-- Implements Husky for git hooks
-- Ensures code quality standards
+The architecture uses unified interfaces for technology-agnostic operations:
 
-#### 🚀 Deployment Agent
-- Creates optimized Docker configurations
-- Sets up CI/CD pipelines
-- Configures production environments
-- Integrates with Deployment plugin for infrastructure
+```typescript
+// Same code works with ANY auth system
+interface UnifiedAuth {
+  client: { signIn, signOut, getSession }
+  server: { auth, protect }
+  components: { LoginButton, AuthForm }
+}
 
-### 4. Plugin System
+// Same code works with ANY UI system
+interface UnifiedUI {
+  components: { Button, Input, Card }
+  tokens: { colors, spacing, typography }
+  theme: { light, dark, switchTheme }
+}
 
-The architecture uses a modular plugin system for extensibility:
-
-```javascript
-// Plugin registry manages available technologies
-const registry = new PluginRegistry();
-registry.register(new ShadcnUIPlugin());
-registry.register(new DrizzlePlugin());
-registry.register(new BetterAuthPlugin());
-
-// Agents use plugins for technology implementation
-const uiAgent = new UIAgent(registry);
-await uiAgent.setup(projectContext);
+// Same code works with ANY database
+interface UnifiedDatabase {
+  client: { query, insert, update, delete }
+  schema: { users, posts, comments }
+  migrations: { generate, run, reset }
+}
 ```
 
 ### 5. Generated Project Structure
@@ -188,12 +196,12 @@ my-enterprise/
 
 ## 🔧 Command Reference
 
-### `create` Command
+### `new` Command
 
 The primary command for generating new projects.
 
 ```bash
-architech create [project-name] [options]
+architech new [project-name] [options]
 ```
 
 **Arguments:**
@@ -210,19 +218,19 @@ architech create [project-name] [options]
 **Examples:**
 ```bash
 # Interactive mode
-architech create
+architech new
 
 # Quick setup with defaults
-architech create my-app --yes
+architech new my-app --yes
 
 # Enterprise monorepo
-architech create my-enterprise --monorepo --yes
+architech new my-enterprise --monorepo --yes
 
 # Custom configuration
-architech create my-app --template nextjs-14 --package-manager yarn --no-git
+architech new my-app --template nextjs-14 --package-manager yarn --no-git
 
 # Skip dependency installation
-architech create my-app --no-install
+architech new my-app --no-install
 ```
 
 ### `plugins` Command
@@ -248,8 +256,11 @@ architech plugins info <plugin-name>
 | Plugin | Description | Technologies |
 |--------|-------------|--------------|
 | `shadcn-ui` | UI component system | Tailwind CSS, Radix UI, Lucide icons |
+| `tamagui` | Cross-platform UI framework | Tamagui, React Native |
 | `drizzle` | Database ORM | Drizzle ORM, PostgreSQL, Neon |
-| `better-auth` | Authentication | Better Auth, NextAuth.js |
+| `prisma` | Database toolkit | Prisma, PostgreSQL, MySQL |
+| `better-auth` | Authentication | Better Auth, JWT, OAuth |
+| `nextauth` | Authentication | NextAuth.js, OAuth providers |
 | `nextjs` | Next.js framework | Next.js 14, App Router, TypeScript |
 
 ## ⚡ Performance & Efficiency
@@ -277,78 +288,132 @@ Tested across different package managers with high success rates:
 
 ## 🏗️ Architecture
 
-### AI-Powered Agent Architecture
+### Three-Layer Unified Interface Architecture
 
-The CLI uses an intelligent agent-based architecture with plugin integration:
+The CLI uses an intelligent three-layer architecture for maximum flexibility:
 
 ```
-┌─────────────────┐
-│   CLI Interface │
-├─────────────────┤
-│ Command Runner  │ ← Package Manager Abstraction
-├─────────────────┤
-│ Orchestrator    │ ← AI-powered project planning
-│    Agent        │   and coordination
-├─────────────────┤
-│ Plugin Registry │ ← Manages available technologies
-├─────────────────┤
-│ ┌─────────────┐ │
-│ │Framework    │ │ ← Creates application foundation
-│ │   Agent     │ │
-│ └─────────────┘ │
-│ ┌─────────────┐ │
-│ │UI Agent     │ │ ← Sets up design systems
-│ └─────────────┘ │
-│ ┌─────────────┐ │
-│ │Database     │ │ ← Configures databases
-│ │   Agent     │ │
-│ └─────────────┘ │
-│ ┌─────────────┐ │
-│ │Auth Agent   │ │ ← Implements authentication
-│ └─────────────┘ │
-│ ┌─────────────┐ │
-│ │Validation   │ │ ← Ensures code quality
-│ │   Agent     │ │
-│ └─────────────┘ │
-│ ┌─────────────┐ │
-│ │Deployment   │ │ ← Prepares infrastructure
-│ │   Agent     │ │
-│ └─────────────┘ │
-└─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    CLI Interface                            │
+├─────────────────────────────────────────────────────────────┤
+│                 Command Runner                              │
+│              (Package Manager Abstraction)                 │
+├─────────────────────────────────────────────────────────────┤
+│                Orchestrator Agent                           │
+│              (AI-Powered Planning)                         │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │Framework    │ │UI Agent     │ │Database     │          │
+│  │   Agent     │ │             │ │   Agent     │          │
+│  │  (Brain)    │ │  (Brain)    │ │  (Brain)    │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │Auth Agent   │ │Validation   │ │Deployment   │          │
+│  │             │ │   Agent     │ │   Agent     │          │
+│  │  (Brain)    │ │  (Brain)    │ │  (Brain)    │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │Next.js      │ │Shadcn/ui    │ │Drizzle      │          │
+│  │  Plugin     │ │  Plugin     │ │  Plugin     │          │
+│  │  (Hands)    │ │  (Hands)    │ │  (Hands)    │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │Better Auth  │ │Tamagui      │ │Prisma       │          │
+│  │  Plugin     │ │  Plugin     │ │  Plugin     │          │
+│  │  (Hands)    │ │  (Hands)    │ │  (Hands)    │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │Better Auth  │ │Shadcn/ui    │ │Drizzle      │          │
+│  │  Adapter    │ │  Adapter    │ │  Adapter    │          │
+│  │(Translator) │ │(Translator) │ │(Translator) │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │NextAuth     │ │Tamagui      │ │Prisma       │          │
+│  │  Adapter    │ │  Adapter    │ │  Adapter    │          │
+│  │(Translator) │ │(Translator) │ │(Translator) │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+├─────────────────────────────────────────────────────────────┤
+│              Unified Interface Registry                    │
+│              (Technology-Agnostic APIs)                   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Plugin System
+### Layer 1: Agents (The "Brain")
 
-The plugin system provides modular technology integration:
+Agents handle AI-powered decision making and orchestration:
 
-```javascript
-// Plugin interface for extensibility
-interface Plugin {
-  name: string;
-  version: string;
-  dependencies: string[];
-  setup(context: ProjectContext): Promise<void>;
-  validate(context: ProjectContext): Promise<ValidationResult>;
-}
-
-// Agents use plugins for implementation
-class UIAgent extends BaseAgent {
-  async setup(context: ProjectContext): Promise<void> {
-    const uiPlugin = this.registry.getPlugin('shadcn-ui');
-    await uiPlugin.setup(context);
+```typescript
+// Agents make intelligent decisions
+class AuthAgent extends AbstractAgent {
+  async executeInternal(context: AgentContext) {
+    // 1. Analyze user requirements
+    const selectedPlugin = await this.selectAuthPlugin(context);
+    
+    // 2. Execute plugin through unified interface
+    const result = await this.executeAuthPluginUnified(context, selectedPlugin);
+    
+    // 3. Validate using unified interface
+    await this.validateAuthSetupUnified(context, selectedPlugin);
   }
 }
 ```
 
-### Package Manager Abstraction
+### Layer 2: Plugins (The "Hands")
 
-The CommandRunner class provides unified interface across all package managers:
+Plugins handle technology-specific implementation:
 
-```javascript
-// Automatic detection and execution
-const runner = new CommandRunner('auto');
-await runner.install(['package'], false, './project');
-await runner.exec('create-next-app', ['my-app']);
+```typescript
+// Plugins do the actual work
+class BetterAuthPlugin implements IPlugin {
+  async install(context: PluginContext) {
+    // Install dependencies
+    await this.installDependencies();
+    
+    // Create configuration files
+    await this.createAuthConfig();
+    
+    // Set up database schema
+    await this.setupDatabaseSchema();
+  }
+}
+```
+
+### Layer 3: Adapters (The "Translator")
+
+Adapters provide unified interfaces for all technologies:
+
+```typescript
+// Adapters make all technologies look the same
+class BetterAuthAdapter implements UnifiedAuth {
+  client = {
+    signIn: (provider, options) => {
+      // Translate unified API to Better Auth API
+      return this.betterAuthClient.signIn(provider, options);
+    },
+    signOut: () => this.betterAuthClient.signOut(),
+    getSession: () => this.betterAuthClient.getSession()
+  }
+}
+```
+
+### Unified Interface System
+
+All technologies provide the same API through adapters:
+
+```typescript
+// Same code works with ANY auth system
+const authInterface = globalRegistry.get('auth', 'better-auth'); // or 'nextauth' or 'clerk'
+await authInterface.client.signIn('email', { email, password });
+
+// Same code works with ANY UI system
+const uiInterface = globalRegistry.get('ui', 'shadcn-ui'); // or 'tamagui' or 'chakra'
+const button = uiInterface.components.Button({ children: 'Click me' });
+
+// Same code works with ANY database
+const dbInterface = globalRegistry.get('database', 'drizzle'); // or 'prisma' or 'supabase'
+const users = await dbInterface.client.query('SELECT * FROM users');
 ```
 
 ## 🔍 Under the Hood
@@ -413,31 +478,55 @@ npm install
 npm link
 
 # Test the CLI
-architech create test-project
+architech new test-project
 ```
 
-### Adding New Plugins
+### Adding New Technologies
 
-The plugin system is designed for easy extension:
+The unified interface system makes it easy to add new technologies:
 
+#### 1. Create a Plugin (Implementation)
 ```typescript
-// Create a new plugin
-class MyCustomPlugin implements Plugin {
-  name = 'my-custom-plugin';
+class ClerkPlugin implements IPlugin {
+  name = 'clerk';
   version = '1.0.0';
-  dependencies = ['some-package'];
-
-  async setup(context: ProjectContext): Promise<void> {
-    // Implementation
-  }
-
-  async validate(context: ProjectContext): Promise<ValidationResult> {
-    // Validation logic
+  
+  async install(context: PluginContext) {
+    // Install Clerk dependencies
+    // Create Clerk configuration
+    // Set up Clerk components
   }
 }
+```
 
-// Register the plugin
-registry.register(new MyCustomPlugin());
+#### 2. Create an Adapter (Translation)
+```typescript
+class ClerkAdapter implements UnifiedAuth {
+  client = {
+    signIn: (provider, options) => {
+      // Translate to Clerk API
+      return this.clerkClient.signIn(provider, options);
+    }
+  }
+}
+```
+
+#### 3. Register in Factory
+```typescript
+// Register in adapter factory
+createAuthAdapter(pluginName: string) {
+  switch (pluginName) {
+    case 'clerk':
+      return createClerkAdapter(/* params */);
+  }
+}
+```
+
+#### 4. Agents Automatically Work!
+```typescript
+// Same agent code works with Clerk
+const authInterface = globalRegistry.get('auth', 'clerk');
+await authInterface.client.signIn('email', { email, password });
 ```
 
 ## 📝 License
@@ -465,13 +554,19 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 - ✅ UI, Database, Auth, and Framework agents
 - ✅ Enterprise monorepo support
 
-### Phase 3: AI Integration (Current)
+### Phase 3: Unified Interfaces ✅
+- ✅ Unified interface architecture
+- ✅ Technology-agnostic agents
+- ✅ Adapter pattern implementation
+- ✅ Lazy loading system
+
+### Phase 4: AI Integration (Current)
 - 🔄 AI-powered project planning
 - 🔄 Intelligent plugin selection
 - 🔄 Automated code generation
 - 🔄 Smart dependency optimization
 
-### Phase 4: Advanced Features
+### Phase 5: Advanced Features
 - 🔮 Custom plugin marketplace
 - 🔮 Advanced AI code generation
 - 🔮 Performance optimization

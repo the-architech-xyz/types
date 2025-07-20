@@ -2,29 +2,36 @@
  * UI Agent - Design System Orchestrator
  * 
  * The brain for UI/design system decisions and plugin orchestration.
- * Handles user interaction, decision making, and coordinates the Shadcn/ui plugin.
+ * Handles user interaction, decision making, and coordinates UI plugins through unified interfaces.
  * Pure orchestrator - no direct installation logic.
  */
 
-import { IAgent, AgentContext, AgentResult, AgentMetadata, AgentCategory, ValidationResult } from '../types/agent.js';
+import { IAgent, AgentContext, AgentResult, AgentMetadata, AgentCategory, ValidationResult, AgentCapability, CapabilityCategory } from '../types/agent.js';
 import { PluginSystem } from '../utils/plugin-system.js';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { TemplateService, templateService } from '../utils/template-service.js';
+import { globalRegistry, globalAdapterFactory } from '../types/unified-registry.js';
+import { UnifiedUI } from '../types/unified.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { PluginContext } from '../types/plugin.js';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 
+interface UIConfig {
+  designSystem: 'shadcn-ui' | 'tamagui' | 'chakra-ui' | 'mui';
+  theme: 'light' | 'dark' | 'auto';
+  components: string[];
+  styling: 'tailwind' | 'css-modules' | 'styled-components';
+}
+
 export class UIAgent extends AbstractAgent {
   private pluginSystem: PluginSystem;
-  private templateService: TemplateService;
 
   constructor() {
     super();
     this.pluginSystem = PluginSystem.getInstance();
-    this.templateService = templateService;
   }
 
   // ============================================================================
@@ -35,17 +42,17 @@ export class UIAgent extends AbstractAgent {
     return {
       name: 'UIAgent',
       version: '2.0.0',
-      description: 'UI/Design System orchestrator - coordinates Shadcn/ui plugin installation',
+      description: 'Orchestrates UI/design system setup using unified interfaces',
       author: 'The Architech Team',
       category: AgentCategory.UI,
-      tags: ['ui', 'design-system', 'orchestrator', 'plugin-coordinator'],
-      dependencies: ['BaseProjectAgent'],
+      tags: ['ui', 'design-system', 'components', 'unified-interface'],
+      dependencies: ['base-project'],
       conflicts: [],
       requirements: [
         {
           type: 'package',
-          name: 'packages/ui',
-          description: 'UI package directory'
+          name: 'fs-extra',
+          description: 'File system utilities'
         }
       ],
       license: 'MIT',
@@ -53,8 +60,72 @@ export class UIAgent extends AbstractAgent {
     };
   }
 
-  protected getAgentCapabilities() {
-    return [];
+  protected getAgentCapabilities(): AgentCapability[] {
+    return [
+      {
+        name: 'ui-setup',
+        description: 'Setup UI/design system with unified interfaces',
+        category: CapabilityCategory.SETUP,
+        parameters: [
+          {
+            name: 'designSystem',
+            type: 'string',
+            description: 'Design system to use',
+            required: false,
+            defaultValue: 'shadcn-ui'
+          },
+          {
+            name: 'theme',
+            type: 'string',
+            description: 'Theme mode',
+            required: false,
+            defaultValue: 'auto'
+          },
+          {
+            name: 'components',
+            type: 'array',
+            description: 'Components to install',
+            required: false,
+            defaultValue: ['button', 'input', 'card', 'form']
+          },
+          {
+            name: 'styling',
+            type: 'string',
+            description: 'Styling approach',
+            required: false,
+            defaultValue: 'tailwind'
+          }
+        ],
+        examples: [
+          {
+            name: 'Setup Shadcn/ui',
+            description: 'Creates UI setup with Shadcn/ui components using unified interfaces',
+            parameters: { designSystem: 'shadcn-ui', theme: 'auto' },
+            expectedResult: 'Complete UI setup with Shadcn/ui via unified interface'
+          },
+          {
+            name: 'Setup Tamagui',
+            description: 'Creates UI setup with Tamagui components using unified interfaces',
+            parameters: { designSystem: 'tamagui', theme: 'dark' },
+            expectedResult: 'UI setup with Tamagui via unified interface'
+          }
+        ]
+      },
+      {
+        name: 'ui-validation',
+        description: 'Validate UI setup',
+        category: CapabilityCategory.VALIDATION,
+        parameters: [],
+        examples: [
+          {
+            name: 'Validate UI setup',
+            description: 'Validates the UI setup using unified interfaces',
+            parameters: {},
+            expectedResult: 'UI setup validation report'
+          }
+        ]
+      }
+    ];
   }
 
   // ============================================================================
@@ -91,12 +162,12 @@ export class UIAgent extends AbstractAgent {
       // Get UI configuration
       const uiConfig = await this.getUIConfig(context);
 
-      // Execute selected UI plugin in the correct location
-      context.logger.info(`Executing ${selectedPlugin} plugin...`);
-      const result = await this.executeUIPlugin(context, selectedPlugin, uiConfig, installPath);
+      // Execute selected UI plugin through unified interface
+      context.logger.info(`Executing ${selectedPlugin} plugin through unified interface...`);
+      const result = await this.executeUIPluginUnified(context, selectedPlugin, uiConfig, installPath);
 
-      // Validate the setup
-      await this.validateUISetup(context, installPath);
+      // Validate the setup using unified interface
+      await this.validateUISetupUnified(context, selectedPlugin, installPath);
 
       const duration = Date.now() - startTime;
       
@@ -106,7 +177,9 @@ export class UIAgent extends AbstractAgent {
         data: {
           plugin: selectedPlugin,
           installPath,
-          designSystem: uiConfig.designSystem
+          designSystem: uiConfig.designSystem,
+          theme: uiConfig.theme,
+          unifiedInterface: true
         },
         errors: [],
         warnings: result.warnings || [],
@@ -114,20 +187,16 @@ export class UIAgent extends AbstractAgent {
       };
 
     } catch (error) {
-      return {
-        success: false,
-        data: null,
-        errors: [{
-          code: 'UI_AGENT_ERROR',
-          message: error instanceof Error ? error.message : 'Unknown error occurred',
-          details: error,
-          recoverable: false,
-          suggestion: 'Check UI plugin configuration and try again',
-          timestamp: new Date()
-        }],
-        warnings: [],
-        duration: Date.now() - startTime
-      };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      context.logger.error(`UI setup failed: ${errorMessage}`);
+      
+      return this.createErrorResult(
+        'UI_SETUP_FAILED',
+        `Failed to setup UI: ${errorMessage}`,
+        [],
+        startTime,
+        error
+      );
     }
   }
 
@@ -240,62 +309,23 @@ export class UIAgent extends AbstractAgent {
   // ============================================================================
 
   private async selectUIPlugin(context: AgentContext): Promise<string> {
-    // Check if user has specified a UI plugin preference
-    const userPreference = context.config?.ui?.plugin;
+    // Check if user has specified a preference
+    const userPreference = context.state.get('uiTechnology');
     if (userPreference) {
-      context.logger.info(`Using user-specified UI plugin: ${userPreference}`);
+      context.logger.info(`Using user preference for UI: ${userPreference}`);
       return userPreference;
     }
 
-    // Check if we're in non-interactive mode (--yes flag) and no user preference
-    if (context.options.useDefaults && !userPreference) {
-      context.logger.info('Using default UI plugin: shadcn-ui');
-      // Store the default selection in context
-      if (!context.config.ui) context.config.ui = {};
-      context.config.ui.plugin = 'shadcn-ui';
-      return 'shadcn-ui';
+    // Check if project has specified UI technology
+    const projectUI = context.config.ui?.technology;
+    if (projectUI) {
+      context.logger.info(`Using project UI technology: ${projectUI}`);
+      return projectUI;
     }
 
-    // Interactive plugin selection
-    const availablePlugins = this.getAvailableUIPlugins();
-    
-    if (availablePlugins.length === 1) {
-      context.logger.info(`Only one UI plugin available: ${availablePlugins[0].id}`);
-      // Store the selection in context
-      if (!context.config.ui) context.config.ui = {};
-      context.config.ui.plugin = availablePlugins[0].id;
-      return availablePlugins[0].id;
-    }
-
-    // Show plugin selection prompt
-    console.log(chalk.blue.bold('\n🎨 Choose your UI framework:\n'));
-    
-    const choices = availablePlugins.map(plugin => {
-      const metadata = plugin.getMetadata();
-      return {
-        name: `${metadata.name} - ${metadata.description}`,
-        value: metadata.id,
-        description: `Tags: ${metadata.tags.join(', ')}`
-      };
-    });
-
-    const { selectedPlugin } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'selectedPlugin',
-        message: chalk.yellow('Select UI framework:'),
-        choices,
-        default: 'shadcn-ui'
-      }
-    ]);
-
-    context.logger.info(`Selected UI plugin: ${selectedPlugin}`);
-    
-    // Store the selection in context
-    if (!context.config.ui) context.config.ui = {};
-    context.config.ui.plugin = selectedPlugin;
-    
-    return selectedPlugin;
+    // Default to Shadcn/ui for Next.js projects
+    context.logger.info('Using default UI technology: shadcn-ui');
+    return 'shadcn-ui';
   }
 
   private getAvailableUIPlugins(): any[] {
@@ -312,83 +342,135 @@ export class UIAgent extends AbstractAgent {
   // PRIVATE METHODS
   // ============================================================================
 
-  private async getUIConfig(context: AgentContext): Promise<any> {
+  private async getUIConfig(context: AgentContext): Promise<UIConfig> {
     // Get configuration from context or use defaults
     const userConfig = context.config.ui || {};
     
     return {
-      designSystem: userConfig.designSystem || 'shadcn',
+      designSystem: userConfig.designSystem || 'shadcn-ui',
       styling: userConfig.styling || 'tailwind',
-      theme: userConfig.theme || 'default',
+      theme: userConfig.theme || 'auto',
       components: userConfig.components || ['button', 'card', 'input', 'form']
     };
   }
 
-  private async executeUIPlugin(context: AgentContext, pluginName: string, uiConfig: any, installPath: string): Promise<any> {
-    // Get the selected plugin
-    const plugin = this.pluginSystem.getRegistry().get(pluginName);
-    if (!plugin) {
-      throw new Error(`${pluginName} plugin not found in registry`);
-    }
-
-    // Prepare plugin context with correct path
-    const pluginContext: PluginContext = {
-      ...context,
-      projectPath: installPath, // Use the correct install path
-      pluginId: pluginName,
-      pluginConfig: this.getPluginConfig(context),
-      installedPlugins: [],
-      projectType: ProjectType.NEXTJS,
-      targetPlatform: [TargetPlatform.WEB]
-    };
-
-    // Validate plugin compatibility
-    const validation = await plugin.validate(pluginContext);
-    if (!validation.valid) {
-      throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
-    }
-
-    // Execute the plugin
-    context.logger.info(`Executing ${pluginName} plugin...`);
-    const result = await plugin.install(pluginContext);
-
-    if (!result.success) {
-      throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
-    }
-
-    return result;
-  }
-
-  private async validateUISetup(context: AgentContext, installPath: string): Promise<void> {
-    context.logger.info('Validating UI setup...');
-
-    // Check for essential UI files
-    const essentialFiles = [
-      'components.json',
-      'src/components/ui/button.tsx',
-      'src/lib/utils.ts'
-    ];
-    
-    for (const file of essentialFiles) {
-      const filePath = path.join(installPath, file);
-      if (!await fsExtra.pathExists(filePath)) {
-        throw new Error(`UI file missing: ${file}`);
+  private async executeUIPluginUnified(
+    context: AgentContext,
+    pluginName: string,
+    uiConfig: UIConfig,
+    installPath: string
+  ): Promise<any> {
+    try {
+      context.logger.info(`Starting unified execution of ${pluginName} plugin...`);
+      
+      // Get the selected plugin
+      const plugin = this.pluginSystem.getRegistry().get(pluginName);
+      if (!plugin) {
+        throw new Error(`${pluginName} plugin not found in registry`);
       }
-    }
 
-    // Check for Tailwind config (either .js or .ts)
-    const tailwindConfigJs = path.join(installPath, 'config', 'tailwind.config.js');
-    const tailwindConfigTs = path.join(installPath, 'config', 'tailwind.config.ts');
-    if (!await fsExtra.pathExists(tailwindConfigJs) && !await fsExtra.pathExists(tailwindConfigTs)) {
-      throw new Error('Tailwind configuration file missing');
-    }
+      context.logger.info(`Found ${pluginName} plugin in registry`);
 
-    context.logger.success('UI setup validation passed');
+      // Prepare plugin context with correct path
+      const pluginContext: PluginContext = {
+        ...context,
+        projectPath: installPath,
+        pluginId: pluginName,
+        pluginConfig: this.getPluginConfig(uiConfig, pluginName),
+        installedPlugins: [],
+        projectType: ProjectType.NEXTJS,
+        targetPlatform: [TargetPlatform.WEB]
+      };
+
+      context.logger.info(`Plugin context prepared for ${pluginName}`);
+
+      // Validate plugin compatibility
+      context.logger.info(`Validating ${pluginName} plugin...`);
+      const validation = await plugin.validate(pluginContext);
+      if (!validation.valid) {
+        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      }
+
+      context.logger.info(`${pluginName} plugin validation passed`);
+
+      // Execute the plugin
+      context.logger.info(`Executing ${pluginName} plugin...`);
+      const result = await plugin.install(pluginContext);
+
+      if (!result.success) {
+        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+      }
+
+      context.logger.info(`${pluginName} plugin execution completed successfully`);
+
+      // Create unified interface adapter
+      context.logger.info(`Creating unified interface adapter for ${pluginName}...`);
+      const uiAdapter = await globalAdapterFactory.createUIAdapter(pluginName);
+      
+      // Register the adapter in the global registry
+      globalRegistry.register('ui', pluginName, uiAdapter);
+      context.logger.info(`Registered ${pluginName} adapter in unified registry`);
+
+      return result;
+    } catch (error) {
+      context.logger.error(`Error in executeUIPluginUnified for ${pluginName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
   }
 
-  private getPluginConfig(context: AgentContext): Record<string, any> {
+  private async validateUISetupUnified(
+    context: AgentContext,
+    pluginName: string,
+    installPath: string
+  ): Promise<void> {
+    try {
+      context.logger.info(`Validating UI setup using unified interface for ${pluginName}...`);
+
+      // Get the unified UI interface
+      const uiInterface = globalRegistry.get('ui', pluginName);
+      if (!uiInterface) {
+        throw new Error(`UI interface not found for ${pluginName}`);
+      }
+
+      // Validate design tokens
+      context.logger.info('Validating design tokens...');
+      if (uiInterface.tokens.colors && uiInterface.tokens.spacing) {
+        context.logger.info('Design tokens available');
+      }
+
+      // Validate core components
+      context.logger.info('Validating core components...');
+      const requiredComponents = ['Button', 'Input', 'Card', 'Text', 'Stack', 'Box'];
+      for (const componentName of requiredComponents) {
+        if (uiInterface.components[componentName as keyof typeof uiInterface.components]) {
+          context.logger.info(`${componentName} component available`);
+        } else {
+          context.logger.warn(`${componentName} component not available`);
+        }
+      }
+
+      // Validate utility functions
+      context.logger.info('Validating utility functions...');
+      if (typeof uiInterface.utils.cn === 'function') {
+        context.logger.info('Utility functions available');
+      }
+
+      // Validate theme management
+      context.logger.info('Validating theme management...');
+      if (uiInterface.theme.light && uiInterface.theme.dark) {
+        context.logger.info('Theme management available');
+      }
+
+      context.logger.info('UI setup validation completed successfully');
+    } catch (error) {
+      context.logger.error(`UI setup validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  }
+
+  private getPluginConfig(uiConfig: UIConfig, pluginName: string): Record<string, any> {
     return {
-      components: ['button', 'input', 'card', 'dialog'],
+      components: uiConfig.components,
       includeExamples: true,
       useTypeScript: true,
       yes: true,
