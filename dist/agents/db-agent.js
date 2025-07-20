@@ -151,8 +151,8 @@ export class DBAgent extends AbstractAgent {
                 // Install in the db package directory (packages/db)
                 packagePath = path.join(context.projectPath, 'packages', 'db');
                 context.logger.info(`Database package path: ${packagePath}`);
-                // Ensure the db package directory exists
-                await fsExtra.ensureDir(packagePath);
+                // Ensure the db package directory exists and is properly set up
+                await this.ensurePackageDirectory(context, 'db', packagePath);
                 context.logger.info(`Using db package directory for database setup: ${packagePath}`);
             }
             else {
@@ -356,14 +356,35 @@ export class DBAgent extends AbstractAgent {
             migrations: userConfig.migrations !== false
         };
     }
-    getPluginConfig(dbConfig) {
+    getPluginConfig(dbConfig, pluginName) {
+        // Return plugin-specific configuration
+        if (pluginName === 'prisma') {
+            return {
+                provider: 'postgresql',
+                databaseUrl: 'DATABASE_URL',
+                shadowDatabaseUrl: 'SHADOW_DATABASE_URL',
+                generateClient: true,
+                generateMigrations: true,
+                seedScript: true,
+                studio: true,
+                introspection: false
+            };
+        }
+        else if (pluginName === 'drizzle') {
+            return {
+                provider: dbConfig.provider,
+                databaseUrl: dbConfig.connectionString,
+                connectionString: dbConfig.connectionString,
+                schema: './db/schema.ts',
+                out: './drizzle',
+                dialect: 'postgresql'
+            };
+        }
+        // Default fallback
         return {
             provider: dbConfig.provider,
             databaseUrl: dbConfig.connectionString,
-            connectionString: dbConfig.connectionString,
-            schema: './db/schema.ts',
-            out: './drizzle',
-            dialect: 'postgresql'
+            connectionString: dbConfig.connectionString
         };
     }
     // ============================================================================
@@ -460,33 +481,45 @@ export class DBAgent extends AbstractAgent {
     // PLUGIN EXECUTION
     // ============================================================================
     async executeDatabasePlugin(context, pluginName, dbConfig, packagePath) {
-        // Get the selected plugin
-        const plugin = this.pluginSystem.getRegistry().get(pluginName);
-        if (!plugin) {
-            throw new Error(`${pluginName} plugin not found in registry`);
+        try {
+            context.logger.info(`Starting execution of ${pluginName} plugin...`);
+            // Get the selected plugin
+            const plugin = this.pluginSystem.getRegistry().get(pluginName);
+            if (!plugin) {
+                throw new Error(`${pluginName} plugin not found in registry`);
+            }
+            context.logger.info(`Found ${pluginName} plugin in registry`);
+            // Prepare plugin context with correct path
+            const pluginContext = {
+                ...context,
+                projectPath: packagePath, // Use package path instead of root path
+                pluginId: pluginName,
+                pluginConfig: this.getPluginConfig(dbConfig, pluginName),
+                installedPlugins: [],
+                projectType: ProjectType.NEXTJS,
+                targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
+            };
+            context.logger.info(`Plugin context prepared for ${pluginName}`);
+            // Validate plugin compatibility
+            context.logger.info(`Validating ${pluginName} plugin...`);
+            const validation = await plugin.validate(pluginContext);
+            if (!validation.valid) {
+                throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+            }
+            context.logger.info(`${pluginName} plugin validation passed`);
+            // Execute the plugin
+            context.logger.info(`Executing ${pluginName} plugin...`);
+            const result = await plugin.install(pluginContext);
+            if (!result.success) {
+                throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+            }
+            context.logger.info(`${pluginName} plugin execution completed successfully`);
+            return result;
         }
-        // Prepare plugin context with correct path
-        const pluginContext = {
-            ...context,
-            projectPath: packagePath, // Use package path instead of root path
-            pluginId: pluginName,
-            pluginConfig: this.getPluginConfig(dbConfig),
-            installedPlugins: [],
-            projectType: ProjectType.NEXTJS,
-            targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
-        };
-        // Validate plugin compatibility
-        const validation = await plugin.validate(pluginContext);
-        if (!validation.valid) {
-            throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+        catch (error) {
+            context.logger.error(`Error in executeDatabasePlugin for ${pluginName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw error;
         }
-        // Execute the plugin
-        context.logger.info(`Executing ${pluginName} plugin...`);
-        const result = await plugin.install(pluginContext);
-        if (!result.success) {
-            throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
-        }
-        return result;
     }
 }
 //# sourceMappingURL=db-agent.js.map

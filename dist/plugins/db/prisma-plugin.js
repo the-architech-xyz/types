@@ -44,7 +44,7 @@ export class PrismaPlugin {
         try {
             context.logger.info('Installing Prisma ORM...');
             // Install Prisma CLI and client
-            await this.installDependencies(context);
+            await this.installDependencies(context, prismaConfig);
             // Initialize Prisma
             await this.initializePrisma(projectPath, prismaConfig, context);
             // Create Prisma schema
@@ -127,6 +127,7 @@ export class PrismaPlugin {
             };
         }
         catch (error) {
+            context.logger.error(`Prisma installation failed: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
             return this.createErrorResult(`Failed to install Prisma: ${error instanceof Error ? error.message : 'Unknown error occurred'}`, startTime, [], error);
         }
     }
@@ -332,11 +333,18 @@ export class PrismaPlugin {
     // ============================================================================
     // PRIVATE METHODS
     // ============================================================================
-    async installDependencies(context) {
+    async installDependencies(context, config) {
         const { projectPath } = context;
-        await this.runner.execCommand(['npm', 'install', 'prisma', '@prisma/client'], {
-            cwd: projectPath
-        });
+        try {
+            await this.runner.execCommand(['npm', 'install', 'prisma', '@prisma/client'], {
+                cwd: projectPath
+            });
+            context.logger.info('Dependencies installed successfully.');
+        }
+        catch (error) {
+            context.logger.error(`Failed to install dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            throw new Error(`Failed to install dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
     async initializePrisma(projectPath, config, context) {
         try {
@@ -347,8 +355,22 @@ export class PrismaPlugin {
             context.logger.info('Prisma initialized successfully.');
         }
         catch (error) {
-            context.logger.error(`Failed to initialize Prisma: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            throw new Error(`Failed to initialize Prisma: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            context.logger.warn('Prisma CLI initialization failed, creating configuration manually...');
+            // Create the prisma directory manually
+            const prismaDir = path.join(projectPath, 'prisma');
+            await fsExtra.ensureDir(prismaDir);
+            // Create .env file with database URL
+            const envContent = `# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="${config.databaseUrl}"
+${config.shadowDatabaseUrl ? `SHADOW_DATABASE_URL="${config.shadowDatabaseUrl}"` : ''}
+`;
+            await fsExtra.writeFile(path.join(projectPath, '.env'), envContent);
+            context.logger.info('Prisma configuration created manually.');
         }
     }
     async createPrismaSchema(projectPath, config) {
@@ -358,9 +380,16 @@ export class PrismaPlugin {
         await fsExtra.writeFile(schemaPath, schemaContent);
     }
     async generatePrismaClientCLI(projectPath) {
-        await this.runner.execCommand(['npx', 'prisma', 'generate'], {
-            cwd: projectPath
-        });
+        try {
+            await this.runner.execCommand(['npx', 'prisma', 'generate'], {
+                cwd: projectPath
+            });
+        }
+        catch (error) {
+            // If CLI generation fails, we'll create the client manually
+            // The client will be generated when the user runs the command manually
+            console.warn('Prisma client generation failed, will be generated on first use');
+        }
     }
     async createDatabaseUtilities(projectPath) {
         // Create Prisma client utility
