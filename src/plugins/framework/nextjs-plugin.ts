@@ -57,18 +57,133 @@ export class NextJSPlugin implements IPlugin {
       
       if (await fsExtra.pathExists(projectPath)) {
         if (isMonorepo) {
-          // For monorepo, clean up but preserve monorepo files
-          context.logger.info(`Directory ${projectPath} exists, cleaning up for fresh installation...`);
-          const contents = await fsExtra.readdir(projectPath);
-          const allowedFiles = ['.architech.json', 'package.json', 'README.md', 'turbo.json'];
+          // For monorepo, preserve monorepo structure and files
+          context.logger.info(`Directory ${projectPath} exists with monorepo structure, proceeding with framework installation...`);
           
-          // Remove any files that aren't monorepo configuration files
-          for (const item of contents) {
-            if (!allowedFiles.includes(item)) {
-              const itemPath = path.join(projectPath, item);
-              await fsExtra.remove(itemPath);
+          // For monorepo, we need to create the Next.js app in the apps directory
+          const appsDir = path.join(projectPath, 'apps');
+          await fsExtra.ensureDir(appsDir);
+          
+          const appName = 'web'; // Default app name for monorepo
+          const appPath = path.join(appsDir, appName);
+          
+          // Check if app already exists
+          if (await fsExtra.pathExists(appPath)) {
+            context.logger.info(`App directory ${appPath} already exists, skipping framework installation`);
+          } else {
+            // Create Next.js project in the apps directory
+            const cliArgs = this.buildCreateNextAppArgs({ ...pluginConfig, projectName: appName });
+            const result = await this.runner.execCommand(
+              [...this.runner.getCreateCommand(), ...cliArgs],
+              { cwd: appsDir }
+            );
+            
+            if (result.code !== 0) {
+              throw new Error(`create-next-app failed: ${result.stderr}`);
             }
           }
+          
+          // Continue with customization
+          await this.customizeProject(context);
+          await this.addEnhancements(context);
+          
+          const duration = Date.now() - startTime;
+          
+          return {
+            success: true,
+            artifacts: [
+              {
+                type: 'directory',
+                path: appPath
+              }
+            ],
+            dependencies: [
+        {
+          name: 'next',
+                version: '^15.4.2',
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'react',
+                version: '^19.1.0',
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'react-dom',
+                version: '^19.1.0',
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+                name: 'typescript',
+                version: '^5.8.3',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: '@types/node',
+          version: '^20.0.0',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+                name: '@types/react',
+                version: '^19.0.0',
+                type: 'development',
+                category: PluginCategory.FRAMEWORK
+              },
+              {
+                name: '@types/react-dom',
+                version: '^19.0.0',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'eslint',
+                version: '^9.0.0',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'eslint-config-next',
+                version: '^15.4.2',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        }
+            ],
+            scripts: [
+        {
+          name: 'dev',
+          command: 'next dev',
+          description: 'Start development server',
+          category: 'dev'
+        },
+        {
+          name: 'build',
+          command: 'next build',
+          description: 'Build for production',
+          category: 'build'
+        },
+        {
+          name: 'start',
+          command: 'next start',
+          description: 'Start production server',
+          category: 'deploy'
+        },
+        {
+          name: 'lint',
+          command: 'next lint',
+          description: 'Run ESLint',
+          category: 'custom'
+        }
+            ],
+            configs: [],
+            errors: [],
+            warnings: [],
+            duration
+          };
         } else {
           // For single-app, we need to handle this differently
           context.logger.info(`Directory ${projectPath} exists for single-app, using temporary directory approach...`);
@@ -80,10 +195,14 @@ export class NextJSPlugin implements IPlugin {
           const parentDir = path.dirname(tempDir);
           
           // Create Next.js project in temp directory
-          await this.runner.execCommand(
+          const result = await this.runner.execCommand(
             [...this.runner.getCreateCommand(), ...cliArgs],
             { cwd: parentDir }
           );
+          
+          if (result.code !== 0) {
+            throw new Error(`create-next-app failed: ${result.stderr}`);
+          }
           
           // Move contents from temp to target directory, preserving .architech.json
           const architechConfigPath = path.join(projectPath, '.architech.json');
@@ -104,7 +223,7 @@ export class NextJSPlugin implements IPlugin {
           }
           
           // Move Next.js project contents to target directory
-          const tempProjectPath = path.join(tempDir, tempProjectName);
+          const tempProjectPath = path.join(path.dirname(tempDir), tempProjectName);
           if (await fsExtra.pathExists(tempProjectPath)) {
             const tempContents = await fsExtra.readdir(tempProjectPath);
             for (const item of tempContents) {
@@ -215,13 +334,7 @@ export class NextJSPlugin implements IPlugin {
           name: 'lint',
           command: 'next lint',
           description: 'Run ESLint',
-          category: 'dev'
-        },
-        {
-          name: 'type-check',
-          command: 'tsc --noEmit',
-          description: 'Run TypeScript type checking',
-          category: 'dev'
+          category: 'custom'
         }
             ],
             configs: [],
@@ -230,133 +343,130 @@ export class NextJSPlugin implements IPlugin {
             duration
           };
         }
+      } else {
+        // Directory doesn't exist, create Next.js project directly
+        context.logger.info(`Creating Next.js project in ${projectPath}...`);
+        
+        const cliArgs = this.buildCreateNextAppArgs({ ...pluginConfig, projectName });
+        const parentDir = path.dirname(projectPath);
+        
+        const result = await this.runner.execCommand(
+          [...this.runner.getCreateCommand(), ...cliArgs],
+          { cwd: parentDir }
+        );
+        
+        if (result.code !== 0) {
+          throw new Error(`create-next-app failed: ${result.stderr}`);
+        }
+        
+        // Continue with customization
+        await this.customizeProject(context);
+        await this.addEnhancements(context);
+        
+        const duration = Date.now() - startTime;
+        
+        return {
+          success: true,
+          artifacts: [
+            {
+              type: 'directory',
+              path: projectPath
+            }
+          ],
+          dependencies: [
+        {
+          name: 'next',
+                version: '^15.4.2',
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'react',
+                version: '^19.1.0',
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'react-dom',
+                version: '^19.1.0',
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+                name: 'typescript',
+                version: '^5.8.3',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: '@types/node',
+          version: '^20.0.0',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+                name: '@types/react',
+                version: '^19.0.0',
+                type: 'development',
+                category: PluginCategory.FRAMEWORK
+              },
+              {
+                name: '@types/react-dom',
+                version: '^19.0.0',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'eslint',
+                version: '^9.0.0',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'eslint-config-next',
+                version: '^15.4.2',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        }
+            ],
+            scripts: [
+        {
+          name: 'dev',
+          command: 'next dev',
+          description: 'Start development server',
+          category: 'dev'
+        },
+        {
+          name: 'build',
+          command: 'next build',
+          description: 'Build for production',
+          category: 'build'
+        },
+        {
+          name: 'start',
+          command: 'next start',
+          description: 'Start production server',
+          category: 'deploy'
+        },
+        {
+          name: 'lint',
+          command: 'next lint',
+          description: 'Run ESLint',
+          category: 'custom'
+        }
+            ],
+            configs: [],
+            errors: [],
+            warnings: [],
+            duration
+          };
       }
-
-      // Step 1: Use official create-next-app CLI (for monorepo or fresh directory)
-      const cliArgs = this.buildCreateNextAppArgs(pluginConfig);
-      const parentDir = path.dirname(projectPath);
-      
-      // Use execCommand with the proper create command
-      await this.runner.execCommand(
-        [...this.runner.getCreateCommand(), ...cliArgs],
-        { cwd: parentDir }
-      );
-
-      // Step 2: Customize generated project
-      await this.customizeProject(context);
-
-      // Step 3: Add project-specific enhancements
-      await this.addEnhancements(context);
-
-      const duration = Date.now() - startTime;
-
-      return {
-        success: true,
-        artifacts: [
-          {
-            type: 'directory',
-            path: projectPath
-          }
-        ],
-        dependencies: [
-          {
-            name: 'next',
-            version: '^15.4.2',
-            type: 'production',
-            category: PluginCategory.FRAMEWORK
-          },
-          {
-            name: 'react',
-            version: '^19.1.0',
-            type: 'production',
-            category: PluginCategory.FRAMEWORK
-          },
-          {
-            name: 'react-dom',
-            version: '^19.1.0',
-            type: 'production',
-            category: PluginCategory.FRAMEWORK
-          },
-          {
-            name: 'typescript',
-            version: '^5.8.3',
-            type: 'development',
-            category: PluginCategory.FRAMEWORK
-          },
-          {
-            name: '@types/node',
-            version: '^20.0.0',
-            type: 'development',
-            category: PluginCategory.FRAMEWORK
-          },
-          {
-            name: '@types/react',
-            version: '^19.0.0',
-            type: 'development',
-            category: PluginCategory.FRAMEWORK
-          },
-          {
-            name: '@types/react-dom',
-            version: '^19.0.0',
-            type: 'development',
-            category: PluginCategory.FRAMEWORK
-          },
-          {
-            name: 'eslint',
-            version: '^9.0.0',
-            type: 'development',
-            category: PluginCategory.FRAMEWORK
-          },
-          {
-            name: 'eslint-config-next',
-            version: '^15.4.2',
-            type: 'development',
-            category: PluginCategory.FRAMEWORK
-          }
-        ],
-        scripts: [
-          {
-            name: 'dev',
-            command: 'next dev',
-            description: 'Start development server',
-            category: 'dev'
-          },
-          {
-            name: 'build',
-            command: 'next build',
-            description: 'Build for production',
-            category: 'build'
-          },
-          {
-            name: 'start',
-            command: 'next start',
-            description: 'Start production server',
-            category: 'deploy'
-          },
-          {
-            name: 'lint',
-            command: 'next lint',
-            description: 'Run ESLint',
-            category: 'dev'
-          },
-          {
-            name: 'type-check',
-            command: 'tsc --noEmit',
-            description: 'Run TypeScript type checking',
-            category: 'dev'
-          }
-        ],
-        configs: [],
-        errors: [],
-        warnings: [],
-        duration
-      };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return this.createErrorResult(
-        `Failed to setup Next.js: ${errorMessage}`,
-        startTime,
+        'NEXTJS_SETUP_FAILED',
+        `Next.js setup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         [],
+        startTime,
         error
       );
     }
@@ -397,11 +507,11 @@ export class NextJSPlugin implements IPlugin {
         duration: Date.now() - startTime
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return this.createErrorResult(
-        `Failed to uninstall Next.js: ${errorMessage}`,
-        startTime,
+        'NEXTJS_UNINSTALL_FAILED',
+        `Failed to uninstall Next.js: ${error instanceof Error ? error.message : 'Unknown error'}`,
         [],
+        startTime,
         error
       );
     }
@@ -424,16 +534,45 @@ export class NextJSPlugin implements IPlugin {
       // In monorepo scenarios, the directory might exist but be empty
       // Check if it's empty or only contains expected monorepo files
       const contents = await fsExtra.readdir(context.projectPath);
-      const allowedFiles = ['.architech.json', 'package.json', 'README.md', 'turbo.json'];
-      const hasOnlyAllowedFiles = contents.every(item => allowedFiles.includes(item));
+      const allowedFiles = [
+        '.architech.json', 
+        'package.json', 
+        'README.md', 
+        'turbo.json',
+        '.gitignore',
+        'tsconfig.json',
+        '.eslintrc.json',
+        '.prettierrc.json',
+        'config',
+        'src',
+        'public',
+        '.git',
+        'apps',
+        'packages',
+        'docs',
+        'scripts',
+        '.github',
+        'node_modules',
+        'bun.lockb',
+        'yarn.lock',
+        'package-lock.json',
+        'pnpm-lock.yaml'
+      ];
       
-      if (!hasOnlyAllowedFiles) {
+      // Check if directory contains only allowed files or is a valid monorepo structure
+      const hasOnlyAllowedFiles = contents.every(item => allowedFiles.includes(item));
+      const hasMonorepoStructure = contents.includes('apps') && contents.includes('packages');
+      
+      if (!hasOnlyAllowedFiles && !hasMonorepoStructure) {
         errors.push({
           field: 'projectPath',
-          message: `Project directory already exists and contains files: ${context.projectPath}`,
+          message: `Project directory already exists and contains unexpected files: ${context.projectPath}`,
           code: 'DIRECTORY_EXISTS',
           severity: 'error'
         });
+      } else if (hasMonorepoStructure) {
+        // Directory exists and has monorepo structure - this is expected
+        warnings.push(`Directory ${context.projectPath} exists with monorepo structure. Framework will be installed in apps directory.`);
       } else {
         // Directory exists but is empty or only has monorepo config files
         warnings.push(`Directory ${context.projectPath} exists but appears to be empty or contain only monorepo configuration files. Proceeding with installation.`);
@@ -636,9 +775,10 @@ export class NextJSPlugin implements IPlugin {
   }
 
   private createErrorResult(
+    code: string,
     message: string,
-    startTime: number,
     errors: any[] = [],
+    startTime: number,
     originalError?: any
   ): PluginResult {
     return {
@@ -649,7 +789,7 @@ export class NextJSPlugin implements IPlugin {
       configs: [],
       errors: [
         {
-          code: 'NEXTJS_SETUP_FAILED',
+          code: code,
           message,
           details: originalError,
           severity: 'error'

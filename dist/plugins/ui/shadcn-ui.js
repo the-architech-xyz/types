@@ -10,6 +10,7 @@ import { templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
+import { structureService } from '../../core/project/structure-service.js';
 export class ShadcnUIPlugin {
     templateService;
     runner;
@@ -344,10 +345,13 @@ export class ShadcnUIPlugin {
     }
     async createTailwindConfig(context) {
         const { projectPath } = context;
+        const isMonorepo = context.projectStructure?.type === 'monorepo';
         context.logger.info('Creating self-contained Tailwind configuration...');
-        // Create config directory
-        const configPath = path.join(projectPath, 'config');
-        await fsExtra.ensureDir(configPath);
+        // Determine config directory based on project structure
+        const configPath = isMonorepo ? path.join(projectPath, 'config') : projectPath;
+        if (isMonorepo) {
+            await fsExtra.ensureDir(configPath);
+        }
         // Create self-contained Tailwind config
         const tailwindConfig = `/** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -1031,99 +1035,42 @@ module.exports = nextConfig;`;
     }
     async createComponentsConfig(context) {
         const { projectPath } = context;
-        context.logger.info('Creating components.json configuration...');
+        const structure = context.projectStructure;
+        const paths = structureService.getPaths(projectPath, structure);
+        // Create components.json in the correct location
+        const configPath = structure.isMonorepo
+            ? path.join(projectPath, 'components.json')
+            : path.join(projectPath, 'components.json');
         const componentsConfig = {
             "$schema": "https://ui.shadcn.com/schema.json",
             "style": "default",
             "rsc": true,
             "tsx": true,
             "tailwind": {
-                "config": "tailwind.config.js",
-                "css": "src/styles/globals.css",
-                "baseColor": "neutral",
+                "config": structure.isMonorepo ? "tailwind.config.ts" : "tailwind.config.ts",
+                "css": structure.isMonorepo ? "src/app/globals.css" : "src/app/globals.css",
+                "baseColor": "slate",
                 "cssVariables": true,
                 "prefix": ""
             },
             "aliases": {
-                "components": "src/components",
-                "utils": "src/lib/utils"
+                "components": structure.isMonorepo ? "@/components" : "@/components",
+                "utils": structure.isMonorepo ? "@/lib/utils" : "@/lib/utils"
             }
         };
-        await fsExtra.writeJSON(path.join(projectPath, 'components.json'), componentsConfig, { spaces: 2 });
-        // Create the CSS file referenced in the config
-        const cssDir = path.join(projectPath, 'src', 'styles');
-        await fsExtra.ensureDir(cssDir);
-        const globalsCSS = `@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}`;
-        await fsExtra.writeFile(path.join(cssDir, 'globals.css'), globalsCSS);
-        context.logger.info('Components configuration created');
+        await fsExtra.writeJSON(configPath, componentsConfig, { spaces: 2 });
     }
     async setupTailwindCSS(context) {
         const { projectPath } = context;
-        // Ensure we have the correct Tailwind CSS version (v3 for Shadcn/ui)
-        context.logger.info('Setting up Tailwind CSS v3 for Shadcn/ui...');
-        // Install required dependencies if not already present
-        await this.runner.install(['tailwindcss@^3.4.0', 'autoprefixer@^10.4.0', 'postcss@^8.4.0', 'tailwindcss-animate@^1.0.7'], false, projectPath);
-        // Create tailwind.config.js
-        const tailwindConfig = `/** @type {import('tailwindcss').Config} */
-module.exports = {
+        const structure = context.projectStructure;
+        const paths = structureService.getPaths(projectPath, structure);
+        // Create tailwind.config.ts in the correct location
+        const configPath = structure.isMonorepo
+            ? path.join(paths.config, 'tailwind.config.ts')
+            : path.join(projectPath, 'tailwind.config.ts');
+        const tailwindConfig = `import type { Config } from 'tailwindcss'
+
+const config: Config = {
   darkMode: ["class"],
   content: [
     './pages/**/*.{ts,tsx}',
@@ -1198,17 +1145,10 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}`;
-        await fsExtra.writeFile(path.join(projectPath, 'tailwind.config.js'), tailwindConfig);
-        // Update postcss.config.js
-        const postcssConfig = `module.exports = {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
-}`;
-        await fsExtra.writeFile(path.join(projectPath, 'postcss.config.js'), postcssConfig);
-        context.logger.info('Tailwind CSS v3 setup completed');
+} satisfies Config
+
+export default config`;
+        await fsExtra.writeFile(configPath, tailwindConfig);
     }
     async addComponents(context) {
         const { projectPath, pluginConfig } = context;
@@ -1252,126 +1192,246 @@ module.exports = {
     }
     async generateUnifiedInterfaceFiles(context) {
         const { projectPath } = context;
-        const libPath = path.join(projectPath, 'src', 'lib', 'ui');
-        await fsExtra.ensureDir(libPath);
+        const structure = context.projectStructure;
+        // For monorepo projects, generate files directly in the package directory
+        // For single app projects, use the structure service to get the correct path
+        let unifiedPath;
+        if (structure.isMonorepo) {
+            // In monorepo, we're already in the package directory (packages/ui)
+            unifiedPath = projectPath;
+        }
+        else {
+            // In single app, use the structure service to get the correct path
+            unifiedPath = structureService.getUnifiedInterfacePath(projectPath, structure, 'ui');
+        }
+        await fsExtra.ensureDir(unifiedPath);
         // Create index.ts for the unified interface
-        const indexContent = `import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
-import { useTheme } from './theme';
+        const indexContent = `// Shadcn UI Unified Interface
+// This file provides a unified interface for UI components across different project structures
 
-// Unified UI interface
-export const ui = {
-  components: {
-    Button,
-    Input,
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-    Badge,
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-    Alert,
-    AlertDescription,
-    AlertTitle,
+export * from './components/button';
+export * from './components/card';
+export * from './components/input';
+export * from './components/label';
+export * from './components/form';
+export * from './components/dialog';
+
+// Re-export utilities
+export { cn } from './lib/utils';
+
+// Theme configuration
+export { theme } from './lib/theme';
+`;
+        await fsExtra.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
+        // Create utils.ts for the unified interface
+        const utilsContent = `import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date)
+}
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount)
+}
+
+export function generateId(): string {
+  return Math.random().toString(36).substr(2, 9)
+}
+
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => func(...args), wait)
+  }
+}
+
+export function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args)
+      inThrottle = true
+      setTimeout(() => (inThrottle = false), limit)
+    }
+  }
+}
+`;
+        await fsExtra.writeFile(path.join(unifiedPath, 'utils.ts'), utilsContent);
+        // Create theme.ts for the unified interface
+        const themeContent = `// Theme configuration for Shadcn UI
+export const theme = {
+  colors: {
+    primary: {
+      50: '#eff6ff',
+      100: '#dbeafe',
+      200: '#bfdbfe',
+      300: '#93c5fd',
+      400: '#60a5fa',
+      500: '#3b82f6',
+      600: '#2563eb',
+      700: '#1d4ed8',
+      800: '#1e40af',
+      900: '#1e3a8a',
+    },
+    gray: {
+      50: '#f9fafb',
+      100: '#f3f4f6',
+      200: '#e5e7eb',
+      300: '#d1d5db',
+      400: '#9ca3af',
+      500: '#6b7280',
+      600: '#4b5563',
+      700: '#374151',
+      800: '#1f2937',
+      900: '#111827',
+    },
   },
-  theme: {
-    useTheme,
+  spacing: {
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem',
+    '2xl': '3rem',
+    '3xl': '4rem',
   },
-  utils: {
-    cn: (...classes: (string | undefined | null | false)[]) => {
-      return classes.filter(Boolean).join(' ');
+  borderRadius: {
+    none: '0',
+    sm: '0.125rem',
+    md: '0.375rem',
+    lg: '0.5rem',
+    xl: '0.75rem',
+    '2xl': '1rem',
+    full: '9999px',
+  },
+  shadows: {
+    sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+  },
+  typography: {
+    fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      serif: ['Georgia', 'serif'],
+      mono: ['JetBrains Mono', 'monospace'],
+    },
+    fontSize: {
+      xs: ['0.75rem', { lineHeight: '1rem' }],
+      sm: ['0.875rem', { lineHeight: '1.25rem' }],
+      base: ['1rem', { lineHeight: '1.5rem' }],
+      lg: ['1.125rem', { lineHeight: '1.75rem' }],
+      xl: ['1.25rem', { lineHeight: '1.75rem' }],
+      '2xl': ['1.5rem', { lineHeight: '2rem' }],
+      '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+      '4xl': ['2.25rem', { lineHeight: '2.5rem' }],
     },
   },
 };
 
-export default ui;
+export type Theme = typeof theme;
 `;
-        await fsExtra.writeFile(path.join(libPath, 'index.ts'), indexContent);
-        // Create components.tsx for additional components
-        const componentsContent = `import React from 'react';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Card } from '../components/ui/card';
+        await fsExtra.writeFile(path.join(unifiedPath, 'theme.ts'), themeContent);
+        // Create components.tsx for the unified interface
+        const componentsContent = `// Shadcn UI Components
+// This file provides React components for the unified interface
 
-export function LoginForm() {
-  return (
-    <Card className="w-full max-w-md">
-      <div className="p-6 space-y-4">
-        <h2 className="text-2xl font-bold text-center">Sign In</h2>
-        <div className="space-y-2">
-          <Input type="email" placeholder="Email" />
-          <Input type="password" placeholder="Password" />
-        </div>
-        <Button className="w-full">Sign In</Button>
-      </div>
-    </Card>
-  );
-}
+import { Button } from './components/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/card';
+import { Input } from './components/input';
+import { Label } from './components/label';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from './components/form';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './components/dialog';
 
-export function UserCard({ user }: { user: any }) {
-  return (
-    <Card className="w-full max-w-sm">
-      <div className="p-6">
-        <h3 className="text-lg font-semibold">{user.name}</h3>
-        <p className="text-sm text-gray-600">{user.email}</p>
-      </div>
-    </Card>
-  );
-}
+export {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+};
 `;
-        await fsExtra.writeFile(path.join(libPath, 'components.tsx'), componentsContent);
-        // Create theme.ts for theme management
-        const themeContent = `import { createContext, useContext, useEffect, useState } from 'react';
+        await fsExtra.writeFile(path.join(unifiedPath, 'components.tsx'), componentsContent);
+        // Create config.ts for the unified interface
+        const configContent = `// Shadcn UI Configuration
+// This file provides configuration for the unified interface
 
-type Theme = 'light' | 'dark' | 'system';
+import { theme } from './theme';
 
-interface ThemeContextType {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-}
+export const config = {
+  theme,
+  components: {
+    button: {
+      variants: ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'],
+      sizes: ['default', 'sm', 'lg', 'icon'],
+    },
+    card: {
+      variants: ['default'],
+    },
+    input: {
+      variants: ['default'],
+      sizes: ['default', 'sm', 'lg'],
+    },
+    label: {
+      variants: ['default'],
+    },
+    form: {
+      variants: ['default'],
+    },
+    dialog: {
+      variants: ['default'],
+    },
+  },
+  utilities: {
+    cn: true,
+    formatDate: true,
+    formatCurrency: true,
+    generateId: true,
+    debounce: true,
+    throttle: true,
+  },
+};
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('system');
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
-    }
-  }, [theme]);
-
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-}
+export type Config = typeof config;
 `;
-        await fsExtra.writeFile(path.join(libPath, 'theme.ts'), themeContent);
-        context.logger.success('Shadcn UI unified interface files generated successfully');
+        await fsExtra.writeFile(path.join(unifiedPath, 'config.ts'), configContent);
     }
     createErrorResult(message, startTime, errors = [], originalError) {
         return {

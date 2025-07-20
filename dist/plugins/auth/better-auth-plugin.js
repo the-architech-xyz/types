@@ -10,6 +10,7 @@ import { templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
+import { structureService } from '../../core/project/structure-service.js';
 export class BetterAuthPlugin {
     templateService;
     runner;
@@ -340,40 +341,45 @@ export class BetterAuthPlugin {
     }
     async createBetterAuthFilesManually(context) {
         const { projectPath, pluginConfig, projectName } = context;
+        const structure = context.projectStructure;
         context.logger.info('Creating Better Auth files manually...');
-        // Create package.json for auth package
-        const packageJson = {
-            name: `@${projectName}/auth`,
-            version: "0.1.0",
-            private: true,
-            main: "./index.ts",
-            types: "./index.ts",
-            scripts: {
-                "build": "tsc",
-                "dev": "tsc --watch",
-                "lint": "eslint . --ext .ts,.tsx"
-            },
-            dependencies: {
-                "better-auth": "^1.3.0",
-                "@better-auth/utils": "^0.2.6",
-                "bcryptjs": "^2.4.3",
-                "jsonwebtoken": "^9.0.2"
-            },
-            devDependencies: {
-                "@better-auth/cli": "^1.3.0",
-                "typescript": "^5.0.0"
-            }
-        };
-        await fsExtra.writeJSON(path.join(projectPath, 'package.json'), packageJson, { spaces: 2 });
-        // Create the main auth configuration file
-        const authConfig = this.generateAuthConfig(pluginConfig);
-        const authPath = path.join(projectPath, 'index.ts');
-        await fsExtra.writeFile(authPath, authConfig);
-        // Create components directory and basic auth components
-        const componentsPath = path.join(projectPath, 'src', 'components');
-        await fsExtra.ensureDir(componentsPath);
-        // Create basic auth components
-        const loginButtonContent = `import { signIn, signOut, useSession } from 'better-auth/react';
+        if (structure.isMonorepo) {
+            // For monorepo, create files in packages/auth/
+            const authPackagePath = structureService.getModulePath(projectPath, structure, 'auth');
+            await fsExtra.ensureDir(authPackagePath);
+            // Create package.json for auth package
+            const packageJson = {
+                name: `@${projectName}/auth`,
+                version: "0.1.0",
+                private: true,
+                main: "./index.ts",
+                types: "./index.ts",
+                scripts: {
+                    "build": "tsc",
+                    "dev": "tsc --watch",
+                    "lint": "eslint . --ext .ts,.tsx"
+                },
+                dependencies: {
+                    "better-auth": "^1.3.0",
+                    "@better-auth/utils": "^0.2.6",
+                    "bcryptjs": "^2.4.3",
+                    "jsonwebtoken": "^9.0.2"
+                },
+                devDependencies: {
+                    "@better-auth/cli": "^1.3.0",
+                    "typescript": "^5.0.0"
+                }
+            };
+            await fsExtra.writeJSON(path.join(authPackagePath, 'package.json'), packageJson, { spaces: 2 });
+            // Create the main auth configuration file
+            const authConfig = this.generateAuthConfig(pluginConfig);
+            const authPath = path.join(authPackagePath, 'index.ts');
+            await fsExtra.writeFile(authPath, authConfig);
+            // Create components directory and basic auth components
+            const componentsPath = path.join(authPackagePath, 'src', 'components');
+            await fsExtra.ensureDir(componentsPath);
+            // Create basic auth components
+            const loginButtonContent = `import { signIn, signOut, useSession } from 'better-auth/react';
 
 export function LoginButton() {
   const { data: session } = useSession();
@@ -392,7 +398,9 @@ export function LoginButton() {
     </button>
   );
 }`;
-        await fsExtra.writeFile(path.join(componentsPath, 'LoginButton.tsx'), loginButtonContent);
+            await fsExtra.writeFile(path.join(componentsPath, 'LoginButton.tsx'), loginButtonContent);
+        }
+        // For single app, skip this step as files will be created in src/lib/auth/ by generateUnifiedInterfaceFiles
         context.logger.success('Better Auth files created manually');
     }
     async generateDatabaseSchema(context) {
@@ -411,12 +419,16 @@ export function LoginButton() {
     }
     async createBetterAuthSchemaManually(context) {
         const { projectPath } = context;
+        const structure = context.projectStructure;
         context.logger.info('Creating Better Auth schema manually...');
-        // Create the auth schema file
-        const authSchemaContent = `import { BetterAuth } from "better-auth";
+        if (structure.isMonorepo) {
+            // For monorepo, create the auth schema file in packages/auth/
+            const authPackagePath = structureService.getModulePath(projectPath, structure, 'auth');
+            await fsExtra.ensureDir(authPackagePath);
+            const authSchemaContent = `import { BetterAuth } from "better-auth";
 import { DrizzleAdapter } from "better-auth/adapters/drizzle-adapter";
-import { db } from "../../packages/db";
-import { users, sessions, accounts, verificationTokens } from "../../packages/db/schema";
+import { db } from "../db";
+import { users, sessions, accounts, verificationTokens } from "../db/schema";
 
 export const auth = new BetterAuth({
   adapter: DrizzleAdapter(db, {
@@ -447,18 +459,26 @@ export const auth = new BetterAuth({
 
 export const { handlers, signIn, signOut, auth: getAuth } = auth;
 `;
-        const authPath = path.join(projectPath, 'auth.ts');
-        await fsExtra.writeFile(authPath, authSchemaContent);
+            const authPath = path.join(authPackagePath, 'index.ts');
+            await fsExtra.writeFile(authPath, authSchemaContent);
+        }
+        // For single app, skip this step as files will be created in src/lib/auth/ by generateUnifiedInterfaceFiles
         context.logger.success('Better Auth schema created manually');
     }
     async createAuthConfiguration(context) {
         const { projectPath, pluginConfig } = context;
-        // Create lib directory if it doesn't exist
-        const libPath = path.join(projectPath, 'lib');
-        await fsExtra.ensureDir(libPath);
-        // Create auth configuration file
-        const authConfig = this.generateAuthConfig(pluginConfig);
-        await fsExtra.writeFile(path.join(libPath, 'auth.ts'), authConfig);
+        const structure = context.projectStructure;
+        // For single app projects, don't create redundant files in root lib/
+        // The unified interface files will be created in src/lib/auth/ by generateUnifiedInterfaceFiles
+        if (structure.isMonorepo) {
+            // For monorepo, create files in packages/auth/
+            const authPackagePath = structureService.getModulePath(projectPath, structure, 'auth');
+            await fsExtra.ensureDir(authPackagePath);
+            // Create auth configuration file
+            const authConfig = this.generateAuthConfig(pluginConfig);
+            await fsExtra.writeFile(path.join(authPackagePath, 'index.ts'), authConfig);
+        }
+        // For single app, skip this step as files will be created in src/lib/auth/
     }
     async addEnvironmentConfig(context) {
         const { projectPath, pluginConfig } = context;
@@ -474,13 +494,24 @@ export const { handlers, signIn, signOut, auth: getAuth } = auth;
     }
     async generateUnifiedInterfaceFiles(context) {
         const { projectPath } = context;
-        const libPath = path.join(projectPath, 'src', 'lib', 'auth');
-        await fsExtra.ensureDir(libPath);
+        const structure = context.projectStructure;
+        // For monorepo projects, generate files directly in the package directory
+        // For single app projects, use the structure service
+        let unifiedPath;
+        if (structure.isMonorepo) {
+            // In monorepo, we're already in the package directory (packages/auth)
+            unifiedPath = projectPath;
+        }
+        else {
+            // In single app, use the structure service to get the correct path
+            unifiedPath = structureService.getUnifiedInterfacePath(projectPath, structure, 'auth');
+        }
+        await fsExtra.ensureDir(unifiedPath);
         // Create index.ts for the unified interface
         const indexContent = `import { BetterAuth } from "better-auth";
 import { DrizzleAdapter } from "better-auth/adapters/drizzle-adapter";
-import { db } from "../../packages/db";
-import { users, sessions, accounts, verificationTokens } from "../../packages/db/schema";
+import { db } from "../db";
+import { users, sessions, accounts, verificationTokens } from "../db/schema";
 
 export const auth = new BetterAuth({
   adapter: DrizzleAdapter(db, {
@@ -516,7 +547,7 @@ export const auth = new BetterAuth({
 
 export const { handlers, signIn, signOut, auth: getAuth } = auth;
 `;
-        await fsExtra.writeFile(path.join(libPath, 'index.ts'), indexContent);
+        await fsExtra.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
         // Create components.tsx for the unified interface
         const componentsContent = `import { signIn, signOut, useSession } from 'better-auth/react';
 
@@ -537,12 +568,12 @@ export function LoginButton() {
     </button>
   );
 }`;
-        await fsExtra.writeFile(path.join(libPath, 'components.tsx'), componentsContent);
+        await fsExtra.writeFile(path.join(unifiedPath, 'components.tsx'), componentsContent);
         // Create config.ts for the unified interface
         const configContent = `import { BetterAuth } from "better-auth";
 import { DrizzleAdapter } from "better-auth/adapters/drizzle-adapter";
-import { db } from "../../packages/db";
-import { users, sessions, accounts, verificationTokens } from "../../packages/db/schema";
+import { db } from "../db";
+import { users, sessions, accounts, verificationTokens } from "../db/schema";
 
 export const auth = new BetterAuth({
   adapter: DrizzleAdapter(db, {
@@ -578,8 +609,7 @@ export const auth = new BetterAuth({
 
 export const { handlers, signIn, signOut, auth: getAuth } = auth;
 `;
-        await fsExtra.writeFile(path.join(libPath, 'config.ts'), configContent);
-        context.logger.success('Better Auth unified interface files generated successfully');
+        await fsExtra.writeFile(path.join(unifiedPath, 'config.ts'), configContent);
     }
     buildInitArgs(config) {
         const args = [];

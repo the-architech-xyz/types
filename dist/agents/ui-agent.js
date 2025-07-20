@@ -11,6 +11,7 @@ import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
+import { structureService } from '../core/project/structure-service.js';
 export class UIAgent extends AbstractAgent {
     pluginSystem;
     constructor() {
@@ -346,58 +347,37 @@ export class UIAgent extends AbstractAgent {
     // HELPER METHODS
     // ============================================================================
     getPackagePath(context, packageName) {
-        const isMonorepo = context.projectStructure?.type === 'monorepo';
-        if (isMonorepo) {
-            return path.join(context.projectPath, 'packages', packageName);
-        }
-        else {
-            // For single-app, install in the root directory (Next.js project)
-            return context.projectPath;
-        }
+        const structure = context.projectStructure;
+        return structureService.getModulePath(context.projectPath, structure, packageName);
     }
     async ensurePackageDirectory(context, packageName, packagePath) {
-        const isMonorepo = context.projectStructure?.type === 'monorepo';
-        if (isMonorepo) {
-            // Create package directory and basic structure
+        const structure = context.projectStructure;
+        if (structure.isMonorepo) {
+            // For monorepo, ensure the package directory exists
             await fsExtra.ensureDir(packagePath);
-            // Create package.json for the UI package
-            const packageJson = {
-                name: `@${context.projectName}/${packageName}`,
-                version: "0.1.0",
-                private: true,
-                main: "./index.ts",
-                types: "./index.ts",
-                scripts: {
-                    "build": "tsc",
-                    "dev": "tsc --watch",
-                    "lint": "eslint . --ext .ts,.tsx"
-                },
-                dependencies: {},
-                devDependencies: {
-                    "typescript": "^5.0.0"
-                }
-            };
-            await fsExtra.writeJSON(path.join(packagePath, 'package.json'), packageJson, { spaces: 2 });
-            // Create index.ts
-            await fsExtra.writeFile(path.join(packagePath, 'index.ts'), `// ${packageName} package exports\n`);
-            // Create tsconfig.json
-            const tsconfig = {
-                extends: "../../tsconfig.json",
-                compilerOptions: {
-                    outDir: "./dist",
-                    rootDir: "."
-                },
-                include: ["./**/*"],
-                exclude: ["node_modules", "dist"]
-            };
-            await fsExtra.writeJSON(path.join(packagePath, 'tsconfig.json'), tsconfig, { spaces: 2 });
-            context.logger.info(`Created ${packageName} package at: ${packagePath}`);
+            // Create package.json if it doesn't exist
+            const packageJsonPath = path.join(packagePath, 'package.json');
+            if (!await fsExtra.pathExists(packageJsonPath)) {
+                const packageJson = {
+                    name: `@${context.projectName}/${packageName}`,
+                    version: "0.1.0",
+                    private: true,
+                    main: "./index.ts",
+                    types: "./index.ts",
+                    scripts: {
+                        "build": "tsc",
+                        "dev": "tsc --watch",
+                        "lint": "eslint . --ext .ts,.tsx"
+                    },
+                    dependencies: {},
+                    devDependencies: {
+                        "typescript": "^5.0.0"
+                    }
+                };
+                await fsExtra.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+            }
         }
-        else {
-            // For single-app, just ensure the directory exists (Next.js project already has structure)
-            await fsExtra.ensureDir(packagePath);
-            context.logger.info(`Using existing Next.js project at: ${packagePath}`);
-        }
+        // For single app, the directory is already created by the base project agent
     }
     // ============================================================================
     // PLUGIN SELECTION
@@ -508,44 +488,21 @@ export class UIAgent extends AbstractAgent {
         }
     }
     async validateUISetupUnified(context, pluginName, installPath) {
-        try {
-            context.logger.info(`Validating UI setup using unified interface for ${pluginName}...`);
-            // Check if unified interface files exist
-            const unifiedFiles = [
-                path.join(installPath, 'src', 'lib', 'ui', 'index.ts'),
-                path.join(installPath, 'src', 'lib', 'ui', 'components.tsx'),
-                path.join(installPath, 'src', 'lib', 'ui', 'theme.ts')
-            ];
-            for (const file of unifiedFiles) {
-                if (!await fsExtra.pathExists(file)) {
-                    throw new Error(`Required unified interface file not found: ${file}`);
-                }
+        const structure = context.projectStructure;
+        const unifiedPath = structureService.getUnifiedInterfacePath(context.projectPath, structure, 'ui');
+        // Check for unified interface files
+        const requiredFiles = [
+            'index.ts',
+            'utils.ts',
+            'theme.ts'
+        ];
+        for (const file of requiredFiles) {
+            const filePath = path.join(unifiedPath, file);
+            if (!await fsExtra.pathExists(filePath)) {
+                throw new Error(`Missing unified interface file: ${filePath}`);
             }
-            // Get the plugin and validate it
-            const plugin = this.pluginSystem.getRegistry().get(pluginName);
-            if (!plugin) {
-                throw new Error(`UI plugin not found: ${pluginName}`);
-            }
-            const pluginContext = {
-                ...context,
-                projectPath: installPath,
-                pluginId: pluginName,
-                pluginConfig: {},
-                installedPlugins: [],
-                projectType: ProjectType.NEXTJS,
-                targetPlatform: [TargetPlatform.WEB]
-            };
-            const validation = await plugin.validate(pluginContext);
-            if (!validation.valid) {
-                const errorMessages = validation.errors.map((e) => e.message).join(', ');
-                throw new Error(`UI plugin validation failed: ${errorMessages}`);
-            }
-            context.logger.success(`UI plugin ${pluginName} validation passed`);
         }
-        catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            throw new Error(`UI plugin validation failed: ${errorMessage}`);
-        }
+        context.logger.success(`✅ ${pluginName} unified interface validation passed`);
     }
     getPluginConfig(uiConfig, pluginName) {
         return {

@@ -11,6 +11,7 @@ import { TemplateService, templateService } from '../../core/templates/template-
 import { CommandRunner } from '../../core/cli/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
+import { structureService, StructureInfo } from '../../core/project/structure-service.js';
 
 interface DatabaseConfig {
   provider: 'neon';
@@ -387,56 +388,78 @@ export class DrizzlePlugin implements IPlugin {
 
   private async initializeDrizzleKit(context: PluginContext): Promise<void> {
     const { projectPath, pluginConfig } = context;
+    const structure = context.projectStructure!;
     
-    // Create drizzle.config.ts
-    const drizzleConfig = this.generateDrizzleConfig(pluginConfig);
-    const configPath = path.join(projectPath, 'drizzle.config.ts');
+    // Adjust config based on project structure
+    const adjustedConfig = {
+      ...pluginConfig,
+      schema: structure.isMonorepo ? './schema.ts' : './src/lib/db/schema.ts',
+      out: structure.isMonorepo ? './drizzle' : './drizzle'
+    };
+    
+    // Create drizzle.config.ts in the correct location
+    const drizzleConfig = this.generateDrizzleConfig(adjustedConfig);
+    const configPath = structure.isMonorepo 
+      ? path.join(structureService.getModulePath(projectPath, structure, 'db'), 'drizzle.config.ts')
+      : path.join(projectPath, 'drizzle.config.ts');
     await fsExtra.writeFile(configPath, drizzleConfig);
   }
 
   private async createDatabaseFiles(context: PluginContext): Promise<void> {
     const { projectPath } = context;
-    const dbPath = path.join(projectPath, 'db');
+    const structure = context.projectStructure!;
     
-    await fsExtra.ensureDir(dbPath);
+    if (structure.isMonorepo) {
+      // For monorepo, create files in packages/db/
+      const dbPath = structureService.getModulePath(projectPath, structure, 'db');
+      await fsExtra.ensureDir(dbPath);
 
-    // Create schema file
-    const schemaContent = this.generateDatabaseSchema();
-    await fsExtra.writeFile(path.join(dbPath, 'schema.ts'), schemaContent);
-      
+      // Create schema file
+      const schemaContent = this.generateDatabaseSchema();
+      await fsExtra.writeFile(path.join(dbPath, 'schema.ts'), schemaContent);
+        
       // Create database connection
-    const connectionContent = this.generateDatabaseConnection();
-    await fsExtra.writeFile(path.join(dbPath, 'index.ts'), connectionContent);
+      const connectionContent = this.generateDatabaseConnection();
+      await fsExtra.writeFile(path.join(dbPath, 'index.ts'), connectionContent);
 
-    // Create migration utility
-    const migrateContent = this.generateMigrationUtils();
-    await fsExtra.writeFile(path.join(dbPath, 'migrate.ts'), migrateContent);
+      // Create migration utility
+      const migrateContent = this.generateMigrationUtils();
+      await fsExtra.writeFile(path.join(dbPath, 'migrate.ts'), migrateContent);
+    }
+    // For single app, skip this step as files will be created in src/lib/db/ by generateUnifiedInterfaceFiles
   }
 
   private async generateInitialMigration(context: PluginContext): Promise<void> {
     const { projectPath } = context;
+    const structure = context.projectStructure!;
     
     context.logger.info('Generating initial migration...');
-    await this.runner.exec('drizzle-kit', ['generate'], projectPath);
+    
+    // For monorepo, run from the db package directory
+    const workingDir = structure.isMonorepo 
+      ? structureService.getModulePath(projectPath, structure, 'db') 
+      : projectPath;
+    await this.runner.exec('drizzle-kit', ['generate'], workingDir);
   }
 
   private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
     const { projectPath } = context;
-    const srcPath = path.join(projectPath, 'src', 'lib', 'db');
+    const structure = context.projectStructure!;
+    const unifiedPath = structureService.getUnifiedInterfacePath(projectPath, structure, 'db');
 
-    await fsExtra.ensureDir(srcPath);
+    await fsExtra.ensureDir(unifiedPath);
 
     // Create index.ts
     const indexContent = this.generateUnifiedIndex();
-    await fsExtra.writeFile(path.join(srcPath, 'index.ts'), indexContent);
+    await fsExtra.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
 
     // Create schema.ts
     const schemaContent = this.generateDatabaseSchema();
-    await fsExtra.writeFile(path.join(srcPath, 'schema.ts'), schemaContent);
+    await fsExtra.writeFile(path.join(unifiedPath, 'schema.ts'), schemaContent);
 
     // Create migrations.ts
     const migrationsContent = this.generateMigrationUtils();
-    await fsExtra.writeFile(path.join(srcPath, 'migrations.ts'), migrationsContent);
+    await fsExtra.writeFile(path.join(unifiedPath, 'migrations.ts'), migrationsContent);
   }
 
   private generateDrizzleConfig(config: Record<string, any>): string {

@@ -4,6 +4,7 @@
  * Provides a unified interface for CLI commands to interact with the plugin system.
  * Handles plugin installation, configuration, and management operations.
  */
+import { structureService } from '../project/structure-service.js';
 export class PluginAdapter {
     pluginSystem;
     logger;
@@ -280,13 +281,8 @@ export class PluginAdapter {
             installedPlugins: [],
             projectType: 'nextjs',
             targetPlatform: ['web'],
-            // Provide default projectStructure for backward compatibility
-            projectStructure: {
-                type: adapterContext.config.structure || 'single-app',
-                userPreference: 'scalable-monorepo',
-                modules: adapterContext.config.modules || [],
-                template: adapterContext.config.template || 'nextjs-14'
-            }
+            // Use the centralized structure service
+            projectStructure: structureService.createStructureInfo(adapterContext.config.userPreference || 'quick-prototype', adapterContext.config.template || 'nextjs-14')
         };
     }
     validateConfiguration(config, schema) {

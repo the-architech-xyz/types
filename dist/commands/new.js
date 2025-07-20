@@ -10,6 +10,7 @@ import inquirer from 'inquirer';
 import { OrchestratorAgent } from '../agents/orchestrator-agent.js';
 import { ContextFactory } from '../core/project/context-factory.js';
 import fsExtra from 'fs-extra';
+import { structureService } from '../core/project/structure-service.js';
 export async function newCommand(projectName, options = {}) {
     console.log(chalk.blue.bold('🎭 Welcome to The Architech!\n'));
     // Debug: Log the options being passed
@@ -37,7 +38,7 @@ export async function newCommand(projectName, options = {}) {
 async function gatherProjectConfig(projectName, options = {}) {
     let config = {
         projectName: projectName || '',
-        projectType: options.projectType || 'scalable-monorepo', // Default to recommended
+        projectType: options.projectType || 'quick-prototype', // Default to single app
         packageManager: options.packageManager || 'auto',
         skipGit: options.noGit || false,
         skipInstall: options.noInstall || false,
@@ -151,13 +152,8 @@ function createEnhancedContext(config) {
         userInput: config.userInput,
         projectType: config.projectType
     });
-    // Enhance the context with project structure information
-    context.projectStructure = {
-        type: structureType,
-        userPreference: config.projectType,
-        template: config.template,
-        modules: modules
-    };
+    // Enhance the context with project structure information using the structure service
+    context.projectStructure = structureService.createStructureInfo(config.projectType, config.template);
     // Store additional configuration in context
     context.config.projectType = config.projectType;
     context.config.userInput = config.userInput;

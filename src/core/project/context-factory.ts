@@ -1,62 +1,82 @@
 /**
  * Context Factory
  * 
- * Creates and validates AgentContext objects with proper defaults
- * and environment information.
+ * Creates and manages execution contexts for agents and plugins.
+ * Provides a consistent interface for context creation across the system.
  */
 
 import * as path from 'path';
 import * as os from 'os';
-import { 
-  AgentContext, 
-  ExecutionOptions, 
-  EnvironmentInfo
-} from '../../types/agent.js';
-import { CommandRunner } from '../cli/command-runner.js';
-import { AgentLogger as Logger } from '../cli/logger.js';
+import { AgentContext, ExecutionOptions, Logger, EnvironmentInfo } from '../../types/agent.js';
+import { CommandRunner, PackageManager } from '../cli/command-runner.js';
+import { structureService, StructureInfo } from './structure-service.js';
+
+// Helper function to get environment info
+function getEnvironmentInfo(): EnvironmentInfo {
+  return {
+    nodeVersion: process.version,
+    platform: os.platform(),
+    arch: os.arch(),
+    cwd: process.cwd(),
+    env: Object.fromEntries(
+      Object.entries(process.env).filter(([_, value]) => value !== undefined)
+    ) as Record<string, string>
+  };
+}
 
 export class ContextFactory {
   /**
-   * Creates a new AgentContext with proper defaults and validation
+   * Creates a context for agent execution
    */
   static createContext(
     projectName: string,
-    options: Partial<ExecutionOptions> & { packageManager?: string } = {},
+    options: Partial<ExecutionOptions> & { packageManager?: PackageManager } = {},
     config: Record<string, any> = {},
     dependencies: string[] = []
   ): AgentContext {
     const projectPath = path.resolve(process.cwd(), projectName);
-    
-    // Build execution options with defaults
-    const executionOptions: ExecutionOptions = {
-      skipGit: false,
-      skipInstall: false,
-      useDefaults: false,
-      verbose: false,
-      dryRun: false,
-      force: false,
-      timeout: 300000, // 5 minutes
-      ...options
-    };
-
-    // Create logger
-    const logger = new Logger(executionOptions.verbose);
 
     // Create command runner
-    const runner = new CommandRunner((options.packageManager as any) || 'auto', {
-      verbose: executionOptions.verbose
+    const runner = new CommandRunner(options.packageManager || 'auto', {
+      verbose: options.verbose || false
     });
 
-    // Build environment info
-    const environment: EnvironmentInfo = {
-      nodeVersion: process.version,
-      platform: os.platform(),
-      arch: os.arch(),
-      cwd: process.cwd(),
-      env: Object.fromEntries(
-        Object.entries(process.env).filter(([_, value]) => value !== undefined)
-      ) as Record<string, string>
+    // Create logger
+    const logger: Logger = {
+      info: (message: string) => console.log(`ℹ️  ${message}`),
+      success: (message: string) => console.log(`✅ ${message}`),
+      warn: (message: string) => console.log(`⚠️  ${message}`),
+      error: (message: string, error?: Error) => {
+        console.error(`❌ ${message}`);
+        if (error && options.verbose) {
+          console.error(error);
+        }
+      },
+      debug: (message: string) => {
+        if (options.verbose) {
+          console.log(`🔍 ${message}`);
+        }
+      },
+      log: (level: any, message: string, context?: any) => {
+        console.log(`[${level.toUpperCase()}] ${message}`, context || '');
+      }
     };
+
+    // Create execution options
+    const executionOptions: ExecutionOptions = {
+      verbose: options.verbose || false,
+      skipGit: options.skipGit || false,
+      skipInstall: options.skipInstall || false,
+      useDefaults: options.useDefaults || false,
+      force: options.force || false
+    };
+
+    // Get environment info
+    const environment = getEnvironmentInfo();
+
+    // Create structure info using the centralized service
+    const userPreference = config.projectType || 'quick-prototype';
+    const structureInfo = structureService.createStructureInfo(userPreference, config.template || 'nextjs-14');
 
     // Create context
     const context: AgentContext = {
@@ -70,33 +90,67 @@ export class ContextFactory {
       state: new Map(),
       dependencies,
       environment,
-      // Provide default projectStructure for backward compatibility
-      projectStructure: {
-        type: config.structure || 'single-app',
-        userPreference: 'scalable-monorepo',
-        modules: config.modules || [],
-        template: config.template || 'nextjs-14'
-      }
+      // Use the centralized structure service
+      projectStructure: structureInfo
     };
 
     return context;
   }
 
   /**
-   * Creates a context for the architech monorepo workflow
+   * Creates a context for plugin execution
    */
-  static createArchitechContext(
+  static createPluginContext(
     projectName: string,
-    selectedModules: string[],
+    projectPath: string,
+    pluginId: string,
+    pluginConfig: Record<string, any>,
+    structure: StructureInfo,
     options: Partial<ExecutionOptions> = {}
-  ): AgentContext {
-    const config = {
-      selectedModules,
-      isMonorepo: true,
-      structure: 'turborepo'
+  ): any {
+    const runner = new CommandRunner('auto', {
+      verbose: options.verbose || false
+    });
+    
+    const logger: Logger = {
+      info: (message: string) => console.log(`[${pluginId}] ℹ️  ${message}`),
+      success: (message: string) => console.log(`[${pluginId}] ✅ ${message}`),
+      warn: (message: string) => console.log(`[${pluginId}] ⚠️  ${message}`),
+      error: (message: string, error?: Error) => {
+        console.error(`[${pluginId}] ❌ ${message}`);
+        if (error && options.verbose) {
+          console.error(error);
+        }
+      },
+      debug: (message: string) => {
+        if (options.verbose) {
+          console.log(`[${pluginId}] 🔍 ${message}`);
+        }
+      },
+      log: (level: any, message: string, context?: any) => {
+        console.log(`[${pluginId}] [${level.toUpperCase()}] ${message}`, context || '');
+      }
     };
 
-    return this.createContext(projectName, options, config, selectedModules);
+    return {
+      projectName,
+      projectPath,
+      packageManager: runner.getPackageManager(),
+      options,
+      config: pluginConfig,
+      runner,
+      logger,
+      state: new Map(),
+      dependencies: [],
+      environment: getEnvironmentInfo(),
+      pluginId,
+      pluginConfig,
+      installedPlugins: [],
+      projectType: 'nextjs' as any,
+      targetPlatform: ['web'] as any,
+      // Use the centralized structure service
+      projectStructure: structure
+    };
   }
 
   /**
@@ -116,75 +170,5 @@ export class ContextFactory {
     };
 
     return this.createContext(projectName, options, config, modules);
-  }
-
-  /**
-   * Validates a context and returns validation errors
-   */
-  static validateContext(context: AgentContext): string[] {
-    const errors: string[] = [];
-
-    // Required fields
-    if (!context.projectName) {
-      errors.push('Project name is required');
-    }
-
-    if (!context.projectPath) {
-      errors.push('Project path is required');
-    }
-
-    if (!context.packageManager) {
-      errors.push('Package manager is required');
-    }
-
-    // Validate project name format
-    if (context.projectName && !/^[a-zA-Z0-9-_]+$/.test(context.projectName)) {
-      errors.push('Project name can only contain letters, numbers, hyphens, and underscores');
-    }
-
-    // Validate package manager
-    const validPackageManagers = ['npm', 'yarn', 'pnpm', 'bun'];
-    if (context.packageManager && !validPackageManagers.includes(context.packageManager)) {
-      errors.push(`Invalid package manager: ${context.packageManager}`);
-    }
-
-    // Validate options
-    if (context.options.timeout && context.options.timeout < 0) {
-      errors.push('Timeout must be a positive number');
-    }
-
-    return errors;
-  }
-
-  /**
-   * Creates a child context with updated configuration
-   */
-  static createChildContext(
-    parentContext: AgentContext,
-    updates: Partial<AgentContext>
-  ): AgentContext {
-    return {
-      ...parentContext,
-      ...updates,
-      state: new Map(parentContext.state), // Clone state
-      config: { ...parentContext.config, ...updates.config }
-    };
-  }
-
-  /**
-   * Updates context state immutably
-   */
-  static updateContextState(
-    context: AgentContext,
-    key: string,
-    value: any
-  ): AgentContext {
-    const newState = new Map(context.state);
-    newState.set(key, value);
-
-    return {
-      ...context,
-      state: newState
-    };
   }
 } 

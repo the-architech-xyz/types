@@ -5,6 +5,7 @@
  */
 
 import { CommandRunner } from '../core/cli/command-runner.js';
+import { StructureInfo } from '../core/project/structure-service.js';
 
 // ============================================================================
 // CORE INTERFACES
@@ -43,12 +44,7 @@ export interface AgentContext {
   packageManager: string;
   
   // Project structure and preferences
-  projectStructure?: {
-    type: 'single-app' | 'monorepo';
-    userPreference: 'quick-prototype' | 'scalable-monorepo';
-    modules: string[];
-    template: string;
-  };
+  projectStructure?: StructureInfo;
   
   // User input and requirements
   userInput?: string;

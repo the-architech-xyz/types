@@ -99,8 +99,10 @@ export class FrameworkAgent extends AbstractAgent {
         // Get the framework plugin
         const plugin = this.pluginSystem.getRegistry().get(frameworkType);
         if (!plugin) {
+            context.logger.error(`Framework plugin not found: ${frameworkType}`);
             throw new Error(`Framework plugin not found: ${frameworkType}`);
         }
+        context.logger.info(`Found plugin: ${plugin.getMetadata().name} (${plugin.getMetadata().id})`);
         // Prepare plugin context
         const pluginContext = {
             ...context,
@@ -115,14 +117,20 @@ export class FrameworkAgent extends AbstractAgent {
             projectType: ProjectType.NEXTJS,
             targetPlatform: [TargetPlatform.WEB]
         };
+        context.logger.info(`Plugin context prepared for ${frameworkType}`);
         // Validate plugin
+        context.logger.info(`Validating ${frameworkType} plugin...`);
         const validation = await plugin.validate(pluginContext);
         if (!validation.valid) {
+            context.logger.error(`${frameworkType} plugin validation failed: ${validation.errors.map((e) => e.message).join(', ')}`);
             throw new Error(`${frameworkType} plugin validation failed: ${validation.errors.map((e) => e.message).join(', ')}`);
         }
+        context.logger.info(`${frameworkType} plugin validation passed`);
         // Execute plugin
+        context.logger.info(`Executing ${frameworkType} plugin...`);
         const result = await plugin.install(pluginContext);
         if (!result.success) {
+            context.logger.error(`${frameworkType} plugin execution failed: ${result.errors.map((e) => e.message).join(', ')}`);
             throw new Error(`${frameworkType} plugin execution failed: ${result.errors.map((e) => e.message).join(', ')}`);
         }
         context.logger.success(`${frameworkType} framework setup completed`);

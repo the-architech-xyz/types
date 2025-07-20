@@ -9,6 +9,7 @@ import { PluginSystem } from './plugin-system.js';
 import { CommandRunner } from '../cli/command-runner.js';
 import { Logger } from '../../types/agent.js';
 import { PluginContext, PluginResult, PluginError } from '../../types/plugin.js';
+import { structureService } from '../project/structure-service.js';
 
 export interface AdapterContext {
   projectName: string;
@@ -355,13 +356,11 @@ export class PluginAdapter {
       installedPlugins: [],
       projectType: 'nextjs' as any,
       targetPlatform: ['web'] as any,
-      // Provide default projectStructure for backward compatibility
-      projectStructure: {
-        type: adapterContext.config.structure || 'single-app',
-        userPreference: 'scalable-monorepo',
-        modules: adapterContext.config.modules || [],
-        template: adapterContext.config.template || 'nextjs-14'
-      }
+      // Use the centralized structure service
+      projectStructure: structureService.createStructureInfo(
+        adapterContext.config.userPreference || 'quick-prototype',
+        adapterContext.config.template || 'nextjs-14'
+      )
     };
   }
 

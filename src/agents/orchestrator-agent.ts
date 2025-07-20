@@ -583,7 +583,7 @@ export class OrchestratorAgent implements IAgent {
           const { BaseProjectAgent } = await import('./base-project-agent.js');
           return new BaseProjectAgent();
         case 'framework':
-          const { FrameworkAgent } = await import('./framework-agent');
+          const { FrameworkAgent } = await import('./framework-agent.js');
           return new FrameworkAgent();
         case 'db':
           const { DBAgent } = await import('./db-agent.js');

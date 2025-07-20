@@ -5,13 +5,13 @@
  * Handles user interaction, decision making, and coordinates database plugins through unified interfaces.
  * No direct installation logic - delegates everything to plugins through adapters.
  */
-import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
+import { structureService } from '../core/project/structure-service.js';
 export class DBAgent extends AbstractAgent {
     pluginSystem;
     constructor() {
@@ -324,62 +324,37 @@ export class DBAgent extends AbstractAgent {
     // PRIVATE METHODS - Database Setup
     // ============================================================================
     getPackagePath(context, packageName) {
-        const isMonorepo = context.projectStructure?.type === 'monorepo';
-        if (isMonorepo) {
-            return path.join(context.projectPath, 'packages', packageName);
-        }
-        else {
-            // For single-app, install in the root directory (Next.js project)
-            return context.projectPath;
-        }
+        const structure = context.projectStructure;
+        return structureService.getModulePath(context.projectPath, structure, packageName);
     }
     async ensurePackageDirectory(context, packageName, packagePath) {
-        const isMonorepo = context.projectStructure?.type === 'monorepo';
-        if (isMonorepo) {
-            // Create package directory and basic structure
+        const structure = context.projectStructure;
+        if (structure.isMonorepo) {
+            // For monorepo, ensure the package directory exists
             await fsExtra.ensureDir(packagePath);
-            // Create package.json for the DB package
-            const packageJson = {
-                name: `@${context.projectName}/${packageName}`,
-                version: "0.1.0",
-                private: true,
-                main: "./index.ts",
-                types: "./index.ts",
-                scripts: {
-                    "build": "tsc",
-                    "dev": "tsc --watch",
-                    "lint": "eslint . --ext .ts,.tsx",
-                    "db:generate": "drizzle-kit generate",
-                    "db:migrate": "drizzle-kit migrate",
-                    "db:studio": "drizzle-kit studio"
-                },
-                dependencies: {},
-                devDependencies: {
-                    "typescript": "^5.0.0",
-                    "drizzle-kit": "^0.31.4"
-                }
-            };
-            await fsExtra.writeJSON(path.join(packagePath, 'package.json'), packageJson, { spaces: 2 });
-            // Create index.ts
-            await fsExtra.writeFile(path.join(packagePath, 'index.ts'), `// ${packageName} package exports\n`);
-            // Create tsconfig.json
-            const tsconfig = {
-                extends: "../../tsconfig.json",
-                compilerOptions: {
-                    outDir: "./dist",
-                    rootDir: "."
-                },
-                include: ["./**/*"],
-                exclude: ["node_modules", "dist"]
-            };
-            await fsExtra.writeJSON(path.join(packagePath, 'tsconfig.json'), tsconfig, { spaces: 2 });
-            context.logger.info(`Created ${packageName} package at: ${packagePath}`);
+            // Create package.json if it doesn't exist
+            const packageJsonPath = path.join(packagePath, 'package.json');
+            if (!await fsExtra.pathExists(packageJsonPath)) {
+                const packageJson = {
+                    name: `@${context.projectName}/${packageName}`,
+                    version: "0.1.0",
+                    private: true,
+                    main: "./index.ts",
+                    types: "./index.ts",
+                    scripts: {
+                        "build": "tsc",
+                        "dev": "tsc --watch",
+                        "lint": "eslint . --ext .ts,.tsx"
+                    },
+                    dependencies: {},
+                    devDependencies: {
+                        "typescript": "^5.0.0"
+                    }
+                };
+                await fsExtra.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+            }
         }
-        else {
-            // For single-app, just ensure the directory exists (Next.js project already has structure)
-            await fsExtra.ensureDir(packagePath);
-            context.logger.info(`Using existing Next.js project at: ${packagePath}`);
-        }
+        // For single app, the directory is already created by the base project agent
     }
     async getDatabaseConfig(context) {
         // Get configuration from context or use defaults
@@ -465,16 +440,14 @@ export class DBAgent extends AbstractAgent {
         if (!plugin) {
             throw new Error(`Database plugin not found: ${actualPluginId}`);
         }
-        // Determine the correct project path for the plugin
-        const isMonorepo = context.projectStructure?.type === 'monorepo';
-        const pluginProjectPath = isMonorepo
-            ? path.join(context.projectPath, 'packages', 'db')
-            : context.projectPath;
+        // Always use the root project path for the plugin context
+        // The plugin will handle monorepo vs single app structure internally
+        const pluginProjectPath = context.projectPath;
         context.logger.info(`Plugin will generate files in: ${pluginProjectPath}`);
-        // Prepare plugin context with correct project path
+        // Prepare plugin context with root project path
         const pluginContext = {
             ...context,
-            projectPath: pluginProjectPath, // Use the correct path for the plugin
+            projectPath: pluginProjectPath, // Use root project path
             pluginId: actualPluginId,
             pluginConfig: {
                 provider: pluginSelection?.database?.provider || 'neon',
@@ -504,39 +477,21 @@ export class DBAgent extends AbstractAgent {
         };
     }
     async validateDatabaseSetupUnified(context, pluginName, installPath) {
-        context.logger.info(`Validating ${pluginName} setup with unified interface...`);
-        try {
-            // Determine the correct path to check based on project structure
-            const isMonorepo = context.projectStructure?.type === 'monorepo';
-            let dbLibPath;
-            if (isMonorepo) {
-                // For monorepo, check in the package directory
-                dbLibPath = path.join(installPath, 'src', 'lib', 'db');
+        const structure = context.projectStructure;
+        const unifiedPath = structureService.getUnifiedInterfacePath(context.projectPath, structure, 'db');
+        // Check for unified interface files
+        const requiredFiles = [
+            'index.ts',
+            'schema.ts',
+            'migrations.ts'
+        ];
+        for (const file of requiredFiles) {
+            const filePath = path.join(unifiedPath, file);
+            if (!await fsExtra.pathExists(filePath)) {
+                throw new Error(`Missing unified interface file: ${filePath}`);
             }
-            else {
-                // For single-app, check in the project root
-                dbLibPath = path.join(installPath, 'src', 'lib', 'db');
-            }
-            const dbIndexPath = path.join(dbLibPath, 'index.ts');
-            if (!existsSync(dbIndexPath)) {
-                throw new Error(`Unified database interface not found at ${dbIndexPath}`);
-            }
-            // Check if database schema was generated
-            const dbSchemaPath = path.join(dbLibPath, 'schema.ts');
-            if (!existsSync(dbSchemaPath)) {
-                context.logger.warn('Database schema file not found, but continuing...');
-            }
-            // Check if migrations were generated
-            const dbMigrationsPath = path.join(dbLibPath, 'migrations.ts');
-            if (!existsSync(dbMigrationsPath)) {
-                context.logger.warn('Database migrations file not found, but continuing...');
-            }
-            context.logger.success(`${pluginName} unified interface validation passed`);
         }
-        catch (error) {
-            context.logger.error(`Failed to validate ${pluginName} setup: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            throw error;
-        }
+        context.logger.success(`✅ ${pluginName} unified interface validation passed`);
     }
     // ============================================================================
     // PLUGIN SELECTION

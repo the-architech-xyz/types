@@ -10,7 +10,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { newCommand } from './commands/new.js';
-import { scaleToMonorepoCommand } from './commands/scale-to-monorepo.js';
+import { scaleCommand } from './commands/scale.js';
 import { displayBanner } from './core/cli/banner.js';
 
 // Async IIFE to handle dynamic imports
@@ -50,19 +50,19 @@ import { displayBanner } from './core/cli/banner.js';
     .description('🎭 Create a new project with guided decision making')
     .argument('[project-name]', 'Name of the project to create')
     .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
-    .option('--project-type <type>', 'Project type (quick-prototype, scalable-monorepo)', 'scalable-monorepo')
+    .option('--project-type <type>', 'Project type (quick-prototype, scalable-monorepo)', 'quick-prototype')
     .option('--no-git', 'Skip git repository initialization')
     .option('--no-install', 'Skip dependency installation')
     .option('-y, --yes', 'Skip interactive prompts and use defaults', false)
     .action(newCommand);
 
-  // Scale to monorepo command - Migrate single-app to monorepo
+  // Scale command - Transform single app to monorepo (the killer feature)
   program
-    .command('scale-to-monorepo')
-    .description('📈 Scale a single-app project to enterprise monorepo structure')
+    .command('scale')
+    .description('🚀 Scale your single app to a scalable monorepo structure')
     .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
     .option('-y, --yes', 'Skip interactive prompts and use defaults')
-    .action(scaleToMonorepoCommand);
+    .action(scaleCommand);
 
   // Plugins command - Plugin management
   console.log('Registering plugins command...');
@@ -98,65 +98,56 @@ import { displayBanner } from './core/cli/banner.js';
         console.log(chalk.blue('\n📦 Available Templates:'));
         console.log('  • nextjs-14     - Next.js 14 with App Router');
         console.log('  • nextjs-13     - Next.js 13 with Pages Router');
-        console.log('  • react-vite    - React with Vite');
-        console.log('  • vue-nuxt      - Vue with Nuxt 3');
-      }
-      if (options.modules) {
-        console.log(chalk.blue('\n🧩 Available Modules:'));
-        console.log('  • auth          - Authentication (NextAuth.js)');
-        console.log('  • database      - Database (Prisma + PostgreSQL)');
-        console.log('  • payments      - Payments (Stripe)');
-        console.log('  • admin         - Admin Dashboard');
-        console.log('  • analytics     - Analytics (Google Analytics)');
+        console.log('  • react-18      - React 18 with Vite');
+        console.log('  • vue-3         - Vue 3 with Composition API');
+      } else if (options.modules) {
+        console.log(chalk.blue('\n🔧 Available Modules:'));
+        console.log('  • auth          - Authentication (Better Auth)');
+        console.log('  • database      - Database (Drizzle ORM)');
+        console.log('  • ui            - UI Components (Shadcn/ui)');
+        console.log('  • payments      - Payment processing');
+        console.log('  • admin         - Admin dashboard');
+        console.log('  • email         - Email services');
+        console.log('  • monitoring    - Application monitoring');
+      } else {
+        console.log(chalk.blue('\n🎯 Quick Start:'));
+        console.log('  architech new my-app          # Create a new project');
+        console.log('  architech scale               # Scale to monorepo');
+        console.log('  architech add auth            # Add authentication');
+        console.log('  architech list --templates    # Show templates');
+        console.log('  architech list --modules      # Show modules');
       }
     });
 
   // Info command - Show project information
   program
     .command('info')
-    .description('ℹ️  Show information about the current project')
+    .description('ℹ️  Show project information and status')
     .action(() => {
-      console.log(chalk.yellow('🚧 The "info" command is coming soon!'));
-      console.log(chalk.gray('This will show details about the current project and its modules.'));
+      console.log(chalk.blue('\n📊 Project Information:'));
+      console.log(chalk.gray('This command will show:'));
+      console.log('  • Project structure (single-app vs monorepo)');
+      console.log('  • Installed modules and plugins');
+      console.log('  • Dependencies and versions');
+      console.log('  • Configuration status');
+      console.log(chalk.yellow('\n🚧 Coming soon!'));
     });
 
-  // Error handling for unknown commands
-  program.on('command:*', (operands) => {
-    console.log(chalk.red(`\n❌ Unknown command: ${operands[0]}`));
-    console.log(chalk.yellow('💡 Run "architech --help" to see available commands.\n'));
-    process.exit(1);
-  });
-
-  // Custom help
-  program.on('--help', () => {
-    console.log(chalk.blue('\n🎯 Examples:'));
-    console.log('  $ architech new my-app');
-    console.log('  $ architech new my-app --project-type scalable-monorepo');
-    console.log('  $ architech scale-to-monorepo');
-    console.log('  $ architech plugins list');
-    console.log('  $ architech plugins info shadcn-ui');
-    console.log('  $ architech add auth');
-    console.log('  $ architech list --templates');
-    console.log(chalk.blue('\n🚀 Get started:'));
-    console.log('  Run "architech new" and follow the interactive prompts!');
-    console.log(chalk.gray('\n  For more information, visit: https://the-architech.dev\n'));
-  });
-
-  // Handle no arguments - show help
-  if (!process.argv.slice(2).length) {
-    program.outputHelp();
-    process.exit(0);
-  }
+  // Update command - Update The Architech CLI
+  program
+    .command('update')
+    .description('🔄 Update The Architech CLI to the latest version')
+    .action(() => {
+      console.log(chalk.blue('\n🔄 Updating The Architech CLI...'));
+      console.log(chalk.gray('This will update the CLI to the latest version.'));
+      console.log(chalk.yellow('\n🚧 Coming soon!'));
+    });
 
   // Parse command line arguments
-  program.parse(process.argv);
-
-  // Handle unknown flags
-  const options = program.opts();
-  if (Object.keys(options).length === 0 && process.argv.length === 2) {
-    program.outputHelp();
+  try {
+    await program.parseAsync();
+  } catch (error) {
+    console.error(chalk.red('❌ An error occurred:'), error);
+    process.exit(1);
   }
-})().catch(error => {
-  console.error('Failed to start CLI:', error);
-  process.exit(1);
-}); 
+})(); 

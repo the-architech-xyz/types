@@ -14,6 +14,7 @@ import { AgentContext, ExecutionOptions } from '../types/agent.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
 import { ContextFactory } from '../core/project/context-factory.js';
 import fsExtra from 'fs-extra';
+import { structureService } from '../core/project/structure-service.js';
 
 export interface NewOptions {
   packageManager?: string;
@@ -69,7 +70,7 @@ export async function newCommand(projectName?: string, options: NewOptions = {})
 async function gatherProjectConfig(projectName?: string, options: NewOptions = {}): Promise<NewConfig> {
   let config: NewConfig = {
     projectName: projectName || '',
-    projectType: options.projectType || 'scalable-monorepo', // Default to recommended
+    projectType: options.projectType || 'quick-prototype', // Default to single app
     packageManager: options.packageManager || 'auto',
     skipGit: options.noGit || false,
     skipInstall: options.noInstall || false,
@@ -179,7 +180,7 @@ function createEnhancedContext(config: NewConfig) {
   const context = ContextFactory.createContext(
     config.projectName,
     {
-      packageManager: config.packageManager,
+      packageManager: config.packageManager as any,
       skipGit: config.skipGit,
       skipInstall: config.skipInstall,
       useDefaults: config.useDefaults,
@@ -194,13 +195,8 @@ function createEnhancedContext(config: NewConfig) {
     }
   );
 
-  // Enhance the context with project structure information
-  context.projectStructure = {
-    type: structureType,
-    userPreference: config.projectType,
-    template: config.template,
-    modules: modules
-  };
+  // Enhance the context with project structure information using the structure service
+  context.projectStructure = structureService.createStructureInfo(config.projectType, config.template);
 
   // Store additional configuration in context
   context.config.projectType = config.projectType;

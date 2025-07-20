@@ -4,6 +4,7 @@
  * Defines the core types and interfaces for the agent system.
  */
 import { CommandRunner } from '../core/cli/command-runner.js';
+import { StructureInfo } from '../core/project/structure-service.js';
 export interface IAgent {
     execute(context: AgentContext): Promise<AgentResult>;
     validate?(context: AgentContext): Promise<ValidationResult>;
@@ -20,12 +21,7 @@ export interface AgentContext {
     projectName: string;
     projectPath: string;
     packageManager: string;
-    projectStructure?: {
-        type: 'single-app' | 'monorepo';
-        userPreference: 'quick-prototype' | 'scalable-monorepo';
-        modules: string[];
-        template: string;
-    };
+    projectStructure?: StructureInfo;
     userInput?: string;
     options: ExecutionOptions;
     config: Record<string, any>;
