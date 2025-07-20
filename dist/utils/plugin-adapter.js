@@ -279,7 +279,14 @@ export class PluginAdapter {
             pluginConfig: adapterContext.config[pluginId] || {},
             installedPlugins: [],
             projectType: 'nextjs',
-            targetPlatform: ['web']
+            targetPlatform: ['web'],
+            // Provide default projectStructure for backward compatibility
+            projectStructure: {
+                type: adapterContext.config.structure || 'single-app',
+                userPreference: 'scalable-monorepo',
+                modules: adapterContext.config.modules || [],
+                template: adapterContext.config.template || 'nextjs-14'
+            }
         };
     }
     validateConfiguration(config, schema) {

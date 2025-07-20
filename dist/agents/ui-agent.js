@@ -54,7 +54,12 @@ export class UIAgent extends AbstractAgent {
         const startTime = Date.now();
         try {
             context.logger.info('Starting UI/Design System orchestration...');
-            // Step 1: Get the Shadcn/ui plugin
+            // Step 1: Determine the correct path based on project structure
+            const packagePath = this.getPackagePath(context, 'ui');
+            context.logger.info(`UI package path: ${packagePath}`);
+            // Step 2: Ensure package directory exists
+            await this.ensurePackageDirectory(context, 'ui', packagePath);
+            // Step 3: Get the Shadcn/ui plugin
             const shadcnPlugin = this.pluginSystem.getRegistry().get('shadcn-ui');
             if (!shadcnPlugin) {
                 return this.createErrorResult('PLUGIN_NOT_FOUND', 'Shadcn/ui plugin not found in registry', [{
@@ -64,21 +69,22 @@ export class UIAgent extends AbstractAgent {
                         severity: 'error'
                     }]);
             }
-            // Step 2: Prepare plugin context
+            // Step 4: Prepare plugin context with correct path
             const pluginContext = {
                 ...context,
+                projectPath: packagePath, // Use package path instead of root path
                 pluginId: 'shadcn-ui',
                 pluginConfig: this.getPluginConfig(context),
                 installedPlugins: [],
                 projectType: ProjectType.NEXTJS,
                 targetPlatform: [TargetPlatform.WEB]
             };
-            // Step 3: Validate plugin compatibility
+            // Step 5: Validate plugin compatibility
             const validation = await shadcnPlugin.validate(pluginContext);
             if (!validation.valid) {
                 return this.createErrorResult('PLUGIN_VALIDATION_FAILED', 'Shadcn/ui plugin validation failed', validation.errors);
             }
-            // Step 4: Execute the plugin
+            // Step 6: Execute the plugin
             context.logger.info('Executing Shadcn/ui plugin...');
             const pluginResult = await shadcnPlugin.install(pluginContext);
             if (!pluginResult.success) {
@@ -90,6 +96,7 @@ export class UIAgent extends AbstractAgent {
                 success: true,
                 data: {
                     plugin: 'shadcn-ui',
+                    packagePath,
                     components: pluginResult.artifacts.length,
                     dependencies: pluginResult.dependencies.length
                 },
@@ -113,15 +120,10 @@ export class UIAgent extends AbstractAgent {
         }
         const errors = [];
         const warnings = [];
-        // Check if UI package exists
-        const uiPackagePath = path.join(context.projectPath, 'packages', 'ui');
-        if (!await fsExtra.pathExists(uiPackagePath)) {
-            errors.push({
-                field: 'uiPackage',
-                message: 'UI package directory does not exist',
-                code: 'UI_PACKAGE_NOT_FOUND',
-                severity: 'error'
-            });
+        // Check if UI package exists (but don't fail if it doesn't - we'll create it)
+        const packagePath = this.getPackagePath(context, 'ui');
+        if (!await fsExtra.pathExists(packagePath)) {
+            warnings.push(`UI package directory will be created at: ${packagePath}`);
         }
         // Check if Shadcn/ui plugin is available
         const shadcnPlugin = this.pluginSystem.getRegistry().get('shadcn-ui');
@@ -142,6 +144,60 @@ export class UIAgent extends AbstractAgent {
     // ============================================================================
     // HELPER METHODS
     // ============================================================================
+    getPackagePath(context, packageName) {
+        const isMonorepo = context.projectStructure?.type === 'monorepo';
+        if (isMonorepo) {
+            return path.join(context.projectPath, 'packages', packageName);
+        }
+        else {
+            // For single-app, install in the root directory (Next.js project)
+            return context.projectPath;
+        }
+    }
+    async ensurePackageDirectory(context, packageName, packagePath) {
+        const isMonorepo = context.projectStructure?.type === 'monorepo';
+        if (isMonorepo) {
+            // Create package directory and basic structure
+            await fsExtra.ensureDir(packagePath);
+            // Create package.json for the UI package
+            const packageJson = {
+                name: `@${context.projectName}/${packageName}`,
+                version: "0.1.0",
+                private: true,
+                main: "./index.ts",
+                types: "./index.ts",
+                scripts: {
+                    "build": "tsc",
+                    "dev": "tsc --watch",
+                    "lint": "eslint . --ext .ts,.tsx"
+                },
+                dependencies: {},
+                devDependencies: {
+                    "typescript": "^5.0.0"
+                }
+            };
+            await fsExtra.writeJSON(path.join(packagePath, 'package.json'), packageJson, { spaces: 2 });
+            // Create index.ts
+            await fsExtra.writeFile(path.join(packagePath, 'index.ts'), `// ${packageName} package exports\n`);
+            // Create tsconfig.json
+            const tsconfig = {
+                extends: "../../tsconfig.json",
+                compilerOptions: {
+                    outDir: "./dist",
+                    rootDir: "."
+                },
+                include: ["./**/*"],
+                exclude: ["node_modules", "dist"]
+            };
+            await fsExtra.writeJSON(path.join(packagePath, 'tsconfig.json'), tsconfig, { spaces: 2 });
+            context.logger.info(`Created ${packageName} package at: ${packagePath}`);
+        }
+        else {
+            // For single-app, just ensure the directory exists (Next.js project already has structure)
+            await fsExtra.ensureDir(packagePath);
+            context.logger.info(`Using existing Next.js project at: ${packagePath}`);
+        }
+    }
     getPluginConfig(context) {
         // Get configuration from context or use defaults
         const userConfig = context.config.ui || {};

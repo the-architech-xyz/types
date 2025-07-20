@@ -1,22 +1,14 @@
 /**
- * Base Project Agent - Foundation Builder
+ * Base Project Agent - Structure Creator
  *
- * Responsible for creating the core project structure using the plugin system.
- * Pure orchestrator - delegates all technology implementation to plugins.
+ * Responsible for creating the core project structure (monorepo or single-app).
+ * Pure structure creator - no framework installation, just structure setup.
  */
-import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginSystem } from '../utils/plugin-system.js';
-import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
 export class BaseProjectAgent extends AbstractAgent {
-    pluginSystem;
-    constructor() {
-        super();
-        this.pluginSystem = PluginSystem.getInstance();
-    }
     // ============================================================================
     // AGENT METADATA
     // ============================================================================
@@ -24,10 +16,10 @@ export class BaseProjectAgent extends AbstractAgent {
         return {
             name: 'BaseProjectAgent',
             version: '2.0.0',
-            description: 'Creates the foundational project structure using plugin orchestration',
+            description: 'Creates the foundational project structure (monorepo or single-app)',
             author: 'The Architech Team',
             category: AgentCategory.FOUNDATION,
-            tags: ['project', 'foundation', 'orchestrator', 'plugin-coordinator'],
+            tags: ['project', 'foundation', 'structure', 'monorepo', 'single-app'],
             dependencies: [],
             conflicts: [],
             requirements: [
@@ -44,64 +36,50 @@ export class BaseProjectAgent extends AbstractAgent {
     getAgentCapabilities() {
         return [
             {
-                name: 'create-project-structure',
-                description: 'Create project structure using NextJS plugin',
+                name: 'create-monorepo-structure',
+                description: 'Create monorepo structure with apps/ and packages/ directories',
                 parameters: [
                     {
                         name: 'projectName',
                         type: 'string',
                         required: true,
                         description: 'Name of the project to create'
-                    },
-                    {
-                        name: 'framework',
-                        type: 'string',
-                        required: true,
-                        description: 'Framework to use (nextjs, nextjs-14)'
-                    },
-                    {
-                        name: 'structure',
-                        type: 'string',
-                        required: true,
-                        description: 'Project structure (single-app or monorepo)'
                     }
                 ],
                 examples: [
                     {
-                        name: 'Create Next.js monorepo',
-                        description: 'Create a Next.js monorepo using NextJS plugin',
+                        name: 'Create monorepo structure',
+                        description: 'Create apps/, packages/, turbo.json, and workspace config',
                         parameters: {
-                            projectName: 'my-app',
-                            framework: 'nextjs-14',
-                            structure: 'monorepo'
+                            projectName: 'my-monorepo'
                         },
-                        expectedResult: 'Project structure created successfully via plugin'
+                        expectedResult: 'Monorepo structure created successfully'
                     }
                 ],
                 category: CapabilityCategory.SETUP
             },
             {
-                name: 'validate-project-structure',
-                description: 'Validate created project structure',
+                name: 'create-single-app-structure',
+                description: 'Create single-app structure with basic configuration',
                 parameters: [
                     {
-                        name: 'projectPath',
+                        name: 'projectName',
                         type: 'string',
                         required: true,
-                        description: 'Path to the project directory'
+                        description: 'Name of the project to create'
                     }
                 ],
                 examples: [
                     {
-                        name: 'Validate monorepo structure',
-                        description: 'Validate that all required directories and files exist',
+                        name: 'Create single-app structure',
+                        description: 'Create basic structure with path aliases and config',
                         parameters: {
-                            projectPath: './my-app'
+                            projectName: 'my-app'
                         },
-                        expectedResult: 'Structure validation passed'
+                        expectedResult: 'Single-app structure created successfully'
                     }
                 ],
-                category: CapabilityCategory.VALIDATION
+                category: CapabilityCategory.SETUP
             }
         ];
     }
@@ -128,26 +106,8 @@ export class BaseProjectAgent extends AbstractAgent {
                 severity: 'error'
             });
         }
-        // Validate framework
-        const framework = context.config.template;
-        if (!framework) {
-            errors.push({
-                field: 'template',
-                message: 'Framework/template is required',
-                code: 'REQUIRED_FIELD',
-                severity: 'error'
-            });
-        }
-        else if (!['nextjs', 'nextjs-14', 'react', 'vue'].includes(framework)) {
-            errors.push({
-                field: 'template',
-                message: `Unsupported framework: ${framework}`,
-                code: 'UNSUPPORTED_FRAMEWORK',
-                severity: 'error'
-            });
-        }
         // Validate project path
-        if (existsSync(context.projectPath)) {
+        if (await fsExtra.pathExists(context.projectPath)) {
             errors.push({
                 field: 'projectPath',
                 message: `Project directory already exists: ${context.projectPath}`,
@@ -155,17 +115,12 @@ export class BaseProjectAgent extends AbstractAgent {
                 severity: 'error'
             });
         }
-        // Validate package manager
-        if (!['npm', 'yarn', 'pnpm', 'bun', 'auto'].includes(context.packageManager)) {
-            warnings.push(`Unsupported package manager: ${context.packageManager}`);
-        }
-        // Check if NextJS plugin is available
-        const nextjsPlugin = this.pluginSystem.getRegistry().get('nextjs');
-        if (!nextjsPlugin) {
+        // Validate project structure
+        if (!context.projectStructure) {
             errors.push({
-                field: 'plugin',
-                message: 'NextJS plugin not found in registry',
-                code: 'PLUGIN_NOT_FOUND',
+                field: 'projectStructure',
+                message: 'Project structure information is required',
+                code: 'REQUIRED_FIELD',
                 severity: 'error'
             });
         }
@@ -176,35 +131,41 @@ export class BaseProjectAgent extends AbstractAgent {
         };
     }
     // ============================================================================
-    // CORE EXECUTION - Pure Plugin Orchestration
+    // CORE EXECUTION - Pure Structure Creation
     // ============================================================================
     async executeInternal(context) {
-        const { projectName, projectPath, config } = context;
-        const framework = config.template;
-        const structure = config.structure || 'monorepo';
-        context.logger.info(`Creating ${structure} structure for ${framework}: ${projectName}`);
+        const { projectName, projectPath, projectStructure } = context;
+        const structure = projectStructure?.type || context.config.structure || 'single-app';
+        context.logger.info(`Creating ${structure} structure for ${projectName}`);
+        context.logger.info(`User preference: ${projectStructure?.userPreference || 'not specified'}`);
         try {
             // Start spinner for actual work
             await this.startSpinner(`🔧 Creating ${structure} structure for ${projectName}...`, context);
-            // Step 1: Execute NextJS plugin for project creation
-            const pluginResult = await this.executeNextJSPlugin(context, framework, structure);
-            // Step 2: Validate the created project structure
-            await this.validateProjectStructure(context, structure);
-            // Step 3: Create project configuration file
+            // Step 1: Create the appropriate project structure
+            if (structure === 'monorepo') {
+                await this.createMonorepoStructure(context);
+            }
+            else {
+                await this.createSingleAppStructure(context);
+            }
+            // Step 2: Create project configuration file
             await this.createProjectConfiguration(context, structure);
             await this.succeedSpinner(`✅ Project structure created successfully`);
             return {
                 success: true,
                 data: {
                     projectName,
-                    framework,
                     structure,
-                    plugin: 'nextjs',
-                    artifacts: pluginResult.artifacts.length,
-                    dependencies: pluginResult.dependencies.length
+                    userPreference: projectStructure?.userPreference,
+                    artifacts: ['project-structure', 'configuration']
                 },
-                artifacts: pluginResult.artifacts,
-                warnings: pluginResult.warnings,
+                artifacts: [
+                    {
+                        type: 'directory',
+                        path: projectPath,
+                        metadata: { structure, type: 'project-root' }
+                    }
+                ],
                 duration: Date.now() - this.startTime
             };
         }
@@ -215,67 +176,115 @@ export class BaseProjectAgent extends AbstractAgent {
         }
     }
     // ============================================================================
-    // PRIVATE METHODS - Plugin Orchestration
+    // PRIVATE METHODS - Structure Creation
     // ============================================================================
-    async executeNextJSPlugin(context, framework, structure) {
-        // Get the NextJS plugin
-        const nextjsPlugin = this.pluginSystem.getRegistry().get('nextjs');
-        if (!nextjsPlugin) {
-            throw new Error('NextJS plugin not found in registry');
-        }
-        // Prepare plugin context
-        const pluginContext = {
-            ...context,
-            pluginId: 'nextjs',
-            pluginConfig: this.getPluginConfig(context, framework, structure),
-            installedPlugins: [],
-            projectType: ProjectType.NEXTJS,
-            targetPlatform: [TargetPlatform.WEB]
-        };
-        // Validate plugin compatibility
-        const validation = await nextjsPlugin.validate(pluginContext);
-        if (!validation.valid) {
-            throw new Error(`NextJS plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
-        }
-        // Execute the plugin
-        context.logger.info('Executing NextJS plugin...');
-        const result = await nextjsPlugin.install(pluginContext);
-        if (!result.success) {
-            throw new Error(`NextJS plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
-        }
-        return result;
-    }
-    async validateProjectStructure(context, structure) {
-        const { projectPath } = context;
-        context.logger.info('Validating project structure...');
-        // Check for essential files
-        const essentialFiles = ['package.json', 'README.md'];
-        for (const file of essentialFiles) {
-            const filePath = path.join(projectPath, file);
-            if (!await fsExtra.pathExists(filePath)) {
-                throw new Error(`Essential file missing: ${file}`);
-            }
-        }
-        // Check for structure-specific files
-        if (structure === 'monorepo') {
-            const monorepoFiles = ['turbo.json', 'packages'];
-            for (const file of monorepoFiles) {
-                const filePath = path.join(projectPath, file);
-                if (!await fsExtra.pathExists(filePath)) {
-                    throw new Error(`Monorepo file/directory missing: ${file}`);
+    async createMonorepoStructure(context) {
+        const { projectPath, projectName } = context;
+        context.logger.info('Creating monorepo structure...');
+        // Create monorepo directories
+        const appsPath = path.join(projectPath, 'apps');
+        const packagesPath = path.join(projectPath, 'packages');
+        await fsExtra.ensureDir(appsPath);
+        await fsExtra.ensureDir(packagesPath);
+        // Create Turborepo configuration
+        const turboConfig = {
+            $schema: "https://turbo.build/schema.json",
+            globalDependencies: ["**/.env.*local"],
+            pipeline: {
+                build: {
+                    dependsOn: ["^build"],
+                    outputs: [".next/**", "!.next/cache/**", "dist/**"]
+                },
+                dev: {
+                    cache: false,
+                    persistent: true
+                },
+                lint: {
+                    dependsOn: ["^lint"]
+                },
+                "type-check": {
+                    dependsOn: ["^type-check"]
                 }
             }
-        }
-        context.logger.success('Project structure validation passed');
+        };
+        await fsExtra.writeJSON(path.join(projectPath, 'turbo.json'), turboConfig, { spaces: 2 });
+        // Create root package.json
+        const rootPackage = {
+            name: projectName,
+            version: "0.1.0",
+            private: true,
+            workspaces: [
+                "apps/*",
+                "packages/*"
+            ],
+            scripts: {
+                "build": "turbo run build",
+                "dev": "turbo run dev",
+                "lint": "turbo run lint",
+                "type-check": "turbo run type-check",
+                "clean": "turbo run clean && rm -rf node_modules"
+            },
+            devDependencies: {
+                "turbo": "^1.10.0"
+            },
+            packageManager: context.packageManager
+        };
+        await fsExtra.writeJSON(path.join(projectPath, 'package.json'), rootPackage, { spaces: 2 });
+        // Create README
+        const readme = `# ${projectName}
+
+This is a monorepo built with Turborepo.
+
+## Apps
+
+- \`apps/web\` - Main web application
+
+## Packages
+
+- \`packages/ui\` - Shared UI components
+- \`packages/db\` - Database layer
+- \`packages/auth\` - Authentication
+
+## Development
+
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
+`;
+        await fsExtra.writeFile(path.join(projectPath, 'README.md'), readme);
+        context.logger.success('Monorepo structure created successfully');
+    }
+    async createSingleAppStructure(context) {
+        const { projectPath, projectName } = context;
+        context.logger.info('Creating single-app structure...');
+        // For single-app, we only create the project directory
+        // FrameworkAgent will handle creating the Next.js project structure
+        await fsExtra.ensureDir(projectPath);
+        // Create README
+        const readme = `# ${projectName}
+
+This is a single-app project.
+
+## Development
+
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
+`;
+        await fsExtra.writeFile(path.join(projectPath, 'README.md'), readme);
+        context.logger.success('Single-app structure created successfully');
     }
     async createProjectConfiguration(context, structure) {
-        const { projectPath, projectName, config } = context;
+        const { projectPath, projectName, projectStructure } = context;
         // Create architech configuration file
         const architechConfig = {
             name: projectName,
             version: '0.1.0',
             structure,
-            framework: config.template,
+            userPreference: projectStructure?.userPreference,
+            framework: projectStructure?.template,
             packageManager: context.packageManager,
             createdAt: new Date().toISOString(),
             plugins: [],
@@ -283,20 +292,6 @@ export class BaseProjectAgent extends AbstractAgent {
         };
         const configPath = path.join(projectPath, '.architech.json');
         await fsExtra.writeJSON(configPath, architechConfig, { spaces: 2 });
-    }
-    getPluginConfig(context, framework, structure) {
-        return {
-            projectName: context.projectName, // Add projectName to plugin config
-            template: framework,
-            structure,
-            typescript: true,
-            tailwind: true,
-            eslint: true,
-            srcDir: false,
-            importAlias: '@/*',
-            appRouter: framework === 'nextjs-14', // Fix: use appRouter instead of useAppRouter
-            useMonorepo: structure === 'monorepo'
-        };
     }
 }
 //# sourceMappingURL=base-project-agent.js.map

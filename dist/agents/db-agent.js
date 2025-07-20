@@ -5,7 +5,6 @@
  * Handles user interaction, decision making, and coordinates the Drizzle plugin.
  * No direct installation logic - delegates everything to plugins.
  */
-import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
@@ -145,17 +144,23 @@ export class DBAgent extends AbstractAgent {
         try {
             // Start spinner for actual work
             await this.startSpinner(`🗄️ Setting up database with Drizzle ORM...`, context);
-            // Step 1: Get database configuration
+            // Step 1: Determine the correct path based on project structure
+            const packagePath = this.getPackagePath(context, 'db');
+            context.logger.info(`Database package path: ${packagePath}`);
+            // Step 2: Ensure package directory exists
+            await this.ensurePackageDirectory(context, 'db', packagePath);
+            // Step 3: Get database configuration
             const dbConfig = await this.getDatabaseConfig(context);
-            // Step 2: Execute Drizzle plugin
-            const pluginResult = await this.executeDrizzlePlugin(context, dbConfig);
-            // Step 3: Validate database setup
-            await this.validateDatabaseSetup(context);
+            // Step 4: Execute Drizzle plugin with correct path
+            const pluginResult = await this.executeDrizzlePlugin(context, dbConfig, packagePath);
+            // Step 5: Validate database setup
+            await this.validateDatabaseSetup(context, packagePath);
             await this.succeedSpinner(`✅ Database setup completed successfully`);
             return {
                 success: true,
                 data: {
                     provider: dbConfig.provider,
+                    packagePath,
                     plugin: 'drizzle',
                     artifacts: pluginResult.artifacts.length,
                     dependencies: pluginResult.dependencies.length,
@@ -169,7 +174,8 @@ export class DBAgent extends AbstractAgent {
         catch (error) {
             await this.failSpinner(`❌ Database setup failed`);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            return this.createErrorResult('DATABASE_SETUP_FAILED', `Database setup failed: ${errorMessage}`, [], this.startTime, error);
+            context.logger.error(`Database setup failed: ${errorMessage}`, error);
+            return this.createErrorResult('DATABASE_SETUP_FAILED', `Failed to setup database: ${errorMessage}`, [], this.startTime, error);
         }
     }
     // ============================================================================
@@ -182,14 +188,10 @@ export class DBAgent extends AbstractAgent {
         }
         const errors = [];
         const warnings = [];
-        // Check if project directory exists
-        if (!existsSync(context.projectPath)) {
-            errors.push({
-                field: 'projectPath',
-                message: `Project directory does not exist: ${context.projectPath}`,
-                code: 'PROJECT_NOT_FOUND',
-                severity: 'error'
-            });
+        // Check if database package exists (but don't fail if it doesn't - we'll create it)
+        const packagePath = this.getPackagePath(context, 'db');
+        if (!await fsExtra.pathExists(packagePath)) {
+            warnings.push(`Database package directory will be created at: ${packagePath}`);
         }
         // Check if Drizzle plugin is available
         const drizzlePlugin = this.pluginSystem.getRegistry().get('drizzle');
@@ -201,11 +203,6 @@ export class DBAgent extends AbstractAgent {
                 severity: 'error'
             });
         }
-        // Check for database configuration
-        const dbConfig = context.config.database || {};
-        if (!dbConfig.connectionString && !dbConfig.databaseUrl) {
-            warnings.push('Database connection string not configured - you will need to set DATABASE_URL');
-        }
         return {
             valid: errors.length === 0,
             errors,
@@ -213,17 +210,76 @@ export class DBAgent extends AbstractAgent {
         };
     }
     // ============================================================================
-    // PRIVATE METHODS - Plugin Orchestration
+    // PRIVATE METHODS - Database Setup
     // ============================================================================
-    async executeDrizzlePlugin(context, dbConfig) {
+    getPackagePath(context, packageName) {
+        const isMonorepo = context.projectStructure?.type === 'monorepo';
+        if (isMonorepo) {
+            return path.join(context.projectPath, 'packages', packageName);
+        }
+        else {
+            // For single-app, install in the root directory (Next.js project)
+            return context.projectPath;
+        }
+    }
+    async ensurePackageDirectory(context, packageName, packagePath) {
+        const isMonorepo = context.projectStructure?.type === 'monorepo';
+        if (isMonorepo) {
+            // Create package directory and basic structure
+            await fsExtra.ensureDir(packagePath);
+            // Create package.json for the DB package
+            const packageJson = {
+                name: `@${context.projectName}/${packageName}`,
+                version: "0.1.0",
+                private: true,
+                main: "./index.ts",
+                types: "./index.ts",
+                scripts: {
+                    "build": "tsc",
+                    "dev": "tsc --watch",
+                    "lint": "eslint . --ext .ts,.tsx",
+                    "db:generate": "drizzle-kit generate",
+                    "db:migrate": "drizzle-kit migrate",
+                    "db:studio": "drizzle-kit studio"
+                },
+                dependencies: {},
+                devDependencies: {
+                    "typescript": "^5.0.0",
+                    "drizzle-kit": "^0.31.4"
+                }
+            };
+            await fsExtra.writeJSON(path.join(packagePath, 'package.json'), packageJson, { spaces: 2 });
+            // Create index.ts
+            await fsExtra.writeFile(path.join(packagePath, 'index.ts'), `// ${packageName} package exports\n`);
+            // Create tsconfig.json
+            const tsconfig = {
+                extends: "../../tsconfig.json",
+                compilerOptions: {
+                    outDir: "./dist",
+                    rootDir: "."
+                },
+                include: ["./**/*"],
+                exclude: ["node_modules", "dist"]
+            };
+            await fsExtra.writeJSON(path.join(packagePath, 'tsconfig.json'), tsconfig, { spaces: 2 });
+            context.logger.info(`Created ${packageName} package at: ${packagePath}`);
+        }
+        else {
+            // For single-app, just ensure the directory exists (Next.js project already has structure)
+            await fsExtra.ensureDir(packagePath);
+            context.logger.info(`Using existing Next.js project at: ${packagePath}`);
+        }
+    }
+    async executeDrizzlePlugin(context, dbConfig, packagePath) {
         // Get the Drizzle plugin
         const drizzlePlugin = this.pluginSystem.getRegistry().get('drizzle');
         if (!drizzlePlugin) {
             throw new Error('Drizzle plugin not found in registry');
         }
-        // Prepare plugin context
+        // Prepare plugin context with correct path
         const pluginContext = {
             ...context,
+            projectPath: packagePath, // Use package path instead of root path
             pluginId: 'drizzle',
             pluginConfig: this.getPluginConfig(dbConfig),
             installedPlugins: [],
@@ -243,19 +299,22 @@ export class DBAgent extends AbstractAgent {
         }
         return result;
     }
-    async validateDatabaseSetup(context) {
-        const { projectPath } = context;
+    async validateDatabaseSetup(context, packagePath) {
         context.logger.info('Validating database setup...');
-        // Check for essential database files
-        const essentialFiles = ['drizzle.config.ts', 'db/schema.ts', 'db/index.ts'];
+        // Check for essential database files in the package path
+        const essentialFiles = [
+            'drizzle.config.ts',
+            'db/schema.ts',
+            'db/index.ts'
+        ];
         for (const file of essentialFiles) {
-            const filePath = path.join(projectPath, file);
+            const filePath = path.join(packagePath, file);
             if (!await fsExtra.pathExists(filePath)) {
                 throw new Error(`Database file missing: ${file}`);
             }
         }
         // Check for package.json dependencies
-        const packageJsonPath = path.join(projectPath, 'package.json');
+        const packageJsonPath = path.join(packagePath, 'package.json');
         if (await fsExtra.pathExists(packageJsonPath)) {
             const packageJson = await fsExtra.readJSON(packageJsonPath);
             const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
@@ -294,8 +353,10 @@ export class DBAgent extends AbstractAgent {
             // Get the Drizzle plugin for uninstallation
             const drizzlePlugin = this.pluginSystem.getRegistry().get('drizzle');
             if (drizzlePlugin) {
+                const packagePath = this.getPackagePath(context, 'db');
                 const pluginContext = {
                     ...context,
+                    projectPath: packagePath, // Use package path for uninstallation
                     pluginId: 'drizzle',
                     pluginConfig: {},
                     installedPlugins: [],

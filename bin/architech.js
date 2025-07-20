@@ -8,4 +8,4 @@
  */
 
 // Import the main CLI from the compiled source
-import "../index.js"; 
+import "../dist/index.js"; 

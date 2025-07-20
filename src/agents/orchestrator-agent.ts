@@ -296,43 +296,53 @@ export class OrchestratorAgent implements IAgent {
       name: 'Project Foundation',
       description: 'Setup project structure and core configuration',
       agents: ['base-project'],
-      plugins: ['nextjs'],
+      plugins: [],
       order: 1,
       dependencies: []
     });
 
-    // Phase 2: Database Layer
+    // Phase 2: Framework Installation
+    phases.push({
+      name: 'Framework Installation',
+      description: 'Install and configure the selected frontend framework',
+      agents: ['framework'],
+      plugins: [requirements.ui.framework],
+      order: 2,
+      dependencies: ['Project Foundation']
+    });
+
+    // Phase 3: Database Layer
     if (requirements.database.orm === 'drizzle') {
       phases.push({
         name: 'Database Layer',
         description: 'Setup database with Drizzle ORM',
         agents: ['db'],
         plugins: ['drizzle'],
-        order: 2,
+        order: 3,
         dependencies: ['Project Foundation']
       });
     }
 
-    // Phase 3: Authentication
+    // Phase 4: Authentication
     if (requirements.authentication.providers.length > 0) {
       phases.push({
         name: 'Authentication',
         description: 'Setup authentication with Better Auth',
         agents: ['auth'],
         plugins: ['better-auth'],
-        order: 3,
+        order: 4,
         dependencies: ['Database Layer']
       });
     }
 
-    // Phase 4: UI/Design System
+    // Phase 5: UI/Design System
     if (requirements.ui.designSystem === 'shadcn-ui') {
       phases.push({
         name: 'UI/Design System',
         description: 'Setup Shadcn/ui design system',
         agents: ['ui'],
         plugins: ['shadcn-ui'],
-        order: 4,
+        order: 5,
         dependencies: ['Project Foundation']
       });
     }
@@ -537,6 +547,9 @@ export class OrchestratorAgent implements IAgent {
         case 'base-project':
           const { BaseProjectAgent } = await import('./base-project-agent.js');
           return new BaseProjectAgent();
+        case 'framework':
+          const { FrameworkAgent } = await import('./framework-agent.js');
+          return new FrameworkAgent();
         case 'db':
           const { DBAgent } = await import('./db-agent.js');
           return new DBAgent();

@@ -9,6 +9,8 @@ import { program } from 'commander';
 import chalk from 'chalk';
 import { createCommand } from './commands/create.js';
 import { architechCommand } from './commands/architech.js';
+import { newCommand } from './commands/new.js';
+import { scaleToMonorepoCommand } from './commands/scale-to-monorepo.js';
 import { displayBanner } from './utils/banner.js';
 // Async IIFE to handle dynamic imports
 (async () => {
@@ -41,7 +43,6 @@ import { displayBanner } from './utils/banner.js';
     // Create command - The main project generation command
     program
         .command('create')
-        .alias('new')
         .description('🏗️  Create a new application with specialized AI agents')
         .argument('[project-name]', 'Name of the project to create')
         .option('-t, --template <template>', 'Project template (nextjs, react, vue)', 'nextjs')
@@ -51,6 +52,24 @@ import { displayBanner } from './utils/banner.js';
         .option('--no-install', 'Skip dependency installation')
         .option('-y, --yes', 'Skip interactive prompts and use defaults')
         .action(createCommand);
+    // New command - Unified project generation with guided decision making
+    program
+        .command('new')
+        .description('🎭 Create a new project with guided decision making')
+        .argument('[project-name]', 'Name of the project to create')
+        .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
+        .option('--project-type <type>', 'Project type (quick-prototype, scalable-monorepo)', 'scalable-monorepo')
+        .option('--no-git', 'Skip git repository initialization')
+        .option('--no-install', 'Skip dependency installation')
+        .option('-y, --yes', 'Skip interactive prompts and use defaults', false)
+        .action(newCommand);
+    // Scale to monorepo command - Migrate single-app to monorepo
+    program
+        .command('scale-to-monorepo')
+        .description('📈 Scale a single-app project to enterprise monorepo structure')
+        .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
+        .option('-y, --yes', 'Skip interactive prompts and use defaults')
+        .action(scaleToMonorepoCommand);
     // Architech command - Enterprise-grade monorepo structure
     program
         .command('architech')

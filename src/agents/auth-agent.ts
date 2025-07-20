@@ -171,14 +171,21 @@ export class AuthAgent extends AbstractAgent {
       // Start spinner for actual work
       await this.startSpinner(`🔐 Setting up authentication with Better Auth...`, context);
 
-      // Step 1: Get authentication configuration
+      // Step 1: Determine the correct path based on project structure
+      const packagePath = this.getPackagePath(context, 'auth');
+      context.logger.info(`Authentication package path: ${packagePath}`);
+
+      // Step 2: Ensure package directory exists
+      await this.ensurePackageDirectory(context, 'auth', packagePath);
+
+      // Step 3: Get authentication configuration
       const authConfig = await this.getAuthConfig(context);
       
-      // Step 2: Execute Better Auth plugin
-      const pluginResult = await this.executeBetterAuthPlugin(context, authConfig);
+      // Step 4: Execute Better Auth plugin with correct path
+      const pluginResult = await this.executeBetterAuthPlugin(context, authConfig, packagePath);
       
-      // Step 3: Validate authentication setup
-      await this.validateAuthenticationSetup(context);
+      // Step 5: Validate authentication setup
+      await this.validateAuthenticationSetup(context, packagePath);
 
       await this.succeedSpinner(`✅ Authentication setup completed successfully`);
 
@@ -186,6 +193,7 @@ export class AuthAgent extends AbstractAgent {
         success: true,
         data: {
           providers: authConfig.providers,
+          packagePath,
           plugin: 'better-auth',
           artifacts: pluginResult.artifacts.length,
           dependencies: pluginResult.dependencies.length,
@@ -199,9 +207,11 @@ export class AuthAgent extends AbstractAgent {
     } catch (error) {
       await this.failSpinner(`❌ Authentication setup failed`);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      context.logger.error(`Authentication setup failed: ${errorMessage}`, error as Error);
+      
       return this.createErrorResult(
         'AUTHENTICATION_SETUP_FAILED',
-        `Authentication setup failed: ${errorMessage}`,
+        `Failed to setup authentication: ${errorMessage}`,
         [],
         this.startTime,
         error
@@ -223,14 +233,10 @@ export class AuthAgent extends AbstractAgent {
     const errors: any[] = [];
     const warnings: string[] = [];
 
-    // Check if project directory exists
-    if (!existsSync(context.projectPath)) {
-      errors.push({
-        field: 'projectPath',
-        message: `Project directory does not exist: ${context.projectPath}`,
-        code: 'PROJECT_NOT_FOUND',
-        severity: 'error'
-      });
+    // Check if authentication package exists (but don't fail if it doesn't - we'll create it)
+    const packagePath = this.getPackagePath(context, 'auth');
+    if (!await fsExtra.pathExists(packagePath)) {
+      warnings.push(`Authentication package directory will be created at: ${packagePath}`);
     }
 
     // Check if Better Auth plugin is available
@@ -244,18 +250,6 @@ export class AuthAgent extends AbstractAgent {
       });
     }
 
-    // Check for database configuration (Better Auth requires a database)
-    const dbConfig = context.config.database || {};
-    if (!dbConfig.connectionString && !dbConfig.databaseUrl) {
-      warnings.push('Database connection string not configured - Better Auth requires a database');
-    }
-
-    // Check for authentication configuration
-    const authConfig = context.config.authentication || {};
-    if (!authConfig.secret) {
-      warnings.push('AUTH_SECRET not configured - you will need to set this environment variable');
-    }
-
     return {
       valid: errors.length === 0,
       errors,
@@ -264,12 +258,75 @@ export class AuthAgent extends AbstractAgent {
   }
 
   // ============================================================================
-  // PRIVATE METHODS - Plugin Orchestration
+  // PRIVATE METHODS - Authentication Setup
   // ============================================================================
+
+  private getPackagePath(context: AgentContext, packageName: string): string {
+    const isMonorepo = context.projectStructure?.type === 'monorepo';
+    
+    if (isMonorepo) {
+      return path.join(context.projectPath, 'packages', packageName);
+    } else {
+      // For single-app, install in the root directory (Next.js project)
+      return context.projectPath;
+    }
+  }
+
+  private async ensurePackageDirectory(context: AgentContext, packageName: string, packagePath: string): Promise<void> {
+    const isMonorepo = context.projectStructure?.type === 'monorepo';
+    
+    if (isMonorepo) {
+      // Create package directory and basic structure
+      await fsExtra.ensureDir(packagePath);
+      
+      // Create package.json for the Auth package
+      const packageJson = {
+        name: `@${context.projectName}/${packageName}`,
+        version: "0.1.0",
+        private: true,
+        main: "./index.ts",
+        types: "./index.ts",
+        scripts: {
+          "build": "tsc",
+          "dev": "tsc --watch",
+          "lint": "eslint . --ext .ts,.tsx"
+        },
+        dependencies: {},
+        devDependencies: {
+          "typescript": "^5.0.0"
+        }
+      };
+      
+      await fsExtra.writeJSON(path.join(packagePath, 'package.json'), packageJson, { spaces: 2 });
+      
+      // Create index.ts
+      await fsExtra.writeFile(path.join(packagePath, 'index.ts'), `// ${packageName} package exports\n`);
+      
+      // Create tsconfig.json
+      const tsconfig = {
+        extends: "../../tsconfig.json",
+        compilerOptions: {
+          outDir: "./dist",
+          rootDir: "."
+        },
+        include: ["./**/*"],
+        exclude: ["node_modules", "dist"]
+      };
+      
+      await fsExtra.writeJSON(path.join(packagePath, 'tsconfig.json'), tsconfig, { spaces: 2 });
+      
+      context.logger.info(`Created ${packageName} package at: ${packagePath}`);
+    } else {
+      // For single-app, just ensure the directory exists (Next.js project already has structure)
+      await fsExtra.ensureDir(packagePath);
+      context.logger.info(`Using existing Next.js project at: ${packagePath}`);
+    }
+  }
 
   private async executeBetterAuthPlugin(
     context: AgentContext, 
-    authConfig: AuthConfig
+    authConfig: AuthConfig,
+    packagePath: string
   ): Promise<any> {
     // Get the Better Auth plugin
     const betterAuthPlugin = this.pluginSystem.getRegistry().get('better-auth');
@@ -277,9 +334,10 @@ export class AuthAgent extends AbstractAgent {
       throw new Error('Better Auth plugin not found in registry');
     }
 
-    // Prepare plugin context
+    // Prepare plugin context with correct path
     const pluginContext: PluginContext = {
       ...context,
+      projectPath: packagePath, // Use package path instead of root path
       pluginId: 'better-auth',
       pluginConfig: this.getPluginConfig(authConfig),
       installedPlugins: [],
@@ -304,22 +362,23 @@ export class AuthAgent extends AbstractAgent {
     return result;
   }
 
-  private async validateAuthenticationSetup(context: AgentContext): Promise<void> {
-    const { projectPath } = context;
-    
+  private async validateAuthenticationSetup(context: AgentContext, packagePath: string): Promise<void> {
     context.logger.info('Validating authentication setup...');
 
-    // Check for essential authentication files
-    const essentialFiles = ['auth.ts', 'lib/auth.ts'];
+    // Check for essential authentication files in the package path
+    const essentialFiles = [
+      'auth.config.ts',
+      'lib/auth.ts'
+    ];
     for (const file of essentialFiles) {
-      const filePath = path.join(projectPath, file);
+      const filePath = path.join(packagePath, file);
       if (!await fsExtra.pathExists(filePath)) {
         throw new Error(`Authentication file missing: ${file}`);
       }
     }
 
     // Check for package.json dependencies
-    const packageJsonPath = path.join(projectPath, 'package.json');
+    const packageJsonPath = path.join(packagePath, 'package.json');
     if (await fsExtra.pathExists(packageJsonPath)) {
       const packageJson = await fsExtra.readJSON(packageJsonPath);
       const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
@@ -368,8 +427,10 @@ export class AuthAgent extends AbstractAgent {
       // Get the Better Auth plugin for uninstallation
       const betterAuthPlugin = this.pluginSystem.getRegistry().get('better-auth');
       if (betterAuthPlugin) {
+        const packagePath = this.getPackagePath(context, 'auth');
         const pluginContext: PluginContext = {
           ...context,
+          projectPath: packagePath, // Use package path for uninstallation
           pluginId: 'better-auth',
           pluginConfig: {},
           installedPlugins: [],

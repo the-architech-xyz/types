@@ -1,20 +1,17 @@
 /**
- * Base Project Agent - Foundation Builder
+ * Base Project Agent - Structure Creator
  *
- * Responsible for creating the core project structure using the plugin system.
- * Pure orchestrator - delegates all technology implementation to plugins.
+ * Responsible for creating the core project structure (monorepo or single-app).
+ * Pure structure creator - no framework installation, just structure setup.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class BaseProjectAgent extends AbstractAgent {
-    private pluginSystem;
-    constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
     validate(context: AgentContext): Promise<ValidationResult>;
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
-    private executeNextJSPlugin;
-    private validateProjectStructure;
+    private createMonorepoStructure;
+    private createSingleAppStructure;
     private createProjectConfiguration;
-    private getPluginConfig;
 }

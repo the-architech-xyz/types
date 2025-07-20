@@ -15,6 +15,8 @@ export declare class UIAgent extends AbstractAgent {
     protected getAgentCapabilities(): never[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     validate(context: AgentContext): Promise<ValidationResult>;
+    private getPackagePath;
+    private ensurePackageDirectory;
     private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;
 }

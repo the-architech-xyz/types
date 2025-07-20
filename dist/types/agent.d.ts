@@ -21,6 +21,13 @@ export interface AgentContext {
     projectName: string;
     projectPath: string;
     packageManager: string;
+    projectStructure?: {
+        type: 'single-app' | 'monorepo';
+        userPreference: 'quick-prototype' | 'scalable-monorepo';
+        modules: string[];
+        template: string;
+    };
+    userInput?: string;
     options: ExecutionOptions;
     config: Record<string, any>;
     runner: CommandRunner;

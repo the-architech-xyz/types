@@ -69,7 +69,14 @@ export class ContextFactory {
       logger,
       state: new Map(),
       dependencies,
-      environment
+      environment,
+      // Provide default projectStructure for backward compatibility
+      projectStructure: {
+        type: config.structure || 'single-app',
+        userPreference: 'scalable-monorepo',
+        modules: config.modules || [],
+        template: config.template || 'nextjs-14'
+      }
     };
 
     return context;

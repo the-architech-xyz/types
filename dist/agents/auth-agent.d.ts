@@ -14,6 +14,8 @@ export declare class AuthAgent extends AbstractAgent {
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     validate(context: AgentContext): Promise<ValidationResult>;
+    private getPackagePath;
+    private ensurePackageDirectory;
     private executeBetterAuthPlugin;
     private validateAuthenticationSetup;
     private getAuthConfig;

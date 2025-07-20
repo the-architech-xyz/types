@@ -95,19 +95,19 @@ export class DrizzlePlugin implements IPlugin {
         dependencies: [
           {
             name: 'drizzle-orm',
-            version: '^0.45.0',
+            version: '^0.44.3',
             type: 'production',
             category: PluginCategory.DATABASE
           },
           {
             name: '@neondatabase/serverless',
-            version: '^1.1.0',
+            version: '^1.0.1',
             type: 'production',
             category: PluginCategory.DATABASE
           },
           {
             name: 'drizzle-kit',
-            version: '^0.32.0',
+            version: '^0.31.4',
             type: 'development',
             category: PluginCategory.DATABASE
           },
@@ -121,7 +121,7 @@ export class DrizzlePlugin implements IPlugin {
         scripts: [
           {
             name: 'db:generate',
-            command: 'drizzle-kit generate:pg',
+            command: 'drizzle-kit generate',
             description: 'Generate database migrations',
             category: 'dev'
           },
@@ -133,7 +133,7 @@ export class DrizzlePlugin implements IPlugin {
           },
           {
             name: 'db:push',
-            command: 'drizzle-kit push:pg',
+            command: 'drizzle-kit push',
             description: 'Push schema to database',
             category: 'dev'
           },
@@ -273,19 +273,19 @@ export class DrizzlePlugin implements IPlugin {
       {
         type: 'package',
         name: 'drizzle-orm',
-        version: '^0.45.0',
+        version: '^0.44.3',
         description: 'Drizzle ORM core package'
       },
       {
         type: 'package',
         name: '@neondatabase/serverless',
-        version: '^1.1.0',
+        version: '^1.0.1',
         description: 'Neon database driver'
       },
       {
         type: 'package',
         name: 'drizzle-kit',
-        version: '^0.32.0',
+        version: '^0.31.4',
         description: 'Drizzle CLI and migration tools'
       },
       {
@@ -356,13 +356,13 @@ export class DrizzlePlugin implements IPlugin {
     const { projectPath } = context;
     
     const dependencies = [
-      'drizzle-orm@^0.45.0',
-      '@neondatabase/serverless@^1.1.0',
+      'drizzle-orm@^0.44.3',
+      '@neondatabase/serverless@^1.0.1',
       'postgres@^3.4.0'
     ];
     
     const devDependencies = [
-      'drizzle-kit@^0.32.0'
+      'drizzle-kit@^0.31.4'
     ];
 
     context.logger.info('Installing Drizzle ORM dependencies...');
@@ -402,7 +402,7 @@ export class DrizzlePlugin implements IPlugin {
     const { projectPath } = context;
     
     context.logger.info('Generating initial migration...');
-    await this.runner.exec('drizzle-kit', ['generate:pg'], projectPath);
+    await this.runner.exec('drizzle-kit', ['generate'], projectPath);
   }
 
   private generateDrizzleConfig(config: Record<string, any>): string {

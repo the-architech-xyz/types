@@ -42,7 +42,170 @@ export class NextJSPlugin {
         try {
             const { projectName, projectPath, pluginConfig } = context;
             context.logger.info('Installing Next.js framework using create-next-app CLI...');
-            // Step 1: Use official create-next-app CLI
+            // Step 0: Handle existing directory based on project structure
+            const isMonorepo = context.projectStructure?.type === 'monorepo';
+            if (await fsExtra.pathExists(projectPath)) {
+                if (isMonorepo) {
+                    // For monorepo, clean up but preserve monorepo files
+                    context.logger.info(`Directory ${projectPath} exists, cleaning up for fresh installation...`);
+                    const contents = await fsExtra.readdir(projectPath);
+                    const allowedFiles = ['.architech.json', 'package.json', 'README.md', 'turbo.json'];
+                    // Remove any files that aren't monorepo configuration files
+                    for (const item of contents) {
+                        if (!allowedFiles.includes(item)) {
+                            const itemPath = path.join(projectPath, item);
+                            await fsExtra.remove(itemPath);
+                        }
+                    }
+                }
+                else {
+                    // For single-app, we need to handle this differently
+                    context.logger.info(`Directory ${projectPath} exists for single-app, using temporary directory approach...`);
+                    // Create Next.js project in a temporary directory
+                    const tempDir = path.join(path.dirname(projectPath), `${projectName}-temp`);
+                    const cliArgs = this.buildCreateNextAppArgs(pluginConfig);
+                    const parentDir = path.dirname(tempDir);
+                    // Create Next.js project in temp directory
+                    await this.runner.execCommand([...this.runner.getCreateCommand(), ...cliArgs], { cwd: parentDir });
+                    // Move contents from temp to target directory, preserving .architech.json
+                    const architechConfigPath = path.join(projectPath, '.architech.json');
+                    const hasArchitechConfig = await fsExtra.pathExists(architechConfigPath);
+                    let architechConfig = null;
+                    if (hasArchitechConfig) {
+                        architechConfig = await fsExtra.readJSON(architechConfigPath);
+                    }
+                    // Remove target directory contents except .architech.json
+                    const targetContents = await fsExtra.readdir(projectPath);
+                    for (const item of targetContents) {
+                        if (item !== '.architech.json') {
+                            const itemPath = path.join(projectPath, item);
+                            await fsExtra.remove(itemPath);
+                        }
+                    }
+                    // Move Next.js project contents to target directory
+                    const tempProjectPath = path.join(tempDir, projectName);
+                    if (await fsExtra.pathExists(tempProjectPath)) {
+                        const tempContents = await fsExtra.readdir(tempProjectPath);
+                        for (const item of tempContents) {
+                            const sourcePath = path.join(tempProjectPath, item);
+                            const targetPath = path.join(projectPath, item);
+                            await fsExtra.move(sourcePath, targetPath);
+                        }
+                    }
+                    // Restore .architech.json if it existed
+                    if (hasArchitechConfig && architechConfig) {
+                        await fsExtra.writeJSON(architechConfigPath, architechConfig, { spaces: 2 });
+                    }
+                    // Clean up temp directory
+                    await fsExtra.remove(tempDir);
+                    // Continue with customization
+                    await this.customizeProject(context);
+                    await this.addEnhancements(context);
+                    const duration = Date.now() - startTime;
+                    return {
+                        success: true,
+                        artifacts: [
+                            {
+                                type: 'directory',
+                                path: projectPath
+                            }
+                        ],
+                        dependencies: [
+                            {
+                                name: 'next',
+                                version: '^15.4.2',
+                                type: 'production',
+                                category: PluginCategory.FRAMEWORK
+                            },
+                            {
+                                name: 'react',
+                                version: '^19.1.0',
+                                type: 'production',
+                                category: PluginCategory.FRAMEWORK
+                            },
+                            {
+                                name: 'react-dom',
+                                version: '^19.1.0',
+                                type: 'production',
+                                category: PluginCategory.FRAMEWORK
+                            },
+                            {
+                                name: 'typescript',
+                                version: '^5.8.3',
+                                type: 'development',
+                                category: PluginCategory.FRAMEWORK
+                            },
+                            {
+                                name: '@types/node',
+                                version: '^20.0.0',
+                                type: 'development',
+                                category: PluginCategory.FRAMEWORK
+                            },
+                            {
+                                name: '@types/react',
+                                version: '^19.0.0',
+                                type: 'development',
+                                category: PluginCategory.FRAMEWORK
+                            },
+                            {
+                                name: '@types/react-dom',
+                                version: '^19.0.0',
+                                type: 'development',
+                                category: PluginCategory.FRAMEWORK
+                            },
+                            {
+                                name: 'eslint',
+                                version: '^9.0.0',
+                                type: 'development',
+                                category: PluginCategory.FRAMEWORK
+                            },
+                            {
+                                name: 'eslint-config-next',
+                                version: '^15.4.2',
+                                type: 'development',
+                                category: PluginCategory.FRAMEWORK
+                            }
+                        ],
+                        scripts: [
+                            {
+                                name: 'dev',
+                                command: 'next dev',
+                                description: 'Start development server',
+                                category: 'dev'
+                            },
+                            {
+                                name: 'build',
+                                command: 'next build',
+                                description: 'Build for production',
+                                category: 'build'
+                            },
+                            {
+                                name: 'start',
+                                command: 'next start',
+                                description: 'Start production server',
+                                category: 'deploy'
+                            },
+                            {
+                                name: 'lint',
+                                command: 'next lint',
+                                description: 'Run ESLint',
+                                category: 'dev'
+                            },
+                            {
+                                name: 'type-check',
+                                command: 'tsc --noEmit',
+                                description: 'Run TypeScript type checking',
+                                category: 'dev'
+                            }
+                        ],
+                        configs: [],
+                        errors: [],
+                        warnings: [],
+                        duration
+                    };
+                }
+            }
+            // Step 1: Use official create-next-app CLI (for monorepo or fresh directory)
             const cliArgs = this.buildCreateNextAppArgs(pluginConfig);
             const parentDir = path.dirname(projectPath);
             // Use execCommand with the proper create command
@@ -205,14 +368,25 @@ export class NextJSPlugin {
     async validate(context) {
         const errors = [];
         const warnings = [];
-        // For framework plugins that create projects, the directory should NOT exist yet
+        // For framework plugins that create projects, check if directory exists
         if (await fsExtra.pathExists(context.projectPath)) {
-            errors.push({
-                field: 'projectPath',
-                message: `Project directory already exists: ${context.projectPath}`,
-                code: 'DIRECTORY_EXISTS',
-                severity: 'error'
-            });
+            // In monorepo scenarios, the directory might exist but be empty
+            // Check if it's empty or only contains expected monorepo files
+            const contents = await fsExtra.readdir(context.projectPath);
+            const allowedFiles = ['.architech.json', 'package.json', 'README.md', 'turbo.json'];
+            const hasOnlyAllowedFiles = contents.every(item => allowedFiles.includes(item));
+            if (!hasOnlyAllowedFiles) {
+                errors.push({
+                    field: 'projectPath',
+                    message: `Project directory already exists and contains files: ${context.projectPath}`,
+                    code: 'DIRECTORY_EXISTS',
+                    severity: 'error'
+                });
+            }
+            else {
+                // Directory exists but is empty or only has monorepo config files
+                warnings.push(`Directory ${context.projectPath} exists but appears to be empty or contain only monorepo configuration files. Proceeding with installation.`);
+            }
         }
         // Check parent directory exists and is writable
         const parentDir = path.dirname(context.projectPath);
