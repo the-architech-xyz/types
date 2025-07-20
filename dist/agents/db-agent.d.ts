@@ -1,32 +1,22 @@
 /**
- * DB Agent - Database Package Generator
+ * DB Agent - Database Orchestrator
  *
- * Sets up the packages/db database layer with:
- * - Drizzle ORM configuration
- * - Neon PostgreSQL integration
- * - Database schema definitions
- * - Migration scripts and utilities
- *
- * Enhanced to integrate with the Drizzle plugin and orchestrator agent pattern.
+ * Pure orchestrator for database setup using the Drizzle plugin.
+ * Handles user interaction, decision making, and coordinates the Drizzle plugin.
+ * No direct installation logic - delegates everything to plugins.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class DBAgent extends AbstractAgent {
-    private templateService;
     private pluginSystem;
     constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
-    private executeDrizzlePlugin;
-    private enhanceDatabaseSetup;
-    private generateCustomSchema;
-    private generateSchemaContent;
-    private generateTableDefinition;
-    private createEnhancedUtils;
-    private createHealthChecks;
-    private createSeedingUtils;
-    private getDatabaseConfig;
     validate(context: AgentContext): Promise<ValidationResult>;
+    private executeDrizzlePlugin;
+    private validateDatabaseSetup;
+    private getDatabaseConfig;
+    private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;
 }

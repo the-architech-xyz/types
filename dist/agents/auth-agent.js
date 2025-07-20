@@ -1,36 +1,21 @@
 /**
- * Auth Agent - Authentication Package Generator
+ * Auth Agent - Authentication Orchestrator
  *
- * Sets up the packages/auth authentication layer with:
- * - Better Auth configuration
- * - Database integration with Drizzle
- * - Social login providers
- * - Session management utilities
- *
- * Enhanced to integrate with the plugin system for modularity.
+ * Pure orchestrator for authentication setup using the Better Auth plugin.
+ * Handles user interaction, decision making, and coordinates the Better Auth plugin.
+ * No direct installation logic - delegates everything to plugins.
  */
 import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { templateService } from '../utils/template-service.js';
 import { PluginSystem } from '../utils/plugin-system.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
-// Dynamic import for inquirer
-let inquirerModule = null;
-async function getInquirer() {
-    if (!inquirerModule) {
-        inquirerModule = await import('inquirer');
-    }
-    return inquirerModule.default;
-}
 export class AuthAgent extends AbstractAgent {
-    templateService;
     pluginSystem;
     constructor() {
         super();
-        this.templateService = templateService;
         this.pluginSystem = PluginSystem.getInstance();
     }
     // ============================================================================
@@ -40,10 +25,10 @@ export class AuthAgent extends AbstractAgent {
         return {
             name: 'AuthAgent',
             version: '2.0.0',
-            description: 'Sets up the authentication package with Better Auth using plugin system',
+            description: 'Authentication orchestrator - coordinates Better Auth plugin for authentication setup',
             author: 'The Architech Team',
             category: AgentCategory.AUTHENTICATION,
-            tags: ['authentication', 'better-auth', 'oauth', 'session', 'security', 'plugin-integration'],
+            tags: ['authentication', 'orchestrator', 'plugin-coordinator', 'better-auth'],
             dependencies: ['BaseProjectAgent', 'DBAgent'],
             conflicts: [],
             requirements: [
@@ -56,16 +41,6 @@ export class AuthAgent extends AbstractAgent {
                     type: 'package',
                     name: '@better-auth/utils',
                     description: 'Better Auth utilities'
-                },
-                {
-                    type: 'file',
-                    name: 'packages/auth',
-                    description: 'Authentication package directory'
-                },
-                {
-                    type: 'file',
-                    name: 'packages/db',
-                    description: 'Database package for auth integration'
                 }
             ],
             license: 'MIT',
@@ -76,7 +51,7 @@ export class AuthAgent extends AbstractAgent {
         return [
             {
                 name: 'setup-authentication',
-                description: 'Creates a complete authentication setup with Better Auth using plugin system',
+                description: 'Creates a complete authentication setup using Better Auth plugin',
                 parameters: [
                     {
                         name: 'providers',
@@ -112,27 +87,20 @@ export class AuthAgent extends AbstractAgent {
                                 message: 'Session duration must be between 1 hour and 30 days'
                             }
                         ]
-                    },
-                    {
-                        name: 'usePlugin',
-                        type: 'boolean',
-                        required: false,
-                        description: 'Whether to use the Better Auth plugin for core setup',
-                        defaultValue: true
                     }
                 ],
                 examples: [
                     {
-                        name: 'Setup email authentication with plugin',
-                        description: 'Creates authentication with email/password using plugin',
-                        parameters: { providers: ['email'], requireEmailVerification: true, usePlugin: true },
-                        expectedResult: 'Complete authentication package with email auth via plugin'
+                        name: 'Setup email authentication',
+                        description: 'Creates authentication with email/password using Better Auth plugin',
+                        parameters: { providers: ['email'], requireEmailVerification: true },
+                        expectedResult: 'Complete authentication setup with email auth via plugin'
                     },
                     {
-                        name: 'Setup social authentication with plugin',
-                        description: 'Creates authentication with social providers using plugin',
-                        parameters: { providers: ['email', 'github', 'google'], usePlugin: true },
-                        expectedResult: 'Authentication package with social login support via plugin'
+                        name: 'Setup social authentication',
+                        description: 'Creates authentication with social providers using Better Auth plugin',
+                        parameters: { providers: ['email', 'github', 'google'] },
+                        expectedResult: 'Authentication setup with social login support via plugin'
                     }
                 ],
                 category: CapabilityCategory.SETUP
@@ -153,128 +121,54 @@ export class AuthAgent extends AbstractAgent {
                                 message: 'Provider must be github or google'
                             }
                         ]
-                    },
-                    {
-                        name: 'usePlugin',
-                        type: 'boolean',
-                        required: false,
-                        description: 'Whether to use the Better Auth plugin for configuration',
-                        defaultValue: true
                     }
                 ],
                 examples: [
                     {
-                        name: 'Configure GitHub OAuth via plugin',
-                        description: 'Adds GitHub OAuth configuration using plugin',
-                        parameters: { provider: 'github', usePlugin: true },
-                        expectedResult: 'GitHub OAuth configured in auth package via plugin'
+                        name: 'Configure GitHub OAuth',
+                        description: 'Adds GitHub OAuth configuration using Better Auth plugin',
+                        parameters: { provider: 'github' },
+                        expectedResult: 'GitHub OAuth configured via plugin'
                     }
                 ],
                 category: CapabilityCategory.CONFIGURATION
-            },
-            {
-                name: 'enhance-auth-package',
-                description: 'Adds agent-specific enhancements to the auth package',
-                parameters: [
-                    {
-                        name: 'security',
-                        type: 'boolean',
-                        required: false,
-                        description: 'Whether to add security utilities',
-                        defaultValue: true
-                    },
-                    {
-                        name: 'monitoring',
-                        type: 'boolean',
-                        required: false,
-                        description: 'Whether to add auth monitoring utilities',
-                        defaultValue: true
-                    },
-                    {
-                        name: 'aiFeatures',
-                        type: 'boolean',
-                        required: false,
-                        description: 'Whether to add AI-powered auth features',
-                        defaultValue: true
-                    }
-                ],
-                examples: [
-                    {
-                        name: 'Add all enhancements',
-                        description: 'Adds all agent-specific enhancements to the auth package',
-                        parameters: { security: true, monitoring: true, aiFeatures: true },
-                        expectedResult: 'Enhanced auth package with security, monitoring, and AI features'
-                    }
-                ],
-                category: CapabilityCategory.INTEGRATION
             }
         ];
     }
     // ============================================================================
-    // CORE EXECUTION
+    // CORE EXECUTION - Pure Plugin Orchestration
     // ============================================================================
     async executeInternal(context) {
         const { projectName, projectPath } = context;
-        const authPackagePath = path.join(projectPath, 'packages', 'auth');
-        context.logger.info(`Setting up authentication package: ${projectName}/packages/auth`);
+        context.logger.info(`Setting up authentication for project: ${projectName}`);
         try {
-            // Get authentication configuration
+            // Start spinner for actual work
+            await this.startSpinner(`🔐 Setting up authentication with Better Auth...`, context);
+            // Step 1: Get authentication configuration
             const authConfig = await this.getAuthConfig(context);
-            // Get parameters from context config
-            const usePlugin = context.config?.usePlugin !== false; // Default to true
-            let pluginResult = null;
-            // Use plugin for core setup if enabled
-            if (usePlugin) {
-                context.logger.info('Using Better Auth plugin for core setup...');
-                pluginResult = await this.executeBetterAuthPlugin(context, authPackagePath, authConfig);
-            }
-            // Always run agent-specific enhancements
-            await this.enhanceAuthPackage(authPackagePath, context, authConfig);
-            const artifacts = [
-                {
-                    type: 'directory',
-                    path: authPackagePath,
-                    metadata: {
-                        package: 'auth',
-                        framework: 'better-auth',
-                        providers: authConfig.providers,
-                        features: ['authentication', 'session-management', 'security', 'enhancements'],
-                        pluginUsed: usePlugin
-                    }
+            // Step 2: Execute Better Auth plugin
+            const pluginResult = await this.executeBetterAuthPlugin(context, authConfig);
+            // Step 3: Validate authentication setup
+            await this.validateAuthenticationSetup(context);
+            await this.succeedSpinner(`✅ Authentication setup completed successfully`);
+            return {
+                success: true,
+                data: {
+                    providers: authConfig.providers,
+                    plugin: 'better-auth',
+                    artifacts: pluginResult.artifacts.length,
+                    dependencies: pluginResult.dependencies.length,
+                    scripts: pluginResult.scripts.length
                 },
-                {
-                    type: 'file',
-                    path: path.join(authPackagePath, 'package.json'),
-                    metadata: { type: 'package-config' }
-                },
-                {
-                    type: 'file',
-                    path: path.join(authPackagePath, 'auth.config.ts'),
-                    metadata: { type: 'auth-config' }
-                }
-            ];
-            // Add plugin artifacts if plugin was used
-            if (pluginResult?.artifacts) {
-                artifacts.push(...pluginResult.artifacts);
-            }
-            return this.createSuccessResult({
-                packagePath: authPackagePath,
-                providers: authConfig.providers,
-                framework: 'better-auth',
-                pluginUsed: usePlugin,
-                enhancements: ['security', 'monitoring', 'ai-features']
-            }, artifacts, [
-                'Authentication package structure created',
-                'Better Auth configured',
-                'Provider setup completed',
-                'Agent-specific enhancements added',
-                'Ready for authentication development'
-            ]);
+                artifacts: pluginResult.artifacts,
+                warnings: pluginResult.warnings,
+                duration: Date.now() - this.startTime
+            };
         }
         catch (error) {
+            await this.failSpinner(`❌ Authentication setup failed`);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            context.logger.error(`Failed to setup auth package: ${errorMessage}`, error);
-            return this.createErrorResult('AUTH_SETUP_FAILED', `Failed to setup auth package: ${errorMessage}`, [], 0, error);
+            return this.createErrorResult('AUTHENTICATION_SETUP_FAILED', `Authentication setup failed: ${errorMessage}`, [], this.startTime, error);
         }
     }
     // ============================================================================
@@ -287,28 +181,34 @@ export class AuthAgent extends AbstractAgent {
         }
         const errors = [];
         const warnings = [];
-        // Check if Auth package directory exists
-        const authPackagePath = path.join(context.projectPath, 'packages', 'auth');
-        if (!existsSync(authPackagePath)) {
+        // Check if project directory exists
+        if (!existsSync(context.projectPath)) {
             errors.push({
-                field: 'authPackagePath',
-                message: 'Auth package directory does not exist',
-                code: 'AUTH_PACKAGE_MISSING'
+                field: 'projectPath',
+                message: `Project directory does not exist: ${context.projectPath}`,
+                code: 'PROJECT_NOT_FOUND',
+                severity: 'error'
             });
         }
-        // Check if DB package exists (required for auth)
-        const dbPackagePath = path.join(context.projectPath, 'packages', 'db');
-        if (!existsSync(dbPackagePath)) {
+        // Check if Better Auth plugin is available
+        const betterAuthPlugin = this.pluginSystem.getRegistry().get('better-auth');
+        if (!betterAuthPlugin) {
             errors.push({
-                field: 'dbPackagePath',
-                message: 'Database package is required for authentication',
-                code: 'DB_PACKAGE_MISSING'
+                field: 'plugin',
+                message: 'Better Auth plugin not found in registry',
+                code: 'PLUGIN_NOT_FOUND',
+                severity: 'error'
             });
         }
-        // Check for required environment variables
-        const envFile = path.join(context.projectPath, '.env.local');
-        if (!existsSync(envFile)) {
-            warnings.push('Environment file (.env.local) not found - will be created');
+        // Check for database configuration (Better Auth requires a database)
+        const dbConfig = context.config.database || {};
+        if (!dbConfig.connectionString && !dbConfig.databaseUrl) {
+            warnings.push('Database connection string not configured - Better Auth requires a database');
+        }
+        // Check for authentication configuration
+        const authConfig = context.config.authentication || {};
+        if (!authConfig.secret) {
+            warnings.push('AUTH_SECRET not configured - you will need to set this environment variable');
         }
         return {
             valid: errors.length === 0,
@@ -317,349 +217,103 @@ export class AuthAgent extends AbstractAgent {
         };
     }
     // ============================================================================
-    // PRIVATE METHODS
+    // PRIVATE METHODS - Plugin Orchestration
     // ============================================================================
-    async getAuthConfig(context) {
-        // If useDefaults is true, return default configuration
-        if (context.options.useDefaults) {
-            return {
-                providers: ['email'],
-                requireEmailVerification: true,
-                sessionDuration: 7 * 24 * 60 * 60 // 7 days in seconds
-            };
+    async executeBetterAuthPlugin(context, authConfig) {
+        // Get the Better Auth plugin
+        const betterAuthPlugin = this.pluginSystem.getRegistry().get('better-auth');
+        if (!betterAuthPlugin) {
+            throw new Error('Better Auth plugin not found in registry');
         }
-        const questions = [
-            {
-                type: 'checkbox',
-                name: 'providers',
-                message: 'Select authentication providers:',
-                choices: [
-                    { name: 'Email & Password', value: 'email', checked: true },
-                    { name: 'GitHub OAuth', value: 'github' },
-                    { name: 'Google OAuth', value: 'google' }
-                ],
-                validate: (input) => {
-                    if (input.length === 0) {
-                        return 'Please select at least one authentication provider';
-                    }
-                    return true;
-                }
-            },
-            {
-                type: 'confirm',
-                name: 'requireEmailVerification',
-                message: 'Require email verification for new accounts?',
-                default: true
-            },
-            {
-                type: 'number',
-                name: 'sessionDuration',
-                message: 'Session duration in days:',
-                default: 7,
-                validate: (input) => {
-                    if (!input || isNaN(input)) {
-                        return 'Please enter a valid number';
-                    }
-                    if (input < 1 || input > 30) {
-                        return 'Session duration must be between 1 and 30 days';
-                    }
-                    return true;
-                }
+        // Prepare plugin context
+        const pluginContext = {
+            ...context,
+            pluginId: 'better-auth',
+            pluginConfig: this.getPluginConfig(authConfig),
+            installedPlugins: [],
+            projectType: ProjectType.NEXTJS,
+            targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
+        };
+        // Validate plugin compatibility
+        const validation = await betterAuthPlugin.validate(pluginContext);
+        if (!validation.valid) {
+            throw new Error(`Better Auth plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+        }
+        // Execute the plugin
+        context.logger.info('Executing Better Auth plugin...');
+        const result = await betterAuthPlugin.install(pluginContext);
+        if (!result.success) {
+            throw new Error(`Better Auth plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+        }
+        return result;
+    }
+    async validateAuthenticationSetup(context) {
+        const { projectPath } = context;
+        context.logger.info('Validating authentication setup...');
+        // Check for essential authentication files
+        const essentialFiles = ['auth.ts', 'lib/auth.ts'];
+        for (const file of essentialFiles) {
+            const filePath = path.join(projectPath, file);
+            if (!await fsExtra.pathExists(filePath)) {
+                throw new Error(`Authentication file missing: ${file}`);
             }
-        ];
-        const inquirer = await getInquirer();
-        const answers = await inquirer.prompt(questions);
+        }
+        // Check for package.json dependencies
+        const packageJsonPath = path.join(projectPath, 'package.json');
+        if (await fsExtra.pathExists(packageJsonPath)) {
+            const packageJson = await fsExtra.readJSON(packageJsonPath);
+            const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
+            if (!dependencies['better-auth']) {
+                throw new Error('Better Auth dependency not found in package.json');
+            }
+        }
+        context.logger.success('Authentication setup validation passed');
+    }
+    async getAuthConfig(context) {
+        // Get configuration from context or use defaults
+        const userConfig = context.config.authentication || {};
+        const dbConfig = context.config.database || {};
         return {
-            providers: answers.providers,
-            requireEmailVerification: answers.requireEmailVerification,
-            sessionDuration: answers.sessionDuration * 24 * 60 * 60 // Convert days to seconds
+            providers: userConfig.providers || ['email'],
+            requireEmailVerification: userConfig.requireEmailVerification !== false,
+            sessionDuration: userConfig.sessionDuration || 604800,
+            databaseUrl: dbConfig.connectionString || dbConfig.databaseUrl || ''
         };
     }
-    async updatePackageJson(authPackagePath, context) {
-        const packageJson = {
-            name: `@${context.projectName}/auth`,
-            version: "0.1.0",
-            private: true,
-            description: "Authentication layer with Better Auth",
-            main: "index.ts",
-            types: "index.ts",
-            scripts: {
-                "build": "tsc",
-                "dev": "tsc --watch",
-                "lint": "eslint . --ext .ts",
-                "type-check": "tsc --noEmit"
-            },
-            dependencies: {
-                "better-auth": "^1.2.12",
-                "@better-auth/utils": "^0.2.6",
-                "jose": "^6.0.11",
-                "bcryptjs": "^2.4.3",
-                "zod": "^3.24.1"
-            },
-            devDependencies: {
-                "@types/bcryptjs": "^2.4.6",
-                "typescript": "^5.2.2"
-            },
-            peerDependencies: {
-                "react": "^18.0.0",
-                "next": "^14.0.0"
-            }
-        };
-        await fsExtra.writeJSON(path.join(authPackagePath, 'package.json'), packageJson, { spaces: 2 });
-    }
-    async createESLintConfig(authPackagePath) {
-        const eslintConfig = {
-            extends: ["../../.eslintrc.json"]
-        };
-        await fsExtra.writeJSON(path.join(authPackagePath, '.eslintrc.json'), eslintConfig, { spaces: 2 });
-    }
-    async createAuthConfig(authPackagePath, context, authConfig) {
-        const socialProvidersConfig = authConfig.providers.includes('github') || authConfig.providers.includes('google')
-            ? `
-  socialProviders: {
-    ${authConfig.providers.includes('github') ? `
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    },` : ''}
-    ${authConfig.providers.includes('google') ? `
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    },` : ''}
-  },`
-            : '';
-        const templateData = {
-            projectName: context.projectName,
+    getPluginConfig(authConfig) {
+        return {
             providers: authConfig.providers,
             requireEmailVerification: authConfig.requireEmailVerification,
             sessionDuration: authConfig.sessionDuration,
-            socialProvidersConfig
+            databaseUrl: authConfig.databaseUrl,
+            secret: process.env.AUTH_SECRET || 'your-secret-key-here',
+            skipDb: false,
+            skipPlugins: false
         };
-        const content = await this.templateService.renderTemplate('auth', 'auth.ts.ejs', templateData, { logger: context.logger });
-        await fsExtra.writeFile(path.join(authPackagePath, 'auth.ts'), content);
-    }
-    async createAuthUtils(authPackagePath, context) {
-        const clientContent = await this.templateService.renderTemplate('auth', 'client.ts.ejs', {}, { logger: context.logger });
-        await fsExtra.writeFile(path.join(authPackagePath, 'client.ts'), clientContent);
-        const serverContent = await this.templateService.renderTemplate('auth', 'server.ts.ejs', {}, { logger: context.logger });
-        await fsExtra.writeFile(path.join(authPackagePath, 'server.ts'), serverContent);
-    }
-    async createAuthMiddleware(authPackagePath, context) {
-        const content = await this.templateService.renderTemplate('auth', 'middleware.ts.ejs', {}, { logger: context.logger });
-        await fsExtra.writeFile(path.join(authPackagePath, 'middleware.ts'), content);
-    }
-    async createIndex(authPackagePath) {
-        const content = await this.templateService.renderTemplate('auth', 'index.ts.ejs', {});
-        await fsExtra.writeFile(path.join(authPackagePath, 'index.ts'), content);
-    }
-    async updateEnvConfig(projectPath, authConfig, context) {
-        const envFile = path.join(projectPath, '.env.local');
-        let envContent = '';
-        // Read existing env file if it exists
-        if (existsSync(envFile)) {
-            envContent = await fsExtra.readFile(envFile, 'utf-8');
-        }
-        // Generate auth environment variables using template
-        const authEnvVars = await this.templateService.renderTemplate('auth', 'env-vars.ejs', { providers: authConfig.providers }, { logger: context.logger });
-        // Only add if not already present
-        const newVars = authEnvVars.split('\n').filter(varLine => {
-            const varName = varLine.split('=')[0];
-            return varName && !envContent.includes(varName);
-        });
-        if (newVars.length > 0) {
-            await fsExtra.appendFile(envFile, '\n' + newVars.join('\n'));
-        }
-    }
-    displayAuthSetupInstructions(authConfig) {
-        console.log('\n🔐 Authentication Setup Instructions:');
-        console.log('=====================================');
-        console.log('');
-        console.log('1. Environment Variables:');
-        console.log('   - Update .env.local with your actual values');
-        console.log('   - Generate a secure AUTH_SECRET (32+ characters)');
-        console.log('');
-        if (authConfig.providers.includes('github')) {
-            console.log('2. GitHub OAuth Setup:');
-            console.log('   - Go to GitHub Settings > Developer settings > OAuth Apps');
-            console.log('   - Create a new OAuth App');
-            console.log('   - Set Authorization callback URL to: http://localhost:3000/api/auth/callback/github');
-            console.log('   - Update GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in .env.local');
-            console.log('');
-        }
-        if (authConfig.providers.includes('google')) {
-            console.log('3. Google OAuth Setup:');
-            console.log('   - Go to Google Cloud Console > APIs & Services > Credentials');
-            console.log('   - Create OAuth 2.0 Client ID');
-            console.log('   - Set Authorized redirect URIs to: http://localhost:3000/api/auth/callback/google');
-            console.log('   - Update GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env.local');
-            console.log('');
-        }
-        console.log('4. Usage:');
-        console.log('   - Import auth utilities in your components');
-        console.log('   - Use useSession() for client-side auth state');
-        console.log('   - Use getServerSession() for server-side auth checks');
-        console.log('   - Add authMiddleware to your Next.js middleware');
-        console.log('');
-    }
-    // ============================================================================
-    // PLUGIN INTEGRATION
-    // ============================================================================
-    async executeBetterAuthPlugin(context, authPackagePath, authConfig) {
-        try {
-            const registry = this.pluginSystem.getRegistry();
-            const betterAuthPlugin = registry.get('better-auth');
-            if (!betterAuthPlugin) {
-                throw new Error('Better Auth plugin not found in registry');
-            }
-            const pluginContext = {
-                ...context,
-                pluginId: 'better-auth',
-                pluginConfig: {
-                    providers: authConfig.providers,
-                    requireEmailVerification: authConfig.requireEmailVerification,
-                    sessionDuration: authConfig.sessionDuration,
-                    targetPath: authPackagePath
-                },
-                installedPlugins: [],
-                projectType: ProjectType.NEXTJS,
-                targetPlatform: [TargetPlatform.WEB]
-            };
-            context.logger.info('Executing Better Auth plugin...');
-            const result = await betterAuthPlugin.install(pluginContext);
-            if (!result.success) {
-                throw new Error(`Plugin execution failed: ${result.errors?.[0]?.message || 'Unknown error'}`);
-            }
-            context.logger.info('Better Auth plugin executed successfully');
-            return result;
-        }
-        catch (error) {
-            context.logger.warn(`Plugin execution failed, falling back to manual setup: ${error}`);
-            // Fall back to manual setup
-            await this.manualSetup(authPackagePath, context, authConfig);
-            return null;
-        }
-    }
-    // ============================================================================
-    // AGENT-SPECIFIC ENHANCEMENTS
-    // ============================================================================
-    async enhanceAuthPackage(authPackagePath, context, authConfig) {
-        context.logger.info('Adding agent-specific enhancements to auth package...');
-        // Create basic directory structure
-        const libPath = path.join(authPackagePath, 'lib');
-        await fsExtra.ensureDir(libPath);
-        // Create basic security utilities (without templates for now)
-        const securityPath = path.join(libPath, 'security');
-        await fsExtra.ensureDir(securityPath);
-        // Create a basic rate limiting utility
-        const rateLimitingContent = `// Rate limiting utilities for ${context.projectName}
-export class RateLimiter {
-  private attempts = new Map<string, number[]>();
-  
-  constructor(private maxAttempts: number = 5, private windowMs: number = 15 * 60 * 1000) {}
-  
-  isAllowed(identifier: string): boolean {
-    const now = Date.now();
-    const userAttempts = this.attempts.get(identifier) || [];
-    const recentAttempts = userAttempts.filter(time => now - time < this.windowMs);
-    
-    if (recentAttempts.length >= this.maxAttempts) {
-      return false;
-    }
-    
-    recentAttempts.push(now);
-    this.attempts.set(identifier, recentAttempts);
-    return true;
-  }
-  
-  reset(identifier: string): void {
-    this.attempts.delete(identifier);
-  }
-}`;
-        await fsExtra.writeFile(path.join(securityPath, 'rate-limiting.ts'), rateLimitingContent);
-        // Create basic monitoring utilities
-        const monitoringPath = path.join(libPath, 'monitoring');
-        await fsExtra.ensureDir(monitoringPath);
-        const monitoringContent = `// Auth monitoring utilities for ${context.projectName}
-export class AuthLogger {
-  static log(event: string, data?: any) {
-    console.log(\`[AUTH] \${event}\`, data || '');
-  }
-  
-  static error(event: string, error?: any) {
-    console.error(\`[AUTH ERROR] \${event}\`, error || '');
-  }
-}`;
-        await fsExtra.writeFile(path.join(monitoringPath, 'auth-logger.ts'), monitoringContent);
-        // Create basic utils
-        const utilsPath = path.join(libPath, 'utils');
-        await fsExtra.ensureDir(utilsPath);
-        const utilsContent = `// Enhanced auth utilities for ${context.projectName}
-export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
-  return emailRegex.test(email);
-}
-
-export function validatePassword(password: string): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
-  }
-  
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-  
-  if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-  
-  if (!/\\d/.test(password)) {
-    errors.push('Password must contain at least one number');
-  }
-  
-  return {
-    valid: errors.length === 0,
-    errors
-  };
-}`;
-        await fsExtra.writeFile(path.join(utilsPath, 'enhanced.ts'), utilsContent);
-    }
-    // ============================================================================
-    // FALLBACK MANUAL SETUP
-    // ============================================================================
-    async manualSetup(authPackagePath, context, authConfig) {
-        context.logger.info('Performing manual auth setup...');
-        // Update package.json with dependencies
-        await this.updatePackageJson(authPackagePath, context);
-        // Create ESLint config
-        await this.createESLintConfig(authPackagePath);
-        // Create auth configuration
-        await this.createAuthConfig(authPackagePath, context, authConfig);
-        // Create auth utilities
-        await this.createAuthUtils(authPackagePath, context);
-        // Create auth middleware
-        await this.createAuthMiddleware(authPackagePath, context);
-        // Create index exports
-        await this.createIndex(authPackagePath);
-        // Update environment configuration
-        await this.updateEnvConfig(context.projectPath, authConfig, context);
     }
     // ============================================================================
     // ROLLBACK
     // ============================================================================
     async rollback(context) {
-        const authPackagePath = path.join(context.projectPath, 'packages', 'auth');
-        context.logger.info('Rolling back authentication package...');
+        context.logger.warn('Rolling back authentication setup...');
         try {
-            if (existsSync(authPackagePath)) {
-                await fsExtra.remove(authPackagePath);
-                context.logger.success('Authentication package removed');
+            // Get the Better Auth plugin for uninstallation
+            const betterAuthPlugin = this.pluginSystem.getRegistry().get('better-auth');
+            if (betterAuthPlugin) {
+                const pluginContext = {
+                    ...context,
+                    pluginId: 'better-auth',
+                    pluginConfig: {},
+                    installedPlugins: [],
+                    projectType: ProjectType.NEXTJS,
+                    targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
+                };
+                await betterAuthPlugin.uninstall(pluginContext);
             }
+            context.logger.success('Authentication setup rollback completed');
         }
         catch (error) {
-            context.logger.error('Failed to rollback authentication package', error);
+            context.logger.error('Authentication rollback failed', error);
         }
     }
 }

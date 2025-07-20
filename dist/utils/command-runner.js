@@ -27,6 +27,10 @@ export class CommandRunner {
     getPackageManager() {
         return this.packageManager;
     }
+    // Public getter for create command
+    getCreateCommand() {
+        return this.commands.create;
+    }
     detectPackageManager() {
         // Check which package managers are available
         const available = [];

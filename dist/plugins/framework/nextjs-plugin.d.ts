@@ -1,12 +1,14 @@
 /**
- * Next.js Framework Plugin
+ * Next.js Framework Plugin - Pure Technology Implementation
  *
- * Provides Next.js framework setup and configuration.
- * Handles project structure, routing, and Next.js-specific features.
+ * Provides Next.js framework integration using the official create-next-app CLI.
+ * Focuses only on technology setup and artifact generation.
+ * No user interaction or business logic - that's handled by agents.
  */
-import { IPlugin, PluginMetadata, PluginContext, PluginResult, CompatibilityMatrix, ValidationResult, PluginRequirement, ConfigSchema } from '../../types/plugin.js';
+import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../types/plugin.js';
 export declare class NextJSPlugin implements IPlugin {
     private templateService;
+    private runner;
     constructor();
     getMetadata(): PluginMetadata;
     install(context: PluginContext): Promise<PluginResult>;
@@ -19,10 +21,9 @@ export declare class NextJSPlugin implements IPlugin {
     getRequirements(): PluginRequirement[];
     getDefaultConfig(): Record<string, any>;
     getConfigSchema(): ConfigSchema;
-    private createProjectStructure;
-    private generateNextConfig;
-    private generateTsConfig;
-    private generateEslintConfig;
-    private generateProjectStructure;
+    private buildCreateNextAppArgs;
+    private customizeProject;
+    private addEnhancements;
+    private addCustomConfigurations;
     private createErrorResult;
 }

@@ -1,35 +1,22 @@
 /**
- * Auth Agent - Authentication Package Generator
+ * Auth Agent - Authentication Orchestrator
  *
- * Sets up the packages/auth authentication layer with:
- * - Better Auth configuration
- * - Database integration with Drizzle
- * - Social login providers
- * - Session management utilities
- *
- * Enhanced to integrate with the plugin system for modularity.
+ * Pure orchestrator for authentication setup using the Better Auth plugin.
+ * Handles user interaction, decision making, and coordinates the Better Auth plugin.
+ * No direct installation logic - delegates everything to plugins.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class AuthAgent extends AbstractAgent {
-    private templateService;
     private pluginSystem;
     constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     validate(context: AgentContext): Promise<ValidationResult>;
-    private getAuthConfig;
-    private updatePackageJson;
-    private createESLintConfig;
-    private createAuthConfig;
-    private createAuthUtils;
-    private createAuthMiddleware;
-    private createIndex;
-    private updateEnvConfig;
-    private displayAuthSetupInstructions;
     private executeBetterAuthPlugin;
-    private enhanceAuthPackage;
-    private manualSetup;
+    private validateAuthenticationSetup;
+    private getAuthConfig;
+    private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;
 }

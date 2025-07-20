@@ -1,27 +1,21 @@
 /**
  * Base Project Agent - Foundation Builder
  *
- * Responsible for creating the core project structure using the new
- * framework-agnostic and structure-agnostic approach.
- *
- * Enhanced to integrate with the plugin system for modularity.
+ * Responsible for creating the core project structure using the plugin system.
+ * Pure orchestrator - delegates all technology implementation to plugins.
  */
 import { existsSync } from 'fs';
 import * as path from 'path';
+import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { templateService } from '../utils/template-service.js';
-import { ProjectStructureManager } from '../utils/project-structure-manager.js';
-import { ConfigurationManager } from '../utils/configuration-manager.js';
+import { PluginSystem } from '../utils/plugin-system.js';
+import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
 export class BaseProjectAgent extends AbstractAgent {
     pluginSystem;
-    structureManager;
-    configManager;
-    constructor(pluginSystem) {
+    constructor() {
         super();
-        this.pluginSystem = pluginSystem;
-        this.structureManager = new ProjectStructureManager(templateService);
-        this.configManager = new ConfigurationManager();
+        this.pluginSystem = PluginSystem.getInstance();
     }
     // ============================================================================
     // AGENT METADATA
@@ -30,10 +24,10 @@ export class BaseProjectAgent extends AbstractAgent {
         return {
             name: 'BaseProjectAgent',
             version: '2.0.0',
-            description: 'Creates the foundational project structure using framework-agnostic approach',
+            description: 'Creates the foundational project structure using plugin orchestration',
             author: 'The Architech Team',
             category: AgentCategory.FOUNDATION,
-            tags: ['project', 'foundation', 'generator', 'framework-agnostic', 'structure-agnostic'],
+            tags: ['project', 'foundation', 'orchestrator', 'plugin-coordinator'],
             dependencies: [],
             conflicts: [],
             requirements: [
@@ -51,7 +45,7 @@ export class BaseProjectAgent extends AbstractAgent {
         return [
             {
                 name: 'create-project-structure',
-                description: 'Create project structure (single-app or monorepo)',
+                description: 'Create project structure using NextJS plugin',
                 parameters: [
                     {
                         name: 'projectName',
@@ -63,7 +57,7 @@ export class BaseProjectAgent extends AbstractAgent {
                         name: 'framework',
                         type: 'string',
                         required: true,
-                        description: 'Framework to use (nextjs, react, vue)'
+                        description: 'Framework to use (nextjs, nextjs-14)'
                     },
                     {
                         name: 'structure',
@@ -75,13 +69,13 @@ export class BaseProjectAgent extends AbstractAgent {
                 examples: [
                     {
                         name: 'Create Next.js monorepo',
-                        description: 'Create a Next.js monorepo with Turborepo',
+                        description: 'Create a Next.js monorepo using NextJS plugin',
                         parameters: {
                             projectName: 'my-app',
                             framework: 'nextjs-14',
                             structure: 'monorepo'
                         },
-                        expectedResult: 'Project structure created successfully'
+                        expectedResult: 'Project structure created successfully via plugin'
                     }
                 ],
                 category: CapabilityCategory.SETUP
@@ -119,41 +113,70 @@ export class BaseProjectAgent extends AbstractAgent {
         const warnings = [];
         // Validate project name
         if (!context.projectName || context.projectName.trim().length === 0) {
-            errors.push('Project name is required');
+            errors.push({
+                field: 'projectName',
+                message: 'Project name is required',
+                code: 'REQUIRED_FIELD',
+                severity: 'error'
+            });
         }
         else if (!/^[a-zA-Z0-9-_]+$/.test(context.projectName)) {
-            errors.push('Project name can only contain letters, numbers, hyphens, and underscores');
+            errors.push({
+                field: 'projectName',
+                message: 'Project name can only contain letters, numbers, hyphens, and underscores',
+                code: 'INVALID_FORMAT',
+                severity: 'error'
+            });
         }
         // Validate framework
         const framework = context.config.template;
         if (!framework) {
-            errors.push('Framework/template is required');
+            errors.push({
+                field: 'template',
+                message: 'Framework/template is required',
+                code: 'REQUIRED_FIELD',
+                severity: 'error'
+            });
         }
         else if (!['nextjs', 'nextjs-14', 'react', 'vue'].includes(framework)) {
-            errors.push(`Unsupported framework: ${framework}`);
+            errors.push({
+                field: 'template',
+                message: `Unsupported framework: ${framework}`,
+                code: 'UNSUPPORTED_FRAMEWORK',
+                severity: 'error'
+            });
         }
         // Validate project path
         if (existsSync(context.projectPath)) {
-            errors.push(`Project directory already exists: ${context.projectPath}`);
+            errors.push({
+                field: 'projectPath',
+                message: `Project directory already exists: ${context.projectPath}`,
+                code: 'DIRECTORY_EXISTS',
+                severity: 'error'
+            });
         }
         // Validate package manager
         if (!['npm', 'yarn', 'pnpm', 'bun', 'auto'].includes(context.packageManager)) {
             warnings.push(`Unsupported package manager: ${context.packageManager}`);
         }
+        // Check if NextJS plugin is available
+        const nextjsPlugin = this.pluginSystem.getRegistry().get('nextjs');
+        if (!nextjsPlugin) {
+            errors.push({
+                field: 'plugin',
+                message: 'NextJS plugin not found in registry',
+                code: 'PLUGIN_NOT_FOUND',
+                severity: 'error'
+            });
+        }
         return {
             valid: errors.length === 0,
-            errors: errors.map(error => ({
-                field: 'general',
-                message: error,
-                code: 'VALIDATION_ERROR',
-                severity: 'error'
-            })),
-            warnings,
-            ...(warnings.length > 0 && { suggestions: ['Consider using a supported package manager'] })
+            errors,
+            warnings
         };
     }
     // ============================================================================
-    // CORE EXECUTION
+    // CORE EXECUTION - Pure Plugin Orchestration
     // ============================================================================
     async executeInternal(context) {
         const { projectName, projectPath, config } = context;
@@ -163,139 +186,117 @@ export class BaseProjectAgent extends AbstractAgent {
         try {
             // Start spinner for actual work
             await this.startSpinner(`🔧 Creating ${structure} structure for ${projectName}...`, context);
-            // Step 1: Create project configuration
-            const projectConfig = await this.createProjectConfiguration(context, structure);
-            // Step 2: Create project structure
-            await this.createProjectStructure(context, projectConfig);
-            // Step 3: Validate project structure
-            await this.validateProjectStructure(context, projectConfig);
-            // Step 4: Save configuration
-            await this.saveProjectConfiguration(context, projectConfig);
-            // Stop spinner and show success
-            this.succeedSpinner(`✅ ${structure} structure created successfully: ${projectName}`);
-            const artifacts = [
-                {
-                    type: 'directory',
-                    path: projectPath,
-                    metadata: {
-                        framework,
-                        features: projectConfig.features,
-                        structure,
-                        modules: projectConfig.modules
-                    }
+            // Step 1: Execute NextJS plugin for project creation
+            const pluginResult = await this.executeNextJSPlugin(context, framework, structure);
+            // Step 2: Validate the created project structure
+            await this.validateProjectStructure(context, structure);
+            // Step 3: Create project configuration file
+            await this.createProjectConfiguration(context, structure);
+            await this.succeedSpinner(`✅ Project structure created successfully`);
+            return {
+                success: true,
+                data: {
+                    projectName,
+                    framework,
+                    structure,
+                    plugin: 'nextjs',
+                    artifacts: pluginResult.artifacts.length,
+                    dependencies: pluginResult.dependencies.length
                 },
-                {
-                    type: 'config',
-                    path: path.join(projectPath, '.architech.json'),
-                    metadata: { type: 'project-configuration' }
-                }
-            ];
-            return this.createSuccessResult({
-                projectPath,
-                framework,
-                structure,
-                packages: projectConfig.modules,
-                features: projectConfig.features
-            }, artifacts, [
-                `${structure} structure created`,
-                'Configuration files generated',
-                'Project structure validated',
-                'Ready for framework-specific setup'
-            ]);
+                artifacts: pluginResult.artifacts,
+                warnings: pluginResult.warnings,
+                duration: Date.now() - this.startTime
+            };
         }
         catch (error) {
-            // Stop spinner and show error
-            this.failSpinner(`❌ Failed to create ${structure} structure`);
+            await this.failSpinner(`❌ Failed to create project structure`);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            context.logger.error(`Failed to create project structure: ${errorMessage}`, error);
-            return this.createErrorResult('PROJECT_CREATION_FAILED', `Failed to create ${structure} structure: ${errorMessage}`, [], 0, error);
+            return this.createErrorResult('PROJECT_CREATION_FAILED', `Failed to create project structure: ${errorMessage}`, [], this.startTime, error);
         }
     }
     // ============================================================================
-    // PROJECT CONFIGURATION
+    // PRIVATE METHODS - Plugin Orchestration
     // ============================================================================
-    async createProjectConfiguration(context, structure) {
-        const framework = context.config.template;
-        const userInput = context.config.userInput;
-        // Create configuration options
-        const configOptions = {
-            skipGit: context.options.skipGit,
-            skipInstall: context.options.skipInstall,
-            useDefaults: context.options.useDefaults,
-            verbose: context.options.verbose
+    async executeNextJSPlugin(context, framework, structure) {
+        // Get the NextJS plugin
+        const nextjsPlugin = this.pluginSystem.getRegistry().get('nextjs');
+        if (!nextjsPlugin) {
+            throw new Error('NextJS plugin not found in registry');
+        }
+        // Prepare plugin context
+        const pluginContext = {
+            ...context,
+            pluginId: 'nextjs',
+            pluginConfig: this.getPluginConfig(context, framework, structure),
+            installedPlugins: [],
+            projectType: ProjectType.NEXTJS,
+            targetPlatform: [TargetPlatform.WEB]
         };
-        // Create project configuration
-        const projectConfig = this.configManager.createConfiguration(context.projectName, framework, structure, configOptions, userInput);
-        // Validate configuration
-        const validation = this.configManager.validateConfiguration(projectConfig);
+        // Validate plugin compatibility
+        const validation = await nextjsPlugin.validate(pluginContext);
         if (!validation.valid) {
-            throw new Error(`Configuration validation failed: ${validation.errors.join(', ')}`);
+            throw new Error(`NextJS plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
         }
-        context.logger.info('Project configuration created successfully');
-        return projectConfig;
-    }
-    // ============================================================================
-    // PROJECT STRUCTURE CREATION
-    // ============================================================================
-    async createProjectStructure(context, projectConfig) {
-        // Get structure configuration
-        const structureConfig = this.configManager.getStructureConfig(projectConfig);
-        // Get template data
-        const templateData = this.configManager.getTemplateData(projectConfig);
-        // Create project structure
-        await this.structureManager.createStructure(context.projectPath, structureConfig, templateData);
-        context.logger.info('Project structure created successfully');
-    }
-    // ============================================================================
-    // PROJECT STRUCTURE VALIDATION
-    // ============================================================================
-    async validateProjectStructure(context, projectConfig) {
-        // Get structure configuration
-        const structureConfig = this.configManager.getStructureConfig(projectConfig);
-        // Validate structure
-        const isValid = await this.structureManager.validateStructure(context.projectPath, structureConfig);
-        if (!isValid) {
-            throw new Error('Project structure validation failed');
+        // Execute the plugin
+        context.logger.info('Executing NextJS plugin...');
+        const result = await nextjsPlugin.install(pluginContext);
+        if (!result.success) {
+            throw new Error(`NextJS plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
         }
-        context.logger.info('Project structure validation passed');
+        return result;
     }
-    // ============================================================================
-    // CONFIGURATION PERSISTENCE
-    // ============================================================================
-    async saveProjectConfiguration(context, projectConfig) {
-        await this.configManager.saveConfiguration(context.projectPath, projectConfig);
-        context.logger.info('Project configuration saved');
-    }
-    // ============================================================================
-    // HELPER METHODS
-    // ============================================================================
-    getPackageDependencies(packageName) {
-        const dependencies = {
-            ui: {
-                'react': '^18.3.0',
-                'react-dom': '^18.3.0',
-                'tailwindcss': '^3.4.0',
-                'tailwindcss-animate': '^1.0.7',
-                'class-variance-authority': '^0.7.0',
-                'clsx': '^2.1.0',
-                'lucide-react': '^0.400.0',
-                'tailwind-merge': '^2.2.0'
-            },
-            db: {
-                'drizzle-orm': '^0.30.0',
-                'drizzle-kit': '^0.21.0',
-                '@neondatabase/serverless': '^0.9.0'
-            },
-            auth: {
-                'better-auth': '^0.20.0',
-                '@better-auth/drizzle': '^0.20.0'
-            },
-            config: {
-                '@types/node': '^20.0.0',
-                'typescript': '^5.4.0'
+    async validateProjectStructure(context, structure) {
+        const { projectPath } = context;
+        context.logger.info('Validating project structure...');
+        // Check for essential files
+        const essentialFiles = ['package.json', 'README.md'];
+        for (const file of essentialFiles) {
+            const filePath = path.join(projectPath, file);
+            if (!await fsExtra.pathExists(filePath)) {
+                throw new Error(`Essential file missing: ${file}`);
             }
+        }
+        // Check for structure-specific files
+        if (structure === 'monorepo') {
+            const monorepoFiles = ['turbo.json', 'packages'];
+            for (const file of monorepoFiles) {
+                const filePath = path.join(projectPath, file);
+                if (!await fsExtra.pathExists(filePath)) {
+                    throw new Error(`Monorepo file/directory missing: ${file}`);
+                }
+            }
+        }
+        context.logger.success('Project structure validation passed');
+    }
+    async createProjectConfiguration(context, structure) {
+        const { projectPath, projectName, config } = context;
+        // Create architech configuration file
+        const architechConfig = {
+            name: projectName,
+            version: '0.1.0',
+            structure,
+            framework: config.template,
+            packageManager: context.packageManager,
+            createdAt: new Date().toISOString(),
+            plugins: [],
+            agents: []
         };
-        return dependencies[packageName] || {};
+        const configPath = path.join(projectPath, '.architech.json');
+        await fsExtra.writeJSON(configPath, architechConfig, { spaces: 2 });
+    }
+    getPluginConfig(context, framework, structure) {
+        return {
+            projectName: context.projectName, // Add projectName to plugin config
+            template: framework,
+            structure,
+            typescript: true,
+            tailwind: true,
+            eslint: true,
+            srcDir: false,
+            importAlias: '@/*',
+            appRouter: framework === 'nextjs-14', // Fix: use appRouter instead of useAppRouter
+            useMonorepo: structure === 'monorepo'
+        };
     }
 }
 //# sourceMappingURL=base-project-agent.js.map

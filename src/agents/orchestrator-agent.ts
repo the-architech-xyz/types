@@ -536,7 +536,7 @@ export class OrchestratorAgent implements IAgent {
       switch (agentId) {
         case 'base-project':
           const { BaseProjectAgent } = await import('./base-project-agent.js');
-          return new BaseProjectAgent(this.pluginSystem);
+          return new BaseProjectAgent();
         case 'db':
           const { DBAgent } = await import('./db-agent.js');
           return new DBAgent();

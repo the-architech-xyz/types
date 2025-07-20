@@ -1,19 +1,31 @@
-import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform } from '../../types/plugin.js';
+/**
+ * Better Auth Plugin - Pure Technology Implementation
+ * 
+ * Provides Better Auth authentication integration using the official @better-auth/cli.
+ * Focuses only on technology setup and artifact generation.
+ * No user interaction or business logic - that's handled by agents.
+ */
+
+import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../types/plugin.js';
+import { TemplateService, templateService } from '../../utils/template-service.js';
+import { CommandRunner } from '../../utils/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
-import { TemplateService, templateService } from '../../utils/template-service.js';
 
 interface AuthConfig {
   providers: ('email' | 'github' | 'google')[];
   requireEmailVerification: boolean;
   sessionDuration: number;
+  databaseUrl: string;
 }
 
 export class BetterAuthPlugin implements IPlugin {
   private templateService: TemplateService;
+  private runner: CommandRunner;
 
   constructor() {
     this.templateService = templateService;
+    this.runner = new CommandRunner();
   }
 
   // ============================================================================
@@ -36,195 +48,31 @@ export class BetterAuthPlugin implements IPlugin {
   }
 
   // ============================================================================
-  // PLUGIN LIFECYCLE
+  // PLUGIN LIFECYCLE - Pure Technology Implementation
   // ============================================================================
 
   async install(context: PluginContext): Promise<PluginResult> {
-    return this.setupAuthentication(context);
-  }
-
-  async uninstall(context: PluginContext): Promise<PluginResult> {
-    const authPackagePath = path.join(context.projectPath, 'packages', 'auth');
-    
-    try {
-      if (fsExtra.existsSync(authPackagePath)) {
-        await context.runner.execCommand(['rm', '-rf', authPackagePath], { silent: true });
-      }
-
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: [],
-        duration: 0
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      return {
-        success: false,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [{
-          code: 'UNINSTALL_FAILED',
-          message: `Failed to remove authentication package: ${errorMessage}`,
-          severity: 'error'
-        }],
-        warnings: [],
-        duration: 0
-      };
-    }
-  }
-
-  async update(context: PluginContext): Promise<PluginResult> {
-    return this.install(context);
-  }
-
-  // ============================================================================
-  // VALIDATION & COMPATIBILITY
-  // ============================================================================
-
-  async validate(context: PluginContext): Promise<ValidationResult> {
-    const errors: any[] = [];
-    const warnings: string[] = [];
-
-    const authPackagePath = path.join(context.projectPath, 'packages', 'auth');
-    if (!fsExtra.existsSync(authPackagePath)) {
-      errors.push({
-        field: 'authPackagePath',
-        message: `Authentication package directory does not exist: ${authPackagePath}`,
-        code: 'DIRECTORY_NOT_FOUND',
-        severity: 'error'
-      });
-    }
-
-    const packagesPath = path.join(context.projectPath, 'packages');
-    if (!fsExtra.existsSync(packagesPath)) {
-      warnings.push('Packages directory not found - this plugin is designed for monorepo structures');
-    }
-
-    const dbPackagePath = path.join(context.projectPath, 'packages', 'db');
-    if (!fsExtra.existsSync(dbPackagePath)) {
-      warnings.push('Database package not found - Better Auth requires a database for session storage');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings
-    };
-  }
-
-  getCompatibility() {
-    return {
-      frameworks: ['next', 'react', 'vue', 'svelte', 'angular'],
-      platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
-      nodeVersions: ['18.0.0', '20.0.0'],
-      packageManagers: ['npm', 'yarn', 'pnpm'],
-      databases: ['postgresql', 'mysql', 'sqlite'],
-      conflicts: ['next-auth', '@auth/core', 'passport']
-    };
-  }
-
-  getDependencies(): string[] {
-    return ['drizzle'];
-  }
-
-  getConflicts(): string[] {
-    return ['next-auth', '@auth/core', 'passport'];
-  }
-
-  getRequirements() {
-    return [
-      {
-        type: 'package' as const,
-        name: 'better-auth',
-        version: '^0.0.1',
-        description: 'Better Auth core package'
-      },
-      {
-        type: 'package' as const,
-        name: '@better-auth/utils',
-        version: '^0.0.1',
-        description: 'Better Auth utilities'
-      },
-      {
-        type: 'package' as const,
-        name: 'bcryptjs',
-        version: '^2.4.3',
-        description: 'Password hashing'
-      },
-      {
-        type: 'package' as const,
-        name: 'jsonwebtoken',
-        version: '^9.0.2',
-        description: 'JWT token handling'
-      }
-    ];
-  }
-
-  getDefaultConfig(): Record<string, any> {
-    return {
-      providers: ['email'],
-      requireEmailVerification: true,
-      sessionDuration: 604800
-    };
-  }
-
-  getConfigSchema() {
-    return {
-      type: 'object' as const,
-      properties: {
-        providers: {
-          type: 'array' as const,
-          items: { 
-            type: 'string' as const, 
-            enum: ['email', 'github', 'google'],
-            description: 'Authentication provider name'
-          },
-          description: 'Authentication providers to enable'
-        },
-        requireEmailVerification: {
-          type: 'boolean' as const,
-          description: 'Whether to require email verification for new accounts'
-        },
-        sessionDuration: {
-          type: 'number' as const,
-          description: 'Session duration in seconds'
-        }
-      },
-      required: ['providers']
-    };
-  }
-
-  // ============================================================================
-  // TECHNOLOGY IMPLEMENTATION
-  // ============================================================================
-
-  private async setupAuthentication(context: PluginContext): Promise<PluginResult> {
     const startTime = Date.now();
-    const authPackagePath = path.join(context.projectPath, 'packages', 'auth');
     
     try {
-      // Create auth package directory
-      await fsExtra.ensureDir(authPackagePath);
+      const { projectPath, pluginConfig } = context;
       
-      // Get configuration from context
-      const authConfig = this.getAuthConfig(context);
-      
-      // Setup package structure
-      await this.updatePackageJson(authPackagePath, context);
-      await this.createESLintConfig(authPackagePath);
-      await this.createAuthConfig(authPackagePath, context, authConfig);
-      await this.createAuthUtils(authPackagePath, context);
-      await this.createAuthMiddleware(authPackagePath, context);
-      await this.createIndex(authPackagePath);
-      await this.updateEnvConfig(context.projectPath, authConfig, context);
+      context.logger.info('Installing Better Auth using official CLI...');
+
+      // Step 1: Install dependencies
+      await this.installDependencies(context);
+
+      // Step 2: Initialize Better Auth using official CLI
+      await this.initializeBetterAuth(context);
+
+      // Step 3: Generate database schema
+      await this.generateDatabaseSchema(context);
+
+      // Step 4: Create authentication configuration
+      await this.createAuthConfiguration(context);
+
+      // Step 5: Add environment configuration
+      await this.addEnvironmentConfig(context);
 
       const duration = Date.now() - startTime;
 
@@ -232,22 +80,35 @@ export class BetterAuthPlugin implements IPlugin {
         success: true,
         artifacts: [
           {
-            type: 'directory',
-            path: authPackagePath,
-            content: 'Authentication package with Better Auth'
+            type: 'file',
+            path: path.join(projectPath, 'auth.ts')
+          },
+          {
+            type: 'file',
+            path: path.join(projectPath, 'auth.config.ts')
+          },
+          {
+            type: 'file',
+            path: path.join(projectPath, 'lib/auth.ts')
           }
         ],
         dependencies: [
           {
             name: 'better-auth',
-            version: '^0.0.1',
+            version: '^1.3.0',
             type: 'production',
             category: PluginCategory.AUTHENTICATION
           },
           {
             name: '@better-auth/utils',
-            version: '^0.0.1',
+            version: '^0.2.6',
             type: 'production',
+            category: PluginCategory.AUTHENTICATION
+          },
+          {
+            name: '@better-auth/cli',
+            version: '^1.3.0',
+            type: 'development',
             category: PluginCategory.AUTHENTICATION
           },
           {
@@ -267,20 +128,26 @@ export class BetterAuthPlugin implements IPlugin {
           {
             name: 'auth:generate',
             command: 'better-auth generate',
-            description: 'Generate authentication types and utilities',
+            description: 'Generate Better Auth schema',
             category: 'dev'
           },
           {
-            name: 'auth:validate',
-            command: 'better-auth validate',
-            description: 'Validate authentication configuration',
+            name: 'auth:migrate',
+            command: 'better-auth migrate',
+            description: 'Run Better Auth migrations',
+            category: 'dev'
+          },
+          {
+            name: 'auth:secret',
+            command: 'better-auth secret',
+            description: 'Generate Better Auth secret',
             category: 'dev'
           }
         ],
         configs: [
           {
             file: '.env.local',
-            content: 'Authentication environment variables',
+            content: this.generateEnvConfig(pluginConfig),
             mergeStrategy: 'append'
           }
         ],
@@ -290,124 +157,384 @@ export class BetterAuthPlugin implements IPlugin {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const duration = Date.now() - startTime;
+      return this.createErrorResult(
+        `Failed to setup Better Auth: ${errorMessage}`,
+        startTime,
+        [],
+        error
+      );
+    }
+  }
+
+  async uninstall(context: PluginContext): Promise<PluginResult> {
+    const startTime = Date.now();
+    
+    try {
+      const { projectPath } = context;
       
+      // Remove Better Auth specific files
+      const filesToRemove = [
+        'auth.ts',
+        'auth.config.ts',
+        'lib/auth.ts',
+        'auth.config.js',
+        'lib/auth.js'
+      ];
+
+      for (const file of filesToRemove) {
+        const filePath = path.join(projectPath, file);
+        if (await fsExtra.pathExists(filePath)) {
+          await fsExtra.remove(filePath);
+        }
+      }
+
       return {
-        success: false,
+        success: true,
         artifacts: [],
         dependencies: [],
         scripts: [],
         configs: [],
-        errors: [{
-          code: 'SETUP_FAILED',
-          message: `Failed to setup authentication: ${errorMessage}`,
-          severity: 'error'
-        }],
+        errors: [],
         warnings: [],
-        duration
+        duration: Date.now() - startTime
       };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return this.createErrorResult(
+        `Failed to uninstall Better Auth: ${errorMessage}`,
+        startTime,
+        [],
+        error
+      );
     }
   }
 
-  private getAuthConfig(context: PluginContext): AuthConfig {
-    const providers = context.pluginConfig.providers || ['email'];
-    const requireEmailVerification = context.pluginConfig.requireEmailVerification ?? true;
-    const sessionDuration = context.pluginConfig.sessionDuration || 604800;
-
-    return { providers, requireEmailVerification, sessionDuration };
+  async update(context: PluginContext): Promise<PluginResult> {
+    return this.install(context);
   }
 
-  private async updatePackageJson(authPackagePath: string, context: PluginContext): Promise<void> {
-    const packageJson = {
-      name: `@${context.projectName}/auth`,
-      version: "0.1.0",
-      private: true,
-      description: "Authentication layer with Better Auth",
-      main: "index.ts",
-      types: "index.ts",
-      scripts: {
-        "build": "tsc",
-        "dev": "tsc --watch",
-        "lint": "eslint . --ext .ts",
-        "type-check": "tsc --noEmit",
-        "auth:generate": "better-auth generate",
-        "auth:validate": "better-auth validate"
+  // ============================================================================
+  // VALIDATION & COMPATIBILITY
+  // ============================================================================
+
+  async validate(context: PluginContext): Promise<ValidationResult> {
+    const errors: any[] = [];
+    const warnings: string[] = [];
+
+    // Check if project directory exists
+    if (!await fsExtra.pathExists(context.projectPath)) {
+      errors.push({
+        field: 'projectPath',
+        message: `Project directory does not exist: ${context.projectPath}`,
+        code: 'DIRECTORY_NOT_FOUND',
+        severity: 'error'
+      });
+    }
+
+    // Check for database configuration
+    const authConfig = context.pluginConfig;
+    if (!authConfig.databaseUrl && !authConfig.connectionString) {
+      warnings.push('Database URL not configured - Better Auth requires a database for user storage');
+    }
+
+    // Check for required environment variables
+    if (!authConfig.secret) {
+      warnings.push('AUTH_SECRET not configured - you will need to set this environment variable');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  getCompatibility(): CompatibilityMatrix {
+    return {
+      frameworks: ['next', 'react', 'vue', 'svelte', 'angular'],
+      platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
+      nodeVersions: ['18.0.0', '20.0.0'],
+      packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
+      databases: ['postgresql', 'mysql', 'sqlite'],
+      conflicts: ['next-auth', '@auth/core', 'passport']
+    };
+  }
+
+  getDependencies(): string[] {
+    return ['drizzle'];
+  }
+
+  getConflicts(): string[] {
+    return ['next-auth', '@auth/core', 'passport'];
+  }
+
+  getRequirements(): PluginRequirement[] {
+    return [
+      {
+        type: 'package',
+        name: 'better-auth',
+        version: '^1.3.0',
+        description: 'Better Auth core package'
       },
-      dependencies: {
-        "better-auth": "^0.0.1",
-        "@better-auth/utils": "^0.0.1",
-        "bcryptjs": "^2.4.3",
-        "jsonwebtoken": "^9.0.2"
+      {
+        type: 'package',
+        name: '@better-auth/utils',
+        version: '^0.2.6',
+        description: 'Better Auth utilities'
       },
-      devDependencies: {
-        "typescript": "^5.2.2",
-        "@types/bcryptjs": "^2.4.6",
-        "@types/jsonwebtoken": "^9.0.5"
+      {
+        type: 'package',
+        name: '@better-auth/cli',
+        version: '^1.3.0',
+        description: 'Better Auth CLI'
+      },
+      {
+        type: 'package',
+        name: 'bcryptjs',
+        version: '^2.4.3',
+        description: 'Password hashing'
+      },
+      {
+        type: 'package',
+        name: 'jsonwebtoken',
+        version: '^9.0.2',
+        description: 'JWT token handling'
+      }
+    ];
+  }
+
+  getDefaultConfig(): Record<string, any> {
+    return {
+      providers: ['email'],
+      requireEmailVerification: true,
+      sessionDuration: 604800,
+      databaseUrl: process.env.DATABASE_URL || '',
+      secret: process.env.AUTH_SECRET || '',
+      skipDb: false,
+      skipPlugins: false
+    };
+  }
+
+  getConfigSchema(): ConfigSchema {
+    return {
+      type: 'object',
+      properties: {
+        providers: {
+          type: 'array',
+          items: { 
+            type: 'string',
+            enum: ['email', 'github', 'google'],
+            description: 'Authentication provider name'
+          },
+          description: 'Authentication providers to enable',
+          default: ['email']
+        },
+        requireEmailVerification: {
+          type: 'boolean',
+          description: 'Whether to require email verification for new accounts',
+          default: true
+        },
+        sessionDuration: {
+          type: 'number',
+          description: 'Session duration in seconds',
+          default: 604800
+        },
+        databaseUrl: {
+          type: 'string',
+          description: 'Database connection URL',
+          default: ''
+        },
+        secret: {
+          type: 'string',
+          description: 'Authentication secret for JWT signing',
+          default: ''
+        },
+        skipDb: {
+          type: 'boolean',
+          description: 'Skip database setup',
+          default: false
+        },
+        skipPlugins: {
+          type: 'boolean',
+          description: 'Skip plugins setup',
+          default: false
+        }
       }
     };
-
-    await fsExtra.writeJSON(path.join(authPackagePath, 'package.json'), packageJson, { spaces: 2 });
   }
 
-  private async createESLintConfig(authPackagePath: string): Promise<void> {
-    const eslintConfig = {
-      extends: ["../../.eslintrc.json"]
-    };
+  // ============================================================================
+  // PRIVATE METHODS
+  // ============================================================================
 
-    await fsExtra.writeJSON(path.join(authPackagePath, '.eslintrc.json'), eslintConfig, { spaces: 2 });
+  private async installDependencies(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    
+    const dependencies = [
+      'better-auth@^1.3.0',
+      '@better-auth/utils@^0.2.6',
+      'bcryptjs@^2.4.3',
+      'jsonwebtoken@^9.0.2'
+    ];
+    
+    const devDependencies = [
+      '@better-auth/cli@^1.3.0'
+    ];
+
+    context.logger.info('Installing Better Auth dependencies...');
+    await this.runner.install(dependencies, false, projectPath);
+    await this.runner.install(devDependencies, true, projectPath);
   }
 
-  private async createAuthConfig(authPackagePath: string, context: PluginContext, authConfig: AuthConfig): Promise<void> {
-    const templateData = { 
-      projectName: context.projectName,
-      providers: authConfig.providers,
-      requireEmailVerification: authConfig.requireEmailVerification,
-      sessionDuration: authConfig.sessionDuration
-    };
-    const content = await this.templateService.renderTemplate('auth', 'auth.config.ts.ejs', templateData);
-    await fsExtra.writeFile(path.join(authPackagePath, 'auth.config.ts'), content);
+  private async initializeBetterAuth(context: PluginContext): Promise<void> {
+    const { projectPath, pluginConfig } = context;
+    
+    const args = this.buildInitArgs(pluginConfig);
+    
+    context.logger.info('Initializing Better Auth...');
+    await this.runner.exec('@better-auth/cli', ['init', ...args], projectPath);
   }
 
-  private async createAuthUtils(authPackagePath: string, context: PluginContext): Promise<void> {
-    const content = await this.templateService.renderTemplate('auth', 'utils.ts.ejs', {});
-    await fsExtra.writeFile(path.join(authPackagePath, 'utils.ts'), content);
+  private async generateDatabaseSchema(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    
+    context.logger.info('Generating Better Auth database schema...');
+    await this.runner.exec('@better-auth/cli', ['generate', '--y'], projectPath);
   }
 
-  private async createAuthMiddleware(authPackagePath: string, context: PluginContext): Promise<void> {
-    const content = await this.templateService.renderTemplate('auth', 'middleware.ts.ejs', {});
-    await fsExtra.writeFile(path.join(authPackagePath, 'middleware.ts'), content);
+  private async createAuthConfiguration(context: PluginContext): Promise<void> {
+    const { projectPath, pluginConfig } = context;
+    
+    // Create lib directory if it doesn't exist
+    const libPath = path.join(projectPath, 'lib');
+    await fsExtra.ensureDir(libPath);
+
+    // Create auth configuration file
+    const authConfig = this.generateAuthConfig(pluginConfig);
+    await fsExtra.writeFile(path.join(libPath, 'auth.ts'), authConfig);
   }
 
-  private async createIndex(authPackagePath: string): Promise<void> {
-    const content = await this.templateService.renderTemplate('auth', 'index.ts.ejs', {});
-    await fsExtra.writeFile(path.join(authPackagePath, 'index.ts'), content);
-  }
-
-  private async updateEnvConfig(projectPath: string, authConfig: AuthConfig, context: PluginContext): Promise<void> {
+  private async addEnvironmentConfig(context: PluginContext): Promise<void> {
+    const { projectPath, pluginConfig } = context;
+    
+    // Add environment variables to .env.local
+    const envContent = this.generateEnvConfig(pluginConfig);
     const envPath = path.join(projectPath, '.env.local');
     
-    const envVars: Record<string, any> = {
-      AUTH_SECRET: 'your-auth-secret-here',
-      AUTH_URL: 'http://localhost:3000',
-      sessionDuration: authConfig.sessionDuration
+    // Append to existing .env.local or create new
+    let existingContent = '';
+    if (await fsExtra.pathExists(envPath)) {
+      existingContent = await fsExtra.readFile(envPath, 'utf-8');
+    }
+    
+    await fsExtra.writeFile(envPath, existingContent + '\n' + envContent);
+  }
+
+  private buildInitArgs(config: Record<string, any>): string[] {
+    const args: string[] = [];
+
+    if (config.skipDb) {
+      args.push('--skip-db');
+    }
+
+    if (config.skipPlugins) {
+      args.push('--skip-plugins');
+    }
+
+    if (config.packageManager) {
+      args.push('--package-manager', config.packageManager);
+    }
+
+    return args;
+  }
+
+  private generateAuthConfig(config: Record<string, any>): string {
+    return `import { BetterAuth } from "better-auth";
+import { DrizzleAdapter } from "better-auth/drizzle-adapter";
+import { db } from "../db";
+import { users, sessions, accounts, verificationTokens } from "../db/schema";
+
+export const auth = new BetterAuth({
+  adapter: DrizzleAdapter(db, {
+    users,
+    sessions,
+    accounts,
+    verificationTokens,
+  }),
+  providers: [
+    // Configure your providers here
+    // Example:
+    // GithubProvider({
+    //   clientId: process.env.GITHUB_CLIENT_ID!,
+    //   clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    // }),
+  ],
+  session: {
+    strategy: "jwt",
+    maxAge: ${config.sessionDuration || 604800}, // ${config.sessionDuration || 604800} seconds
+  },
+  callbacks: {
+    async session({ session, token }) {
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+  },
+});
+
+export const { handlers, signIn, signOut, auth: getAuth } = auth;
+`;
+  }
+
+  private generateEnvConfig(config: Record<string, any>): string {
+    return `# Better Auth Configuration
+AUTH_SECRET="${config.secret || 'your-secret-key-here'}"
+
+# Database URL (if not already set)
+DATABASE_URL="${config.databaseUrl || config.connectionString || 'postgresql://user:password@localhost:5432/database'}"
+
+# OAuth Provider Configuration (uncomment and configure as needed)
+# GITHUB_CLIENT_ID="your-github-client-id"
+# GITHUB_CLIENT_SECRET="your-github-client-secret"
+# GOOGLE_CLIENT_ID="your-google-client-id"
+# GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# Email Configuration (for email verification)
+# EMAIL_SERVER_HOST="smtp.gmail.com"
+# EMAIL_SERVER_PORT=587
+# EMAIL_SERVER_USER="your-email@gmail.com"
+# EMAIL_SERVER_PASSWORD="your-app-password"
+# EMAIL_FROM="noreply@yourdomain.com"
+`;
+  }
+
+  private createErrorResult(
+    message: string,
+    startTime: number,
+    errors: any[] = [],
+    originalError?: any
+  ): PluginResult {
+    return {
+      success: false,
+      artifacts: [],
+      dependencies: [],
+      scripts: [],
+      configs: [],
+      errors: [
+        {
+          code: 'BETTER_AUTH_SETUP_FAILED',
+          message,
+          details: originalError,
+          severity: 'error'
+        },
+        ...errors
+      ],
+      warnings: [],
+      duration: Date.now() - startTime
     };
-
-    if (authConfig.providers.includes('github')) {
-      envVars['GITHUB_CLIENT_ID'] = 'your-github-client-id';
-      envVars['GITHUB_CLIENT_SECRET'] = 'your-github-client-secret';
-    }
-
-    if (authConfig.providers.includes('google')) {
-      envVars['GOOGLE_CLIENT_ID'] = 'your-google-client-id';
-      envVars['GOOGLE_CLIENT_SECRET'] = 'your-google-client-secret';
-    }
-
-    await this.templateService.renderAndWrite(
-      'auth',
-      '.env.local.ejs',
-      envPath,
-      envVars,
-      { logger: context.logger }
-    );
   }
 } 

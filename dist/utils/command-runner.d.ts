@@ -31,6 +31,7 @@ export declare class CommandRunner {
     private commands;
     constructor(packageManager?: PackageManager, options?: CommandRunnerOptions);
     getPackageManager(): PackageManager;
+    getCreateCommand(): string[];
     private detectPackageManager;
     private getPackageManagerCommands;
     execCommand(cmdArray: string[], options?: CommandRunnerOptions): Promise<CommandResult>;

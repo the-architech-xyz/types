@@ -1,17 +1,21 @@
 /**
- * Next.js Framework Plugin
+ * Next.js Framework Plugin - Pure Technology Implementation
  *
- * Provides Next.js framework setup and configuration.
- * Handles project structure, routing, and Next.js-specific features.
+ * Provides Next.js framework integration using the official create-next-app CLI.
+ * Focuses only on technology setup and artifact generation.
+ * No user interaction or business logic - that's handled by agents.
  */
 import { PluginCategory, TargetPlatform } from '../../types/plugin.js';
+import { templateService } from '../../utils/template-service.js';
+import { CommandRunner } from '../../utils/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
-import { templateService } from '../../utils/template-service.js';
 export class NextJSPlugin {
     templateService;
+    runner;
     constructor() {
         this.templateService = templateService;
+        this.runner = new CommandRunner();
     }
     // ============================================================================
     // PLUGIN METADATA
@@ -26,71 +30,58 @@ export class NextJSPlugin {
             category: PluginCategory.FRAMEWORK,
             tags: ['react', 'nextjs', 'typescript', 'app-router', 'server-components'],
             license: 'MIT',
-            repository: 'https://github.com/architech/nextjs-plugin',
-            homepage: 'https://nextjs.org',
-            documentation: 'https://nextjs.org/docs'
+            repository: 'https://github.com/vercel/next.js',
+            homepage: 'https://nextjs.org'
         };
     }
     // ============================================================================
-    // PLUGIN LIFECYCLE
+    // PLUGIN LIFECYCLE - Pure Technology Implementation
     // ============================================================================
     async install(context) {
         const startTime = Date.now();
         try {
-            const validation = await this.validate(context);
-            if (!validation.valid) {
-                return this.createErrorResult('Plugin validation failed', startTime, validation.errors);
-            }
-            // Create project structure
-            await this.createProjectStructure(context);
+            const { projectName, projectPath, pluginConfig } = context;
+            context.logger.info('Installing Next.js framework using create-next-app CLI...');
+            // Step 1: Use official create-next-app CLI
+            const cliArgs = this.buildCreateNextAppArgs(pluginConfig);
+            const parentDir = path.dirname(projectPath);
+            // Use execCommand with the proper create command
+            await this.runner.execCommand([...this.runner.getCreateCommand(), ...cliArgs], { cwd: parentDir });
+            // Step 2: Customize generated project
+            await this.customizeProject(context);
+            // Step 3: Add project-specific enhancements
+            await this.addEnhancements(context);
             const duration = Date.now() - startTime;
             return {
                 success: true,
                 artifacts: [
                     {
-                        type: 'file',
-                        path: 'next.config.js',
-                        content: 'Next.js configuration file'
-                    },
-                    {
-                        type: 'file',
-                        path: 'tsconfig.json',
-                        content: 'TypeScript configuration'
-                    },
-                    {
-                        type: 'file',
-                        path: '.eslintrc.json',
-                        content: 'ESLint configuration'
+                        type: 'directory',
+                        path: projectPath
                     }
                 ],
                 dependencies: [
                     {
                         name: 'next',
-                        version: '^14.0.0',
+                        version: '^15.4.2',
                         type: 'production',
                         category: PluginCategory.FRAMEWORK
                     },
                     {
                         name: 'react',
-                        version: '^18.0.0',
+                        version: '^19.1.0',
                         type: 'production',
                         category: PluginCategory.FRAMEWORK
                     },
                     {
                         name: 'react-dom',
-                        version: '^18.0.0',
+                        version: '^19.1.0',
                         type: 'production',
                         category: PluginCategory.FRAMEWORK
                     },
                     {
-                        name: '@types/react',
-                        version: '^18.0.0',
-                        type: 'development',
-                        category: PluginCategory.FRAMEWORK
-                    },
-                    {
-                        name: '@types/react-dom',
-                        version: '^18.0.0',
+                        name: 'typescript',
+                        version: '^5.8.3',
                         type: 'development',
                         category: PluginCategory.FRAMEWORK
                     },
@@ -101,20 +92,26 @@ export class NextJSPlugin {
                         category: PluginCategory.FRAMEWORK
                     },
                     {
-                        name: 'typescript',
-                        version: '^5.0.0',
+                        name: '@types/react',
+                        version: '^19.0.0',
+                        type: 'development',
+                        category: PluginCategory.FRAMEWORK
+                    },
+                    {
+                        name: '@types/react-dom',
+                        version: '^19.0.0',
                         type: 'development',
                         category: PluginCategory.FRAMEWORK
                     },
                     {
                         name: 'eslint',
-                        version: '^8.0.0',
+                        version: '^9.0.0',
                         type: 'development',
                         category: PluginCategory.FRAMEWORK
                     },
                     {
                         name: 'eslint-config-next',
-                        version: '^14.0.0',
+                        version: '^15.4.2',
                         type: 'development',
                         category: PluginCategory.FRAMEWORK
                     }
@@ -168,15 +165,18 @@ export class NextJSPlugin {
             // Remove Next.js specific files
             const filesToRemove = [
                 'next.config.js',
+                'next.config.ts',
                 'tsconfig.json',
-                '.eslintrc.json',
+                'eslint.config.mjs',
+                'eslint.config.js',
                 'src/app',
                 'src/pages',
-                'src/styles'
+                'src/styles',
+                'next-env.d.ts'
             ];
             for (const file of filesToRemove) {
                 const filePath = path.join(context.projectPath, file);
-                if (fsExtra.existsSync(filePath)) {
+                if (await fsExtra.pathExists(filePath)) {
                     await fsExtra.remove(filePath);
                 }
             }
@@ -205,26 +205,33 @@ export class NextJSPlugin {
     async validate(context) {
         const errors = [];
         const warnings = [];
-        // Check if project directory exists
-        if (!fsExtra.existsSync(context.projectPath)) {
+        // For framework plugins that create projects, the directory should NOT exist yet
+        if (await fsExtra.pathExists(context.projectPath)) {
             errors.push({
                 field: 'projectPath',
-                message: `Project directory does not exist: ${context.projectPath}`,
-                code: 'DIRECTORY_NOT_FOUND',
+                message: `Project directory already exists: ${context.projectPath}`,
+                code: 'DIRECTORY_EXISTS',
                 severity: 'error'
             });
         }
-        // Check for conflicting frameworks
-        const packageJsonPath = path.join(context.projectPath, 'package.json');
-        if (fsExtra.existsSync(packageJsonPath)) {
-            const packageJson = await fsExtra.readJSON(packageJsonPath);
-            const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
-            if (dependencies['vue']) {
-                warnings.push('Vue.js detected - consider using only one framework');
-            }
-            if (dependencies['angular']) {
-                warnings.push('Angular detected - consider using only one framework');
-            }
+        // Check parent directory exists and is writable
+        const parentDir = path.dirname(context.projectPath);
+        if (!await fsExtra.pathExists(parentDir)) {
+            errors.push({
+                field: 'projectPath',
+                message: `Parent directory does not exist: ${parentDir}`,
+                code: 'PARENT_DIRECTORY_NOT_FOUND',
+                severity: 'error'
+            });
+        }
+        // Validate project name
+        if (!context.pluginConfig?.projectName) {
+            errors.push({
+                field: 'projectName',
+                message: 'Project name is required',
+                code: 'PROJECT_NAME_REQUIRED',
+                severity: 'error'
+            });
         }
         return {
             valid: errors.length === 0,
@@ -237,7 +244,7 @@ export class NextJSPlugin {
             frameworks: ['react'],
             platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
             nodeVersions: ['18.0.0', '20.0.0'],
-            packageManagers: ['npm', 'yarn', 'pnpm'],
+            packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
             conflicts: ['vue', 'angular', 'svelte']
         };
     }
@@ -252,19 +259,19 @@ export class NextJSPlugin {
             {
                 type: 'package',
                 name: 'next',
-                version: '^14.0.0',
+                version: '^15.0.0',
                 description: 'Next.js framework'
             },
             {
                 type: 'package',
                 name: 'react',
-                version: '^18.0.0',
+                version: '^19.0.0',
                 description: 'React library'
             },
             {
                 type: 'package',
                 name: 'react-dom',
-                version: '^18.0.0',
+                version: '^19.0.0',
                 description: 'React DOM'
             },
             {
@@ -277,246 +284,106 @@ export class NextJSPlugin {
     }
     getDefaultConfig() {
         return {
-            appRouter: true,
-            strictMode: true,
-            swcMinify: true,
             typescript: true,
-            eslint: true
+            tailwind: true,
+            eslint: true,
+            appRouter: true,
+            srcDir: true,
+            importAlias: '@/*',
+            skipInstall: true
         };
     }
     getConfigSchema() {
         return {
             type: 'object',
             properties: {
-                appRouter: {
-                    type: 'boolean',
-                    description: 'Use App Router instead of Pages Router'
-                },
-                strictMode: {
-                    type: 'boolean',
-                    description: 'Enable React Strict Mode'
-                },
-                swcMinify: {
-                    type: 'boolean',
-                    description: 'Use SWC for minification'
-                },
                 typescript: {
                     type: 'boolean',
-                    description: 'Enable TypeScript support'
+                    description: 'Initialize as TypeScript project',
+                    default: true
+                },
+                tailwind: {
+                    type: 'boolean',
+                    description: 'Initialize with Tailwind CSS',
+                    default: true
                 },
                 eslint: {
                     type: 'boolean',
-                    description: 'Enable ESLint configuration'
+                    description: 'Initialize with ESLint',
+                    default: true
+                },
+                appRouter: {
+                    type: 'boolean',
+                    description: 'Use App Router (recommended)',
+                    default: true
+                },
+                srcDir: {
+                    type: 'boolean',
+                    description: 'Initialize inside src/ directory',
+                    default: true
+                },
+                importAlias: {
+                    type: 'string',
+                    description: 'Import alias prefix',
+                    default: '@/*'
+                },
+                skipInstall: {
+                    type: 'boolean',
+                    description: 'Skip dependency installation',
+                    default: true
                 }
             }
         };
     }
     // ============================================================================
-    // TECHNOLOGY IMPLEMENTATION
+    // PRIVATE METHODS
     // ============================================================================
-    async createProjectStructure(context) {
-        const useAppRouter = context.pluginConfig.appRouter !== false;
-        // Create Next.js configuration
-        const nextConfig = this.generateNextConfig(context);
-        await fsExtra.writeFile(path.join(context.projectPath, 'next.config.js'), nextConfig);
-        // Create TypeScript configuration
-        const tsConfig = this.generateTsConfig(context);
-        await fsExtra.writeFile(path.join(context.projectPath, 'tsconfig.json'), tsConfig);
-        // Create ESLint configuration
-        const eslintConfig = this.generateEslintConfig(context);
-        await fsExtra.writeFile(path.join(context.projectPath, '.eslintrc.json'), eslintConfig);
-        // Create project structure
-        const projectStructure = this.generateProjectStructure(context);
-        for (const [filePath, content] of Object.entries(projectStructure)) {
-            const fullPath = path.join(context.projectPath, filePath);
-            await fsExtra.ensureDir(path.dirname(fullPath));
-            await fsExtra.writeFile(fullPath, content);
-        }
-    }
-    generateNextConfig(context) {
-        const config = context.pluginConfig;
-        return `/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    appDir: ${config.appRouter || true},
-  },
-  reactStrictMode: ${config.strictMode !== false},
-  swcMinify: ${config.swcMinify !== false},
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
-  images: {
-    domains: [],
-  },
-  env: {
-    CUSTOM_KEY: 'your-value',
-  },
-};
-
-module.exports = nextConfig;
-`;
-    }
-    generateTsConfig(context) {
-        return `{
-  "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "es6"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
-}`;
-    }
-    generateEslintConfig(context) {
-        return `{
-  "extends": ["next/core-web-vitals"],
-  "rules": {
-    "@next/next/no-img-element": "off",
-    "react/no-unescaped-entities": "off"
-  }
-}`;
-    }
-    generateProjectStructure(context) {
-        const useAppRouter = context.pluginConfig.appRouter !== false;
-        if (useAppRouter) {
-            return {
-                'src/app/layout.tsx': `import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
-
-export const metadata: Metadata = {
-  title: '${context.projectName}',
-  description: 'Generated by The Architech',
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
-    </html>
-  );
-}`,
-                'src/app/page.tsx': `export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <h1 className="text-4xl font-bold">
-          Welcome to ${context.projectName}
-        </h1>
-        <p className="text-lg text-gray-600">
-          Generated with The Architech
-        </p>
-      </div>
-    </main>
-  );
-}`,
-                'src/app/globals.css': `@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-}`,
-                'src/app/favicon.ico': '',
-                'public/next.svg': '',
-                'public/vercel.svg': ''
-            };
+    buildCreateNextAppArgs(config) {
+        const args = [config.projectName || 'my-app'];
+        // Add flags based on configuration
+        if (config.typescript !== false) {
+            args.push('--typescript');
         }
         else {
-            return {
-                'src/pages/_app.tsx': `import type { AppProps } from 'next/app';
-import '../styles/globals.css';
-
-export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
-}`,
-                'src/pages/_document.tsx': `import { Html, Head, Main, NextScript } from 'next/document';
-
-export default function Document() {
-  return (
-    <Html lang="en">
-      <Head />
-      <body>
-        <Main />
-        <NextScript />
-      </body>
-    </Html>
-  );
-}`,
-                'src/pages/index.tsx': `import type { NextPage } from 'next';
-import Head from 'next/head';
-
-const Home: NextPage = () => {
-  return (
-    <div>
-      <Head>
-        <title>${context.projectName}</title>
-        <meta name="description" content="Generated by The Architech" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main>
-        <h1>Welcome to ${context.projectName}</h1>
-        <p>Generated with The Architech</p>
-      </main>
-    </div>
-  );
-};
-
-export default Home;`,
-                'src/styles/globals.css': `@tailwind base;
-@tailwind components;
-@tailwind utilities;`
-            };
+            args.push('--javascript');
         }
+        if (config.tailwind !== false) {
+            args.push('--tailwind');
+        }
+        if (config.eslint !== false) {
+            args.push('--eslint');
+        }
+        if (config.appRouter !== false) {
+            args.push('--app');
+        }
+        if (config.srcDir !== false) {
+            args.push('--src-dir');
+        }
+        if (config.importAlias) {
+            args.push('--import-alias', config.importAlias);
+        }
+        if (config.skipInstall !== false) {
+            args.push('--skip-install');
+        }
+        // Always use yes to skip prompts
+        args.push('--yes');
+        return args;
+    }
+    async customizeProject(context) {
+        const { projectPath, pluginConfig } = context;
+        // Add custom configurations if needed
+        if (pluginConfig.customConfig) {
+            await this.addCustomConfigurations(projectPath, pluginConfig);
+        }
+    }
+    async addEnhancements(context) {
+        const { projectPath } = context;
+        // Add any project-specific enhancements
+        // This could include custom scripts, configurations, etc.
+    }
+    async addCustomConfigurations(projectPath, config) {
+        // Add any custom configurations that aren't provided by create-next-app
+        // This is where we can add project-specific customizations
     }
     createErrorResult(message, startTime, errors = [], originalError) {
         return {
@@ -527,7 +394,7 @@ export default Home;`,
             configs: [],
             errors: [
                 {
-                    code: 'NEXTJS_ERROR',
+                    code: 'NEXTJS_SETUP_FAILED',
                     message,
                     details: originalError,
                     severity: 'error'

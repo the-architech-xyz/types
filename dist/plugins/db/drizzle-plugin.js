@@ -1,18 +1,21 @@
 /**
  * Drizzle ORM Plugin - Pure Technology Implementation
  *
- * Provides Drizzle ORM integration with PostgreSQL/MySQL/SQLite.
+ * Provides Drizzle ORM integration with Neon PostgreSQL using the official drizzle-kit CLI.
  * Focuses only on technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
 import { PluginCategory, TargetPlatform } from '../../types/plugin.js';
+import { templateService } from '../../utils/template-service.js';
+import { CommandRunner } from '../../utils/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
-import { templateService } from '../../utils/template-service.js';
 export class DrizzlePlugin {
     templateService;
+    runner;
     constructor() {
         this.templateService = templateService;
+        this.runner = new CommandRunner();
     }
     // ============================================================================
     // PLUGIN METADATA
@@ -35,193 +38,169 @@ export class DrizzlePlugin {
     // PLUGIN LIFECYCLE - Pure Technology Implementation
     // ============================================================================
     async install(context) {
-        const { projectName, projectPath } = context;
-        const dbPackagePath = path.join(projectPath, 'packages', 'db');
         const startTime = Date.now();
         try {
-            // Validate plugin can be installed
-            const validation = await this.validate(context);
-            if (!validation.valid) {
-                return this.createErrorResult('Plugin validation failed', startTime, validation.errors);
-            }
-            // Use configuration from context (provided by agent)
-            const dbConfig = await this.getDatabaseConfig(context);
-            const artifacts = [];
-            const dependencies = [];
-            const scripts = [];
-            const configs = [];
-            const warnings = [];
-            // Add core dependencies
-            dependencies.push({
-                name: 'drizzle-orm',
-                version: '^0.45.0',
-                type: 'production',
-                category: PluginCategory.DATABASE
-            }, {
-                name: '@neondatabase/serverless',
-                version: '^1.1.0',
-                type: 'production',
-                category: PluginCategory.DATABASE
-            }, {
-                name: 'drizzle-kit',
-                version: '^0.32.0',
-                type: 'development',
-                category: PluginCategory.DATABASE
-            });
-            // Generate technology artifacts
-            const packageJson = this.generatePackageJson(projectName);
-            const packageJsonPath = path.join(dbPackagePath, 'package.json');
-            await fsExtra.ensureDir(path.dirname(packageJsonPath));
-            await fsExtra.writeFile(packageJsonPath, packageJson);
-            artifacts.push({
-                type: 'file',
-                path: packageJsonPath,
-                content: packageJson
-            });
-            const eslintConfig = this.generateESLintConfig();
-            const eslintPath = path.join(dbPackagePath, '.eslintrc.json');
-            await fsExtra.writeFile(eslintPath, eslintConfig);
-            artifacts.push({
-                type: 'file',
-                path: eslintPath,
-                content: eslintConfig
-            });
-            const drizzleConfig = this.generateDrizzleConfig(dbConfig);
-            const drizzleConfigPath = path.join(dbPackagePath, 'drizzle.config.ts');
-            await fsExtra.writeFile(drizzleConfigPath, drizzleConfig);
-            artifacts.push({
-                type: 'file',
-                path: drizzleConfigPath,
-                content: drizzleConfig
-            });
-            const databaseSchema = this.generateDatabaseSchema();
-            const schemaPath = path.join(dbPackagePath, 'schema/index.ts');
-            await fsExtra.ensureDir(path.dirname(schemaPath));
-            await fsExtra.writeFile(schemaPath, databaseSchema);
-            artifacts.push({
-                type: 'file',
-                path: schemaPath,
-                content: databaseSchema
-            });
-            const databaseConnection = this.generateDatabaseConnection();
-            const indexPath = path.join(dbPackagePath, 'index.ts');
-            await fsExtra.writeFile(indexPath, databaseConnection);
-            artifacts.push({
-                type: 'file',
-                path: indexPath,
-                content: databaseConnection
-            });
-            const migrationUtils = this.generateMigrationUtils();
-            const migratePath = path.join(dbPackagePath, 'migrate.ts');
-            await fsExtra.writeFile(migratePath, migrationUtils);
-            artifacts.push({
-                type: 'file',
-                path: migratePath,
-                content: migrationUtils
-            });
-            // Add technology scripts
-            scripts.push({
-                name: 'db:generate',
-                command: 'drizzle-kit generate:pg',
-                description: 'Generate database migrations',
-                category: 'dev'
-            }, {
-                name: 'db:migrate',
-                command: 'tsx migrate.ts',
-                description: 'Run database migrations',
-                category: 'dev'
-            }, {
-                name: 'db:push',
-                command: 'drizzle-kit push:pg',
-                description: 'Push schema to database',
-                category: 'dev'
-            }, {
-                name: 'db:studio',
-                command: 'drizzle-kit studio',
-                description: 'Open Drizzle Studio',
-                category: 'dev'
-            });
-            // Add environment configuration
-            const envConfig = this.generateEnvConfig(dbConfig);
-            configs.push({
-                file: '.env.local',
-                content: envConfig,
-                mergeStrategy: 'append'
-            });
+            const { projectName, projectPath, pluginConfig } = context;
+            context.logger.info('Installing Drizzle ORM with Neon database...');
+            // Step 1: Install dependencies
+            await this.installDependencies(context);
+            // Step 2: Initialize drizzle-kit configuration
+            await this.initializeDrizzleKit(context);
+            // Step 3: Create database schema and connection
+            await this.createDatabaseFiles(context);
+            // Step 4: Generate initial migration
+            await this.generateInitialMigration(context);
+            const duration = Date.now() - startTime;
             return {
                 success: true,
-                artifacts,
-                dependencies,
-                scripts,
-                configs,
+                artifacts: [
+                    {
+                        type: 'file',
+                        path: path.join(projectPath, 'drizzle.config.ts')
+                    },
+                    {
+                        type: 'file',
+                        path: path.join(projectPath, 'db/schema.ts')
+                    },
+                    {
+                        type: 'file',
+                        path: path.join(projectPath, 'db/index.ts')
+                    },
+                    {
+                        type: 'file',
+                        path: path.join(projectPath, 'db/migrate.ts')
+                    }
+                ],
+                dependencies: [
+                    {
+                        name: 'drizzle-orm',
+                        version: '^0.45.0',
+                        type: 'production',
+                        category: PluginCategory.DATABASE
+                    },
+                    {
+                        name: '@neondatabase/serverless',
+                        version: '^1.1.0',
+                        type: 'production',
+                        category: PluginCategory.DATABASE
+                    },
+                    {
+                        name: 'drizzle-kit',
+                        version: '^0.32.0',
+                        type: 'development',
+                        category: PluginCategory.DATABASE
+                    },
+                    {
+                        name: 'postgres',
+                        version: '^3.4.0',
+                        type: 'production',
+                        category: PluginCategory.DATABASE
+                    }
+                ],
+                scripts: [
+                    {
+                        name: 'db:generate',
+                        command: 'drizzle-kit generate:pg',
+                        description: 'Generate database migrations',
+                        category: 'dev'
+                    },
+                    {
+                        name: 'db:migrate',
+                        command: 'tsx db/migrate.ts',
+                        description: 'Run database migrations',
+                        category: 'dev'
+                    },
+                    {
+                        name: 'db:push',
+                        command: 'drizzle-kit push:pg',
+                        description: 'Push schema to database',
+                        category: 'dev'
+                    },
+                    {
+                        name: 'db:studio',
+                        command: 'drizzle-kit studio',
+                        description: 'Open Drizzle Studio',
+                        category: 'dev'
+                    },
+                    {
+                        name: 'db:drop',
+                        command: 'drizzle-kit drop',
+                        description: 'Drop database schema',
+                        category: 'dev'
+                    }
+                ],
+                configs: [
+                    {
+                        file: '.env.local',
+                        content: this.generateEnvConfig(pluginConfig),
+                        mergeStrategy: 'append'
+                    }
+                ],
                 errors: [],
-                warnings,
+                warnings: [],
+                duration
+            };
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            return this.createErrorResult(`Failed to setup Drizzle ORM: ${errorMessage}`, startTime, [], error);
+        }
+    }
+    async uninstall(context) {
+        const startTime = Date.now();
+        try {
+            const { projectPath } = context;
+            // Remove Drizzle specific files
+            const filesToRemove = [
+                'drizzle.config.ts',
+                'drizzle.config.js',
+                'db',
+                'migrations'
+            ];
+            for (const file of filesToRemove) {
+                const filePath = path.join(projectPath, file);
+                if (await fsExtra.pathExists(filePath)) {
+                    await fsExtra.remove(filePath);
+                }
+            }
+            return {
+                success: true,
+                artifacts: [],
+                dependencies: [],
+                scripts: [],
+                configs: [],
+                errors: [],
+                warnings: [],
                 duration: Date.now() - startTime
             };
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            return this.createErrorResult(`Failed to configure Drizzle ORM: ${errorMessage}`, startTime, [], error);
-        }
-    }
-    async uninstall(context) {
-        const dbPackagePath = path.join(context.projectPath, 'packages', 'db');
-        const startTime = Date.now();
-        try {
-            const artifacts = [
-                { type: 'directory', path: dbPackagePath }
-            ];
-            return {
-                success: true,
-                artifacts,
-                dependencies: [],
-                scripts: [],
-                configs: [],
-                errors: [],
-                warnings: ['Database package removed'],
-                duration: Date.now() - startTime
-            };
-        }
-        catch (error) {
-            return this.createErrorResult(error instanceof Error ? error.message : 'Unknown error', startTime, [], error);
+            return this.createErrorResult(`Failed to uninstall Drizzle ORM: ${errorMessage}`, startTime, [], error);
         }
     }
     async update(context) {
-        // For now, just reinstall
         return this.install(context);
     }
     // ============================================================================
-    // VALIDATION - Technology Compatibility Only
+    // VALIDATION & COMPATIBILITY
     // ============================================================================
     async validate(context) {
         const errors = [];
         const warnings = [];
-        // Check if DB package directory exists
-        const dbPackagePath = path.join(context.projectPath, 'packages', 'db');
-        if (!fsExtra.existsSync(dbPackagePath)) {
+        // Check if project directory exists
+        if (!await fsExtra.pathExists(context.projectPath)) {
             errors.push({
-                field: 'dbPackagePath',
-                message: `Database package directory does not exist: ${dbPackagePath}`,
+                field: 'projectPath',
+                message: `Project directory does not exist: ${context.projectPath}`,
                 code: 'DIRECTORY_NOT_FOUND',
                 severity: 'error'
             });
         }
-        // Check if project has packages structure (monorepo)
-        const packagesPath = path.join(context.projectPath, 'packages');
-        if (!fsExtra.existsSync(packagesPath)) {
-            warnings.push('Packages directory not found - this plugin is designed for monorepo structures');
-        }
-        // Check for conflicting ORMs
-        const packageJsonPath = path.join(context.projectPath, 'package.json');
-        if (fsExtra.existsSync(packageJsonPath)) {
-            const packageJson = await fsExtra.readJSON(packageJsonPath);
-            const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
-            if (dependencies.prisma) {
-                warnings.push('Prisma detected - potential conflict');
-            }
-            if (dependencies.typeorm) {
-                warnings.push('TypeORM detected - potential conflict');
-            }
+        // Check for database configuration
+        const dbConfig = context.pluginConfig;
+        if (!dbConfig.databaseUrl && !dbConfig.connectionString) {
+            warnings.push('Database URL not configured - you will need to set DATABASE_URL environment variable');
         }
         return {
             valid: errors.length === 0,
@@ -229,16 +208,13 @@ export class DrizzlePlugin {
             warnings
         };
     }
-    // ============================================================================
-    // COMPATIBILITY MATRIX
-    // ============================================================================
     getCompatibility() {
         return {
             frameworks: ['next', 'react', 'vue', 'svelte', 'angular'],
             platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
             nodeVersions: ['18.0.0', '20.0.0'],
-            packageManagers: ['npm', 'yarn', 'pnpm'],
-            databases: ['postgresql', 'mysql', 'sqlite'],
+            packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
+            databases: ['postgresql', 'neon'],
             conflicts: ['prisma', 'typeorm', 'sequelize']
         };
     }
@@ -253,27 +229,37 @@ export class DrizzlePlugin {
             {
                 type: 'package',
                 name: 'drizzle-orm',
-                version: '^0.44.3',
+                version: '^0.45.0',
                 description: 'Drizzle ORM core package'
             },
             {
                 type: 'package',
                 name: '@neondatabase/serverless',
-                version: '^1.0.1',
-                description: 'Neon PostgreSQL serverless driver'
+                version: '^1.1.0',
+                description: 'Neon database driver'
             },
             {
                 type: 'package',
                 name: 'drizzle-kit',
-                version: '^0.31.4',
+                version: '^0.32.0',
                 description: 'Drizzle CLI and migration tools'
+            },
+            {
+                type: 'package',
+                name: 'postgres',
+                version: '^3.4.0',
+                description: 'PostgreSQL client'
             }
         ];
     }
     getDefaultConfig() {
         return {
             provider: 'neon',
-            connectionString: 'NEON_DATABASE_URL_PLACEHOLDER'
+            databaseUrl: process.env.DATABASE_URL || '',
+            connectionString: process.env.DATABASE_URL || '',
+            schema: './db/schema.ts',
+            out: './drizzle',
+            dialect: 'postgresql'
         };
     }
     getConfigSchema() {
@@ -282,82 +268,99 @@ export class DrizzlePlugin {
             properties: {
                 provider: {
                     type: 'string',
+                    enum: ['neon'],
                     description: 'Database provider',
-                    enum: ['neon', 'local', 'vercel'],
                     default: 'neon'
+                },
+                databaseUrl: {
+                    type: 'string',
+                    description: 'Database connection URL',
+                    default: ''
                 },
                 connectionString: {
                     type: 'string',
-                    description: 'Database connection string',
-                    default: 'NEON_DATABASE_URL_PLACEHOLDER'
+                    description: 'Database connection string (alias for databaseUrl)',
+                    default: ''
+                },
+                schema: {
+                    type: 'string',
+                    description: 'Path to schema file',
+                    default: './db/schema.ts'
+                },
+                out: {
+                    type: 'string',
+                    description: 'Output directory for migrations',
+                    default: './drizzle'
+                },
+                dialect: {
+                    type: 'string',
+                    enum: ['postgresql'],
+                    description: 'Database dialect',
+                    default: 'postgresql'
                 }
-            },
-            required: ['provider']
-        };
-    }
-    // ============================================================================
-    // TECHNOLOGY IMPLEMENTATION METHODS
-    // ============================================================================
-    async getDatabaseConfig(context) {
-        // Use configuration from context (provided by agent)
-        const provider = context.pluginConfig.provider || 'neon';
-        const connectionString = context.pluginConfig.connectionString || 'NEON_DATABASE_URL_PLACEHOLDER';
-        return { provider, connectionString };
-    }
-    generatePackageJson(projectName) {
-        const packageJson = {
-            name: `@${projectName}/db`,
-            version: "0.1.0",
-            private: true,
-            description: "Database layer with Drizzle ORM",
-            main: "index.ts",
-            types: "index.ts",
-            scripts: {
-                "build": "tsc",
-                "dev": "tsc --watch",
-                "lint": "eslint . --ext .ts",
-                "type-check": "tsc --noEmit",
-                "db:generate": "drizzle-kit generate:pg",
-                "db:migrate": "tsx migrate.ts",
-                "db:push": "drizzle-kit push:pg",
-                "db:studio": "drizzle-kit studio"
-            },
-            dependencies: {
-                "drizzle-orm": "^0.44.3",
-                "@neondatabase/serverless": "^1.0.1",
-                "postgres": "^3.4.3"
-            },
-            devDependencies: {
-                "drizzle-kit": "^0.31.4",
-                "tsx": "^4.1.0",
-                "typescript": "^5.2.2",
-                "dotenv": "^16.3.1"
             }
         };
-        return JSON.stringify(packageJson, null, 2);
     }
-    generateESLintConfig() {
-        const eslintConfig = {
-            extends: ["../../.eslintrc.json"]
-        };
-        return JSON.stringify(eslintConfig, null, 2);
+    // ============================================================================
+    // PRIVATE METHODS
+    // ============================================================================
+    async installDependencies(context) {
+        const { projectPath } = context;
+        const dependencies = [
+            'drizzle-orm@^0.45.0',
+            '@neondatabase/serverless@^1.1.0',
+            'postgres@^3.4.0'
+        ];
+        const devDependencies = [
+            'drizzle-kit@^0.32.0'
+        ];
+        context.logger.info('Installing Drizzle ORM dependencies...');
+        await this.runner.install(dependencies, false, projectPath);
+        await this.runner.install(devDependencies, true, projectPath);
     }
-    generateDrizzleConfig(dbConfig) {
-        return `import { defineConfig } from 'drizzle-kit';
+    async initializeDrizzleKit(context) {
+        const { projectPath, pluginConfig } = context;
+        // Create drizzle.config.ts
+        const drizzleConfig = this.generateDrizzleConfig(pluginConfig);
+        const configPath = path.join(projectPath, 'drizzle.config.ts');
+        await fsExtra.writeFile(configPath, drizzleConfig);
+    }
+    async createDatabaseFiles(context) {
+        const { projectPath } = context;
+        const dbPath = path.join(projectPath, 'db');
+        await fsExtra.ensureDir(dbPath);
+        // Create schema file
+        const schemaContent = this.generateDatabaseSchema();
+        await fsExtra.writeFile(path.join(dbPath, 'schema.ts'), schemaContent);
+        // Create database connection
+        const connectionContent = this.generateDatabaseConnection();
+        await fsExtra.writeFile(path.join(dbPath, 'index.ts'), connectionContent);
+        // Create migration utility
+        const migrateContent = this.generateMigrationUtils();
+        await fsExtra.writeFile(path.join(dbPath, 'migrate.ts'), migrateContent);
+    }
+    async generateInitialMigration(context) {
+        const { projectPath } = context;
+        context.logger.info('Generating initial migration...');
+        await this.runner.exec('drizzle-kit', ['generate:pg'], projectPath);
+    }
+    generateDrizzleConfig(config) {
+        return `import type { Config } from 'drizzle-kit';
 
-export default defineConfig({
-  schema: './schema/*',
-  out: './migrations',
+export default {
+  schema: '${config.schema || './db/schema.ts'}',
+  out: '${config.out || './drizzle'}',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL || '${dbConfig.connectionString}',
+    url: process.env.DATABASE_URL!,
   },
-});`;
+} satisfies Config;
+`;
     }
     generateDatabaseSchema() {
         return `import { pgTable, serial, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 
-// Users table
+// Example user table
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
@@ -366,21 +369,31 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-// Example query
-export const getUserByEmail = async (email: string) => {
-  // Implementation would go here
-  return null;
-};`;
+// Example posts table
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  content: text('content'),
+  published: boolean('published').default(false),
+  authorId: serial('author_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Export all tables
+export * from 'drizzle-orm/pg-core';
+`;
     }
     generateDatabaseConnection() {
         return `import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
+import * as schema from './schema';
 
 const sql = neon(process.env.DATABASE_URL!);
-export const db = drizzle(sql);
+export const db = drizzle(sql, { schema });
 
-// Export types
-export * from './schema';`;
+export * from './schema';
+`;
     }
     generateMigrationUtils() {
         return `import { drizzle } from 'drizzle-orm/neon-http';
@@ -392,24 +405,27 @@ const db = drizzle(sql);
 
 async function main() {
   try {
-    await migrate(db, { migrationsFolder: './migrations' });
-    console.log('Migration completed successfully');
+    console.log('Running migrations...');
+    await migrate(db, { migrationsFolder: './drizzle' });
+    console.log('Migrations completed successfully!');
+    process.exit(0);
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);
   }
 }
 
-main();`;
+main();
+`;
     }
-    generateEnvConfig(dbConfig) {
+    generateEnvConfig(config) {
         return `# Database Configuration
-DATABASE_URL="${dbConfig.connectionString}"
+DATABASE_URL="${config.databaseUrl || config.connectionString || 'postgresql://user:password@localhost:5432/database'}"
 
-# Add your database credentials here
-# For Neon: postgresql://user:password@host/database
-# For local: postgresql://localhost:5432/myapp
-# For Vercel: $POSTGRES_URL`;
+# Neon Database (if using Neon)
+# Get your connection string from https://console.neon.tech
+# DATABASE_URL="postgresql://user:password@ep-xxx-xxx-xxx.region.aws.neon.tech/database?sslmode=require"
+`;
     }
     createErrorResult(message, startTime, errors = [], originalError) {
         return {
@@ -418,12 +434,15 @@ DATABASE_URL="${dbConfig.connectionString}"
             dependencies: [],
             scripts: [],
             configs: [],
-            errors: [{
-                    code: 'PLUGIN_ERROR',
+            errors: [
+                {
+                    code: 'DRIZZLE_SETUP_FAILED',
                     message,
                     details: originalError,
                     severity: 'error'
-                }, ...errors],
+                },
+                ...errors
+            ],
             warnings: [],
             duration: Date.now() - startTime
         };
