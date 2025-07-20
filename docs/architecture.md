@@ -2,21 +2,22 @@
 
 ## Overview
 
-The Architech CLI implements a sophisticated AI-powered agent architecture with a modular plugin system designed for maximum extensibility, maintainability, and enterprise-grade scalability.
+The Architech CLI implements a sophisticated **three-layer unified interface architecture** with AI-powered agents, modular plugins, and technology-agnostic adapters. This design provides maximum extensibility, maintainability, and enterprise-grade scalability while eliminating technology lock-in.
 
 ## Core Architecture Principles
 
-### 1. Agent-Centric Design
-- **Specialized Agents**: Each agent handles a specific domain (UI, Database, Auth, etc.)
-- **AI Integration**: Agents leverage AI for intelligent decision-making and optimization
-- **Plugin Integration**: Agents use plugins for technology implementation, keeping business logic separate
+### 1. Three-Layer Separation of Concerns
+- **Agents (Brain)**: AI-powered decision making and orchestration
+- **Plugins (Hands)**: Technology-specific implementation and installation
+- **Adapters (Translator)**: Unified interfaces that make all technologies compatible
 
-### 2. Plugin System
-- **Modularity**: Technologies are implemented as plugins for easy swapping and extension
-- **Standardization**: Consistent plugin interface ensures compatibility
-- **Registry Pattern**: Centralized plugin management with dependency resolution
+### 2. Unified Interface System
+- **Technology Agnostic**: Same API for all auth, UI, and database systems
+- **No Lock-in**: Easy to switch between technologies without code changes
+- **Consistent Validation**: All technologies validated the same way
+- **Extensible**: Add new technologies without changing agent code
 
-### 3. Orchestration
+### 3. AI-Powered Orchestration
 - **Intelligent Planning**: AI-powered project analysis and planning
 - **Agent Coordination**: Centralized execution and error handling
 - **Context Sharing**: Shared project context across all agents
@@ -33,30 +34,47 @@ The Architech CLI implements a sophisticated AI-powered agent architecture with 
 │                Orchestrator Agent                           │
 │              (AI-Powered Planning)                         │
 ├─────────────────────────────────────────────────────────────┤
-│                Plugin Registry                              │
-│              (Technology Management)                       │
-├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
 │  │Framework    │ │UI Agent     │ │Database     │          │
 │  │   Agent     │ │             │ │   Agent     │          │
+│  │  (Brain)    │ │  (Brain)    │ │  (Brain)    │          │
 │  └─────────────┘ └─────────────┘ └─────────────┘          │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
 │  │Auth Agent   │ │Validation   │ │Deployment   │          │
 │  │             │ │   Agent     │ │   Agent     │          │
+│  │  (Brain)    │ │  (Brain)    │ │  (Brain)    │          │
 │  └─────────────┘ └─────────────┘ └─────────────┘          │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
 │  │Next.js      │ │Shadcn/ui    │ │Drizzle      │          │
 │  │  Plugin     │ │  Plugin     │ │  Plugin     │          │
+│  │  (Hands)    │ │  (Hands)    │ │  (Hands)    │          │
 │  └─────────────┘ └─────────────┘ └─────────────┘          │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
-│  │Better Auth  │ │ESLint       │ │Docker       │          │
+│  │Better Auth  │ │Tamagui      │ │Prisma       │          │
 │  │  Plugin     │ │  Plugin     │ │  Plugin     │          │
+│  │  (Hands)    │ │  (Hands)    │ │  (Hands)    │          │
 │  └─────────────┘ └─────────────┘ └─────────────┘          │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │Better Auth  │ │Shadcn/ui    │ │Drizzle      │          │
+│  │  Adapter    │ │  Adapter    │ │  Adapter    │          │
+│  │(Translator) │ │(Translator) │ │(Translator) │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │NextAuth     │ │Tamagui      │ │Prisma       │          │
+│  │  Adapter    │ │  Adapter    │ │  Adapter    │          │
+│  │(Translator) │ │(Translator) │ │(Translator) │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+├─────────────────────────────────────────────────────────────┤
+│              Unified Interface Registry                    │
+│              (Technology-Agnostic APIs)                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Agent System
+## Layer 1: Agents (The "Brain")
+
+Agents handle AI-powered decision making, user interaction, and orchestration. They are technology-agnostic and work through unified interfaces.
 
 ### Orchestrator Agent
 
@@ -71,7 +89,7 @@ The central coordinator that manages the entire project generation process.
 
 **Key Features:**
 ```typescript
-class OrchestratorAgent extends BaseAgent {
+class OrchestratorAgent extends AbstractAgent {
   async analyzeProject(requirements: ProjectRequirements): Promise<ProjectPlan> {
     // AI analyzes requirements and creates execution plan
   }
@@ -81,33 +99,33 @@ class OrchestratorAgent extends BaseAgent {
   }
 
   async validateProject(context: ProjectContext): Promise<ValidationResult> {
-    // Comprehensive project validation
+    // Comprehensive project validation through unified interfaces
   }
 }
 ```
 
 ### Specialized Agents
 
-Each agent handles a specific domain and integrates with relevant plugins.
+Each agent handles a specific domain and works through unified interfaces:
 
 #### Framework Agent
 - **Purpose**: Creates application foundation
-- **Plugins**: Next.js, React, Vue
+- **Unified Interface**: Works with any framework plugin
 - **Features**: Template rendering, framework configuration
 
 #### UI Agent
 - **Purpose**: Sets up design systems and UI components
-- **Plugins**: Shadcn/ui, Tailwind CSS
+- **Unified Interface**: Works with any UI plugin (Shadcn/ui, Tamagui, Chakra UI)
 - **Features**: Component installation, theme configuration
 
 #### Database Agent
 - **Purpose**: Configures databases and ORMs
-- **Plugins**: Drizzle, Prisma, PostgreSQL
+- **Unified Interface**: Works with any database plugin (Drizzle, Prisma, Supabase)
 - **Features**: Schema generation, migration setup
 
 #### Auth Agent
 - **Purpose**: Implements authentication systems
-- **Plugins**: Better Auth, NextAuth.js
+- **Unified Interface**: Works with any auth plugin (Better Auth, NextAuth, Clerk)
 - **Features**: Security configuration, user management
 
 #### Validation Agent
@@ -120,14 +138,16 @@ Each agent handles a specific domain and integrates with relevant plugins.
 - **Plugins**: Docker, GitHub Actions, Vercel
 - **Features**: Containerization, CI/CD setup
 
-## Plugin System
+## Layer 2: Plugins (The "Hands")
+
+Plugins handle technology-specific implementation and installation. They do the actual work of setting up technologies.
 
 ### Plugin Interface
 
 All plugins implement a standardized interface for consistency:
 
 ```typescript
-interface Plugin {
+interface IPlugin {
   // Metadata
   name: string;
   version: string;
@@ -139,12 +159,12 @@ interface Plugin {
   conflicts: string[];
   
   // Core functionality
-  setup(context: ProjectContext): Promise<void>;
-  validate(context: ProjectContext): Promise<ValidationResult>;
+  install(context: PluginContext): Promise<PluginResult>;
+  validate(context: PluginContext): Promise<ValidationResult>;
   
   // Optional features
-  configure?(context: ProjectContext): Promise<void>;
-  cleanup?(context: ProjectContext): Promise<void>;
+  configure?(context: PluginContext): Promise<void>;
+  cleanup?(context: PluginContext): Promise<void>;
 }
 ```
 
@@ -154,21 +174,21 @@ Centralized plugin management with dependency resolution:
 
 ```typescript
 class PluginRegistry {
-  private plugins: Map<string, Plugin> = new Map();
+  private plugins: Map<string, IPlugin> = new Map();
   
-  register(plugin: Plugin): void {
+  register(plugin: IPlugin): void {
     // Register plugin with validation
   }
   
-  getPlugin(name: string): Plugin | undefined {
+  get(name: string): IPlugin | undefined {
     // Retrieve plugin by name
   }
   
-  resolveDependencies(pluginNames: string[]): Plugin[] {
+  resolveDependencies(pluginNames: string[]): IPlugin[] {
     // Resolve dependencies and handle conflicts
   }
   
-  validateCompatibility(plugins: Plugin[]): ValidationResult {
+  validateCompatibility(plugins: IPlugin[]): ValidationResult {
     // Check for conflicts and missing dependencies
   }
 }
@@ -178,52 +198,151 @@ class PluginRegistry {
 
 #### UI Plugins
 - **Shadcn/ui**: Modern component system with Tailwind CSS
-- **NextUI**: React component library
 - **Tamagui**: Cross-platform UI framework
+- **Chakra UI**: React component library
+- **Material-UI**: React component library
 
 #### Database Plugins
 - **Drizzle**: Type-safe SQL ORM
 - **Prisma**: Database toolkit and ORM
+- **Supabase**: Backend-as-a-Service
 - **TypeORM**: Object-relational mapping
 
 #### Auth Plugins
 - **Better Auth**: Modern authentication for Next.js
 - **NextAuth.js**: Complete authentication solution
 - **Clerk**: User management platform
+- **Auth0**: Enterprise authentication
 
 #### Framework Plugins
 - **Next.js**: React framework for production
 - **React**: JavaScript library for user interfaces
 - **Vue**: Progressive JavaScript framework
 
-## Project Context
+## Layer 3: Adapters (The "Translator")
 
-Shared context object passed between agents and plugins:
+Adapters provide unified interfaces that make all technologies look the same. They translate technology-specific APIs into consistent, technology-agnostic interfaces.
+
+### Unified Interface System
+
+The core of the architecture is the unified interface system:
 
 ```typescript
-interface ProjectContext {
-  // Project metadata
-  name: string;
-  template: string;
-  packageManager: PackageManager;
+// Unified Authentication Interface
+interface UnifiedAuth {
+  client: {
+    signIn: (provider: string, options?: AuthSignInOptions) => Promise<AuthResult>;
+    signOut: (options?: AuthSignOutOptions) => Promise<AuthResult>;
+    getSession: () => Promise<AuthSession | null>;
+    getUser: () => Promise<AuthUser | null>;
+    isAuthenticated: () => Promise<boolean>;
+  };
+  server: {
+    auth: (req: Request, res: Response) => Promise<AuthSession | null>;
+    protect: (handler: Function) => Function;
+  };
+  components: {
+    LoginButton: ComponentType<LoginButtonProps>;
+    AuthForm: ComponentType<AuthFormProps>;
+    UserProfile: ComponentType<UserProfileProps>;
+    AuthGuard: ComponentType<AuthGuardProps>;
+  };
+}
+
+// Unified UI Interface
+interface UnifiedUI {
+  tokens: {
+    colors: ColorTokens;
+    spacing: SpacingTokens;
+    typography: TypographyTokens;
+  };
+  components: {
+    Button: ComponentType<ButtonProps>;
+    Input: ComponentType<InputProps>;
+    Card: ComponentType<CardProps>;
+    // ... more components
+  };
+  theme: {
+    light: ThemeColors;
+    dark: ThemeColors;
+    switchTheme: () => void;
+  };
+}
+
+// Unified Database Interface
+interface UnifiedDatabase {
+  client: {
+    query: (sql: string, params?: any[]) => Promise<any[]>;
+    insert: (table: string, data: any) => Promise<InsertResult>;
+    update: (table: string, where: any, data: any) => Promise<UpdateResult>;
+    delete: (table: string, where: any) => Promise<DeleteResult>;
+  };
+  schema: {
+    users: TableSchema;
+    posts: TableSchema;
+    comments: TableSchema;
+  };
+  migrations: {
+    generate: (name: string) => Promise<void>;
+    run: () => Promise<void>;
+    reset: () => Promise<void>;
+  };
+}
+```
+
+### Adapter Factory
+
+The adapter factory creates unified interfaces for any technology:
+
+```typescript
+interface AdapterFactory {
+  createAuthAdapter: (pluginName: string) => Promise<UnifiedAuth>;
+  createUIAdapter: (pluginName: string) => Promise<UnifiedUI>;
+  createDatabaseAdapter: (pluginName: string) => Promise<UnifiedDatabase>;
+}
+
+class AdapterFactoryImpl implements AdapterFactory {
+  async createAuthAdapter(pluginName: string): Promise<UnifiedAuth> {
+    switch (pluginName.toLowerCase()) {
+      case 'better-auth':
+        const { createBetterAuthAdapter } = await import('../plugins/auth/better-auth-adapter.js');
+        return createBetterAuthAdapter(/* params */);
+      case 'nextauth':
+        const { createNextAuthAdapter } = await import('../plugins/auth/nextauth-adapter.js');
+        return createNextAuthAdapter(/* params */);
+      case 'clerk':
+        const { createClerkAdapter } = await import('../plugins/auth/clerk-adapter.js');
+        return createClerkAdapter(/* params */);
+      default:
+        throw new Error(`Unknown auth plugin: ${pluginName}`);
+    }
+  }
+}
+```
+
+### Unified Interface Registry
+
+The registry manages all unified interfaces:
+
+```typescript
+interface UnifiedInterfaceRegistry {
+  auth: Map<string, UnifiedAuth>;
+  ui: Map<string, UnifiedUI>;
+  database: Map<string, UnifiedDatabase>;
   
-  // Paths
-  rootPath: string;
-  srcPath: string;
-  configPath: string;
+  register: <T extends keyof UnifiedInterfaceRegistry>(
+    category: T,
+    name: string,
+    implementation: UnifiedInterfaceRegistry[T] extends Map<string, infer U> ? U : never
+  ) => void;
   
-  // Configuration
-  config: ProjectConfig;
-  options: ProjectOptions;
+  get: <T extends keyof UnifiedInterfaceRegistry>(
+    category: T,
+    name: string
+  ) => UnifiedInterfaceRegistry[T] extends Map<string, infer U> ? U | undefined : never;
   
-  // State
-  installedPackages: string[];
-  createdFiles: string[];
-  errors: Error[];
-  
-  // Utilities
-  logger: Logger;
-  runner: CommandRunner;
+  list: <T extends keyof UnifiedInterfaceRegistry>(category: T) => string[];
+  has: <T extends keyof UnifiedInterfaceRegistry>(category: T, name: string) => boolean;
 }
 ```
 
@@ -231,7 +350,7 @@ interface ProjectContext {
 
 ### 1. Project Initialization
 ```bash
-architech create my-app
+architech new my-app
 ```
 
 ### 2. AI Analysis
@@ -257,31 +376,27 @@ const plugins = registry.resolveDependencies([
 ]);
 ```
 
-### 4. Agent Execution
-Agents execute in the correct order with plugin integration:
+### 4. Three-Layer Execution
+Agents execute through the unified interface system:
 
 ```typescript
-// 1. Framework Agent
-await frameworkAgent.setup(context);
+// Layer 1: Agent Decision Making
+const selectedPlugin = await authAgent.selectAuthPlugin(context);
 
-// 2. UI Agent  
-await uiAgent.setup(context);
+// Layer 2: Plugin Implementation
+const result = await authAgent.executeAuthPluginUnified(context, selectedPlugin);
 
-// 3. Database Agent
-await databaseAgent.setup(context);
+// Layer 3: Adapter Translation
+const authAdapter = await globalAdapterFactory.createAuthAdapter(selectedPlugin);
+globalRegistry.register('auth', selectedPlugin, authAdapter);
 
-// 4. Auth Agent
-await authAgent.setup(context);
-
-// 5. Validation Agent
-await validationAgent.setup(context);
-
-// 6. Deployment Agent
-await deploymentAgent.setup(context);
+// Unified Interface Validation
+const authInterface = globalRegistry.get('auth', selectedPlugin);
+await authInterface.client.isAuthenticated();
 ```
 
 ### 5. Validation
-Comprehensive validation ensures project integrity:
+Comprehensive validation through unified interfaces:
 
 ```typescript
 const result = await orchestrator.validateProject(context);
@@ -290,19 +405,57 @@ if (!result.success) {
 }
 ```
 
+## Benefits of the Three-Layer Architecture
+
+### 1. Technology Agnostic
+```typescript
+// Same agent code works with ANY technology
+const authInterface = globalRegistry.get('auth', 'better-auth'); // or 'nextauth' or 'clerk'
+await authInterface.client.signIn('email', { email, password });
+```
+
+### 2. No Lock-in
+```typescript
+// Easy to switch technologies without changing agent code
+// Just change the plugin name and everything works
+const selectedPlugin = 'nextauth'; // instead of 'better-auth'
+```
+
+### 3. Consistent APIs
+```typescript
+// All auth systems have the same interface
+interface UnifiedAuth {
+  client: { signIn, signOut, getSession }
+  server: { auth, protect }
+  components: { LoginButton, AuthForm }
+}
+```
+
+### 4. Easy to Extend
+```typescript
+// Add new technology in 3 steps:
+// 1. Create plugin (implementation)
+// 2. Create adapter (translation)
+// 3. Register in factory
+// Agents automatically work with it!
+```
+
 ## Extending the Architecture
 
 ### Adding New Agents
 
 1. **Create Agent Class**:
 ```typescript
-class CustomAgent extends BaseAgent {
-  async setup(context: ProjectContext): Promise<void> {
-    // Implementation
-  }
-  
-  async validate(context: ProjectContext): Promise<ValidationResult> {
-    // Validation logic
+class CustomAgent extends AbstractAgent {
+  async executeInternal(context: AgentContext): Promise<AgentResult> {
+    // 1. Select appropriate plugin
+    const selectedPlugin = await this.selectPlugin(context);
+    
+    // 2. Execute plugin through unified interface
+    const result = await this.executePluginUnified(context, selectedPlugin);
+    
+    // 3. Validate using unified interface
+    await this.validateSetupUnified(context, selectedPlugin);
   }
 }
 ```
@@ -312,56 +465,78 @@ class CustomAgent extends BaseAgent {
 orchestrator.registerAgent(new CustomAgent());
 ```
 
-### Adding New Plugins
+### Adding New Technologies
 
-1. **Implement Plugin Interface**:
+1. **Create Plugin (Implementation)**:
 ```typescript
-class CustomPlugin implements Plugin {
-  name = 'custom-plugin';
+class ClerkPlugin implements IPlugin {
+  name = 'clerk';
   version = '1.0.0';
-  dependencies = ['some-package'];
   
-  async setup(context: ProjectContext): Promise<void> {
-    // Setup implementation
+  async install(context: PluginContext): Promise<PluginResult> {
+    // Install Clerk dependencies
+    // Create Clerk configuration
+    // Set up Clerk components
   }
   
-  async validate(context: ProjectContext): Promise<ValidationResult> {
-    // Validation implementation
+  async validate(context: PluginContext): Promise<ValidationResult> {
+    // Validate Clerk setup
   }
 }
 ```
 
-2. **Register with Registry**:
+2. **Create Adapter (Translation)**:
 ```typescript
-registry.register(new CustomPlugin());
+class ClerkAdapter implements UnifiedAuth {
+  client = {
+    signIn: (provider, options) => {
+      // Translate unified API to Clerk API
+      return this.clerkClient.signIn(provider, options);
+    },
+    signOut: () => this.clerkClient.signOut(),
+    getSession: () => this.clerkClient.getSession()
+  };
+  
+  server = {
+    auth: (req, res) => this.clerkServer.auth(req, res),
+    protect: (handler) => this.clerkServer.protect(handler)
+  };
+  
+  components = {
+    LoginButton: this.createLoginButton(),
+    AuthForm: this.createAuthForm(),
+    UserProfile: this.createUserProfile(),
+    AuthGuard: this.createAuthGuard()
+  };
+}
 ```
 
-### Adding New Templates
-
-1. **Create Template Files**:
-```
-templates/
-├── custom-template/
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── src/
-```
-
-2. **Register Template**:
+3. **Register in Factory**:
 ```typescript
-templateRegistry.register('custom-template', {
-  path: './templates/custom-template',
-  description: 'Custom template description'
-});
+// Register in adapter factory
+async createAuthAdapter(pluginName: string): Promise<UnifiedAuth> {
+  switch (pluginName.toLowerCase()) {
+    case 'clerk':
+      const { createClerkAdapter } = await import('../plugins/auth/clerk-adapter.js');
+      return createClerkAdapter(/* params */);
+  }
+}
+```
+
+4. **Agents Automatically Work!**:
+```typescript
+// Same agent code works with Clerk
+const authInterface = globalRegistry.get('auth', 'clerk');
+await authInterface.client.signIn('email', { email, password });
 ```
 
 ## Best Practices
 
 ### Agent Development
-- Keep agents focused on a single responsibility
-- Use plugins for technology implementation
+- Keep agents focused on decision making and orchestration
+- Use unified interfaces for all technology interactions
 - Implement proper error handling and rollback
-- Add comprehensive validation
+- Add comprehensive validation through unified interfaces
 
 ### Plugin Development
 - Follow the standard plugin interface
@@ -369,28 +544,34 @@ templateRegistry.register('custom-template', {
 - Implement proper validation
 - Handle configuration gracefully
 
+### Adapter Development
+- Implement all required unified interface methods
+- Provide proper error translation
+- Include escape hatches for advanced use cases
+- Maintain consistent API behavior
+
 ### Testing
-- Test agents in isolation
-- Mock plugin dependencies
-- Test error scenarios
+- Test agents with different technology combinations
+- Mock unified interfaces for testing
+- Test error scenarios and rollback
 - Validate generated projects
 
 ## Performance Considerations
 
+### Lazy Loading
+- Adapters are loaded only when needed
+- Plugins are instantiated on-demand
+- Reduces initial load time and memory usage
+
 ### Caching
 - Cache plugin resolutions
-- Cache template rendering
-- Cache package installations
+- Cache adapter instances
+- Cache unified interface lookups
 
 ### Parallelization
 - Execute independent agents in parallel
 - Parallel plugin installations
 - Concurrent file operations
-
-### Optimization
-- Minimize file system operations
-- Optimize template rendering
-- Reduce dependency resolution time
 
 ## Security
 
@@ -398,6 +579,11 @@ templateRegistry.register('custom-template', {
 - Validate plugin sources
 - Sandbox plugin execution
 - Audit plugin dependencies
+
+### Adapter Security
+- Validate adapter implementations
+- Secure API translation
+- Handle sensitive data properly
 
 ### Project Security
 - Secure default configurations

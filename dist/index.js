@@ -7,8 +7,6 @@
  */
 import { program } from 'commander';
 import chalk from 'chalk';
-import { createCommand } from './commands/create.js';
-import { architechCommand } from './commands/architech.js';
 import { newCommand } from './commands/new.js';
 import { scaleToMonorepoCommand } from './commands/scale-to-monorepo.js';
 import { displayBanner } from './utils/banner.js';
@@ -40,18 +38,6 @@ import { displayBanner } from './utils/banner.js';
         .description('🚀 Revolutionary AI-Powered Application Generator')
         .version('0.1.0', '-v, --version', 'Show The Architech version')
         .helpOption('-h, --help', 'Show help information');
-    // Create command - The main project generation command
-    program
-        .command('create')
-        .description('🏗️  Create a new application with specialized AI agents')
-        .argument('[project-name]', 'Name of the project to create')
-        .option('-t, --template <template>', 'Project template (nextjs, react, vue)', 'nextjs')
-        .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
-        .option('--structure <structure>', 'Project structure (single-app, monorepo)', 'single-app')
-        .option('--no-git', 'Skip git repository initialization')
-        .option('--no-install', 'Skip dependency installation')
-        .option('-y, --yes', 'Skip interactive prompts and use defaults')
-        .action(createCommand);
     // New command - Unified project generation with guided decision making
     program
         .command('new')
@@ -70,17 +56,6 @@ import { displayBanner } from './utils/banner.js';
         .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
         .option('-y, --yes', 'Skip interactive prompts and use defaults')
         .action(scaleToMonorepoCommand);
-    // Architech command - Enterprise-grade monorepo structure
-    program
-        .command('architech')
-        .description('🏛️  Create enterprise-grade monorepo with Turborepo & specialized packages')
-        .argument('[project-name]', 'Name of the project to create')
-        .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
-        .option('--no-git', 'Skip git repository initialization')
-        .option('--no-install', 'Skip dependency installation')
-        .option('-y, --yes', 'Skip interactive prompts and use defaults')
-        .option('--modules <modules>', 'Comma-separated list of modules to include (ui,db,auth,config)', 'ui,db,auth,config')
-        .action(architechCommand);
     // Plugins command - Plugin management
     console.log('Registering plugins command...');
     const pluginsCmd = pluginsCommand();
@@ -142,14 +117,15 @@ import { displayBanner } from './utils/banner.js';
     // Custom help
     program.on('--help', () => {
         console.log(chalk.blue('\n🎯 Examples:'));
-        console.log('  $ architech create my-app');
-        console.log('  $ architech create my-app --template nextjs --package-manager yarn');
+        console.log('  $ architech new my-app');
+        console.log('  $ architech new my-app --project-type scalable-monorepo');
+        console.log('  $ architech scale-to-monorepo');
         console.log('  $ architech plugins list');
-        console.log('  $ architech plugins install shadcn-ui');
+        console.log('  $ architech plugins info shadcn-ui');
         console.log('  $ architech add auth');
         console.log('  $ architech list --templates');
         console.log(chalk.blue('\n🚀 Get started:'));
-        console.log('  Run "architech create" and follow the interactive prompts!');
+        console.log('  Run "architech new" and follow the interactive prompts!');
         console.log(chalk.gray('\n  For more information, visit: https://the-architech.dev\n'));
     });
     // Handle no arguments - show help
