@@ -7,14 +7,14 @@
  * - Context factory
  */
 
-export { ProjectStructureManager } from './project-structure-manager.js';
+export { structureService, StructureService } from './structure-service.js';
 export { ConfigurationManager } from './configuration-manager.js';
 export { ContextFactory } from './context-factory.js';
 
 // Re-export types for convenience
 export type {
   ProjectStructure,
-  StructureConfig,
-  DirectoryStructure,
-  FileStructure
-} from './project-structure-manager.js'; 
+  StructureInfo,
+  UserPreference,
+  PathInfo
+} from './structure-service.js'; 

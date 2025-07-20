@@ -37,7 +37,7 @@ architech new my-app --yes
 architech new my-app --template nextjs-14 --package-manager yarn
 
 # Generate enterprise monorepo
-architech new my-enterprise --monorepo --yes
+architech new my-enterprise --project-type scalable-monorepo --yes
 ```
 
 ## 🎯 Core Concept
@@ -54,14 +54,14 @@ AI-powered decision makers that orchestrate the entire process:
 - **Validation Agent**: Ensures code quality and best practices
 
 ### 🛠️ **Plugins (The "Hands")**
-Technology-specific implementations that do the actual work:
+Technology-specific implementations that do the actual work and generate unified interface files:
 - **Next.js Plugin**: Creates Next.js projects with `create-next-app`
 - **Shadcn/ui Plugin**: Installs and configures UI components
 - **Drizzle Plugin**: Sets up database schemas and migrations
 - **Better Auth Plugin**: Configures authentication systems
 
-### 🔄 **Adapters (The "Translator")**
-Unified interfaces that make all technologies look the same:
+### 🔄 **Unified Interface Files (The "Contract")**
+Generated files that provide consistent APIs across all technologies:
 - **UnifiedAuth**: Same API for Better Auth, NextAuth, Clerk, etc.
 - **UnifiedUI**: Same API for Shadcn/ui, Tamagui, Chakra UI, etc.
 - **UnifiedDatabase**: Same API for Drizzle, Prisma, Supabase, etc.
@@ -105,47 +105,37 @@ const selectedPlugin = await this.selectAuthPlugin(context);
 
 #### **Layer 2: Plugin Implementation**
 ```typescript
-// BetterAuthPlugin does the actual work
+// BetterAuthPlugin does the actual work and generates unified interface files
 const result = await plugin.install(pluginContext);
-// Installs packages, creates files, configures auth
+// Installs packages, creates files, configures auth, generates unified interface
 ```
 
-#### **Layer 3: Adapter Translation**
+#### **Layer 3: Unified Interface Files**
 ```typescript
-// BetterAuthAdapter provides unified interface
-const authAdapter = await globalAdapterFactory.createAuthAdapter('better-auth');
-globalRegistry.register('auth', 'better-auth', authAdapter);
+// Plugins generate unified interface files that provide consistent APIs
+// Generated files: src/lib/auth/index.ts, src/lib/ui/index.ts, src/lib/db/index.ts
 
-// Now all auth systems look the same
-const authInterface = globalRegistry.get('auth', 'better-auth');
-await authInterface.client.signIn('email', { email, password });
+// Now all auth systems look the same through the generated files
+import { auth } from '@/lib/auth';
+await auth.client.signIn('email', { email, password });
 ```
 
 ### 4. Unified Interface System
 
-The architecture uses unified interfaces for technology-agnostic operations:
+The architecture uses generated unified interface files for technology-agnostic operations:
 
 ```typescript
-// Same code works with ANY auth system
-interface UnifiedAuth {
-  client: { signIn, signOut, getSession }
-  server: { auth, protect }
-  components: { LoginButton, AuthForm }
-}
+// Same code works with ANY auth system through generated files
+import { auth } from '@/lib/auth';
+await auth.client.signIn('email', { email, password });
 
-// Same code works with ANY UI system
-interface UnifiedUI {
-  components: { Button, Input, Card }
-  tokens: { colors, spacing, typography }
-  theme: { light, dark, switchTheme }
-}
+// Same code works with ANY UI system through generated files
+import { ui } from '@/lib/ui';
+const button = ui.components.Button({ children: 'Click me' });
 
-// Same code works with ANY database
-interface UnifiedDatabase {
-  client: { query, insert, update, delete }
-  schema: { users, posts, comments }
-  migrations: { generate, run, reset }
-}
+// Same code works with ANY database through generated files
+import { db } from '@/lib/db';
+const users = await db.client.query('SELECT * FROM users');
 ```
 
 ### 5. Generated Project Structure
@@ -158,8 +148,16 @@ my-app/
 │   ├── components/
 │   │   └── ui/             # Shadcn/ui components
 │   ├── lib/
-│   │   ├── db/             # Database utilities
-│   │   ├── auth/           # Authentication helpers
+│   │   ├── db/             # Database utilities (unified interface)
+│   │   │   ├── index.ts    # Unified database interface
+│   │   │   ├── schema.ts   # Database schema
+│   │   │   └── migrations.ts # Migration utilities
+│   │   ├── auth/           # Authentication helpers (unified interface)
+│   │   │   ├── index.ts    # Unified auth interface
+│   │   │   └── config.ts   # Auth configuration
+│   │   ├── ui/             # UI components (unified interface)
+│   │   │   ├── index.ts    # Unified UI interface
+│   │   │   └── components.tsx # UI components
 │   │   └── utils.ts        # Utility functions
 │   └── types/              # TypeScript definitions
 ├── .github/
@@ -184,9 +182,19 @@ my-enterprise/
 │   ├── admin/             # Admin dashboard
 │   └── docs/              # Documentation site
 ├── packages/
-│   ├── ui/                # Shared UI components
-│   ├── db/                # Database schemas & utilities
-│   ├── auth/              # Authentication logic
+│   ├── ui/                # Shared UI components (unified interface)
+│   │   ├── index.ts       # Unified UI interface
+│   │   ├── components.tsx # UI components
+│   │   └── package.json
+│   ├── db/                # Database schemas & utilities (unified interface)
+│   │   ├── index.ts       # Unified database interface
+│   │   ├── schema.ts      # Database schema
+│   │   ├── migrations.ts  # Migration utilities
+│   │   └── package.json
+│   ├── auth/              # Authentication logic (unified interface)
+│   │   ├── index.ts       # Unified auth interface
+│   │   ├── config.ts      # Auth configuration
+│   │   └── package.json
 │   ├── config/            # Shared configurations
 │   └── utils/             # Common utilities
 ├── turbo.json             # Turborepo configuration
@@ -208,9 +216,8 @@ architech new [project-name] [options]
 - `project-name` - Name of the project to create
 
 **Options:**
-- `-t, --template <template>` - Project template (nextjs, react, vue)
-- `-p, --package-manager <pm>` - Package manager (npm, yarn, pnpm, bun, auto)
-- `--monorepo` - Generate enterprise monorepo structure
+- `--project-type <type>` - Project type (quick-prototype, scalable-monorepo) (default: "quick-prototype")
+- `-p, --package-manager <pm>` - Package manager (npm, yarn, pnpm, bun) (default: "auto")
 - `--no-git` - Skip git repository initialization
 - `--no-install` - Skip dependency installation  
 - `-y, --yes` - Skip interactive prompts and use defaults
@@ -224,13 +231,30 @@ architech new
 architech new my-app --yes
 
 # Enterprise monorepo
-architech new my-enterprise --monorepo --yes
+architech new my-enterprise --project-type scalable-monorepo --yes
 
 # Custom configuration
-architech new my-app --template nextjs-14 --package-manager yarn --no-git
+architech new my-app --project-type quick-prototype --package-manager yarn --no-git
 
 # Skip dependency installation
 architech new my-app --no-install
+```
+
+### `scale` Command
+
+Transform a single app project to a monorepo structure.
+
+```bash
+architech scale [project-path]
+```
+
+**Examples:**
+```bash
+# Scale current directory
+architech scale
+
+# Scale specific project
+architech scale ./my-project
 ```
 
 ### `plugins` Command
@@ -324,19 +348,13 @@ The CLI uses an intelligent three-layer architecture for maximum flexibility:
 │  │  (Hands)    │ │  (Hands)    │ │  (Hands)    │          │
 │  └─────────────┘ └─────────────┘ └─────────────┘          │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
-│  │Better Auth  │ │Shadcn/ui    │ │Drizzle      │          │
-│  │  Adapter    │ │  Adapter    │ │  Adapter    │          │
-│  │(Translator) │ │(Translator) │ │(Translator) │          │
-│  └─────────────┘ └─────────────┘ └─────────────┘          │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
-│  │NextAuth     │ │Tamagui      │ │Prisma       │          │
-│  │  Adapter    │ │  Adapter    │ │  Adapter    │          │
-│  │(Translator) │ │(Translator) │ │(Translator) │          │
-│  └─────────────┘ └─────────────┘ └─────────────┘          │
-├─────────────────────────────────────────────────────────────┤
-│              Unified Interface Registry                    │
+│              Generated Unified Interface Files             │
 │              (Technology-Agnostic APIs)                   │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │src/lib/auth/│ │src/lib/ui/  │ │src/lib/db/  │          │
+│  │  index.ts   │ │  index.ts   │ │  index.ts   │          │
+│  │(Contract)   │ │(Contract)   │ │(Contract)   │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -351,10 +369,10 @@ class AuthAgent extends AbstractAgent {
     // 1. Analyze user requirements
     const selectedPlugin = await this.selectAuthPlugin(context);
     
-    // 2. Execute plugin through unified interface
+    // 2. Execute plugin which generates unified interface files
     const result = await this.executeAuthPluginUnified(context, selectedPlugin);
     
-    // 3. Validate using unified interface
+    // 3. Validate using generated unified interface files
     await this.validateAuthSetupUnified(context, selectedPlugin);
   }
 }
@@ -362,10 +380,10 @@ class AuthAgent extends AbstractAgent {
 
 ### Layer 2: Plugins (The "Hands")
 
-Plugins handle technology-specific implementation:
+Plugins handle technology-specific implementation and generate unified interface files:
 
 ```typescript
-// Plugins do the actual work
+// Plugins do the actual work and generate unified interfaces
 class BetterAuthPlugin implements IPlugin {
   async install(context: PluginContext) {
     // Install dependencies
@@ -376,44 +394,66 @@ class BetterAuthPlugin implements IPlugin {
     
     // Set up database schema
     await this.setupDatabaseSchema();
+    
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
   }
 }
 ```
 
-### Layer 3: Adapters (The "Translator")
+### Layer 3: Generated Unified Interface Files (The "Contract")
 
-Adapters provide unified interfaces for all technologies:
+Plugins generate files that provide consistent APIs for all technologies:
 
 ```typescript
-// Adapters make all technologies look the same
-class BetterAuthAdapter implements UnifiedAuth {
-  client = {
+// Generated files make all technologies look the same
+// src/lib/auth/index.ts (generated by BetterAuthPlugin)
+export const auth = {
+  client: {
     signIn: (provider, options) => {
-      // Translate unified API to Better Auth API
+      // Technology-specific implementation
       return this.betterAuthClient.signIn(provider, options);
     },
     signOut: () => this.betterAuthClient.signOut(),
     getSession: () => this.betterAuthClient.getSession()
   }
-}
+};
+
+// src/lib/ui/index.ts (generated by ShadcnUIPlugin)
+export const ui = {
+  components: {
+    Button: (props) => <Button {...props} />,
+    Input: (props) => <Input {...props} />,
+    Card: (props) => <Card {...props} />
+  }
+};
+
+// src/lib/db/index.ts (generated by DrizzlePlugin)
+export const db = {
+  client: {
+    query: (sql, params) => this.drizzleClient.execute(sql, params),
+    insert: (table, data) => this.drizzleClient.insert(table, data),
+    update: (table, where, data) => this.drizzleClient.update(table, where, data)
+  }
+};
 ```
 
 ### Unified Interface System
 
-All technologies provide the same API through adapters:
+All technologies provide the same API through generated files:
 
 ```typescript
-// Same code works with ANY auth system
-const authInterface = globalRegistry.get('auth', 'better-auth'); // or 'nextauth' or 'clerk'
-await authInterface.client.signIn('email', { email, password });
+// Same code works with ANY auth system through generated files
+import { auth } from '@/lib/auth';
+await auth.client.signIn('email', { email, password });
 
-// Same code works with ANY UI system
-const uiInterface = globalRegistry.get('ui', 'shadcn-ui'); // or 'tamagui' or 'chakra'
-const button = uiInterface.components.Button({ children: 'Click me' });
+// Same code works with ANY UI system through generated files
+import { ui } from '@/lib/ui';
+const button = ui.components.Button({ children: 'Click me' });
 
-// Same code works with ANY database
-const dbInterface = globalRegistry.get('database', 'drizzle'); // or 'prisma' or 'supabase'
-const users = await dbInterface.client.query('SELECT * FROM users');
+// Same code works with ANY database through generated files
+import { db } from '@/lib/db';
+const users = await db.client.query('SELECT * FROM users');
 ```
 
 ## 🔍 Under the Hood
@@ -495,38 +535,42 @@ class ClerkPlugin implements IPlugin {
     // Install Clerk dependencies
     // Create Clerk configuration
     // Set up Clerk components
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
   }
 }
 ```
 
-#### 2. Create an Adapter (Translation)
+#### 2. Generate Unified Interface Files
 ```typescript
-class ClerkAdapter implements UnifiedAuth {
-  client = {
+// Plugin generates unified interface files
+private async generateUnifiedInterfaceFiles(context: PluginContext) {
+  const unifiedPath = structureService.getUnifiedInterfacePath(
+    context.projectPath, 
+    context.projectStructure!, 
+    'auth'
+  );
+  
+  const indexContent = `
+export const auth = {
+  client: {
     signIn: (provider, options) => {
-      // Translate to Clerk API
+      // Clerk-specific implementation
       return this.clerkClient.signIn(provider, options);
     }
   }
+};
+`;
+  
+  await fsExtra.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
 }
 ```
 
-#### 3. Register in Factory
+#### 3. Agents Automatically Work!
 ```typescript
-// Register in adapter factory
-createAuthAdapter(pluginName: string) {
-  switch (pluginName) {
-    case 'clerk':
-      return createClerkAdapter(/* params */);
-  }
-}
-```
-
-#### 4. Agents Automatically Work!
-```typescript
-// Same agent code works with Clerk
-const authInterface = globalRegistry.get('auth', 'clerk');
-await authInterface.client.signIn('email', { email, password });
+// Same agent code works with Clerk through generated files
+import { auth } from '@/lib/auth';
+await auth.client.signIn('email', { email, password });
 ```
 
 ## 📝 License
@@ -557,8 +601,8 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 ### Phase 3: Unified Interfaces ✅
 - ✅ Unified interface architecture
 - ✅ Technology-agnostic agents
-- ✅ Adapter pattern implementation
-- ✅ Lazy loading system
+- ✅ Generated unified interface files
+- ✅ Consolidated plugin structure
 
 ### Phase 4: AI Integration (Current)
 - 🔄 AI-powered project planning

@@ -254,7 +254,7 @@ function displayProjectSummary(config: NewConfig): void {
   if (config.projectType === 'quick-prototype') {
     console.log(chalk.blue.bold('\n🔄 Future Scaling:'));
     console.log(chalk.yellow('  When your project grows, run:'));
-    console.log(chalk.white('  npx the-architech scale-to-monorepo'));
+    console.log(chalk.white('  npx the-architech scale'));
     console.log(chalk.gray('  This will automatically restructure your project into a full monorepo'));
   }
 

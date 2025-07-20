@@ -1,17 +1,14 @@
-# Core Module - Consolidated Architecture
+# Core Module - The Architech
 
-## Overview
+Centralized core functionality for The Architech CLI, organized into focused modules for better maintainability and clarity.
 
-The `src/core/` directory contains the consolidated core functionality of The Architech CLI, organized into logical domains for better maintainability and clarity.
-
-## Structure
+## Module Structure
 
 ```
 src/core/
-├── index.ts                 # Main entry point - exports all core functionality
-├── plugin/                  # Plugin system and management
+├── plugin/                 # Plugin system and management
 │   ├── index.ts            # Plugin module exports
-│   ├── plugin-system.ts    # Main plugin orchestrator
+│   ├── plugin-system.ts    # Central plugin orchestrator
 │   ├── plugin-registry.ts  # Plugin discovery and registration
 │   ├── plugin-manager.ts   # Plugin lifecycle management
 │   ├── plugin-adapter.ts   # CLI-to-plugin bridge
@@ -19,7 +16,7 @@ src/core/
 │   └── plugin-configuration-manager.ts # Plugin configuration schemas
 ├── project/                # Project management and structure
 │   ├── index.ts            # Project module exports
-│   ├── project-structure-manager.ts    # Project structure creation
+│   ├── structure-service.ts # Centralized project structure management
 │   ├── configuration-manager.ts        # Project configuration
 │   └── context-factory.ts  # Agent context creation
 ├── cli/                    # CLI utilities and tools
@@ -43,7 +40,11 @@ src/core/
 - **Plugin Configuration Manager**: Schema-based plugin configuration
 
 ### Project Module (`src/core/project/`)
-- **Project Structure Manager**: Creates and manages project directory structures
+- **Structure Service**: Centralized project structure management and path resolution
+  - Handles single app vs monorepo project structures
+  - Provides unified path resolution APIs
+  - Manages structure transformations (scale command)
+  - Generates unified interface files for plugins
 - **Configuration Manager**: Handles project configuration and settings
 - **Context Factory**: Creates and validates agent execution contexts
 
@@ -63,6 +64,7 @@ src/core/
 4. **Reduced Coupling**: Modules are self-contained with clear interfaces
 5. **Enhanced Testing**: Each module can be tested independently
 6. **Simplified Imports**: Single entry points for each domain
+7. **Marketplace Ready**: Plugins generate unified interface files for easy distribution
 
 ## Usage
 
@@ -72,14 +74,14 @@ src/core/
 // Import everything from core
 import { 
   PluginSystem, 
-  ProjectStructureManager, 
+  structureService, 
   CommandRunner, 
   TemplateService 
 } from '../core/index.js';
 
 // Import specific modules
 import { PluginSystem } from '../core/plugin/index.js';
-import { ProjectStructureManager } from '../core/project/index.js';
+import { structureService } from '../core/project/index.js';
 import { CommandRunner } from '../core/cli/index.js';
 import { TemplateService } from '../core/templates/index.js';
 ```
@@ -91,13 +93,28 @@ import { TemplateService } from '../core/templates/index.js';
 import { PluginSystem, PluginSelectionService } from '../core/plugin/index.js';
 
 // Project management
-import { ProjectStructureManager, ContextFactory } from '../core/project/index.js';
+import { structureService, ContextFactory } from '../core/project/index.js';
 
 // CLI utilities
 import { CommandRunner, Logger, displayBanner } from '../core/cli/index.js';
 
 // Template system
 import { TemplateService } from '../core/templates/index.js';
+```
+
+### Structure Service Usage
+
+```typescript
+// Get project structure information
+const structure = structureService.getStructure(projectPath);
+
+// Resolve paths for different project types
+const dbPath = structureService.resolvePath('database', projectPath);
+const authPath = structureService.resolvePath('auth', projectPath);
+const uiPath = structureService.resolvePath('ui', projectPath);
+
+// Transform project structure
+await structureService.transformToMonorepo(singleAppPath);
 ```
 
 ## Migration from Utils
@@ -112,13 +129,56 @@ The old `src/utils/` directory has been completely replaced with this new struct
 | `utils/plugin-adapter.ts` | `core/plugin/plugin-adapter.ts` | Plugin |
 | `utils/plugin-selection-service.ts` | `core/plugin/plugin-selection-service.ts` | Plugin |
 | `utils/plugin-configuration-manager.ts` | `core/plugin/plugin-configuration-manager.ts` | Plugin |
-| `utils/project-structure-manager.ts` | `core/project/project-structure-manager.ts` | Project |
+| `utils/project-structure-manager.ts` | `core/project/structure-service.ts` | Project |
 | `utils/configuration-manager.ts` | `core/project/configuration-manager.ts` | Project |
 | `utils/context-factory.ts` | `core/project/context-factory.ts` | Project |
 | `utils/command-runner.ts` | `core/cli/command-runner.ts` | CLI |
 | `utils/logger.ts` | `core/cli/logger.ts` | CLI |
 | `utils/banner.ts` | `core/cli/banner.ts` | CLI |
 | `utils/template-service.ts` | `core/templates/template-service.ts` | Templates |
+
+## Plugin Architecture
+
+The new plugin architecture uses a unified interface file system:
+
+### Plugin Structure
+```typescript
+// Example plugin implementation
+export class ExamplePlugin implements IPlugin {
+  metadata = {
+    name: 'example',
+    version: '1.0.0',
+    description: 'Example plugin',
+    category: 'example'
+  };
+
+  async install(context: PluginContext): Promise<InstallResult> {
+    // Install dependencies and generate files
+    // Generate unified interface file
+    await this.generateUnifiedInterface(context.projectPath);
+  }
+
+  private async generateUnifiedInterface(projectPath: string): Promise<void> {
+    // Generate unified interface file for agents to use
+    const interfaceContent = this.createInterfaceContent();
+    await fs.writeFile(path.join(projectPath, 'unified-interfaces', 'example.ts'), interfaceContent);
+  }
+}
+```
+
+### Unified Interface Files
+Plugins generate unified interface files that agents can import and use:
+
+```typescript
+// Generated unified interface file
+export interface UnifiedExample {
+  // Plugin-specific implementation
+}
+
+export const createExampleInterface = (): UnifiedExample => {
+  // Return plugin-specific implementation
+};
+```
 
 ## Future Enhancements
 
@@ -129,4 +189,4 @@ This consolidated structure provides a solid foundation for:
 3. **Testing Framework**: Each module can be tested independently
 4. **Documentation**: Clear module boundaries make documentation easier
 5. **Performance Optimization**: Module-specific optimizations
-6. **Type Safety**: Better TypeScript support with clear interfaces 
+6. **Structure Transformations**: Easy project structure evolution 

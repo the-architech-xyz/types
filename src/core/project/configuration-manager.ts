@@ -8,7 +8,7 @@
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { Logger } from '../../types/agent.js';
-import { ProjectStructure, StructureConfig } from './project-structure-manager.js';
+import { ProjectStructure, StructureInfo } from './structure-service.js';
 
 export interface ProjectConfiguration {
   // Basic project info
@@ -56,6 +56,7 @@ export interface ProjectConfiguration {
 }
 
 export interface ConfigurationOptions {
+  packageManager?: string;
   skipGit: boolean;
   skipInstall: boolean;
   useDefaults: boolean;
@@ -98,7 +99,8 @@ export class ConfigurationManager {
       framework,
       
       // Package management
-      packageManager: 'npm',
+      packageManager: options.packageManager || 'auto',
+      workspaces: structure === 'monorepo' ? ['apps/*', 'packages/*'] : undefined,
       
       // Features and modules
       features: this.getDefaultFeatures(framework),
@@ -116,12 +118,12 @@ export class ConfigurationManager {
       typescript: true,
       eslint: true,
       prettier: true,
-      tailwind: true,
+      tailwind: framework.includes('next') || framework.includes('react'),
       
       // Deployment
       deployment: {
-        platform: 'vercel',
-        useDocker: true,
+        platform: undefined,
+        useDocker: false,
         useCI: true
       },
       
@@ -134,35 +136,23 @@ export class ConfigurationManager {
       }
     };
 
-    // Add workspaces for monorepo
-    if (structure === 'monorepo') {
-      return {
-        ...baseConfig,
-        workspaces: ['apps/*', 'packages/*']
-      };
-    }
-
     return baseConfig;
   }
 
   /**
-   * Get structure configuration for project structure manager
+   * Get structure configuration for the project
    */
-  getStructureConfig(config: ProjectConfiguration): StructureConfig {
-    const structureConfig: StructureConfig = {
+  getStructureConfig(config: ProjectConfiguration): StructureInfo {
+    const userPreference = config.structure === 'monorepo' ? 'scalable-monorepo' : 'quick-prototype';
+    
+    return {
       type: config.structure,
-      framework: config.framework,
-      rootConfig: true,
-      sharedConfig: config.structure === 'monorepo'
+      userPreference,
+      isMonorepo: config.structure === 'monorepo',
+      isSingleApp: config.structure === 'single-app',
+      modules: config.modules,
+      template: config.framework
     };
-
-    // Add optional properties only if they exist
-    if (config.structure === 'monorepo') {
-      structureConfig.packages = config.modules;
-      structureConfig.apps = ['web'];
-    }
-
-    return structureConfig;
   }
 
   /**

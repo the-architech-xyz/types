@@ -11,7 +11,7 @@ The Architech CLI can be installed globally or run directly with npx:
 npm install -g the-architech
 
 # Or run directly
-npx the-architech create my-app
+npx the-architech new my-app
 ```
 
 ### Prerequisites
@@ -27,12 +27,12 @@ npx the-architech create my-app
 The easiest way to get started is using interactive mode:
 
 ```bash
-architech create
+architech new
 ```
 
 This will guide you through:
 1. **Project Name**: Enter your project name
-2. **Template Selection**: Choose from available templates
+2. **Project Type**: Choose between quick-prototype (single app) or scalable-monorepo
 3. **Package Manager**: Select your preferred package manager
 4. **Features**: Choose which features to include
 5. **Configuration**: Customize project settings
@@ -42,7 +42,7 @@ This will guide you through:
 For rapid prototyping, use the `--yes` flag to accept all defaults:
 
 ```bash
-architech create my-app --yes
+architech new my-app --yes
 ```
 
 This creates a Next.js 14 project with:
@@ -57,78 +57,52 @@ This creates a Next.js 14 project with:
 Specify options directly for more control:
 
 ```bash
-architech create my-app \
-  --template nextjs-14 \
+architech new my-app \
+  --project-type quick-prototype \
   --package-manager yarn \
   --no-git \
   --no-install
 ```
 
-## Project Templates
+## Project Types
 
-### Next.js 14 (Default)
+### Quick Prototype (Default)
 
-Modern React framework with App Router:
+Single application structure for rapid development:
 
 ```bash
-architech create my-app --template nextjs-14
+architech new my-app --project-type quick-prototype
 ```
 
 **Features:**
-- App Router architecture
+- Single application structure
+- Next.js 14 with App Router
 - TypeScript support
 - Tailwind CSS integration
 - ESLint configuration
 - Optimized build setup
 
-### Next.js 13
+### Scalable Monorepo
 
-Legacy Pages Router support:
+Enterprise monorepo structure for large-scale projects:
 
 ```bash
-architech create my-app --template nextjs-13
+architech new my-enterprise --project-type scalable-monorepo
 ```
 
 **Features:**
-- Pages Router architecture
-- TypeScript support
-- Tailwind CSS integration
-- ESLint configuration
-
-### React with Vite
-
-Fast development with Vite:
-
-```bash
-architech create my-app --template react-vite
-```
-
-**Features:**
-- Vite build tool
-- Fast HMR (Hot Module Replacement)
-- TypeScript support
-- ESLint configuration
-
-### Vue with Nuxt 3
-
-Vue.js framework with auto-imports:
-
-```bash
-architech create my-app --template vue-nuxt
-```
-
-**Features:**
-- Nuxt 3 framework
-- Auto-imports
-- TypeScript support
-- ESLint configuration
+- Monorepo structure with Turborepo
+- Shared packages for UI, database, and auth
+- Multiple applications
+- TypeScript end-to-end
+- Consistent code quality tools
 
 ## Enterprise Monorepo
 
 For large-scale projects, generate an enterprise monorepo:
 
 ```bash
-architech create my-enterprise --monorepo --yes
+architech new my-enterprise --project-type scalable-monorepo --yes
 ```
 
 ### Monorepo Structure
@@ -140,9 +114,19 @@ my-enterprise/
 │   ├── admin/             # Admin dashboard
 │   └── docs/              # Documentation site
 ├── packages/
-│   ├── ui/                # Shared UI components
-│   ├── db/                # Database schemas & utilities
-│   ├── auth/              # Authentication logic
+│   ├── ui/                # Shared UI components (unified interface)
+│   │   ├── index.ts       # Unified UI interface
+│   │   ├── components.tsx # UI components
+│   │   └── package.json
+│   ├── db/                # Database schemas & utilities (unified interface)
+│   │   ├── index.ts       # Unified database interface
+│   │   ├── schema.ts      # Database schema
+│   │   ├── migrations.ts  # Migration utilities
+│   │   └── package.json
+│   ├── auth/              # Authentication logic (unified interface)
+│   │   ├── index.ts       # Unified auth interface
+│   │   ├── config.ts      # Auth configuration
+│   │   └── package.json
 │   ├── config/            # Shared configurations
 │   └── utils/             # Common utilities
 ├── turbo.json             # Turborepo configuration
@@ -153,7 +137,7 @@ my-enterprise/
 ### Monorepo Features
 
 - **Turborepo**: Fast, incremental builds
-- **Shared Packages**: Reusable components and utilities
+- **Shared Packages**: Reusable components and utilities with unified interfaces
 - **TypeScript**: End-to-end type safety
 - **ESLint**: Consistent code quality
 - **Prettier**: Unified code formatting
@@ -179,9 +163,9 @@ bun.lockb found → bun
 Override automatic detection:
 
 ```bash
-architech create my-app --package-manager yarn
-architech create my-app --package-manager pnpm
-architech create my-app --package-manager bun
+architech new my-app --package-manager yarn
+architech new my-app --package-manager pnpm
+architech new my-app --package-manager bun
 ```
 
 ### Package Manager Comparison
@@ -235,7 +219,7 @@ architech plugins info shadcn-ui
 Create a simple prototype with minimal setup:
 
 ```bash
-architech create my-prototype --yes
+architech new my-prototype --yes
 cd my-prototype
 npm run dev
 ```
@@ -245,7 +229,7 @@ npm run dev
 Create a full-featured application:
 
 ```bash
-architech create my-production-app
+architech new my-production-app
 # Select all features during interactive setup
 ```
 
@@ -254,7 +238,7 @@ architech create my-production-app
 Create a scalable enterprise application:
 
 ```bash
-architech create my-enterprise --monorepo --yes
+architech new my-enterprise --project-type scalable-monorepo --yes
 cd my-enterprise
 npm install
 npm run dev
@@ -265,8 +249,8 @@ npm run dev
 Create a project optimized for team development:
 
 ```bash
-architech create team-project \
-  --template nextjs-14 \
+architech new team-project \
+  --project-type quick-prototype \
   --package-manager yarn \
   --yes
 ```
@@ -285,8 +269,16 @@ my-app/
 │   ├── components/
 │   │   └── ui/             # Shadcn/ui components
 │   ├── lib/
-│   │   ├── db/             # Database utilities
-│   │   ├── auth/           # Authentication helpers
+│   │   ├── db/             # Database utilities (unified interface)
+│   │   │   ├── index.ts    # Unified database interface
+│   │   │   ├── schema.ts   # Database schema
+│   │   │   └── migrations.ts # Migration utilities
+│   │   ├── auth/           # Authentication helpers (unified interface)
+│   │   │   ├── index.ts    # Unified auth interface
+│   │   │   └── config.ts   # Auth configuration
+│   │   ├── ui/             # UI components (unified interface)
+│   │   │   ├── index.ts    # Unified UI interface
+│   │   │   └── components.tsx # UI components
 │   │   └── utils.ts        # Utility functions
 │   └── types/              # TypeScript definitions
 ├── .github/
@@ -324,16 +316,20 @@ my-enterprise/
 │       ├── package.json
 │       └── next.config.js
 ├── packages/
-│   ├── ui/                # Shared UI components
-│   │   ├── src/
+│   ├── ui/                # Shared UI components (unified interface)
+│   │   ├── index.ts       # Unified UI interface
+│   │   ├── components.tsx # UI components
 │   │   ├── package.json
 │   │   └── tsconfig.json
-│   ├── db/                # Database schemas & utilities
-│   │   ├── src/
+│   ├── db/                # Database schemas & utilities (unified interface)
+│   │   ├── index.ts       # Unified database interface
+│   │   ├── schema.ts      # Database schema
+│   │   ├── migrations.ts  # Migration utilities
 │   │   ├── package.json
 │   │   └── drizzle.config.ts
-│   ├── auth/              # Authentication logic
-│   │   ├── src/
+│   ├── auth/              # Authentication logic (unified interface)
+│   │   ├── index.ts       # Unified auth interface
+│   │   ├── config.ts      # Auth configuration
 │   │   ├── package.json
 │   │   └── auth.config.ts
 │   ├── config/            # Shared configurations
@@ -495,6 +491,62 @@ railway variables set DATABASE_URL=...
 railway variables set NEXTAUTH_SECRET=...
 ```
 
+## Project Scaling
+
+### Scale Command
+
+Transform a single app project to a monorepo structure:
+
+```bash
+# Scale current directory
+architech scale
+
+# Scale specific project
+architech scale ./my-project
+```
+
+### Scaling Process
+
+The scale command:
+
+1. **Analyzes** the current project structure
+2. **Creates** monorepo directories (apps/, packages/)
+3. **Moves** source code to apps/web/
+4. **Extracts** shared code to packages/
+5. **Updates** configuration files
+6. **Generates** unified interface files
+
+### Before Scaling
+
+```
+my-app/
+├── src/
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   └── types/
+├── package.json
+└── next.config.js
+```
+
+### After Scaling
+
+```
+my-app/
+├── apps/
+│   └── web/
+│       ├── src/
+│       ├── package.json
+│       └── next.config.js
+├── packages/
+│   ├── ui/
+│   ├── db/
+│   ├── auth/
+│   └── config/
+├── turbo.json
+└── package.json
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -520,7 +572,7 @@ npm install
 **Solution**:
 ```bash
 # Try different package manager
-architech create my-app --package-manager npm
+architech new my-app --package-manager npm
 
 # Or install manually
 cd my-app
@@ -538,7 +590,7 @@ sudo chown -R $USER:$GROUP ~/.npm
 sudo chown -R $USER:$GROUP ~/.config
 
 # Or use npx
-npx the-architech create my-app
+npx the-architech new my-app
 ```
 
 #### 4. TypeScript Errors
@@ -552,6 +604,21 @@ npx tsc --version
 
 # Update TypeScript
 npm install -g typescript@latest
+```
+
+#### 5. Unified Interface File Issues
+
+**Problem**: Generated unified interface files not found
+
+**Solution**:
+```bash
+# Check if files were generated
+ls src/lib/auth/
+ls src/lib/ui/
+ls src/lib/db/
+
+# Regenerate if missing
+npm run build
 ```
 
 ### Getting Help
@@ -569,14 +636,16 @@ npm install -g typescript@latest
 3. **Use Prettier**: Ensure consistent formatting
 4. **Organize Components**: Keep components in logical folders
 5. **Use Environment Variables**: Never commit secrets
+6. **Use Unified Interfaces**: Import from generated unified interface files
 
 ### Development Workflow
 
-1. **Start with Interactive Mode**: Use `architech create` for best experience
+1. **Start with Interactive Mode**: Use `architech new` for best experience
 2. **Customize Gradually**: Start with defaults, customize as needed
 3. **Use Git Hooks**: Let Husky handle pre-commit quality checks
 4. **Test Regularly**: Run quality checks before committing
 5. **Update Dependencies**: Keep dependencies up to date
+6. **Scale When Needed**: Use `architech scale` to transform to monorepo
 
 ### Deployment
 
@@ -600,7 +669,7 @@ mkdir -p templates/my-template
 cp -r my-project/* templates/my-template/
 
 # Use custom template
-architech create my-app --template my-template
+architech new my-app --template my-template
 ```
 
 ### Plugin Development
@@ -609,12 +678,25 @@ Develop custom plugins:
 
 ```typescript
 // Create plugin
-class CustomPlugin implements Plugin {
-  name = 'custom-plugin';
-  version = '1.0.0';
+class CustomPlugin implements IPlugin {
+  getMetadata(): PluginMetadata {
+    return {
+      id: 'custom-plugin',
+      name: 'Custom Plugin',
+      version: '1.0.0',
+      description: 'My custom plugin',
+      author: 'Your Name',
+      category: PluginCategory.DATABASE,
+      tags: ['database', 'custom'],
+      license: 'MIT',
+      repository: 'https://github.com/your-org/custom-plugin',
+      homepage: 'https://custom-plugin.dev'
+    };
+  }
   
-  async setup(context: ProjectContext): Promise<void> {
+  async install(context: PluginContext): Promise<PluginResult> {
     // Implementation
+    await this.generateUnifiedInterfaceFiles(context);
   }
 }
 
@@ -654,8 +736,8 @@ If you have projects using the old agent structure:
 
 ### Version Compatibility
 
-| CLI Version | Node.js | Package Managers | Templates |
-|-------------|---------|------------------|-----------|
+| CLI Version | Node.js | Package Managers | Project Types |
+|-------------|---------|------------------|---------------|
 | 2.x | 16+ | All | All |
 | 1.x | 14+ | npm, yarn | Basic |
 

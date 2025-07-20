@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Architech CLI uses a modular plugin system that allows you to extend the functionality with custom technologies, frameworks, and tools. This guide will help you understand how to create, develop, and integrate plugins.
+The Architech CLI uses a modular plugin system that allows you to extend the functionality with custom technologies, frameworks, and tools. This guide will help you understand how to create, develop, and integrate plugins that generate unified interface files.
 
 ## Plugin Architecture
 
@@ -12,59 +12,70 @@ The Architech CLI uses a modular plugin system that allows you to extend the fun
 - **Plugin Registry**: Centralized management and dependency resolution
 - **Agent Integration**: Plugins are used by specialized agents
 - **Context Sharing**: Shared project context across all plugins
+- **Unified Interface Files**: Generated files that provide consistent APIs
+- **Structure Service**: Centralized path resolution for project structures
 
 ### Plugin Lifecycle
 
 1. **Registration**: Plugin is registered with the registry
 2. **Validation**: Compatibility and dependencies are checked
-3. **Setup**: Plugin is executed during project generation
-4. **Validation**: Plugin validates its implementation
-5. **Cleanup**: Optional cleanup after project generation
+3. **Installation**: Plugin is executed during project generation
+4. **File Generation**: Plugin generates unified interface files
+5. **Validation**: Plugin validates its implementation
+6. **Cleanup**: Optional cleanup after project generation
 
 ## Plugin Interface
 
 ### Basic Interface
 
-All plugins must implement the `Plugin` interface:
+All plugins must implement the `IPlugin` interface:
 
 ```typescript
-interface Plugin {
+interface IPlugin {
   // Metadata
-  name: string;
-  version: string;
-  description: string;
-  
-  // Dependencies and compatibility
-  dependencies: string[];
-  peerDependencies: string[];
-  conflicts: string[];
+  getMetadata(): PluginMetadata;
   
   // Core functionality
-  setup(context: ProjectContext): Promise<void>;
-  validate(context: ProjectContext): Promise<ValidationResult>;
+  install(context: PluginContext): Promise<PluginResult>;
+  validate(context: PluginContext): Promise<ValidationResult>;
   
   // Optional features
-  configure?(context: ProjectContext): Promise<void>;
-  cleanup?(context: ProjectContext): Promise<void>;
+  uninstall?(context: PluginContext): Promise<PluginResult>;
+  update?(context: PluginContext): Promise<PluginResult>;
 }
 ```
 
 ### Plugin Metadata
 
 ```typescript
-class MyPlugin implements Plugin {
-  name = 'my-plugin';
-  version = '1.0.0';
-  description = 'Description of what this plugin does';
-  
-  // Dependencies this plugin requires
-  dependencies = ['some-package', 'another-package'];
-  
-  // Dependencies that should be installed but not required
-  peerDependencies = ['optional-package'];
-  
-  // Plugins that conflict with this one
-  conflicts = ['conflicting-plugin'];
+interface PluginMetadata {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  author: string;
+  category: PluginCategory;
+  tags: string[];
+  license: string;
+  repository: string;
+  homepage: string;
+}
+
+class MyPlugin implements IPlugin {
+  getMetadata(): PluginMetadata {
+    return {
+      id: 'my-plugin',
+      name: 'My Plugin',
+      version: '1.0.0',
+      description: 'Description of what this plugin does',
+      author: 'Your Name',
+      category: PluginCategory.DATABASE,
+      tags: ['database', 'orm', 'typescript'],
+      license: 'MIT',
+      repository: 'https://github.com/your-org/my-plugin',
+      homepage: 'https://my-plugin.dev'
+    };
+  }
 }
 ```
 
@@ -73,52 +84,97 @@ class MyPlugin implements Plugin {
 ### 1. Basic Plugin Structure
 
 ```typescript
-import { Plugin, ProjectContext, ValidationResult } from '@the-architech/core';
+import { IPlugin, PluginContext, PluginResult, ValidationResult, PluginMetadata, PluginCategory } from '@the-architech/core';
+import { structureService } from '@the-architech/core';
 
-export class MyFirstPlugin implements Plugin {
-  name = 'my-first-plugin';
-  version = '1.0.0';
-  description = 'My first custom plugin';
-  dependencies = [];
-  peerDependencies = [];
-  conflicts = [];
+export class MyFirstPlugin implements IPlugin {
+  getMetadata(): PluginMetadata {
+    return {
+      id: 'my-first-plugin',
+      name: 'My First Plugin',
+      version: '1.0.0',
+      description: 'My first custom plugin',
+      author: 'Your Name',
+      category: PluginCategory.DATABASE,
+      tags: ['database', 'custom'],
+      license: 'MIT',
+      repository: 'https://github.com/your-org/my-first-plugin',
+      homepage: 'https://my-first-plugin.dev'
+    };
+  }
 
-  async setup(context: ProjectContext): Promise<void> {
-    const { logger, runner, rootPath } = context;
+  async install(context: PluginContext): Promise<PluginResult> {
+    const { logger, projectPath } = context;
     
     logger.info('Setting up MyFirstPlugin...');
     
     // Install dependencies
-    await runner.install(['my-package'], false, rootPath);
+    await this.installDependencies(context);
     
     // Create configuration file
     await this.createConfigFile(context);
     
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
+    
     logger.success('MyFirstPlugin setup complete!');
+    
+    return {
+      success: true,
+      artifacts: [
+        {
+          type: 'file',
+          path: path.join(projectPath, 'my-config.json')
+        }
+      ],
+      dependencies: [
+        {
+          name: 'my-package',
+          version: '^1.0.0',
+          type: 'production',
+          category: PluginCategory.DATABASE
+        }
+      ],
+      scripts: [],
+      configs: [],
+      errors: [],
+      warnings: [],
+      duration: 0
+    };
   }
 
-  async validate(context: ProjectContext): Promise<ValidationResult> {
-    const { rootPath } = context;
+  async validate(context: PluginContext): Promise<ValidationResult> {
+    const { projectPath } = context;
     
     // Check if required files exist
-    const configExists = await fs.exists(path.join(rootPath, 'my-config.json'));
+    const configExists = await fs.pathExists(path.join(projectPath, 'my-config.json'));
     
     if (!configExists) {
       return {
-        success: false,
-        errors: ['my-config.json not found']
+        valid: false,
+        errors: [{
+          field: 'config',
+          message: 'my-config.json not found',
+          code: 'CONFIG_NOT_FOUND',
+          severity: 'error'
+        }]
       };
     }
     
-    return { success: true };
+    return { valid: true, errors: [], warnings: [] };
   }
 
-  private async createConfigFile(context: ProjectContext): Promise<void> {
-    const { rootPath } = context;
-    const configPath = path.join(rootPath, 'my-config.json');
+  private async installDependencies(context: PluginContext): Promise<void> {
+    const { runner, projectPath } = context;
+    await runner.install(['my-package'], false, projectPath);
+  }
+
+  private async createConfigFile(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const configPath = path.join(projectPath, 'my-config.json');
     
     const config = {
-      name: context.name,
+      name: context.projectName,
       version: '1.0.0',
       settings: {
         enabled: true,
@@ -126,7 +182,82 @@ export class MyFirstPlugin implements Plugin {
       }
     };
     
-    await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+    await fs.writeJson(configPath, config, { spaces: 2 });
+  }
+
+  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const structure = context.projectStructure!;
+    
+    // Get the correct path for unified interface files
+    const unifiedPath = structureService.getUnifiedInterfacePath(projectPath, structure, 'my-module');
+    
+    await fs.ensureDir(unifiedPath);
+
+    // Create index.ts for the unified interface
+    const indexContent = `
+// My Plugin Unified Interface
+// This file provides a unified interface for my plugin functionality
+
+export const myModule = {
+  client: {
+    query: async (sql: string, params?: any[]) => {
+      // Implementation specific to my plugin
+      return await this.myClient.execute(sql, params);
+    },
+    insert: async (table: string, data: any) => {
+      return await this.myClient.insert(table, data);
+    },
+    update: async (table: string, where: any, data: any) => {
+      return await this.myClient.update(table, where, data);
+    },
+    delete: async (table: string, where: any) => {
+      return await this.myClient.delete(table, where);
+    }
+  },
+  
+  schema: {
+    // Define your schema here
+    users: { /* user table schema */ },
+    posts: { /* post table schema */ }
+  },
+  
+  migrations: {
+    generate: async (name: string) => {
+      // Generate migration
+      console.log('Generating migration:', name);
+    },
+    run: async () => {
+      // Run migrations
+      console.log('Running migrations');
+    },
+    reset: async () => {
+      // Reset database
+      console.log('Resetting database');
+    }
+  },
+  
+  connection: {
+    connect: async () => {
+      // Connect to database
+      console.log('Connected to database');
+    },
+    disconnect: async () => {
+      // Disconnect from database
+      console.log('Disconnected from database');
+    },
+    isConnected: () => true,
+    health: async () => ({
+      status: 'healthy',
+      latency: 10
+    })
+  }
+};
+
+export default myModule;
+`;
+    
+    await fs.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
   }
 }
 ```
@@ -144,14 +275,20 @@ registry.register(new MyFirstPlugin());
 ### 3. Use in an Agent
 
 ```typescript
-import { BaseAgent } from '@the-architech/core';
+import { AbstractAgent } from '@the-architech/core';
 
-export class CustomAgent extends BaseAgent {
-  async setup(context: ProjectContext): Promise<void> {
-    const plugin = this.registry.getPlugin('my-first-plugin');
+export class CustomAgent extends AbstractAgent {
+  async executeInternal(context: AgentContext): Promise<AgentResult> {
+    const plugin = this.pluginSystem.getRegistry().get('my-first-plugin');
     
     if (plugin) {
-      await plugin.setup(context);
+      const result = await plugin.install(context);
+      
+      // Validate the setup
+      const validation = await plugin.validate(context);
+      if (!validation.valid) {
+        throw new Error(`Plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      }
     }
   }
 }
@@ -166,23 +303,26 @@ Plugins can render templates for configuration files:
 ```typescript
 import { renderTemplate } from '@the-architech/core';
 
-export class ConfigPlugin implements Plugin {
+export class ConfigPlugin implements IPlugin {
   // ... metadata
 
-  async setup(context: ProjectContext): Promise<void> {
-    const { rootPath } = context;
+  async install(context: PluginContext): Promise<PluginResult> {
+    const { projectPath } = context;
     
     // Render template with context
     const configContent = await renderTemplate('config-template.json', {
-      projectName: context.name,
+      projectName: context.projectName,
       version: context.config.version,
       features: context.options.features
     });
     
     await fs.writeFile(
-      path.join(rootPath, 'config.json'),
+      path.join(projectPath, 'config.json'),
       configContent
     );
+    
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
   }
 }
 ```
@@ -192,25 +332,26 @@ export class ConfigPlugin implements Plugin {
 Handle package installation and configuration:
 
 ```typescript
-export class PackagePlugin implements Plugin {
-  dependencies = ['my-package@^2.0.0'];
-  
-  async setup(context: ProjectContext): Promise<void> {
-    const { runner, rootPath, logger } = context;
+export class PackagePlugin implements IPlugin {
+  async install(context: PluginContext): Promise<PluginResult> {
+    const { runner, projectPath, logger } = context;
     
     // Install dependencies
     logger.info('Installing packages...');
-    await runner.install(this.dependencies, false, rootPath);
+    await runner.install(['my-package@^2.0.0'], false, projectPath);
     
     // Update package.json scripts
     await this.updatePackageScripts(context);
+    
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
   }
   
-  private async updatePackageScripts(context: ProjectContext): Promise<void> {
-    const { rootPath } = context;
-    const packagePath = path.join(rootPath, 'package.json');
+  private async updatePackageScripts(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const packagePath = path.join(projectPath, 'package.json');
     
-    const pkg = JSON.parse(await fs.readFile(packagePath, 'utf-8'));
+    const pkg = await fs.readJson(packagePath);
     
     pkg.scripts = {
       ...pkg.scripts,
@@ -218,7 +359,7 @@ export class PackagePlugin implements Plugin {
       'my-build': 'my-package build'
     };
     
-    await fs.writeFile(packagePath, JSON.stringify(pkg, null, 2));
+    await fs.writeJson(packagePath, pkg, { spaces: 2 });
   }
 }
 ```
@@ -228,9 +369,9 @@ export class PackagePlugin implements Plugin {
 Handle complex file operations:
 
 ```typescript
-export class FileSystemPlugin implements Plugin {
-  async setup(context: ProjectContext): Promise<void> {
-    const { rootPath, srcPath } = context;
+export class FileSystemPlugin implements IPlugin {
+  async install(context: PluginContext): Promise<PluginResult> {
+    const { projectPath } = context;
     
     // Create directory structure
     await this.createDirectories(context);
@@ -240,32 +381,42 @@ export class FileSystemPlugin implements Plugin {
     
     // Generate dynamic files
     await this.generateFiles(context);
+    
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
   }
   
-  private async createDirectories(context: ProjectContext): Promise<void> {
-    const { srcPath } = context;
+  private async createDirectories(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const structure = context.projectStructure!;
+    
+    // Use structure service to get correct paths
+    const paths = structureService.getPaths(projectPath, structure);
+    
     const dirs = [
-      path.join(srcPath, 'components', 'my-components'),
-      path.join(srcPath, 'lib', 'my-utils'),
-      path.join(srcPath, 'types', 'my-types')
+      path.join(paths.components, 'my-components'),
+      path.join(paths.lib, 'my-utils'),
+      path.join(paths.types, 'my-types')
     ];
     
     for (const dir of dirs) {
-      await fs.mkdir(dir, { recursive: true });
+      await fs.ensureDir(dir);
     }
   }
   
-  private async copyTemplates(context: ProjectContext): Promise<void> {
-    const { rootPath, srcPath } = context;
+  private async copyTemplates(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const structure = context.projectStructure!;
+    const paths = structureService.getPaths(projectPath, structure);
     
     const templates = [
-      { from: 'templates/component.tsx', to: path.join(srcPath, 'components', 'MyComponent.tsx') },
-      { from: 'templates/util.ts', to: path.join(srcPath, 'lib', 'my-util.ts') }
+      { from: 'templates/component.tsx', to: path.join(paths.components, 'MyComponent.tsx') },
+      { from: 'templates/util.ts', to: path.join(paths.lib, 'my-util.ts') }
     ];
     
     for (const template of templates) {
       const content = await fs.readFile(template.from, 'utf-8');
-      const rendered = content.replace(/\{\{projectName\}\}/g, context.name);
+      const rendered = content.replace(/\{\{projectName\}\}/g, context.projectName);
       await fs.writeFile(template.to, rendered);
     }
   }
@@ -277,20 +428,21 @@ export class FileSystemPlugin implements Plugin {
 Handle complex configuration scenarios:
 
 ```typescript
-export class ConfigPlugin implements Plugin {
-  async setup(context: ProjectContext): Promise<void> {
+export class ConfigPlugin implements IPlugin {
+  async install(context: PluginContext): Promise<PluginResult> {
     await this.createMainConfig(context);
     await this.createEnvironmentConfig(context);
     await this.updateExistingConfigs(context);
+    await this.generateUnifiedInterfaceFiles(context);
   }
   
-  private async createMainConfig(context: ProjectContext): Promise<void> {
-    const { rootPath } = context;
-    const configPath = path.join(rootPath, 'my-config.js');
+  private async createMainConfig(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const configPath = path.join(projectPath, 'my-config.js');
     
     const config = `
 module.exports = {
-  name: '${context.name}',
+  name: '${context.projectName}',
   version: '${context.config.version}',
   features: ${JSON.stringify(context.options.features)},
   development: {
@@ -307,9 +459,9 @@ module.exports = {
     await fs.writeFile(configPath, config);
   }
   
-  private async createEnvironmentConfig(context: ProjectContext): Promise<void> {
-    const { rootPath } = context;
-    const envPath = path.join(rootPath, '.env.example');
+  private async createEnvironmentConfig(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const envPath = path.join(projectPath, '.env.example');
     
     const envVars = `
 # My Plugin Configuration
@@ -330,11 +482,23 @@ MY_PLUGIN_DEBUG=false
 Plugins for UI frameworks and component libraries:
 
 ```typescript
-export class UIComponentPlugin implements Plugin {
-  name = 'ui-component-library';
-  dependencies = ['@ui-library/core', '@ui-library/components'];
+export class UIComponentPlugin implements IPlugin {
+  getMetadata(): PluginMetadata {
+    return {
+      id: 'ui-component-library',
+      name: 'UI Component Library',
+      version: '1.0.0',
+      description: 'UI component library plugin',
+      author: 'Your Name',
+      category: PluginCategory.UI,
+      tags: ['ui', 'components', 'react'],
+      license: 'MIT',
+      repository: 'https://github.com/your-org/ui-component-library',
+      homepage: 'https://ui-component-library.dev'
+    };
+  }
   
-  async setup(context: ProjectContext): Promise<void> {
+  async install(context: PluginContext): Promise<PluginResult> {
     // Install UI library
     await this.installLibrary(context);
     
@@ -346,11 +510,14 @@ export class UIComponentPlugin implements Plugin {
     
     // Create example components
     await this.createExamples(context);
+    
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
   }
   
-  private async createComponentConfig(context: ProjectContext): Promise<void> {
-    const { rootPath } = context;
-    const configPath = path.join(rootPath, 'ui.config.js');
+  private async createComponentConfig(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const configPath = path.join(projectPath, 'ui.config.js');
     
     const config = `
 module.exports = {
@@ -370,6 +537,51 @@ module.exports = {
     
     await fs.writeFile(configPath, config);
   }
+  
+  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const structure = context.projectStructure!;
+    const unifiedPath = structureService.getUnifiedInterfacePath(projectPath, structure, 'ui');
+    
+    await fs.ensureDir(unifiedPath);
+
+    // Create index.ts for the unified interface
+    const indexContent = `
+// UI Component Library Unified Interface
+// This file provides a unified interface for UI components
+
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Modal } from '../components/ui/modal';
+
+export const ui = {
+  components: {
+    Button,
+    Input,
+    Modal,
+  },
+  theme: {
+    colors: {
+      primary: '#007bff',
+      secondary: '#6c757d'
+    },
+    useTheme: () => {
+      // Theme hook implementation
+      return { colors: { primary: '#007bff', secondary: '#6c757d' } };
+    }
+  },
+  utils: {
+    cn: (...classes: (string | undefined | null | false)[]) => {
+      return classes.filter(Boolean).join(' ');
+    },
+  },
+};
+
+export default ui;
+`;
+    
+    await fs.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
+  }
 }
 ```
 
@@ -378,11 +590,23 @@ module.exports = {
 Plugins for database ORMs and configurations:
 
 ```typescript
-export class DatabasePlugin implements Plugin {
-  name = 'database-orm';
-  dependencies = ['@orm/core', '@orm/cli'];
+export class DatabasePlugin implements IPlugin {
+  getMetadata(): PluginMetadata {
+    return {
+      id: 'database-orm',
+      name: 'Database ORM',
+      version: '1.0.0',
+      description: 'Database ORM plugin',
+      author: 'Your Name',
+      category: PluginCategory.DATABASE,
+      tags: ['database', 'orm', 'sql'],
+      license: 'MIT',
+      repository: 'https://github.com/your-org/database-orm',
+      homepage: 'https://database-orm.dev'
+    };
+  }
   
-  async setup(context: ProjectContext): Promise<void> {
+  async install(context: PluginContext): Promise<PluginResult> {
     // Install ORM
     await this.installORM(context);
     
@@ -394,11 +618,14 @@ export class DatabasePlugin implements Plugin {
     
     // Set up migrations
     await this.setupMigrations(context);
+    
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
   }
   
-  private async createDatabaseConfig(context: ProjectContext): Promise<void> {
-    const { rootPath } = context;
-    const configPath = path.join(rootPath, 'database.config.js');
+  private async createDatabaseConfig(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const configPath = path.join(projectPath, 'database.config.js');
     
     const config = `
 module.exports = {
@@ -406,7 +633,7 @@ module.exports = {
   connection: {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || '${context.name}',
+    database: process.env.DB_NAME || '${context.projectName}',
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || ''
   },
@@ -421,6 +648,78 @@ module.exports = {
     
     await fs.writeFile(configPath, config);
   }
+  
+  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<PluginResult> {
+    const { projectPath } = context;
+    const structure = context.projectStructure!;
+    const unifiedPath = structureService.getUnifiedInterfacePath(projectPath, structure, 'db');
+    
+    await fs.ensureDir(unifiedPath);
+
+    // Create index.ts for the unified interface
+    const indexContent = `
+// Database ORM Unified Interface
+// This file provides a unified interface for database operations
+
+export const db = {
+  client: {
+    query: async (sql: string, params?: any[]) => {
+      // ORM-specific implementation
+      return await this.ormClient.execute(sql, params);
+    },
+    insert: async (table: string, data: any) => {
+      return await this.ormClient.insert(table, data);
+    },
+    update: async (table: string, where: any, data: any) => {
+      return await this.ormClient.update(table, where, data);
+    },
+    delete: async (table: string, where: any) => {
+      return await this.ormClient.delete(table, where);
+    }
+  },
+  
+  schema: {
+    users: { /* user table schema */ },
+    posts: { /* post table schema */ }
+  },
+  
+  migrations: {
+    generate: async (name: string) => {
+      // Generate migration
+      console.log('Generating migration:', name);
+    },
+    run: async () => {
+      // Run migrations
+      console.log('Running migrations');
+    },
+    reset: async () => {
+      // Reset database
+      console.log('Resetting database');
+    }
+  },
+  
+  connection: {
+    connect: async () => {
+      // Connect to database
+      console.log('Connected to database');
+    },
+    disconnect: async () => {
+      // Disconnect from database
+      console.log('Disconnected from database');
+    },
+    isConnected: () => true,
+    health: async () => ({
+      status: 'healthy',
+      latency: 10
+    })
+  }
+};
+
+export default db;
+`;
+    
+    await fs.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
+  }
 }
 ```
 
@@ -429,11 +728,23 @@ module.exports = {
 Plugins for authentication systems:
 
 ```typescript
-export class AuthPlugin implements Plugin {
-  name = 'auth-system';
-  dependencies = ['@auth/core', '@auth/providers'];
+export class AuthPlugin implements IPlugin {
+  getMetadata(): PluginMetadata {
+    return {
+      id: 'auth-system',
+      name: 'Authentication System',
+      version: '1.0.0',
+      description: 'Authentication system plugin',
+      author: 'Your Name',
+      category: PluginCategory.AUTH,
+      tags: ['auth', 'authentication', 'security'],
+      license: 'MIT',
+      repository: 'https://github.com/your-org/auth-system',
+      homepage: 'https://auth-system.dev'
+    };
+  }
   
-  async setup(context: ProjectContext): Promise<void> {
+  async install(context: PluginContext): Promise<PluginResult> {
     // Install auth library
     await this.installAuth(context);
     
@@ -445,11 +756,14 @@ export class AuthPlugin implements Plugin {
     
     // Create auth utilities
     await this.createAuthUtils(context);
+    
+    // Generate unified interface files
+    await this.generateUnifiedInterfaceFiles(context);
   }
   
-  private async createAuthConfig(context: ProjectContext): Promise<void> {
-    const { rootPath } = context;
-    const configPath = path.join(rootPath, 'auth.config.js');
+  private async createAuthConfig(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const configPath = path.join(projectPath, 'auth.config.js');
     
     const config = `
 module.exports = {
@@ -478,6 +792,73 @@ module.exports = {
     
     await fs.writeFile(configPath, config);
   }
+  
+  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const structure = context.projectStructure!;
+    const unifiedPath = structureService.getUnifiedInterfacePath(projectPath, structure, 'auth');
+    
+    await fs.ensureDir(unifiedPath);
+
+    // Create index.ts for the unified interface
+    const indexContent = `
+// Authentication System Unified Interface
+// This file provides a unified interface for authentication
+
+export const auth = {
+  client: {
+    signIn: async (provider: string, options?: any) => {
+      // Auth-specific implementation
+      return await this.authClient.signIn(provider, options);
+    },
+    signOut: async (options?: any) => {
+      return await this.authClient.signOut(options);
+    },
+    getSession: async () => {
+      return await this.authClient.getSession();
+    },
+    getUser: async () => {
+      return await this.authClient.getUser();
+    },
+    isAuthenticated: async () => {
+      return await this.authClient.isAuthenticated();
+    }
+  },
+  
+  server: {
+    auth: async (req: Request, res: Response) => {
+      return await this.authServer.auth(req, res);
+    },
+    protect: (handler: Function) => {
+      return this.authServer.protect(handler);
+    }
+  },
+  
+  components: {
+    LoginButton: (props: any) => {
+      // Login button component
+      return <button {...props}>Sign In</button>;
+    },
+    AuthForm: (props: any) => {
+      // Auth form component
+      return <form {...props}>Auth Form</form>;
+    },
+    UserProfile: (props: any) => {
+      // User profile component
+      return <div {...props}>User Profile</div>;
+    },
+    AuthGuard: (props: any) => {
+      // Auth guard component
+      return <div {...props}>Auth Guard</div>;
+    }
+  }
+};
+
+export default auth;
+`;
+    
+    await fs.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
+  }
 }
 ```
 
@@ -492,7 +873,7 @@ import { createMockContext } from '@the-architech/testing';
 
 describe('MyPlugin', () => {
   let plugin: MyPlugin;
-  let context: ProjectContext;
+  let context: PluginContext;
   
   beforeEach(() => {
     plugin = new MyPlugin();
@@ -500,22 +881,40 @@ describe('MyPlugin', () => {
   });
   
   it('should setup correctly', async () => {
-    await plugin.setup(context);
+    const result = await plugin.install(context);
     
+    expect(result.success).toBe(true);
     // Verify files were created
-    expect(await fs.exists(path.join(context.rootPath, 'my-config.json'))).toBe(true);
+    expect(await fs.pathExists(path.join(context.projectPath, 'my-config.json'))).toBe(true);
   });
   
   it('should validate correctly', async () => {
     const result = await plugin.validate(context);
-    expect(result.success).toBe(true);
+    expect(result.valid).toBe(true);
+  });
+  
+  it('should generate unified interface files', async () => {
+    await plugin.install(context);
+    
+    const structure = context.projectStructure!;
+    const unifiedPath = structureService.getUnifiedInterfacePath(
+      context.projectPath, 
+      structure, 
+      'my-module'
+    );
+    
+    expect(await fs.pathExists(path.join(unifiedPath, 'index.ts'))).toBe(true);
   });
   
   it('should handle missing dependencies', async () => {
     // Test error handling
     const result = await plugin.validate(createMockContext({ missingFiles: true }));
-    expect(result.success).toBe(false);
-    expect(result.errors).toContain('Required file not found');
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        message: 'my-config.json not found'
+      })
+    );
   });
 });
 ```
@@ -534,7 +933,7 @@ describe('Plugin Integration', () => {
     
     registry.register(plugin);
     
-    const retrieved = registry.getPlugin('my-plugin');
+    const retrieved = registry.get('my-plugin');
     expect(retrieved).toBe(plugin);
   });
   
@@ -557,10 +956,12 @@ describe('Plugin Integration', () => {
 - **Dependency Management**: Clearly define dependencies and conflicts
 - **Error Handling**: Implement proper error handling and validation
 - **Documentation**: Document your plugin's purpose and usage
+- **Unified Interface Generation**: Always generate unified interface files
 
 ### 2. File Operations
 
 - **Path Safety**: Use `path.join()` for cross-platform compatibility
+- **Structure Service**: Use the structure service for path resolution
 - **Async Operations**: Use async/await for file operations
 - **Error Recovery**: Implement rollback mechanisms for failed operations
 - **File Permissions**: Handle file permission issues gracefully
@@ -572,14 +973,22 @@ describe('Plugin Integration', () => {
 - **Validation**: Validate configuration values
 - **Documentation**: Document all configuration options
 
-### 4. Performance
+### 4. Unified Interface Files
+
+- **Consistent API**: Provide consistent API across all technologies
+- **TypeScript Types**: Include proper TypeScript types
+- **Escape Hatches**: Add escape hatches for advanced use cases
+- **Documentation**: Document the unified interface API
+- **Testing**: Test the generated unified interface files
+
+### 5. Performance
 
 - **Minimal Operations**: Minimize file system operations
 - **Caching**: Cache expensive operations when possible
 - **Parallelization**: Execute independent operations in parallel
 - **Cleanup**: Clean up temporary files and resources
 
-### 5. Security
+### 6. Security
 
 - **Input Validation**: Validate all inputs and configuration
 - **Path Traversal**: Prevent path traversal attacks
@@ -670,6 +1079,7 @@ To contribute a plugin to the community:
 - **Compatibility**: Ensure compatibility with current CLI versions
 - **Security**: Follow security best practices
 - **Performance**: Optimize for performance and efficiency
+- **Unified Interfaces**: Generate proper unified interface files
 
 ## Troubleshooting
 
@@ -684,8 +1094,8 @@ To contribute a plugin to the community:
 // Ensure plugin is registered
 registry.register(new MyPlugin());
 
-// Check plugin name
-console.log(plugin.name); // Should match what you're looking for
+// Check plugin ID
+console.log(plugin.getMetadata().id); // Should match what you're looking for
 ```
 
 #### 2. Dependency Conflicts
@@ -695,23 +1105,28 @@ console.log(plugin.name); // Should match what you're looking for
 **Solution**:
 ```typescript
 // Check conflicts
-console.log(plugin.conflicts);
+console.log(plugin.getMetadata().conflicts);
 
 // Resolve manually
 const plugins = registry.resolveDependencies(['my-plugin']);
 ```
 
-#### 3. Template Rendering Errors
+#### 3. Unified Interface File Generation Errors
 
-**Problem**: Templates not rendering correctly
+**Problem**: Unified interface files not generating correctly
 
 **Solution**:
 ```typescript
-// Check template path
-const templatePath = path.join(__dirname, 'templates', 'template.ejs');
+// Check structure service path
+const unifiedPath = structureService.getUnifiedInterfacePath(
+  context.projectPath, 
+  context.projectStructure!, 
+  'my-module'
+);
 
 // Validate context
 console.log('Context:', context);
+console.log('Structure:', context.projectStructure);
 ```
 
 #### 4. File Permission Errors
@@ -721,10 +1136,10 @@ console.log('Context:', context);
 **Solution**:
 ```typescript
 // Check directory permissions
-await fs.access(rootPath, fs.constants.W_OK);
+await fs.access(projectPath, fs.constants.W_OK);
 
 // Create directories with proper permissions
-await fs.mkdir(dir, { recursive: true, mode: 0o755 });
+await fs.ensureDir(dir, { mode: 0o755 });
 ```
 
 ### Getting Help
@@ -743,6 +1158,7 @@ Remember to:
 - Start simple and iterate
 - Test thoroughly
 - Document your work
+- Generate unified interface files
 - Contribute back to the community
 - Keep security and performance in mind
 

@@ -68,11 +68,11 @@ export class DrizzlePlugin implements IPlugin {
       // Step 3: Create database schema and connection
       await this.createDatabaseFiles(context);
 
-      // Step 4: Generate initial migration
-      await this.generateInitialMigration(context);
-
-      // Step 5: Generate unified interface files
+      // Step 4: Generate unified interface files (must be before migration)
       await this.generateUnifiedInterfaceFiles(context);
+
+      // Step 5: Generate initial migration (after files exist)
+      await this.generateInitialMigration(context);
 
       const duration = Date.now() - startTime;
 
@@ -447,19 +447,29 @@ export class DrizzlePlugin implements IPlugin {
     const structure = context.projectStructure!;
     const unifiedPath = structureService.getUnifiedInterfacePath(projectPath, structure, 'db');
 
+    context.logger.info(`Generating unified interface files in: ${unifiedPath}`);
+    context.logger.info(`Project structure: ${structure.isMonorepo ? 'monorepo' : 'single-app'}`);
+
     await fsExtra.ensureDir(unifiedPath);
+    context.logger.info(`Created directory: ${unifiedPath}`);
 
     // Create index.ts
     const indexContent = this.generateUnifiedIndex();
-    await fsExtra.writeFile(path.join(unifiedPath, 'index.ts'), indexContent);
+    const indexPath = path.join(unifiedPath, 'index.ts');
+    await fsExtra.writeFile(indexPath, indexContent);
+    context.logger.info(`Created index.ts: ${indexPath}`);
 
     // Create schema.ts
     const schemaContent = this.generateDatabaseSchema();
-    await fsExtra.writeFile(path.join(unifiedPath, 'schema.ts'), schemaContent);
+    const schemaPath = path.join(unifiedPath, 'schema.ts');
+    await fsExtra.writeFile(schemaPath, schemaContent);
+    context.logger.info(`Created schema.ts: ${schemaPath}`);
 
     // Create migrations.ts
     const migrationsContent = this.generateMigrationUtils();
-    await fsExtra.writeFile(path.join(unifiedPath, 'migrations.ts'), migrationsContent);
+    const migrationsPath = path.join(unifiedPath, 'migrations.ts');
+    await fsExtra.writeFile(migrationsPath, migrationsContent);
+    context.logger.info(`Created migrations.ts: ${migrationsPath}`);
   }
 
   private generateDrizzleConfig(config: Record<string, any>): string {

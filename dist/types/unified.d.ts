@@ -524,28 +524,6 @@ export interface ConnectionHealth {
     latency?: number;
     error?: string;
 }
-export interface UnifiedInterfaceRegistry {
-    auth: Map<string, UnifiedAuth>;
-    ui: Map<string, UnifiedUI>;
-    database: Map<string, UnifiedDatabase>;
-    deployment: Map<string, UnifiedDeployment>;
-    testing: Map<string, UnifiedTesting>;
-    email: Map<string, UnifiedEmail>;
-    monitoring: Map<string, UnifiedMonitoring>;
-    register: <T extends keyof UnifiedInterfaceRegistry>(category: T, name: string, implementation: UnifiedInterfaceRegistry[T] extends Map<string, infer U> ? U : never) => void;
-    get: <T extends keyof UnifiedInterfaceRegistry>(category: T, name: string) => UnifiedInterfaceRegistry[T] extends Map<string, infer U> ? U | undefined : never;
-    list: <T extends keyof UnifiedInterfaceRegistry>(category: T) => string[];
-    has: <T extends keyof UnifiedInterfaceRegistry>(category: T, name: string) => boolean;
-}
-export interface AdapterFactory {
-    createAuthAdapter: (pluginName: string) => Promise<UnifiedAuth>;
-    createUIAdapter: (pluginName: string) => Promise<UnifiedUI>;
-    createDatabaseAdapter: (pluginName: string) => Promise<UnifiedDatabase>;
-    createDeploymentAdapter: (pluginName: string) => Promise<UnifiedDeployment>;
-    createTestingAdapter: (pluginName: string) => Promise<UnifiedTesting>;
-    createEmailAdapter: (pluginName: string) => Promise<UnifiedEmail>;
-    createMonitoringAdapter: (pluginName: string) => Promise<UnifiedMonitoring>;
-}
 export interface UnifiedDeployment {
     deploy: (options?: DeployOptions) => Promise<DeployResult>;
     build: (options?: BuildOptions) => Promise<BuildResult>;
