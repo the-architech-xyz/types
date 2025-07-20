@@ -295,6 +295,14 @@ This is a monorepo built with Turborepo.
 npm install
 npm run dev
 \`\`\`
+
+## Available Scripts
+
+- \`dev\` - Start development server
+- \`build\` - Build all packages and apps
+- \`lint\` - Lint all packages and apps
+- \`type-check\` - Type check all packages and apps
+- \`clean\` - Clean all build artifacts
 `;
     
     await fsExtra.writeFile(path.join(projectPath, 'README.md'), readme);

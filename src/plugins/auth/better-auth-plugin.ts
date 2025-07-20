@@ -392,36 +392,6 @@ export class BetterAuthPlugin implements IPlugin {
     context.logger.info('Installing Better Auth dependencies...');
     await this.runner.install(dependencies, false, projectPath);
     await this.runner.install(devDependencies, true, projectPath);
-    
-    // Update package.json with the installed dependencies
-    await this.updatePackageJson(context);
-  }
-
-  private async updatePackageJson(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    const packageJsonPath = path.join(projectPath, 'package.json');
-    
-    if (await fsExtra.pathExists(packageJsonPath)) {
-      const packageJson = await fsExtra.readJSON(packageJsonPath);
-      
-      // Add dependencies if they don't exist
-      packageJson.dependencies = {
-        ...packageJson.dependencies,
-        'better-auth': '^1.3.0',
-        '@better-auth/utils': '^0.2.6',
-        'bcryptjs': '^2.4.3',
-        'jsonwebtoken': '^9.0.2'
-      };
-      
-      // Add devDependencies if they don't exist
-      packageJson.devDependencies = {
-        ...packageJson.devDependencies,
-        '@better-auth/cli': '^1.3.0'
-      };
-      
-      await fsExtra.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
-      context.logger.info('Updated package.json with Better Auth dependencies');
-    }
   }
 
   private async initializeBetterAuth(context: PluginContext): Promise<void> {
@@ -457,179 +427,67 @@ export class BetterAuthPlugin implements IPlugin {
   }
 
   private async createBetterAuthFilesManually(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
+    const { projectPath, pluginConfig, projectName } = context;
     
     context.logger.info('Creating Better Auth files manually...');
     
+    // Create package.json for auth package
+    const packageJson = {
+      name: `@${projectName}/auth`,
+      version: "0.1.0",
+      private: true,
+      main: "./index.ts",
+      types: "./index.ts",
+      scripts: {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "lint": "eslint . --ext .ts,.tsx"
+      },
+      dependencies: {
+        "better-auth": "^1.3.0",
+        "@better-auth/utils": "^0.2.6",
+        "bcryptjs": "^2.4.3",
+        "jsonwebtoken": "^9.0.2"
+      },
+      devDependencies: {
+        "@better-auth/cli": "^1.3.0",
+        "typescript": "^5.0.0"
+      }
+    };
+    
+    await fsExtra.writeJSON(path.join(projectPath, 'package.json'), packageJson, { spaces: 2 });
+    
     // Create the main auth configuration file
     const authConfig = this.generateAuthConfig(pluginConfig);
-    const authPath = path.join(projectPath, 'src', 'auth.ts');
-    await fsExtra.ensureDir(path.dirname(authPath));
+    const authPath = path.join(projectPath, 'index.ts');
     await fsExtra.writeFile(authPath, authConfig);
-    
-    // Create the auth.config.ts file
-    const authConfigContent = `import { BetterAuth } from "better-auth";
-import { DrizzleAdapter } from "better-auth/adapters/drizzle-adapter";
-import { db } from "../../db";
-import { users, sessions, accounts, verificationTokens } from "../../db/schema";
-
-export default BetterAuth({
-  adapter: DrizzleAdapter(db, {
-    users,
-    sessions,
-    accounts,
-    verificationTokens,
-  }),
-  providers: [
-    // Configure your providers here
-  ],
-  session: {
-    strategy: "jwt",
-    maxAge: ${pluginConfig.sessionDuration || 604800},
-  },
-  callbacks: {
-    async session({ session, token }) {
-      return session;
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-  },
-});
-`;
-    
-    const authConfigPath = path.join(projectPath, 'src', 'auth.config.ts');
-    await fsExtra.writeFile(authConfigPath, authConfigContent);
     
     // Create components directory and basic auth components
     const componentsPath = path.join(projectPath, 'src', 'components');
     await fsExtra.ensureDir(componentsPath);
     
-    // Create LoginButton component
-    const loginButtonContent = `import React from 'react';
-import { signIn, signOut } from '../auth';
+    // Create basic auth components
+    const loginButtonContent = `import { signIn, signOut, useSession } from 'better-auth/react';
 
-interface LoginButtonProps {
-  provider?: string;
-  children?: React.ReactNode;
-  className?: string;
-}
+export function LoginButton() {
+  const { data: session } = useSession();
 
-export const LoginButton: React.FC<LoginButtonProps> = ({ 
-  provider = 'github', 
-  children = 'Sign In',
-  className = ''
-}) => {
+  if (session) {
+    return (
+      <button onClick={() => signOut()}>
+        Sign Out
+      </button>
+    );
+  }
+
   return (
-    <button
-      onClick={() => signIn(provider)}
-      className={\`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors \${className}\`}
-    >
-      {children}
+    <button onClick={() => signIn()}>
+      Sign In
     </button>
   );
-};
-
-export const LogoutButton: React.FC<{ className?: string }> = ({ 
-  className = '' 
-}) => {
-  return (
-    <button
-      onClick={() => signOut()}
-      className={\`px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors \${className}\`}
-    >
-      Sign Out
-    </button>
-  );
-};
-`;
+}`;
     
     await fsExtra.writeFile(path.join(componentsPath, 'LoginButton.tsx'), loginButtonContent);
-    
-    // Create AuthForm component
-    const authFormContent = `import React, { useState } from 'react';
-import { signIn } from '../auth';
-
-interface AuthFormProps {
-  className?: string;
-}
-
-export const AuthForm: React.FC<AuthFormProps> = ({ className = '' }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await signIn('credentials', { email, password });
-    } catch (error) {
-      console.error('Authentication error:', error);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className={\`space-y-4 \${className}\`}>
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          Email
-        </label>
-        <input
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          required
-        />
-      </div>
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          Password
-        </label>
-        <input
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          required
-        />
-      </div>
-      <button
-        type="submit"
-        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      >
-        Sign In
-      </button>
-    </form>
-  );
-};
-`;
-    
-    await fsExtra.writeFile(path.join(componentsPath, 'AuthForm.tsx'), authFormContent);
-    
-    // Create components index file
-    const componentsIndexContent = `export { LoginButton, LogoutButton } from './LoginButton';
-export { AuthForm } from './AuthForm';
-`;
-    
-    await fsExtra.writeFile(path.join(componentsPath, 'index.ts'), componentsIndexContent);
-    
-    // Create main package index file
-    const packageIndexContent = `// Export auth configuration
-export { auth, handlers, signIn, signOut, auth: getAuth } from './auth';
-
-// Export auth components
-export * from './components';
-
-// Export types
-export type { Session, User } from 'better-auth';
-`;
-    
-    await fsExtra.writeFile(path.join(projectPath, 'src', 'index.ts'), packageIndexContent);
     
     context.logger.success('Better Auth files created manually');
   }
@@ -746,8 +604,8 @@ export const { handlers, signIn, signOut, auth: getAuth } = auth;
   private generateAuthConfig(config: Record<string, any>): string {
     return `import { BetterAuth } from "better-auth";
 import { DrizzleAdapter } from "better-auth/adapters/drizzle-adapter";
-import { db } from "../../db";
-import { users, sessions, accounts, verificationTokens } from "../../db/schema";
+import { db } from "../db";
+import { users, sessions, accounts, verificationTokens } from "../db/schema";
 
 export const auth = new BetterAuth({
   adapter: DrizzleAdapter(db, {

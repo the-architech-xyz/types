@@ -368,35 +368,6 @@ export class DrizzlePlugin implements IPlugin {
     context.logger.info('Installing Drizzle ORM dependencies...');
     await this.runner.install(dependencies, false, projectPath);
     await this.runner.install(devDependencies, true, projectPath);
-    
-    // Update package.json with the installed dependencies
-    await this.updatePackageJson(context);
-  }
-
-  private async updatePackageJson(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    const packageJsonPath = path.join(projectPath, 'package.json');
-    
-    if (await fsExtra.pathExists(packageJsonPath)) {
-      const packageJson = await fsExtra.readJSON(packageJsonPath);
-      
-      // Add dependencies if they don't exist
-      packageJson.dependencies = {
-        ...packageJson.dependencies,
-        'drizzle-orm': '^0.44.3',
-        '@neondatabase/serverless': '^1.0.1',
-        'postgres': '^3.4.0'
-      };
-      
-      // Add devDependencies if they don't exist
-      packageJson.devDependencies = {
-        ...packageJson.devDependencies,
-        'drizzle-kit': '^0.31.4'
-      };
-      
-      await fsExtra.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
-      context.logger.info('Updated package.json with Drizzle dependencies');
-    }
   }
 
   private async initializeDrizzleKit(context: PluginContext): Promise<void> {
@@ -449,18 +420,57 @@ export default {
   }
 
   private generateDatabaseSchema(): string {
-    return `import { pgTable, serial, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+    return `import { pgTable, serial, text, timestamp, boolean, varchar, index } from 'drizzle-orm/pg-core';
 
-// Example user table
+// Better Auth required tables
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
   name: text('name'),
+  emailVerified: timestamp('email_verified'),
+  image: text('image'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-// Example posts table
+export const accounts = pgTable('accounts', {
+  id: serial('id').primaryKey(),
+  userId: serial('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 255 }).notNull(),
+  provider: varchar('provider', { length: 255 }).notNull(),
+  providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
+  refresh_token: text('refresh_token'),
+  access_token: text('access_token'),
+  expires_at: timestamp('expires_at'),
+  token_type: varchar('token_type', { length: 255 }),
+  scope: varchar('scope', { length: 255 }),
+  id_token: text('id_token'),
+  session_state: varchar('session_state', { length: 255 }),
+}, (table) => ({
+  providerProviderAccountIdIdx: index('accounts_provider_provider_account_id_idx').on(table.provider, table.providerAccountId),
+  accountsUserIdIdx: index('accounts_user_id_idx').on(table.userId),
+}));
+
+export const sessions = pgTable('sessions', {
+  id: serial('id').primaryKey(),
+  sessionToken: varchar('session_token', { length: 255 }).notNull().unique(),
+  userId: serial('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires').notNull(),
+}, (table) => ({
+  sessionTokenIdx: index('sessions_session_token_idx').on(table.sessionToken),
+  sessionsUserIdIdx: index('sessions_user_id_idx').on(table.userId),
+}));
+
+export const verificationTokens = pgTable('verification_tokens', {
+  identifier: varchar('identifier', { length: 255 }).notNull(),
+  token: varchar('token', { length: 255 }).notNull().unique(),
+  expires: timestamp('expires').notNull(),
+}, (table) => ({
+  tokenIdx: index('token_idx').on(table.token),
+  identifierTokenIdx: index('identifier_token_idx').on(table.identifier, table.token),
+}));
+
+// Example application tables
 export const posts = pgTable('posts', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
@@ -484,7 +494,11 @@ import * as schema from './schema';
 const sql = neon(process.env.DATABASE_URL!);
 export const db = drizzle(sql, { schema });
 
+// Export schema for use in other packages
 export * from './schema';
+
+// Export database instance
+export { db };
 `;
   }
 

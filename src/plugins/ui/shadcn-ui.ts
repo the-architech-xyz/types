@@ -376,43 +376,6 @@ export class ShadcnUIPlugin implements IPlugin {
 
     context.logger.info('Installing UI dependencies...');
     await this.runner.install(dependencies, false, projectPath);
-    
-    // Update package.json with the installed dependencies
-    await this.updatePackageJson(context);
-  }
-
-  private async updatePackageJson(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    const packageJsonPath = path.join(projectPath, 'package.json');
-    
-    if (await fsExtra.pathExists(packageJsonPath)) {
-      const packageJson = await fsExtra.readJSON(packageJsonPath);
-      
-      // Add dependencies if they don't exist
-      packageJson.dependencies = {
-        ...packageJson.dependencies,
-        'class-variance-authority': '^0.7.0',
-        'clsx': '^2.0.0',
-        'tailwind-merge': '^2.0.0',
-        'lucide-react': '^0.300.0',
-        '@radix-ui/react-slot': '^1.0.2',
-        '@radix-ui/react-dialog': '^1.0.5',
-        '@radix-ui/react-label': '^2.0.2',
-        'react-hook-form': '^7.48.2'
-      };
-      
-      // Add devDependencies if they don't exist
-      packageJson.devDependencies = {
-        ...packageJson.devDependencies,
-        'tailwindcss': '^3.4.0',
-        'autoprefixer': '^10.4.0',
-        'postcss': '^8.4.0',
-        'tailwindcss-animate': '^1.0.7'
-      };
-      
-      await fsExtra.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
-      context.logger.info('Updated package.json with UI dependencies');
-    }
   }
 
   private async createTailwindConfig(context: PluginContext): Promise<void> {
@@ -1060,11 +1023,30 @@ export {
     
     context.logger.info('Creating package exports...');
     
-    // Create main package index file
-    const packageIndexContent = `// Export UI components
+    // Create tsup configuration
+    const tsupConfig = `import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  entry: ['src/index.ts'],
+  format: ['cjs', 'esm'],
+  dts: true,
+  splitting: false,
+  sourcemap: true,
+  clean: true,
+  external: ['react', 'react-dom'],
+  treeshake: true,
+});
+`;
+    
+    await fsExtra.writeFile(path.join(projectPath, 'tsup.config.ts'), tsupConfig);
+    
+    // Create package index file
+    const indexContent = `// Export UI components
 export { Button, buttonVariants } from './components/ui/button';
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './components/ui/card';
 export { Input } from './components/ui/input';
+export { Label } from './components/ui/label';
+export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './components/ui/dialog';
 
 // Export utilities
 export { cn } from './lib/utils';
@@ -1072,9 +1054,11 @@ export { cn } from './lib/utils';
 // Export types
 export type { ButtonProps } from './components/ui/button';
 export type { InputProps } from './components/ui/input';
+export type { LabelProps } from './components/ui/label';
+export type { DialogProps } from './components/ui/dialog';
 `;
     
-    await fsExtra.writeFile(path.join(projectPath, 'src', 'index.ts'), packageIndexContent);
+    await fsExtra.writeFile(path.join(projectPath, 'src', 'index.ts'), indexContent);
     
     context.logger.success('Package exports created');
   }

@@ -22,7 +22,6 @@ export declare class ShadcnUIPlugin implements IPlugin {
     getDefaultConfig(): Record<string, any>;
     getConfigSchema(): ConfigSchema;
     private installDependencies;
-    private updatePackageJson;
     private createTailwindConfig;
     private createUIComponents;
     private createButtonComponent;

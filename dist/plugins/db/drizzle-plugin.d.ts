@@ -22,7 +22,6 @@ export declare class DrizzlePlugin implements IPlugin {
     getDefaultConfig(): Record<string, any>;
     getConfigSchema(): ConfigSchema;
     private installDependencies;
-    private updatePackageJson;
     private initializeDrizzleKit;
     private createDatabaseFiles;
     private generateInitialMigration;
