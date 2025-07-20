@@ -6,17 +6,13 @@
  * No direct installation logic - delegates everything to plugins through adapters.
  */
 
-import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginSystem } from '../core/plugin/plugin-system.js';
-import { ProjectType, TargetPlatform } from '../types/plugin.js';
-import { TemplateService, templateService } from '../core/templates/template-service.js';
-import { globalRegistry, globalAdapterFactory } from '../types/unified-registry.js';
-import { UnifiedDatabase } from '../types/unified.js';
+import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
-import { PluginContext } from '../types/plugin.js';
-import inquirer from 'inquirer';
-import chalk from 'chalk';
+import { AbstractAgent } from './base/abstract-agent.js';
+import { PluginSystem } from '../core/plugin/plugin-system.js';
+import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
+import { TemplateService, templateService } from '../core/templates/template-service.js';
 import {
   AgentContext,
   AgentResult,
@@ -25,14 +21,36 @@ import {
   AgentCategory,
   CapabilityCategory,
   ValidationResult,
-  Artifact
+  Artifact,
+  ValidationError
 } from '../types/agent.js';
 
 interface DatabaseConfig {
-  provider: 'neon' | 'supabase' | 'local';
+  provider: 'neon' | 'supabase' | 'local' | 'planetscale' | 'vercel' | 'mongodb';
   connectionString: string;
   schema: string[];
   migrations: boolean;
+  features: {
+    seeding: boolean;
+    backup: boolean;
+    connectionPooling: boolean;
+    ssl: boolean;
+    readReplicas: boolean;
+  };
+  seeding?: {
+    fixtures: string[];
+    autoSeed: boolean;
+  };
+  backup?: {
+    frequency: 'daily' | 'weekly' | 'monthly';
+    retention: number; // days
+    autoBackup: boolean;
+  };
+  connectionPooling?: {
+    min: number;
+    max: number;
+    idleTimeout: number;
+  };
 }
 
 export class DBAgent extends AbstractAgent {
@@ -103,6 +121,51 @@ export class DBAgent extends AbstractAgent {
             description: 'Enable migrations',
             required: false,
             defaultValue: true
+          },
+          {
+            name: 'features',
+            type: 'object',
+            description: 'Advanced database features',
+            required: false,
+            defaultValue: {
+              seeding: false,
+              backup: false,
+              connectionPooling: false,
+              ssl: true,
+              readReplicas: false
+            }
+          },
+          {
+            name: 'seeding',
+            type: 'object',
+            description: 'Database seeding configuration',
+            required: false,
+            defaultValue: {
+              fixtures: ['users', 'posts'],
+              autoSeed: false
+            }
+          },
+          {
+            name: 'backup',
+            type: 'object',
+            description: 'Database backup configuration',
+            required: false,
+            defaultValue: {
+              frequency: 'daily',
+              retention: 30,
+              autoBackup: false
+            }
+          },
+          {
+            name: 'connectionPooling',
+            type: 'object',
+            description: 'Connection pooling configuration',
+            required: false,
+            defaultValue: {
+              min: 2,
+              max: 10,
+              idleTimeout: 30000
+            }
           }
         ],
         examples: [
@@ -117,6 +180,18 @@ export class DBAgent extends AbstractAgent {
             description: 'Creates database setup with Prisma ORM using unified interfaces',
             parameters: { provider: 'supabase', migrations: true },
             expectedResult: 'Database setup with Prisma ORM via unified interface'
+          },
+          {
+            name: 'Setup advanced database',
+            description: 'Creates database setup with seeding and backup using unified interfaces',
+            parameters: { 
+              provider: 'planetscale', 
+              migrations: true,
+              features: { seeding: true, backup: true, connectionPooling: true },
+              seeding: { fixtures: ['users', 'posts', 'categories'], autoSeed: true },
+              backup: { frequency: 'daily', retention: 7, autoBackup: true }
+            },
+            expectedResult: 'Advanced database setup with seeding and backup via unified interface'
           }
         ]
       },
@@ -131,6 +206,75 @@ export class DBAgent extends AbstractAgent {
             description: 'Validates the database setup using unified interfaces',
             parameters: {},
             expectedResult: 'Database setup validation report'
+          }
+        ]
+      },
+      {
+        name: 'db-seeding',
+        description: 'Setup database seeding',
+        category: CapabilityCategory.SETUP,
+        parameters: [
+          {
+            name: 'fixtures',
+            type: 'array',
+            description: 'Fixtures to seed',
+            required: true
+          },
+          {
+            name: 'autoSeed',
+            type: 'boolean',
+            description: 'Automatically seed on setup',
+            required: false,
+            defaultValue: false
+          }
+        ],
+        examples: [
+          {
+            name: 'Setup seeding',
+            description: 'Creates database seeding system',
+            parameters: { 
+              fixtures: ['users', 'posts', 'categories'], 
+              autoSeed: true 
+            },
+            expectedResult: 'Database seeding system with auto-seeding enabled'
+          }
+        ]
+      },
+      {
+        name: 'db-backup',
+        description: 'Setup database backup',
+        category: CapabilityCategory.SETUP,
+        parameters: [
+          {
+            name: 'frequency',
+            type: 'string',
+            description: 'Backup frequency',
+            required: true
+          },
+          {
+            name: 'retention',
+            type: 'number',
+            description: 'Backup retention in days',
+            required: true
+          },
+          {
+            name: 'autoBackup',
+            type: 'boolean',
+            description: 'Enable automatic backups',
+            required: false,
+            defaultValue: false
+          }
+        ],
+        examples: [
+          {
+            name: 'Setup backup',
+            description: 'Creates database backup system',
+            parameters: { 
+              frequency: 'daily', 
+              retention: 30, 
+              autoBackup: true 
+            },
+            expectedResult: 'Database backup system with daily backups'
           }
         ]
       }
@@ -325,7 +469,17 @@ export class DBAgent extends AbstractAgent {
       provider: userConfig.provider || 'neon',
       connectionString: userConfig.connectionString || userConfig.databaseUrl || '',
       schema: userConfig.schema || ['users', 'posts', 'comments'],
-      migrations: userConfig.migrations !== false
+      migrations: userConfig.migrations !== false,
+      features: {
+        seeding: userConfig.features?.seeding || false,
+        backup: userConfig.features?.backup || false,
+        connectionPooling: userConfig.features?.connectionPooling || false,
+        ssl: userConfig.features?.ssl || false,
+        readReplicas: userConfig.features?.readReplicas || false,
+      },
+      seeding: userConfig.seeding,
+      backup: userConfig.backup,
+      connectionPooling: userConfig.connectionPooling,
     };
   }
 
@@ -427,7 +581,7 @@ export class DBAgent extends AbstractAgent {
     // Validate plugin
     const validation = await plugin.validate(pluginContext);
     if (!validation.valid) {
-      throw new Error(`${actualPluginId} plugin validation failed: ${validation.errors.map((e: any) => e.message).join(', ')}`);
+      throw new Error(`${actualPluginId} plugin validation failed: ${validation.errors.map((e: ValidationError) => e.message).join(', ')}`);
     }
     context.logger.info(`${actualPluginId} plugin validation passed`);
 
@@ -450,44 +604,35 @@ export class DBAgent extends AbstractAgent {
   private async validateDatabaseSetupUnified(
     context: AgentContext,
     pluginName: string,
-    packagePath: string
+    installPath: string
   ): Promise<void> {
+    context.logger.info(`Validating ${pluginName} setup with unified interface...`);
+
     try {
-      context.logger.info(`Validating database setup using unified interface for ${pluginName}...`);
-
-      // Get the unified database interface
-      const dbInterface = globalRegistry.get('database', pluginName);
-      if (!dbInterface) {
-        throw new Error(`Database interface not found for ${pluginName}`);
+      // Check if unified interface files were generated
+      const dbLibPath = path.join(installPath, 'src', 'lib', 'db');
+      const dbIndexPath = path.join(dbLibPath, 'index.ts');
+      
+      if (!existsSync(dbIndexPath)) {
+        throw new Error(`Unified database interface not found at ${dbIndexPath}`);
       }
 
-      // Validate client operations
-      context.logger.info('Validating database client operations...');
-      if (typeof dbInterface.client.query === 'function') {
-        context.logger.info('Database client operations available');
+      // Check if database schema was generated
+      const dbSchemaPath = path.join(dbLibPath, 'schema.ts');
+      if (!existsSync(dbSchemaPath)) {
+        context.logger.warn('Database schema file not found, but continuing...');
       }
 
-      // Validate schema management
-      context.logger.info('Validating schema management...');
-      if (dbInterface.schema.users && dbInterface.schema.posts) {
-        context.logger.info('Schema management available');
+      // Check if migrations were generated
+      const dbMigrationsPath = path.join(dbLibPath, 'migrations.ts');
+      if (!existsSync(dbMigrationsPath)) {
+        context.logger.warn('Database migrations file not found, but continuing...');
       }
 
-      // Validate migration utilities
-      context.logger.info('Validating migration utilities...');
-      if (typeof dbInterface.migrations.generate === 'function') {
-        context.logger.info('Migration utilities available');
-      }
+      context.logger.success(`${pluginName} unified interface validation passed`);
 
-      // Validate connection management
-      context.logger.info('Validating connection management...');
-      if (typeof dbInterface.connection.connect === 'function') {
-        context.logger.info('Connection management available');
-      }
-
-      context.logger.info('Database setup validation completed successfully');
     } catch (error) {
-      context.logger.error(`Database setup validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      context.logger.error(`Failed to validate ${pluginName} setup: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   }
@@ -520,7 +665,7 @@ export class DBAgent extends AbstractAgent {
     const registry = this.pluginSystem.getRegistry();
     const allPlugins = registry.getAll();
     
-    return allPlugins.filter(plugin => {
+    return allPlugins.filter((plugin: any) => {
       const metadata = plugin.getMetadata();
       return metadata.category === 'orm' || metadata.category === 'database';
     });
@@ -564,7 +709,7 @@ export class DBAgent extends AbstractAgent {
       context.logger.info(`Validating ${pluginName} plugin...`);
       const validation = await plugin.validate(pluginContext);
       if (!validation.valid) {
-        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map((e: ValidationError) => e.message).join(', ')}`);
       }
 
       context.logger.info(`${pluginName} plugin validation passed`);
@@ -574,7 +719,7 @@ export class DBAgent extends AbstractAgent {
       const result = await plugin.install(pluginContext);
 
       if (!result.success) {
-        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map((e: any) => e.message).join(', ')}`);
       }
 
       context.logger.info(`${pluginName} plugin execution completed successfully`);

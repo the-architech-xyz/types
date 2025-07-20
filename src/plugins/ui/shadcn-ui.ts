@@ -67,11 +67,26 @@ export class ShadcnUIPlugin implements IPlugin {
       // Step 5: Create package exports
       await this.createPackageExports(context);
 
+      // Step 6: Generate unified interface files
+      await this.generateUnifiedInterfaceFiles(context);
+
       const duration = Date.now() - startTime;
 
       return {
         success: true,
         artifacts: [
+          {
+            type: 'file',
+            path: path.join(projectPath, 'src', 'lib', 'ui', 'index.ts')
+          },
+          {
+            type: 'file',
+            path: path.join(projectPath, 'src', 'lib', 'ui', 'components.tsx')
+          },
+          {
+            type: 'file',
+            path: path.join(projectPath, 'src', 'lib', 'ui', 'theme.ts')
+          },
           {
             type: 'file',
             path: path.join(projectPath, 'src', 'components', 'ui', 'button.tsx')
@@ -87,10 +102,6 @@ export class ShadcnUIPlugin implements IPlugin {
           {
             type: 'file',
             path: path.join(projectPath, 'config', 'tailwind.config.js')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'index.ts')
           }
         ],
         dependencies: [
@@ -1359,8 +1370,135 @@ module.exports = {
   }
 
   private async addCustomConfigurations(projectPath: string, config: Record<string, any>): Promise<void> {
-    // Add any custom configurations that aren't provided by the shadcn CLI
-    // This is where we can add project-specific customizations
+    // Add any custom configurations here
+  }
+
+  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const libPath = path.join(projectPath, 'src', 'lib', 'ui');
+    await fsExtra.ensureDir(libPath);
+
+    // Create index.ts for the unified interface
+    const indexContent = `import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
+import { useTheme } from './theme';
+
+// Unified UI interface
+export const ui = {
+  components: {
+    Button,
+    Input,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+    Badge,
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
+    Alert,
+    AlertDescription,
+    AlertTitle,
+  },
+  theme: {
+    useTheme,
+  },
+  utils: {
+    cn: (...classes: (string | undefined | null | false)[]) => {
+      return classes.filter(Boolean).join(' ');
+    },
+  },
+};
+
+export default ui;
+`;
+    await fsExtra.writeFile(path.join(libPath, 'index.ts'), indexContent);
+
+    // Create components.tsx for additional components
+    const componentsContent = `import React from 'react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Card } from '../components/ui/card';
+
+export function LoginForm() {
+  return (
+    <Card className="w-full max-w-md">
+      <div className="p-6 space-y-4">
+        <h2 className="text-2xl font-bold text-center">Sign In</h2>
+        <div className="space-y-2">
+          <Input type="email" placeholder="Email" />
+          <Input type="password" placeholder="Password" />
+        </div>
+        <Button className="w-full">Sign In</Button>
+      </div>
+    </Card>
+  );
+}
+
+export function UserCard({ user }: { user: any }) {
+  return (
+    <Card className="w-full max-w-sm">
+      <div className="p-6">
+        <h3 className="text-lg font-semibold">{user.name}</h3>
+        <p className="text-sm text-gray-600">{user.email}</p>
+      </div>
+    </Card>
+  );
+}
+`;
+    await fsExtra.writeFile(path.join(libPath, 'components.tsx'), componentsContent);
+
+    // Create theme.ts for theme management
+    const themeContent = `import { createContext, useContext, useEffect, useState } from 'react';
+
+type Theme = 'light' | 'dark' | 'system';
+
+interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<Theme>('system');
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+  }, [theme]);
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useTheme() {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+}
+`;
+    await fsExtra.writeFile(path.join(libPath, 'theme.ts'), themeContent);
+
+    context.logger.success('Shadcn UI unified interface files generated successfully');
   }
 
   private createErrorResult(

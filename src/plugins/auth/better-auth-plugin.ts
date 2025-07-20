@@ -74,11 +74,26 @@ export class BetterAuthPlugin implements IPlugin {
       // Step 5: Add environment configuration
       await this.addEnvironmentConfig(context);
 
+      // Step 6: Generate unified interface files
+      await this.generateUnifiedInterfaceFiles(context);
+
       const duration = Date.now() - startTime;
 
       return {
         success: true,
         artifacts: [
+          {
+            type: 'file',
+            path: path.join(projectPath, 'src', 'lib', 'auth', 'index.ts')
+          },
+          {
+            type: 'file',
+            path: path.join(projectPath, 'src', 'lib', 'auth', 'components.tsx')
+          },
+          {
+            type: 'file',
+            path: path.join(projectPath, 'src', 'lib', 'auth', 'config.ts')
+          },
           {
             type: 'file',
             path: path.join(projectPath, 'src', 'auth.ts')
@@ -94,10 +109,6 @@ export class BetterAuthPlugin implements IPlugin {
           {
             type: 'file',
             path: path.join(projectPath, 'src', 'components', 'AuthForm.tsx')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'index.ts')
           }
         ],
         dependencies: [
@@ -108,27 +119,9 @@ export class BetterAuthPlugin implements IPlugin {
             category: PluginCategory.AUTHENTICATION
           },
           {
-            name: '@better-auth/utils',
-            version: '^0.2.6',
-            type: 'production',
-            category: PluginCategory.AUTHENTICATION
-          },
-          {
             name: '@better-auth/cli',
             version: '^1.3.0',
             type: 'development',
-            category: PluginCategory.AUTHENTICATION
-          },
-          {
-            name: 'bcryptjs',
-            version: '^2.4.3',
-            type: 'production',
-            category: PluginCategory.AUTHENTICATION
-          },
-          {
-            name: 'jsonwebtoken',
-            version: '^9.0.2',
-            type: 'production',
             category: PluginCategory.AUTHENTICATION
           }
         ],
@@ -136,37 +129,19 @@ export class BetterAuthPlugin implements IPlugin {
           {
             name: 'auth:generate',
             command: 'better-auth generate',
-            description: 'Generate Better Auth schema',
-            category: 'dev'
-          },
-          {
-            name: 'auth:migrate',
-            command: 'better-auth migrate',
-            description: 'Run Better Auth migrations',
-            category: 'dev'
-          },
-          {
-            name: 'auth:secret',
-            command: 'better-auth secret',
-            description: 'Generate Better Auth secret',
+            description: 'Generate Better Auth files',
             category: 'dev'
           }
         ],
-        configs: [
-          {
-            file: '.env.local',
-            content: this.generateEnvConfig(pluginConfig),
-            mergeStrategy: 'append'
-          }
-        ],
+        configs: [],
         errors: [],
         warnings: [],
         duration
       };
+
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       return this.createErrorResult(
-        `Failed to setup Better Auth: ${errorMessage}`,
+        'Failed to install Better Auth',
         startTime,
         [],
         error
@@ -581,6 +556,120 @@ export const { handlers, signIn, signOut, auth: getAuth } = auth;
     }
     
     await fsExtra.writeFile(envPath, existingContent + '\n' + envContent);
+  }
+
+  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const libPath = path.join(projectPath, 'src', 'lib', 'auth');
+    await fsExtra.ensureDir(libPath);
+
+    // Create index.ts for the unified interface
+    const indexContent = `import { BetterAuth } from "better-auth";
+import { DrizzleAdapter } from "better-auth/adapters/drizzle-adapter";
+import { db } from "../../packages/db";
+import { users, sessions, accounts, verificationTokens } from "../../packages/db/schema";
+
+export const auth = new BetterAuth({
+  adapter: DrizzleAdapter(db, {
+    users,
+    sessions,
+    accounts,
+    verificationTokens,
+  }),
+  providers: [
+    // Configure your providers here
+    // Example:
+    // GithubProvider({
+    //   clientId: process.env.GITHUB_CLIENT_ID!,
+    //   clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    // }),
+  ],
+  session: {
+    strategy: "jwt",
+    maxAge: 604800, // 7 days
+  },
+  callbacks: {
+    async session({ session, token }) {
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+  },
+});
+
+export const { handlers, signIn, signOut, auth: getAuth } = auth;
+`;
+    await fsExtra.writeFile(path.join(libPath, 'index.ts'), indexContent);
+
+    // Create components.tsx for the unified interface
+    const componentsContent = `import { signIn, signOut, useSession } from 'better-auth/react';
+
+export function LoginButton() {
+  const { data: session } = useSession();
+
+  if (session) {
+    return (
+      <button onClick={() => signOut()}>
+        Sign Out
+      </button>
+    );
+  }
+
+  return (
+    <button onClick={() => signIn()}>
+      Sign In
+    </button>
+  );
+}`;
+    await fsExtra.writeFile(path.join(libPath, 'components.tsx'), componentsContent);
+
+    // Create config.ts for the unified interface
+    const configContent = `import { BetterAuth } from "better-auth";
+import { DrizzleAdapter } from "better-auth/adapters/drizzle-adapter";
+import { db } from "../../packages/db";
+import { users, sessions, accounts, verificationTokens } from "../../packages/db/schema";
+
+export const auth = new BetterAuth({
+  adapter: DrizzleAdapter(db, {
+    users,
+    sessions,
+    accounts,
+    verificationTokens,
+  }),
+  providers: [
+    // Configure your providers here
+    // Example:
+    // GithubProvider({
+    //   clientId: process.env.GITHUB_CLIENT_ID!,
+    //   clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    // }),
+  ],
+  session: {
+    strategy: "jwt",
+    maxAge: 604800, // 7 days
+  },
+  callbacks: {
+    async session({ session, token }) {
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+  },
+});
+
+export const { handlers, signIn, signOut, auth: getAuth } = auth;
+`;
+    await fsExtra.writeFile(path.join(libPath, 'config.ts'), configContent);
+
+    context.logger.success('Better Auth unified interface files generated successfully');
   }
 
   private buildInitArgs(config: Record<string, any>): string[] {

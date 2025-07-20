@@ -12,8 +12,6 @@ import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
-import { globalRegistry, globalAdapterFactory } from '../types/unified-registry.js';
-import { UnifiedAuth } from '../types/unified.js';
 import {
   AgentContext,
   AgentResult,
@@ -22,14 +20,32 @@ import {
   AgentCategory,
   CapabilityCategory,
   ValidationResult,
-  Artifact
+  Artifact,
+  ValidationError
 } from '../types/agent.js';
 
 interface AuthConfig {
-  providers: ('email' | 'github' | 'google')[];
+  providers: ('email' | 'github' | 'google' | 'discord' | 'twitter' | 'oauth')[];
   requireEmailVerification: boolean;
   sessionDuration: number;
   databaseUrl: string;
+  features: {
+    rbac: boolean;
+    mfa: boolean;
+    socialLogin: boolean;
+    sessionManagement: boolean;
+    passwordReset: boolean;
+    accountLinking: boolean;
+  };
+  rbac?: {
+    roles: string[];
+    permissions: string[];
+    defaultRole: string;
+  };
+  mfa?: {
+    methods: ('totp' | 'sms' | 'email')[];
+    required: boolean;
+  };
 }
 
 export class AuthAgent extends AbstractAgent {
@@ -93,6 +109,41 @@ export class AuthAgent extends AbstractAgent {
             description: 'Session duration in seconds',
             required: false,
             defaultValue: 30 * 24 * 60 * 60 // 30 days
+          },
+          {
+            name: 'features',
+            type: 'object',
+            description: 'Advanced authentication features',
+            required: false,
+            defaultValue: {
+              rbac: false,
+              mfa: false,
+              socialLogin: false,
+              sessionManagement: true,
+              passwordReset: true,
+              accountLinking: false
+            }
+          },
+          {
+            name: 'rbac',
+            type: 'object',
+            description: 'Role-based access control configuration',
+            required: false,
+            defaultValue: {
+              roles: ['user', 'admin'],
+              permissions: ['read', 'write', 'delete'],
+              defaultRole: 'user'
+            }
+          },
+          {
+            name: 'mfa',
+            type: 'object',
+            description: 'Multi-factor authentication configuration',
+            required: false,
+            defaultValue: {
+              methods: ['totp'],
+              required: false
+            }
           }
         ],
         examples: [
@@ -107,6 +158,17 @@ export class AuthAgent extends AbstractAgent {
             description: 'Creates authentication with social providers using unified interfaces',
             parameters: { providers: ['email', 'github', 'google'] },
             expectedResult: 'Authentication setup with social login support via unified interface'
+          },
+          {
+            name: 'Setup advanced authentication',
+            description: 'Creates authentication with RBAC and MFA using unified interfaces',
+            parameters: { 
+              providers: ['email', 'github'], 
+              features: { rbac: true, mfa: true },
+              rbac: { roles: ['user', 'admin', 'moderator'], permissions: ['read', 'write', 'delete', 'moderate'] },
+              mfa: { methods: ['totp', 'email'], required: true }
+            },
+            expectedResult: 'Advanced authentication setup with RBAC and MFA via unified interface'
           }
         ]
       },
@@ -121,6 +183,75 @@ export class AuthAgent extends AbstractAgent {
             description: 'Validates the authentication setup using unified interfaces',
             parameters: {},
             expectedResult: 'Authentication setup validation report'
+          }
+        ]
+      },
+      {
+        name: 'auth-rbac-setup',
+        description: 'Setup role-based access control',
+        category: CapabilityCategory.SETUP,
+        parameters: [
+          {
+            name: 'roles',
+            type: 'array',
+            description: 'Roles to create',
+            required: true
+          },
+          {
+            name: 'permissions',
+            type: 'array',
+            description: 'Permissions to define',
+            required: true
+          },
+          {
+            name: 'defaultRole',
+            type: 'string',
+            description: 'Default role for new users',
+            required: false,
+            defaultValue: 'user'
+          }
+        ],
+        examples: [
+          {
+            name: 'Setup RBAC',
+            description: 'Creates role-based access control system',
+            parameters: { 
+              roles: ['user', 'admin', 'moderator'], 
+              permissions: ['read', 'write', 'delete', 'moderate'],
+              defaultRole: 'user'
+            },
+            expectedResult: 'RBAC system setup with roles and permissions'
+          }
+        ]
+      },
+      {
+        name: 'auth-mfa-setup',
+        description: 'Setup multi-factor authentication',
+        category: CapabilityCategory.SETUP,
+        parameters: [
+          {
+            name: 'methods',
+            type: 'array',
+            description: 'MFA methods to enable',
+            required: true
+          },
+          {
+            name: 'required',
+            type: 'boolean',
+            description: 'Whether MFA is required for all users',
+            required: false,
+            defaultValue: false
+          }
+        ],
+        examples: [
+          {
+            name: 'Setup MFA',
+            description: 'Creates multi-factor authentication system',
+            parameters: { 
+              methods: ['totp', 'email'], 
+              required: true 
+            },
+            expectedResult: 'MFA system setup with TOTP and email methods'
           }
         ]
       }
@@ -208,21 +339,18 @@ export class AuthAgent extends AbstractAgent {
     authConfig: AuthConfig,
     installPath: string
   ): Promise<any> {
+    context.logger.info(`Executing ${pluginName} plugin with unified interface...`);
+
     try {
-      context.logger.info(`Starting unified execution of ${pluginName} plugin...`);
-      
-      // Get the selected plugin
+      // Get plugin from registry
       const plugin = this.pluginSystem.getRegistry().get(pluginName);
       if (!plugin) {
-        throw new Error(`${pluginName} plugin not found in registry`);
+        throw new Error(`Auth plugin not found: ${pluginName}`);
       }
 
-      context.logger.info(`Found ${pluginName} plugin in registry`);
-
-      // Prepare plugin context with correct path
+      // Prepare plugin context
       const pluginContext: PluginContext = {
         ...context,
-        projectPath: installPath,
         pluginId: pluginName,
         pluginConfig: this.getPluginConfig(authConfig, pluginName),
         installedPlugins: [],
@@ -230,38 +358,18 @@ export class AuthAgent extends AbstractAgent {
         targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
       };
 
-      context.logger.info(`Plugin context prepared for ${pluginName}`);
-
-      // Validate plugin compatibility
-      context.logger.info(`Validating ${pluginName} plugin...`);
-      const validation = await plugin.validate(pluginContext);
-      if (!validation.valid) {
-        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
-      }
-
-      context.logger.info(`${pluginName} plugin validation passed`);
-
-      // Execute the plugin
-      context.logger.info(`Executing ${pluginName} plugin...`);
+      // Install plugin (this will generate the unified interface files)
       const result = await plugin.install(pluginContext);
-
+      
       if (!result.success) {
-        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`Failed to install ${pluginName}: ${result.errors.map((e: any) => e.message).join(', ')}`);
       }
 
-      context.logger.info(`${pluginName} plugin execution completed successfully`);
-
-      // Create unified interface adapter
-      context.logger.info(`Creating unified interface adapter for ${pluginName}...`);
-      const authAdapter = await globalAdapterFactory.createAuthAdapter(pluginName);
-      
-      // Register the adapter in the global registry
-      globalRegistry.register('auth', pluginName, authAdapter);
-      context.logger.info(`Registered ${pluginName} adapter in unified registry`);
-
+      context.logger.success(`${pluginName} plugin installed successfully`);
       return result;
+
     } catch (error) {
-      context.logger.error(`Error in executeAuthPluginUnified for ${pluginName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      context.logger.error(`Failed to execute ${pluginName} plugin: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   }
@@ -271,46 +379,27 @@ export class AuthAgent extends AbstractAgent {
     pluginName: string,
     installPath: string
   ): Promise<void> {
+    context.logger.info(`Validating ${pluginName} setup with unified interface...`);
+
     try {
-      context.logger.info(`Validating auth setup using unified interface for ${pluginName}...`);
-
-      // Get the unified auth interface
-      const authInterface = globalRegistry.get('auth', pluginName);
-      if (!authInterface) {
-        throw new Error(`Auth interface not found for ${pluginName}`);
+      // Check if unified interface files were generated
+      const authLibPath = path.join(installPath, 'src', 'lib', 'auth');
+      const authIndexPath = path.join(authLibPath, 'index.ts');
+      
+      if (!existsSync(authIndexPath)) {
+        throw new Error(`Unified auth interface not found at ${authIndexPath}`);
       }
 
-      // Validate client-side functionality
-      context.logger.info('Validating client-side auth functionality...');
-      const isAuthenticated = await authInterface.client.isAuthenticated();
-      context.logger.info(`Authentication status check: ${isAuthenticated}`);
-
-      // Validate server-side functionality
-      context.logger.info('Validating server-side auth functionality...');
-      if (typeof authInterface.server.auth === 'function') {
-        context.logger.info('Server-side auth function available');
+      // Check if auth components were generated
+      const authComponentsPath = path.join(authLibPath, 'components.tsx');
+      if (!existsSync(authComponentsPath)) {
+        context.logger.warn('Auth components file not found, but continuing...');
       }
 
-      // Validate components
-      context.logger.info('Validating auth components...');
-      const requiredComponents = ['LoginButton', 'AuthForm', 'UserProfile', 'AuthGuard'];
-      for (const componentName of requiredComponents) {
-        if (authInterface.components[componentName as keyof typeof authInterface.components]) {
-          context.logger.info(`${componentName} component available`);
-        } else {
-          context.logger.warn(`${componentName} component not available`);
-        }
-      }
+      context.logger.success(`${pluginName} unified interface validation passed`);
 
-      // Validate configuration
-      context.logger.info('Validating auth configuration...');
-      if (authInterface.config.providers.length > 0) {
-        context.logger.info(`Configured providers: ${authInterface.config.providers.map(p => p.name).join(', ')}`);
-      }
-
-      context.logger.info('Auth setup validation completed successfully');
     } catch (error) {
-      context.logger.error(`Auth setup validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      context.logger.error(`Failed to validate ${pluginName} setup: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   }
@@ -480,7 +569,17 @@ export class AuthAgent extends AbstractAgent {
       providers: userConfig.providers || ['email'],
       requireEmailVerification: userConfig.requireEmailVerification !== false,
       sessionDuration: userConfig.sessionDuration || 604800,
-      databaseUrl: dbConfig.connectionString || dbConfig.databaseUrl || ''
+      databaseUrl: dbConfig.connectionString || dbConfig.databaseUrl || '',
+      features: {
+        rbac: userConfig.features?.rbac || false,
+        mfa: userConfig.features?.mfa || false,
+        socialLogin: userConfig.features?.socialLogin || false,
+        sessionManagement: userConfig.features?.sessionManagement || false,
+        passwordReset: userConfig.features?.passwordReset || false,
+        accountLinking: userConfig.features?.accountLinking || false,
+      },
+      rbac: userConfig.rbac,
+      mfa: userConfig.mfa,
     };
   }
 
@@ -492,7 +591,10 @@ export class AuthAgent extends AbstractAgent {
       databaseUrl: authConfig.databaseUrl,
       secret: process.env.AUTH_SECRET || 'your-secret-key-here',
       skipDb: false,
-      skipPlugins: false
+      skipPlugins: false,
+      features: authConfig.features,
+      rbac: authConfig.rbac,
+      mfa: authConfig.mfa,
     };
 
     // Add specific plugin-specific configurations if needed

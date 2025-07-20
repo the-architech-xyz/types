@@ -5,6 +5,8 @@
  * through their adapters. This enables true modularity and no lock-in.
  */
 
+import { ValidationResult } from './agent.js';
+
 // ============================================================================
 // UNIFIED AUTHENTICATION INTERFACE
 // ============================================================================
@@ -614,6 +616,10 @@ export interface UnifiedInterfaceRegistry {
   auth: Map<string, UnifiedAuth>;
   ui: Map<string, UnifiedUI>;
   database: Map<string, UnifiedDatabase>;
+  deployment: Map<string, UnifiedDeployment>;
+  testing: Map<string, UnifiedTesting>;
+  email: Map<string, UnifiedEmail>;
+  monitoring: Map<string, UnifiedMonitoring>;
   
   register: <T extends keyof UnifiedInterfaceRegistry>(
     category: T,
@@ -644,4 +650,640 @@ export interface AdapterFactory {
   createAuthAdapter: (pluginName: string) => Promise<UnifiedAuth>;
   createUIAdapter: (pluginName: string) => Promise<UnifiedUI>;
   createDatabaseAdapter: (pluginName: string) => Promise<UnifiedDatabase>;
+  createDeploymentAdapter: (pluginName: string) => Promise<UnifiedDeployment>;
+  createTestingAdapter: (pluginName: string) => Promise<UnifiedTesting>;
+  createEmailAdapter: (pluginName: string) => Promise<UnifiedEmail>;
+  createMonitoringAdapter: (pluginName: string) => Promise<UnifiedMonitoring>;
+}
+
+// ============================================================================
+// UNIFIED DEPLOYMENT INTERFACE
+// ============================================================================
+
+export interface UnifiedDeployment {
+  // Deployment operations
+  deploy: (options?: DeployOptions) => Promise<DeployResult>;
+  build: (options?: BuildOptions) => Promise<BuildResult>;
+  preview: (options?: PreviewOptions) => Promise<PreviewResult>;
+  
+  // Environment management
+  environments: {
+    list: () => Promise<Environment[]>;
+    create: (name: string, options?: EnvironmentOptions) => Promise<Environment>;
+    delete: (name: string) => Promise<void>;
+    promote: (from: string, to: string) => Promise<void>;
+  };
+  
+  // Domain management
+  domains: {
+    list: () => Promise<Domain[]>;
+    add: (domain: string, options?: DomainOptions) => Promise<Domain>;
+    remove: (domain: string) => Promise<void>;
+    verify: (domain: string) => Promise<DomainVerification>;
+  };
+  
+  // Configuration
+  config: {
+    platform: string;
+    environment: string;
+    region?: string;
+    autoDeploy: boolean;
+    previewDeployments: boolean;
+    customDomain: boolean;
+    ssl: boolean;
+    ciCd: boolean;
+  };
+  
+  // Utility functions
+  getRequiredEnvVars: () => string[];
+  getDeploymentFiles: () => DeploymentFile[];
+  validateConfig: () => Promise<ValidationResult>;
+  
+  // Escape hatch for advanced use cases
+  getUnderlyingClient: () => any;
+}
+
+export interface DeployOptions {
+  environment?: string;
+  branch?: string;
+  commit?: string;
+  variables?: Record<string, string>;
+  functions?: Record<string, any>;
+}
+
+export interface DeployResult {
+  success: boolean;
+  url?: string;
+  deploymentId?: string;
+  error?: string;
+  logs?: string[];
+}
+
+export interface BuildOptions {
+  environment?: string;
+  clean?: boolean;
+  cache?: boolean;
+}
+
+export interface BuildResult {
+  success: boolean;
+  outputPath?: string;
+  error?: string;
+  logs?: string[];
+}
+
+export interface PreviewOptions {
+  branch?: string;
+  commit?: string;
+  variables?: Record<string, string>;
+}
+
+export interface PreviewResult {
+  success: boolean;
+  url?: string;
+  previewId?: string;
+  error?: string;
+}
+
+export interface Environment {
+  name: string;
+  url?: string;
+  status: 'active' | 'inactive' | 'building' | 'error';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface EnvironmentOptions {
+  variables?: Record<string, string>;
+  region?: string;
+  autoDeploy?: boolean;
+}
+
+export interface Domain {
+  name: string;
+  status: 'active' | 'pending' | 'error';
+  ssl: boolean;
+  createdAt: Date;
+}
+
+export interface DomainOptions {
+  ssl?: boolean;
+  redirects?: string[];
+}
+
+export interface DomainVerification {
+  verified: boolean;
+  error?: string;
+  dnsRecords?: DNSRecord[];
+}
+
+export interface DNSRecord {
+  type: 'A' | 'CNAME' | 'TXT' | 'MX';
+  name: string;
+  value: string;
+  ttl?: number;
+}
+
+export interface DeploymentFile {
+  name: string;
+  description: string;
+  required: boolean;
+  content?: string;
+  path?: string;
+} 
+
+// ============================================================================
+// UNIFIED TESTING INTERFACE
+// ============================================================================
+
+export interface UnifiedTesting {
+  // Test execution
+  runTests: (options?: TestRunOptions) => Promise<TestRunResult>;
+  runUnitTests: (options?: TestRunOptions) => Promise<TestRunResult>;
+  runIntegrationTests: (options?: TestRunOptions) => Promise<TestRunResult>;
+  runE2ETests: (options?: TestRunOptions) => Promise<TestRunResult>;
+  
+  // Coverage reporting
+  generateCoverage: (options?: CoverageOptions) => Promise<CoverageResult>;
+  getCoverageReport: () => Promise<CoverageReport>;
+  
+  // Test utilities
+  getTestUtilities: () => TestUtility[];
+  createMock: <T>(template: T) => T;
+  createTestData: (schema: any) => any;
+  
+  // Test file management
+  getTestFiles: () => TestFile[];
+  generateTestFile: (component: string, type: 'unit' | 'integration' | 'e2e') => Promise<string>;
+  
+  // Configuration
+  config: {
+    framework: string;
+    coverage: boolean;
+    e2e: boolean;
+    unitTesting: boolean;
+    integrationTesting: boolean;
+    e2eTesting: boolean;
+    coverageReporting: boolean;
+    testUtilities: boolean;
+  };
+  
+  // Utility functions
+  getRequiredDependencies: () => string[];
+  getTestScripts: () => Record<string, string>;
+  validateConfig: () => Promise<ValidationResult>;
+  
+  // Escape hatch for advanced use cases
+  getUnderlyingClient: () => any;
+}
+
+export interface TestRunOptions {
+  pattern?: string;
+  watch?: boolean;
+  coverage?: boolean;
+  environment?: string;
+  timeout?: number;
+}
+
+export interface TestRunResult {
+  success: boolean;
+  passed: number;
+  failed: number;
+  skipped: number;
+  duration: number;
+  errors?: TestError[];
+  logs?: string[];
+}
+
+export interface TestError {
+  test: string;
+  message: string;
+  stack?: string;
+  expected?: any;
+  actual?: any;
+}
+
+export interface CoverageOptions {
+  threshold?: number;
+  reporters?: string[];
+  exclude?: string[];
+}
+
+export interface CoverageResult {
+  success: boolean;
+  coverage: number;
+  reportPath?: string;
+  details?: CoverageDetails;
+}
+
+export interface CoverageDetails {
+  statements: number;
+  branches: number;
+  functions: number;
+  lines: number;
+}
+
+export interface CoverageReport {
+  summary: CoverageDetails;
+  files: Record<string, CoverageDetails>;
+  timestamp: Date;
+}
+
+export interface TestUtility {
+  name: string;
+  description: string;
+  type: 'mock' | 'fixture' | 'helper' | 'matcher';
+  usage: string;
+}
+
+export interface TestFile {
+  name: string;
+  description: string;
+  type: 'unit' | 'integration' | 'e2e';
+  path: string;
+  content?: string;
+} 
+
+// ============================================================================
+// UNIFIED EMAIL INTERFACE
+// ============================================================================
+
+export interface UnifiedEmail {
+  // Email sending operations
+  send: (options: EmailSendOptions) => Promise<EmailSendResult>;
+  sendTemplate: (options: EmailTemplateOptions) => Promise<EmailSendResult>;
+  sendBulk: (options: EmailBulkOptions) => Promise<EmailBulkResult>;
+  
+  // Template management
+  templates: {
+    list: () => Promise<EmailTemplate[]>;
+    create: (template: EmailTemplateCreate) => Promise<EmailTemplate>;
+    update: (id: string, template: EmailTemplateUpdate) => Promise<EmailTemplate>;
+    delete: (id: string) => Promise<void>;
+    render: (id: string, data: Record<string, any>) => Promise<string>;
+  };
+  
+  // Email validation
+  validation: {
+    validateEmail: (email: string) => Promise<EmailValidationResult>;
+    validateDomain: (domain: string) => Promise<DomainValidationResult>;
+    checkDeliverability: (email: string) => Promise<DeliverabilityResult>;
+  };
+  
+  // Analytics and tracking
+  analytics: {
+    getStats: (options?: EmailStatsOptions) => Promise<EmailStats>;
+    getEvents: (options?: EmailEventsOptions) => Promise<EmailEvent[]>;
+    trackOpen: (messageId: string) => Promise<void>;
+    trackClick: (messageId: string, link: string) => Promise<void>;
+  };
+  
+  // Configuration
+  config: {
+    provider: string;
+    apiKey: string;
+    fromEmail: string;
+    fromName?: string;
+    replyTo?: string;
+    webhookUrl?: string;
+    sandboxMode: boolean;
+  };
+  
+  // Utility functions
+  getRequiredEnvVars: () => string[];
+  getEmailTemplates: () => EmailTemplateFile[];
+  validateConfig: () => Promise<ValidationResult>;
+  
+  // Escape hatch for advanced use cases
+  getUnderlyingClient: () => any;
+}
+
+export interface EmailSendOptions {
+  to: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+  from?: string;
+  replyTo?: string;
+  cc?: string[];
+  bcc?: string[];
+  attachments?: EmailAttachment[];
+  headers?: Record<string, string>;
+  templateId?: string;
+  templateData?: Record<string, any>;
+}
+
+export interface EmailSendResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+  providerResponse?: any;
+}
+
+export interface EmailTemplateOptions {
+  templateId: string;
+  to: string | string[];
+  data: Record<string, any>;
+  subject?: string;
+  from?: string;
+  replyTo?: string;
+}
+
+export interface EmailBulkOptions {
+  emails: Array<{
+    to: string;
+    subject: string;
+    text?: string;
+    html?: string;
+    templateId?: string;
+    templateData?: Record<string, any>;
+  }>;
+  from?: string;
+  replyTo?: string;
+}
+
+export interface EmailBulkResult {
+  success: boolean;
+  sent: number;
+  failed: number;
+  errors: Array<{
+    email: string;
+    error: string;
+  }>;
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  html: string;
+  text?: string;
+  variables: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface EmailTemplateCreate {
+  name: string;
+  subject: string;
+  html: string;
+  text?: string;
+  variables?: string[];
+}
+
+export interface EmailTemplateUpdate {
+  name?: string;
+  subject?: string;
+  html?: string;
+  text?: string;
+  variables?: string[];
+}
+
+export interface EmailValidationResult {
+  valid: boolean;
+  error?: string;
+  suggestions?: string[];
+}
+
+export interface DomainValidationResult {
+  valid: boolean;
+  hasMX: boolean;
+  hasSPF: boolean;
+  hasDKIM: boolean;
+  hasDMARC: boolean;
+  error?: string;
+}
+
+export interface DeliverabilityResult {
+  deliverable: boolean;
+  score: number;
+  risk: 'low' | 'medium' | 'high';
+  reasons: string[];
+}
+
+export interface EmailStatsOptions {
+  startDate?: Date;
+  endDate?: Date;
+  templateId?: string;
+}
+
+export interface EmailStats {
+  sent: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  unsubscribed: number;
+  spamReports: number;
+  openRate: number;
+  clickRate: number;
+  bounceRate: number;
+}
+
+export interface EmailEventsOptions {
+  startDate?: Date;
+  endDate?: Date;
+  eventType?: 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed';
+  messageId?: string;
+}
+
+export interface EmailEvent {
+  id: string;
+  messageId: string;
+  eventType: 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed';
+  timestamp: Date;
+  data?: Record<string, any>;
+}
+
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+  contentId?: string;
+}
+
+export interface EmailTemplateFile {
+  name: string;
+  description: string;
+  type: 'welcome' | 'verification' | 'reset-password' | 'notification' | 'marketing';
+  path: string;
+  content?: string;
+} 
+
+// ============================================================================
+// UNIFIED MONITORING INTERFACE
+// ============================================================================
+
+export interface UnifiedMonitoring {
+  // Error tracking
+  errors: {
+    captureException: (error: Error, context?: ErrorContext) => Promise<void>;
+    captureMessage: (message: string, level?: ErrorLevel, context?: ErrorContext) => Promise<void>;
+    setUser: (user: MonitoringUser) => void;
+    setTag: (key: string, value: string) => void;
+    setContext: (name: string, context: Record<string, any>) => void;
+  };
+  
+  // Performance monitoring
+  performance: {
+    startTransaction: (name: string, operation?: string) => MonitoringTransaction;
+    startSpan: (name: string, operation?: string) => MonitoringSpan;
+    measure: (name: string, fn: () => any) => Promise<any>;
+    mark: (name: string) => void;
+    measureMark: (name: string, startMark: string, endMark: string) => void;
+  };
+  
+  // Analytics and metrics
+  analytics: {
+    track: (event: string, properties?: Record<string, any>) => void;
+    identify: (userId: string, traits?: Record<string, any>) => void;
+    page: (name: string, properties?: Record<string, any>) => void;
+    group: (groupId: string, traits?: Record<string, any>) => void;
+  };
+  
+  // Logging
+  logging: {
+    log: (level: LogLevel, message: string, context?: LogContext) => void;
+    info: (message: string, context?: LogContext) => void;
+    warn: (message: string, context?: LogContext) => void;
+    error: (message: string, context?: LogContext) => void;
+    debug: (message: string, context?: LogContext) => void;
+  };
+  
+  // Health checks
+  health: {
+    check: (name: string, checkFn: () => Promise<HealthCheckResult>) => void;
+    getStatus: () => Promise<HealthStatus>;
+    addHealthIndicator: (name: string, indicator: HealthIndicator) => void;
+  };
+  
+  // Alerts and notifications
+  alerts: {
+    createAlert: (alert: AlertConfig) => Promise<Alert>;
+    updateAlert: (alertId: string, updates: Partial<AlertConfig>) => Promise<Alert>;
+    deleteAlert: (alertId: string) => Promise<void>;
+    listAlerts: () => Promise<Alert[]>;
+  };
+  
+  // Configuration
+  config: {
+    provider: string;
+    dsn: string;
+    environment: string;
+    release?: string;
+    debug: boolean;
+    tracesSampleRate: number;
+    profilesSampleRate: number;
+  };
+  
+  // Utility functions
+  getRequiredEnvVars: () => string[];
+  getMonitoringFiles: () => MonitoringFile[];
+  validateConfig: () => Promise<ValidationResult>;
+  
+  // Escape hatch for advanced use cases
+  getUnderlyingClient: () => any;
+}
+
+export interface ErrorContext {
+  user?: MonitoringUser;
+  tags?: Record<string, string>;
+  extra?: Record<string, any>;
+  level?: ErrorLevel;
+  fingerprint?: string[];
+}
+
+export type ErrorLevel = 'fatal' | 'error' | 'warning' | 'info' | 'debug';
+
+export interface MonitoringUser {
+  id: string;
+  email?: string;
+  username?: string;
+  ip_address?: string;
+  [key: string]: any;
+}
+
+export interface MonitoringTransaction {
+  id: string;
+  name: string;
+  operation?: string;
+  setTag: (key: string, value: string) => void;
+  setData: (key: string, value: any) => void;
+  finish: () => void;
+  createChildSpan: (name: string, operation?: string) => MonitoringSpan;
+}
+
+export interface MonitoringSpan {
+  id: string;
+  name: string;
+  operation?: string;
+  setTag: (key: string, value: string) => void;
+  setData: (key: string, value: any) => void;
+  finish: () => void;
+}
+
+export interface LogContext {
+  userId?: string;
+  sessionId?: string;
+  requestId?: string;
+  tags?: Record<string, string>;
+  extra?: Record<string, any>;
+}
+
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+
+export interface HealthCheckResult {
+  status: 'healthy' | 'unhealthy' | 'degraded';
+  message?: string;
+  details?: Record<string, any>;
+  timestamp: Date;
+}
+
+export interface HealthStatus {
+  status: 'healthy' | 'unhealthy' | 'degraded';
+  checks: Record<string, HealthCheckResult>;
+  timestamp: Date;
+}
+
+export interface HealthIndicator {
+  name: string;
+  check: () => Promise<HealthCheckResult>;
+  interval?: number;
+}
+
+export interface AlertConfig {
+  name: string;
+  description?: string;
+  condition: AlertCondition;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  channels: string[];
+  enabled: boolean;
+}
+
+export interface AlertCondition {
+  type: 'threshold' | 'anomaly' | 'custom';
+  metric: string;
+  operator: 'gt' | 'gte' | 'lt' | 'lte' | 'eq' | 'ne';
+  value: number;
+  duration: string;
+}
+
+export interface Alert {
+  id: string;
+  name: string;
+  description?: string;
+  condition: AlertCondition;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  status: 'active' | 'resolved' | 'acknowledged';
+  createdAt: Date;
+  updatedAt: Date;
+  lastTriggered?: Date;
+}
+
+export interface MonitoringFile {
+  name: string;
+  description: string;
+  type: 'config' | 'middleware' | 'utils' | 'health-check';
+  path: string;
+  content?: string;
 } 

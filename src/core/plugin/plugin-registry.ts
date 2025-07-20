@@ -8,13 +8,12 @@
 import {
   IPlugin,
   PluginRegistry,
+  PluginMetadata,
   PluginCategory,
-  ProjectType,
-  TargetPlatform,
-  CompatibilityMatrix,
-  ValidationResult
-} from '../types/plugin.js';
-import { Logger } from '../types/agent.js';
+  ValidationResult,
+  CompatibilityMatrix
+} from '../../types/plugin.js';
+import { Logger } from '../../types/agent.js';
 
 export class PluginRegistryImpl implements PluginRegistry {
   private plugins: Map<string, IPlugin> = new Map();
@@ -71,7 +70,7 @@ export class PluginRegistryImpl implements PluginRegistry {
   // COMPATIBILITY CHECKING
   // ============================================================================
 
-  getCompatible(projectType: ProjectType, platforms: TargetPlatform[]): IPlugin[] {
+  getCompatible(projectType: any, platforms: any[]): IPlugin[] {
     return this.getAll().filter(plugin => {
       const compatibility = plugin.getCompatibility();
       
@@ -179,7 +178,7 @@ export class PluginRegistryImpl implements PluginRegistry {
       return (
         metadata.name.toLowerCase().includes(lowerQuery) ||
         metadata.description.toLowerCase().includes(lowerQuery) ||
-        metadata.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+        metadata.tags.some((tag: string) => tag.toLowerCase().includes(lowerQuery))
       );
     });
   }

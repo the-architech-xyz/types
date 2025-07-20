@@ -158,11 +158,14 @@ export interface AgentMetadata {
 }
 
 export interface AgentCapability {
+  id?: string;
   name: string;
   description: string;
-  parameters: Parameter[];
-  examples: Example[];
+  parameters?: Parameter[];
+  examples?: Example[];
   category: CapabilityCategory;
+  requirements?: string[];
+  conflicts?: string[];
 }
 
 export interface Parameter {
@@ -200,6 +203,7 @@ export interface AgentRequirement {
 
 export enum AgentCategory {
   FOUNDATION = 'foundation',
+  FRAMEWORK = 'framework',
   UI = 'ui',
   DATABASE = 'database',
   AUTHENTICATION = 'authentication',
@@ -213,6 +217,8 @@ export enum AgentCategory {
 }
 
 export enum CapabilityCategory {
+  FOUNDATION = 'foundation',
+  FRAMEWORK = 'framework',
   SETUP = 'setup',
   CONFIGURATION = 'configuration',
   GENERATION = 'generation',
@@ -232,6 +238,7 @@ export interface Artifact {
   metadata?: Record<string, any>;
   size?: number;
   checksum?: string;
+  description?: string;
 }
 
 export interface AgentState {

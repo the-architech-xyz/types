@@ -583,7 +583,7 @@ export class OrchestratorAgent implements IAgent {
           const { BaseProjectAgent } = await import('./base-project-agent.js');
           return new BaseProjectAgent();
         case 'framework':
-          const { FrameworkAgent } = await import('./framework-agent.js');
+          const { FrameworkAgent } = await import('./framework-agent');
           return new FrameworkAgent();
         case 'db':
           const { DBAgent } = await import('./db-agent.js');
@@ -591,10 +591,21 @@ export class OrchestratorAgent implements IAgent {
         case 'auth':
           const { AuthAgent } = await import('./auth-agent.js');
           return new AuthAgent();
-        case 'design-system':
         case 'ui':
           const { UIAgent } = await import('./ui-agent.js');
           return new UIAgent();
+        case 'deployment':
+          const { DeploymentAgent } = await import('./deployment-agent.js');
+          return new DeploymentAgent();
+        case 'testing':
+          const { TestingAgent } = await import('./testing-agent.js');
+          return new TestingAgent();
+        case 'email':
+          const { EmailAgent } = await import('./email-agent.js');
+          return new EmailAgent();
+        case 'monitoring':
+          const { MonitoringAgent } = await import('./monitoring-agent.js');
+          return new MonitoringAgent();
         default:
           this.logger.warn(`Unknown agent: ${agentId}`);
           return null;

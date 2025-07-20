@@ -6,24 +6,60 @@
  * Pure orchestrator - no direct installation logic.
  */
 
-import { IAgent, AgentContext, AgentResult, AgentMetadata, AgentCategory, ValidationResult, AgentCapability, CapabilityCategory } from '../types/agent.js';
-import { PluginSystem } from '../core/plugin/plugin-system.js';
-import { AbstractAgent } from './base/abstract-agent.js';
-import { ProjectType, TargetPlatform } from '../types/plugin.js';
-import { TemplateService, templateService } from '../core/templates/template-service.js';
-import { globalRegistry, globalAdapterFactory } from '../types/unified-registry.js';
-import { UnifiedUI } from '../types/unified.js';
+import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
-import { PluginContext } from '../types/plugin.js';
+import { AbstractAgent } from './base/abstract-agent.js';
+import { PluginSystem } from '../core/plugin/plugin-system.js';
+import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
+import { TemplateService, templateService } from '../core/templates/template-service.js';
+import {
+  AgentContext,
+  AgentResult,
+  AgentMetadata,
+  AgentCapability,
+  AgentCategory,
+  CapabilityCategory,
+  ValidationResult,
+  Artifact,
+  ValidationError
+} from '../types/agent.js';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 
 interface UIConfig {
-  designSystem: 'shadcn-ui' | 'tamagui' | 'chakra-ui' | 'mui';
+  designSystem: 'shadcn-ui' | 'tamagui' | 'chakra-ui' | 'mui' | 'antd' | 'radix';
   theme: 'light' | 'dark' | 'auto';
   components: string[];
-  styling: 'tailwind' | 'css-modules' | 'styled-components';
+  styling: 'tailwind' | 'css-modules' | 'styled-components' | 'emotion';
+  features: {
+    animations: boolean;
+    responsiveDesign: boolean;
+    themeCustomization: boolean;
+    componentLibrary: boolean;
+    iconLibrary: boolean;
+    accessibility: boolean;
+  };
+  animations?: {
+    library: 'framer-motion' | 'react-spring' | 'none';
+    duration: number;
+    easing: string;
+  };
+  responsiveDesign?: {
+    breakpoints: string[];
+    mobileFirst: boolean;
+    fluidTypography: boolean;
+  };
+  themeCustomization?: {
+    colors: Record<string, string>;
+    fonts: Record<string, string>;
+    spacing: Record<string, string>;
+    borderRadius: Record<string, string>;
+  };
+  iconLibrary?: {
+    provider: 'lucide' | 'heroicons' | 'feather' | 'phosphor';
+    includeIcons: string[];
+  };
 }
 
 export class UIAgent extends AbstractAgent {
@@ -94,6 +130,64 @@ export class UIAgent extends AbstractAgent {
             description: 'Styling approach',
             required: false,
             defaultValue: 'tailwind'
+          },
+          {
+            name: 'features',
+            type: 'object',
+            description: 'Advanced UI features',
+            required: false,
+            defaultValue: {
+              animations: false,
+              responsiveDesign: true,
+              themeCustomization: false,
+              componentLibrary: true,
+              iconLibrary: false,
+              accessibility: true
+            }
+          },
+          {
+            name: 'animations',
+            type: 'object',
+            description: 'Animation configuration',
+            required: false,
+            defaultValue: {
+              library: 'framer-motion',
+              duration: 300,
+              easing: 'ease-in-out'
+            }
+          },
+          {
+            name: 'responsiveDesign',
+            type: 'object',
+            description: 'Responsive design configuration',
+            required: false,
+            defaultValue: {
+              breakpoints: ['sm', 'md', 'lg', 'xl', '2xl'],
+              mobileFirst: true,
+              fluidTypography: false
+            }
+          },
+          {
+            name: 'themeCustomization',
+            type: 'object',
+            description: 'Theme customization',
+            required: false,
+            defaultValue: {
+              colors: {},
+              fonts: {},
+              spacing: {},
+              borderRadius: {}
+            }
+          },
+          {
+            name: 'iconLibrary',
+            type: 'object',
+            description: 'Icon library configuration',
+            required: false,
+            defaultValue: {
+              provider: 'lucide',
+              includeIcons: ['home', 'user', 'settings', 'search']
+            }
           }
         ],
         examples: [
@@ -108,6 +202,19 @@ export class UIAgent extends AbstractAgent {
             description: 'Creates UI setup with Tamagui components using unified interfaces',
             parameters: { designSystem: 'tamagui', theme: 'dark' },
             expectedResult: 'UI setup with Tamagui via unified interface'
+          },
+          {
+            name: 'Setup advanced UI',
+            description: 'Creates UI setup with animations and responsive design using unified interfaces',
+            parameters: { 
+              designSystem: 'shadcn-ui', 
+              theme: 'auto',
+              features: { animations: true, responsiveDesign: true, iconLibrary: true },
+              animations: { library: 'framer-motion', duration: 250, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+              responsiveDesign: { breakpoints: ['sm', 'md', 'lg', 'xl'], mobileFirst: true, fluidTypography: true },
+              iconLibrary: { provider: 'lucide', includeIcons: ['home', 'user', 'settings', 'search', 'menu', 'close'] }
+            },
+            expectedResult: 'Advanced UI setup with animations and responsive design via unified interface'
           }
         ]
       },
@@ -122,6 +229,84 @@ export class UIAgent extends AbstractAgent {
             description: 'Validates the UI setup using unified interfaces',
             parameters: {},
             expectedResult: 'UI setup validation report'
+          }
+        ]
+      },
+      {
+        name: 'ui-animations',
+        description: 'Setup UI animations',
+        category: CapabilityCategory.SETUP,
+        parameters: [
+          {
+            name: 'library',
+            type: 'string',
+            description: 'Animation library to use',
+            required: true
+          },
+          {
+            name: 'duration',
+            type: 'number',
+            description: 'Default animation duration',
+            required: false,
+            defaultValue: 300
+          },
+          {
+            name: 'easing',
+            type: 'string',
+            description: 'Default easing function',
+            required: false,
+            defaultValue: 'ease-in-out'
+          }
+        ],
+        examples: [
+          {
+            name: 'Setup animations',
+            description: 'Creates animation system with Framer Motion',
+            parameters: { 
+              library: 'framer-motion', 
+              duration: 250, 
+              easing: 'cubic-bezier(0.4, 0, 0.2, 1)' 
+            },
+            expectedResult: 'Animation system setup with Framer Motion'
+          }
+        ]
+      },
+      {
+        name: 'ui-responsive',
+        description: 'Setup responsive design',
+        category: CapabilityCategory.SETUP,
+        parameters: [
+          {
+            name: 'breakpoints',
+            type: 'array',
+            description: 'Breakpoint definitions',
+            required: true
+          },
+          {
+            name: 'mobileFirst',
+            type: 'boolean',
+            description: 'Use mobile-first approach',
+            required: false,
+            defaultValue: true
+          },
+          {
+            name: 'fluidTypography',
+            type: 'boolean',
+            description: 'Enable fluid typography',
+            required: false,
+            defaultValue: false
+          }
+        ],
+        examples: [
+          {
+            name: 'Setup responsive design',
+            description: 'Creates responsive design system',
+            parameters: { 
+              breakpoints: ['sm', 'md', 'lg', 'xl', '2xl'], 
+              mobileFirst: true, 
+              fluidTypography: true 
+            },
+            expectedResult: 'Responsive design system with mobile-first approach'
           }
         ]
       }
@@ -348,7 +533,7 @@ export class UIAgent extends AbstractAgent {
     const registry = this.pluginSystem.getRegistry();
     const allPlugins = registry.getAll();
     
-    return allPlugins.filter(plugin => {
+    return allPlugins.filter((plugin: any) => {
       const metadata = plugin.getMetadata();
       return metadata.category === 'ui-library' || metadata.category === 'design-system';
     });
@@ -366,7 +551,19 @@ export class UIAgent extends AbstractAgent {
       designSystem: userConfig.designSystem || 'shadcn-ui',
       styling: userConfig.styling || 'tailwind',
       theme: userConfig.theme || 'auto',
-      components: userConfig.components || ['button', 'card', 'input', 'form']
+      components: userConfig.components || ['button', 'card', 'input', 'form'],
+      features: {
+        animations: userConfig.features?.animations || false,
+        responsiveDesign: userConfig.features?.responsiveDesign || false,
+        themeCustomization: userConfig.features?.themeCustomization || false,
+        componentLibrary: userConfig.features?.componentLibrary || false,
+        iconLibrary: userConfig.features?.iconLibrary || false,
+        accessibility: userConfig.features?.accessibility || false,
+      },
+      animations: userConfig.animations,
+      responsiveDesign: userConfig.responsiveDesign,
+      themeCustomization: userConfig.themeCustomization,
+      iconLibrary: userConfig.iconLibrary,
     };
   }
 
@@ -387,7 +584,7 @@ export class UIAgent extends AbstractAgent {
 
       context.logger.info(`Found ${pluginName} plugin in registry`);
 
-      // Prepare plugin context with correct path
+      // Prepare plugin context
       const pluginContext: PluginContext = {
         ...context,
         projectPath: installPath,
@@ -404,7 +601,7 @@ export class UIAgent extends AbstractAgent {
       context.logger.info(`Validating ${pluginName} plugin...`);
       const validation = await plugin.validate(pluginContext);
       if (!validation.valid) {
-        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map((e: ValidationError) => e.message).join(', ')}`);
       }
 
       context.logger.info(`${pluginName} plugin validation passed`);
@@ -414,23 +611,15 @@ export class UIAgent extends AbstractAgent {
       const result = await plugin.install(pluginContext);
 
       if (!result.success) {
-        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map((e: any) => e.message).join(', ')}`);
       }
 
       context.logger.info(`${pluginName} plugin execution completed successfully`);
-
-      // Create unified interface adapter
-      context.logger.info(`Creating unified interface adapter for ${pluginName}...`);
-      const uiAdapter = await globalAdapterFactory.createUIAdapter(pluginName);
-      
-      // Register the adapter in the global registry
-      globalRegistry.register('ui', pluginName, uiAdapter);
-      context.logger.info(`Registered ${pluginName} adapter in unified registry`);
-
       return result;
+
     } catch (error) {
-      context.logger.error(`Error in executeUIPluginUnified for ${pluginName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to execute UI plugin ${pluginName}: ${errorMessage}`);
     }
   }
 
@@ -442,45 +631,46 @@ export class UIAgent extends AbstractAgent {
     try {
       context.logger.info(`Validating UI setup using unified interface for ${pluginName}...`);
 
-      // Get the unified UI interface
-      const uiInterface = globalRegistry.get('ui', pluginName);
-      if (!uiInterface) {
-        throw new Error(`UI interface not found for ${pluginName}`);
-      }
+      // Check if unified interface files exist
+      const unifiedFiles = [
+        path.join(installPath, 'src', 'lib', 'ui', 'index.ts'),
+        path.join(installPath, 'src', 'lib', 'ui', 'components.tsx'),
+        path.join(installPath, 'src', 'lib', 'ui', 'config.ts')
+      ];
 
-      // Validate design tokens
-      context.logger.info('Validating design tokens...');
-      if (uiInterface.tokens.colors && uiInterface.tokens.spacing) {
-        context.logger.info('Design tokens available');
-      }
-
-      // Validate core components
-      context.logger.info('Validating core components...');
-      const requiredComponents = ['Button', 'Input', 'Card', 'Text', 'Stack', 'Box'];
-      for (const componentName of requiredComponents) {
-        if (uiInterface.components[componentName as keyof typeof uiInterface.components]) {
-          context.logger.info(`${componentName} component available`);
-        } else {
-          context.logger.warn(`${componentName} component not available`);
+      for (const file of unifiedFiles) {
+        if (!await fsExtra.pathExists(file)) {
+          throw new Error(`Required unified interface file not found: ${file}`);
         }
       }
 
-      // Validate utility functions
-      context.logger.info('Validating utility functions...');
-      if (typeof uiInterface.utils.cn === 'function') {
-        context.logger.info('Utility functions available');
+      // Get the plugin and validate it
+      const plugin = this.pluginSystem.getRegistry().get(pluginName);
+      if (!plugin) {
+        throw new Error(`UI plugin not found: ${pluginName}`);
       }
 
-      // Validate theme management
-      context.logger.info('Validating theme management...');
-      if (uiInterface.theme.light && uiInterface.theme.dark) {
-        context.logger.info('Theme management available');
+      const pluginContext: PluginContext = {
+        ...context,
+        projectPath: installPath,
+        pluginId: pluginName,
+        pluginConfig: {},
+        installedPlugins: [],
+        projectType: ProjectType.NEXTJS,
+        targetPlatform: [TargetPlatform.WEB]
+      };
+
+      const validation = await plugin.validate(pluginContext);
+      if (!validation.valid) {
+        const errorMessages = validation.errors.map((e: any) => e.message).join(', ');
+        throw new Error(`UI plugin validation failed: ${errorMessages}`);
       }
 
-      context.logger.info('UI setup validation completed successfully');
+      context.logger.success(`UI plugin ${pluginName} validation passed`);
+
     } catch (error) {
-      context.logger.error(`UI setup validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`UI plugin validation failed: ${errorMessage}`);
     }
   }
 
