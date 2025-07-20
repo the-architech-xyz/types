@@ -28,6 +28,10 @@ export declare class TemplateService {
      */
     renderTemplate(agentName: string, templatePath: string, data: TemplateData, options?: TemplateOptions): Promise<string>;
     /**
+     * Simple render method - alias for renderTemplateNew
+     */
+    render(templatePath: string, data: TemplateData, options?: TemplateOptions): Promise<string>;
+    /**
      * Render a template with the new unified structure
      */
     renderTemplateNew(category: TemplateCategory, templatePath: string, data: TemplateData, options?: TemplateOptions): Promise<string>;

@@ -16,8 +16,8 @@ export declare class AuthAgent extends AbstractAgent {
     validate(context: AgentContext): Promise<ValidationResult>;
     private getPackagePath;
     private ensurePackageDirectory;
+    private validateAuthSetup;
     private executeBetterAuthPlugin;
-    private validateAuthenticationSetup;
     private getAuthConfig;
     private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;

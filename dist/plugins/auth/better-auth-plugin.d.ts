@@ -22,8 +22,11 @@ export declare class BetterAuthPlugin implements IPlugin {
     getDefaultConfig(): Record<string, any>;
     getConfigSchema(): ConfigSchema;
     private installDependencies;
+    private updatePackageJson;
     private initializeBetterAuth;
+    private createBetterAuthFilesManually;
     private generateDatabaseSchema;
+    private createBetterAuthSchemaManually;
     private createAuthConfiguration;
     private addEnvironmentConfig;
     private buildInitArgs;

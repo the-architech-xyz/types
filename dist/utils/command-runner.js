@@ -259,6 +259,47 @@ export class CommandRunner {
         const execCmd = [...this.commands.exec, toolName, ...args];
         return this.execCommand(execCmd, { cwd });
     }
+    /**
+     * Execute a command non-interactively by providing input via stdin
+     * Useful for CLI tools that ask for user input
+     */
+    async execNonInteractive(toolName, args = [], input = [], cwd = process.cwd()) {
+        const execCmd = [...this.commands.exec, toolName, ...args];
+        if (this.verbose) {
+            console.log(chalk.blue(`🔧 Executing non-interactive: ${execCmd.join(' ')}`));
+        }
+        return new Promise((resolve, reject) => {
+            const { spawn } = require('child_process');
+            const child = spawn(execCmd[0], execCmd.slice(1), {
+                cwd,
+                stdio: ['pipe', 'pipe', 'pipe'],
+                shell: true
+            });
+            let stdout = '';
+            let stderr = '';
+            child.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+            child.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+            child.on('error', (error) => {
+                reject(error);
+            });
+            child.on('close', (code) => {
+                resolve({
+                    stdout,
+                    stderr,
+                    code
+                });
+            });
+            // Send input to stdin
+            if (input.length > 0) {
+                child.stdin.write(input.join('\n') + '\n');
+                child.stdin.end();
+            }
+        });
+    }
     // Helper method for The Architech specific operations
     async initProject(projectPath, framework = 'nextjs', options = {}) {
         const projectName = path.basename(projectPath);

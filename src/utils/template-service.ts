@@ -85,6 +85,29 @@ export class TemplateService {
   }
 
   /**
+   * Simple render method - alias for renderTemplateNew
+   */
+  async render(templatePath: string, data: TemplateData, options: TemplateOptions = {}): Promise<string> {
+    // If templatePath already starts with 'shared/', 'frameworks/', or 'packages/', 
+    // extract the category and remaining path
+    let category: TemplateCategory = 'shared';
+    let path = templatePath;
+    
+    if (templatePath.startsWith('shared/')) {
+      category = 'shared';
+      path = templatePath.substring(7); // Remove 'shared/' prefix
+    } else if (templatePath.startsWith('frameworks/')) {
+      category = 'frameworks';
+      path = templatePath.substring(11); // Remove 'frameworks/' prefix
+    } else if (templatePath.startsWith('packages/')) {
+      category = 'packages';
+      path = templatePath.substring(9); // Remove 'packages/' prefix
+    }
+    
+    return await this.renderTemplateNew(category, path, data, options);
+  }
+
+  /**
    * Render a template with the new unified structure
    */
   async renderTemplateNew(

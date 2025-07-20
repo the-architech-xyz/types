@@ -137,37 +137,37 @@ export class NextJSPlugin implements IPlugin {
               }
             ],
             dependencies: [
-              {
-                name: 'next',
+        {
+          name: 'next',
                 version: '^15.4.2',
-                type: 'production',
-                category: PluginCategory.FRAMEWORK
-              },
-              {
-                name: 'react',
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'react',
                 version: '^19.1.0',
-                type: 'production',
-                category: PluginCategory.FRAMEWORK
-              },
-              {
-                name: 'react-dom',
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'react-dom',
                 version: '^19.1.0',
-                type: 'production',
-                category: PluginCategory.FRAMEWORK
-              },
-              {
+          type: 'production',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
                 name: 'typescript',
                 version: '^5.8.3',
-                type: 'development',
-                category: PluginCategory.FRAMEWORK
-              },
-              {
-                name: '@types/node',
-                version: '^20.0.0',
-                type: 'development',
-                category: PluginCategory.FRAMEWORK
-              },
-              {
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: '@types/node',
+          version: '^20.0.0',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
                 name: '@types/react',
                 version: '^19.0.0',
                 type: 'development',
@@ -176,53 +176,53 @@ export class NextJSPlugin implements IPlugin {
               {
                 name: '@types/react-dom',
                 version: '^19.0.0',
-                type: 'development',
-                category: PluginCategory.FRAMEWORK
-              },
-              {
-                name: 'eslint',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'eslint',
                 version: '^9.0.0',
-                type: 'development',
-                category: PluginCategory.FRAMEWORK
-              },
-              {
-                name: 'eslint-config-next',
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        },
+        {
+          name: 'eslint-config-next',
                 version: '^15.4.2',
-                type: 'development',
-                category: PluginCategory.FRAMEWORK
-              }
+          type: 'development',
+          category: PluginCategory.FRAMEWORK
+        }
             ],
             scripts: [
-              {
-                name: 'dev',
-                command: 'next dev',
-                description: 'Start development server',
-                category: 'dev'
-              },
-              {
-                name: 'build',
-                command: 'next build',
-                description: 'Build for production',
-                category: 'build'
-              },
-              {
-                name: 'start',
-                command: 'next start',
-                description: 'Start production server',
-                category: 'deploy'
-              },
-              {
-                name: 'lint',
-                command: 'next lint',
-                description: 'Run ESLint',
-                category: 'dev'
-              },
-              {
-                name: 'type-check',
-                command: 'tsc --noEmit',
-                description: 'Run TypeScript type checking',
-                category: 'dev'
-              }
+        {
+          name: 'dev',
+          command: 'next dev',
+          description: 'Start development server',
+          category: 'dev'
+        },
+        {
+          name: 'build',
+          command: 'next build',
+          description: 'Build for production',
+          category: 'build'
+        },
+        {
+          name: 'start',
+          command: 'next start',
+          description: 'Start production server',
+          category: 'deploy'
+        },
+        {
+          name: 'lint',
+          command: 'next lint',
+          description: 'Run ESLint',
+          category: 'dev'
+        },
+        {
+          name: 'type-check',
+          command: 'tsc --noEmit',
+          description: 'Run TypeScript type checking',
+          category: 'dev'
+        }
             ],
             configs: [],
             errors: [],
@@ -408,7 +408,7 @@ export class NextJSPlugin implements IPlugin {
   }
 
   async update(context: PluginContext): Promise<PluginResult> {
-    return this.install(context);
+      return this.install(context);
   }
 
   // ============================================================================
@@ -453,12 +453,12 @@ export class NextJSPlugin implements IPlugin {
 
     // Validate project name
     if (!context.pluginConfig?.projectName) {
-      errors.push({
+        errors.push({
         field: 'projectName',
         message: 'Project name is required',
         code: 'PROJECT_NAME_REQUIRED',
-        severity: 'error'
-      });
+          severity: 'error'
+        });
     }
 
     return {

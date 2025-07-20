@@ -54,60 +54,60 @@ export class UIAgent extends AbstractAgent {
         const startTime = Date.now();
         try {
             context.logger.info('Starting UI/Design System orchestration...');
-            // Step 1: Determine the correct path based on project structure
-            const packagePath = this.getPackagePath(context, 'ui');
-            context.logger.info(`UI package path: ${packagePath}`);
-            // Step 2: Ensure package directory exists
-            await this.ensurePackageDirectory(context, 'ui', packagePath);
-            // Step 3: Get the Shadcn/ui plugin
-            const shadcnPlugin = this.pluginSystem.getRegistry().get('shadcn-ui');
-            if (!shadcnPlugin) {
-                return this.createErrorResult('PLUGIN_NOT_FOUND', 'Shadcn/ui plugin not found in registry', [{
-                        field: 'plugin',
-                        message: 'Shadcn/ui plugin is not registered',
-                        code: 'PLUGIN_NOT_FOUND',
-                        severity: 'error'
-                    }]);
+            // For monorepo, install UI components in the ui package directory
+            const isMonorepo = context.projectStructure?.type === 'monorepo';
+            let installPath;
+            if (isMonorepo) {
+                // Install in the ui package directory (packages/ui)
+                installPath = path.join(context.projectPath, 'packages', 'ui');
+                context.logger.info(`UI package path: ${installPath}`);
+                // Ensure the ui package directory exists
+                await fsExtra.ensureDir(installPath);
+                context.logger.info(`Using ui package directory for UI setup: ${installPath}`);
             }
-            // Step 4: Prepare plugin context with correct path
-            const pluginContext = {
-                ...context,
-                projectPath: packagePath, // Use package path instead of root path
-                pluginId: 'shadcn-ui',
-                pluginConfig: this.getPluginConfig(context),
-                installedPlugins: [],
-                projectType: ProjectType.NEXTJS,
-                targetPlatform: [TargetPlatform.WEB]
-            };
-            // Step 5: Validate plugin compatibility
-            const validation = await shadcnPlugin.validate(pluginContext);
-            if (!validation.valid) {
-                return this.createErrorResult('PLUGIN_VALIDATION_FAILED', 'Shadcn/ui plugin validation failed', validation.errors);
+            else {
+                // For single-app, use the project root
+                installPath = context.projectPath;
+                context.logger.info(`Using project root for UI setup: ${installPath}`);
             }
-            // Step 6: Execute the plugin
+            // Get UI configuration
+            const uiConfig = await this.getUIConfig(context);
+            // Execute Shadcn/ui plugin in the correct location
             context.logger.info('Executing Shadcn/ui plugin...');
-            const pluginResult = await shadcnPlugin.install(pluginContext);
-            if (!pluginResult.success) {
-                return this.createErrorResult('PLUGIN_EXECUTION_FAILED', 'Shadcn/ui plugin execution failed', pluginResult.errors);
-            }
+            const result = await this.executeShadcnUIPlugin(context, uiConfig, installPath);
+            // Validate the setup
+            await this.validateUISetup(context, installPath);
             const duration = Date.now() - startTime;
-            context.logger.success('UI/Design System setup completed successfully');
             return {
                 success: true,
+                artifacts: result.artifacts || [],
                 data: {
                     plugin: 'shadcn-ui',
-                    packagePath,
-                    components: pluginResult.artifacts.length,
-                    dependencies: pluginResult.dependencies.length
+                    installPath,
+                    designSystem: uiConfig.designSystem
                 },
-                artifacts: pluginResult.artifacts,
-                warnings: pluginResult.warnings,
+                errors: [],
+                warnings: result.warnings || [],
                 duration
             };
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            return this.createErrorResult('UI_ORCHESTRATION_FAILED', `UI orchestration failed: ${errorMessage}`, [], 0, error);
+            context.logger.error('UI setup failed', error);
+            return {
+                success: false,
+                artifacts: [],
+                data: null,
+                errors: [{
+                        code: 'UI_SETUP_FAILED',
+                        message: `UI setup failed: ${errorMessage}`,
+                        details: error,
+                        recoverable: false,
+                        timestamp: new Date()
+                    }],
+                warnings: [],
+                duration: Date.now() - startTime
+            };
         }
     }
     // ============================================================================
@@ -198,14 +198,77 @@ export class UIAgent extends AbstractAgent {
             context.logger.info(`Using existing Next.js project at: ${packagePath}`);
         }
     }
-    getPluginConfig(context) {
+    // ============================================================================
+    // PRIVATE METHODS
+    // ============================================================================
+    async getUIConfig(context) {
         // Get configuration from context or use defaults
         const userConfig = context.config.ui || {};
         return {
-            components: userConfig.components || ['button', 'card', 'input', 'label', 'dialog'],
-            includeExamples: userConfig.includeExamples ?? true,
-            useTypeScript: userConfig.useTypeScript ?? true,
-            theme: userConfig.theme || 'slate'
+            designSystem: userConfig.designSystem || 'shadcn',
+            styling: userConfig.styling || 'tailwind',
+            theme: userConfig.theme || 'default',
+            components: userConfig.components || ['button', 'card', 'input', 'form']
+        };
+    }
+    async executeShadcnUIPlugin(context, uiConfig, installPath) {
+        // Get the Shadcn/ui plugin
+        const shadcnPlugin = this.pluginSystem.getRegistry().get('shadcn-ui');
+        if (!shadcnPlugin) {
+            throw new Error('Shadcn/ui plugin not found in registry');
+        }
+        // Prepare plugin context with correct path
+        const pluginContext = {
+            ...context,
+            projectPath: installPath, // Use the correct install path
+            pluginId: 'shadcn-ui',
+            pluginConfig: this.getPluginConfig(context),
+            installedPlugins: [],
+            projectType: ProjectType.NEXTJS,
+            targetPlatform: [TargetPlatform.WEB]
+        };
+        // Validate plugin compatibility
+        const validation = await shadcnPlugin.validate(pluginContext);
+        if (!validation.valid) {
+            throw new Error(`Shadcn/ui plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+        }
+        // Execute the plugin
+        context.logger.info('Executing Shadcn/ui plugin...');
+        const result = await shadcnPlugin.install(pluginContext);
+        if (!result.success) {
+            throw new Error(`Shadcn/ui plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+        }
+        return result;
+    }
+    async validateUISetup(context, installPath) {
+        context.logger.info('Validating UI setup...');
+        // Check for essential UI files
+        const essentialFiles = [
+            'components.json',
+            'src/components/ui/button.tsx',
+            'src/lib/utils.ts'
+        ];
+        for (const file of essentialFiles) {
+            const filePath = path.join(installPath, file);
+            if (!await fsExtra.pathExists(filePath)) {
+                throw new Error(`UI file missing: ${file}`);
+            }
+        }
+        // Check for Tailwind config (either .js or .ts)
+        const tailwindConfigJs = path.join(installPath, 'config', 'tailwind.config.js');
+        const tailwindConfigTs = path.join(installPath, 'config', 'tailwind.config.ts');
+        if (!await fsExtra.pathExists(tailwindConfigJs) && !await fsExtra.pathExists(tailwindConfigTs)) {
+            throw new Error('Tailwind configuration file missing');
+        }
+        context.logger.success('UI setup validation passed');
+    }
+    getPluginConfig(context) {
+        return {
+            components: ['button', 'input', 'card', 'dialog'],
+            includeExamples: true,
+            useTypeScript: true,
+            yes: true,
+            defaults: true
         };
     }
     // ============================================================================

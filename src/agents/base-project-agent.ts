@@ -8,6 +8,7 @@
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
+import { templateService } from '../utils/template-service.js';
 import {
   AgentContext,
   AgentResult,
@@ -20,6 +21,7 @@ import {
 } from '../types/agent.js';
 
 export class BaseProjectAgent extends AbstractAgent {
+  private templateService = templateService;
 
   // ============================================================================
   // AGENT METADATA
@@ -225,53 +227,52 @@ export class BaseProjectAgent extends AbstractAgent {
     await fsExtra.ensureDir(appsPath);
     await fsExtra.ensureDir(packagesPath);
     
-    // Create Turborepo configuration
-    const turboConfig = {
-      $schema: "https://turbo.build/schema.json",
-      globalDependencies: ["**/.env.*local"],
-      pipeline: {
-        build: {
-          dependsOn: ["^build"],
-          outputs: [".next/**", "!.next/cache/**", "dist/**"]
-        },
-        dev: {
-          cache: false,
-          persistent: true
-        },
-        lint: {
-          dependsOn: ["^lint"]
-        },
-        "type-check": {
-          dependsOn: ["^type-check"]
-        }
-      }
-    };
+    // Create package directories (removed config package)
+    const uiPath = path.join(packagesPath, 'ui');
+    const dbPath = path.join(packagesPath, 'db');
+    const authPath = path.join(packagesPath, 'auth');
     
-    await fsExtra.writeJSON(path.join(projectPath, 'turbo.json'), turboConfig, { spaces: 2 });
+    await fsExtra.ensureDir(uiPath);
+    await fsExtra.ensureDir(dbPath);
+    await fsExtra.ensureDir(authPath);
     
-    // Create root package.json
-    const rootPackage = {
-      name: projectName,
-      version: "0.1.0",
-      private: true,
-      workspaces: [
-        "apps/*",
-        "packages/*"
-      ],
-      scripts: {
-        "build": "turbo run build",
-        "dev": "turbo run dev",
-        "lint": "turbo run lint",
-        "type-check": "turbo run type-check",
-        "clean": "turbo run clean && rm -rf node_modules"
-      },
-      devDependencies: {
-        "turbo": "^1.10.0"
-      },
-      packageManager: context.packageManager
-    };
+    // Use template system for root-level configurations
+    await this.createRootConfigurations(context);
     
-    await fsExtra.writeJSON(path.join(projectPath, 'package.json'), rootPackage, { spaces: 2 });
+    // Use template system for package configurations
+    await this.createPackageConfigurations(context);
+    
+    context.logger.success('Monorepo structure created successfully');
+  }
+
+  private async createRootConfigurations(context: AgentContext): Promise<void> {
+    const { projectPath, projectName, packageManager } = context;
+    
+    // Get user preferences for technologies (defaults to current stack)
+    const dbTechnology = context.state.get('dbTechnology') || 'drizzle';
+    const authTechnology = context.state.get('authTechnology') || 'better-auth';
+    
+    // Create root package.json using template
+    const rootPackageJson = await this.templateService.render('shared/config/package.json.ejs', {
+      projectName,
+      packageManager
+    });
+    await fsExtra.writeFile(path.join(projectPath, 'package.json'), rootPackageJson);
+    
+    // Create turbo.json using template
+    const turboJson = await this.templateService.render('shared/config/turbo.json.ejs', {});
+    await fsExtra.writeFile(path.join(projectPath, 'turbo.json'), turboJson);
+    
+    // Create base tsconfig.json using template
+    const tsconfigBase = await this.templateService.render('shared/config/tsconfig.base.json.ejs', {});
+    await fsExtra.writeFile(path.join(projectPath, 'tsconfig.base.json'), tsconfigBase);
+    
+    // Create .env.example using template
+    const envExample = await this.templateService.render('shared/config/.env.example.ejs', {
+      dbTechnology,
+      authTechnology
+    });
+    await fsExtra.writeFile(path.join(projectPath, '.env.example'), envExample);
     
     // Create README
     const readme = `# ${projectName}
@@ -284,9 +285,9 @@ This is a monorepo built with Turborepo.
 
 ## Packages
 
-- \`packages/ui\` - Shared UI components
-- \`packages/db\` - Database layer
-- \`packages/auth\` - Authentication
+- \`packages/ui\` - Shared UI components and design system
+- \`packages/db\` - Database layer (${dbTechnology})
+- \`packages/auth\` - Authentication system (${authTechnology})
 
 ## Development
 
@@ -297,8 +298,54 @@ npm run dev
 `;
     
     await fsExtra.writeFile(path.join(projectPath, 'README.md'), readme);
+  }
+
+  private async createPackageConfigurations(context: AgentContext): Promise<void> {
+    const { projectPath, projectName } = context;
+    const packagesPath = path.join(projectPath, 'packages');
     
-    context.logger.success('Monorepo structure created successfully');
+    // Get user preferences for technologies
+    const dbTechnology = context.state.get('dbTechnology') || 'drizzle';
+    const authTechnology = context.state.get('authTechnology') || 'better-auth';
+    
+    // Create package configurations using dynamic templates (removed config package)
+    const packages = [
+      { name: 'ui', type: 'ui' },
+      { name: 'db', type: 'db', technology: dbTechnology },
+      { name: 'auth', type: 'auth', technology: authTechnology }
+    ];
+    
+    for (const pkg of packages) {
+      const packagePath = path.join(packagesPath, pkg.name);
+      
+      // Create package.json using dynamic template
+      const packageJson = await this.templateService.render('shared/packages/package.json.ejs', {
+        projectName,
+        packageName: pkg.name,
+        packageType: pkg.type,
+        dbTechnology: pkg.technology || dbTechnology,
+        authTechnology: pkg.technology || authTechnology
+      });
+      await fsExtra.writeFile(path.join(packagePath, 'package.json'), packageJson);
+      
+      // Create tsconfig.json using dynamic template
+      const tsconfig = await this.templateService.render('shared/packages/tsconfig.json.ejs', {
+        packageType: pkg.type
+      });
+      await fsExtra.writeFile(path.join(packagePath, 'tsconfig.json'), tsconfig);
+      
+      // Create index.ts using dynamic template
+      const indexTs = await this.templateService.render('shared/packages/index.ts.ejs', {
+        packageType: pkg.type,
+        dbTechnology: pkg.technology || dbTechnology,
+        authTechnology: pkg.technology || authTechnology
+      });
+      
+      // Create src directory and index.ts
+      const srcPath = path.join(packagePath, 'src');
+      await fsExtra.ensureDir(srcPath);
+      await fsExtra.writeFile(path.join(srcPath, 'index.ts'), indexTs);
+    }
   }
 
   private async createSingleAppStructure(context: AgentContext): Promise<void> {

@@ -368,6 +368,35 @@ export class DrizzlePlugin implements IPlugin {
     context.logger.info('Installing Drizzle ORM dependencies...');
     await this.runner.install(dependencies, false, projectPath);
     await this.runner.install(devDependencies, true, projectPath);
+    
+    // Update package.json with the installed dependencies
+    await this.updatePackageJson(context);
+  }
+
+  private async updatePackageJson(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
+    const packageJsonPath = path.join(projectPath, 'package.json');
+    
+    if (await fsExtra.pathExists(packageJsonPath)) {
+      const packageJson = await fsExtra.readJSON(packageJsonPath);
+      
+      // Add dependencies if they don't exist
+      packageJson.dependencies = {
+        ...packageJson.dependencies,
+        'drizzle-orm': '^0.44.3',
+        '@neondatabase/serverless': '^1.0.1',
+        'postgres': '^3.4.0'
+      };
+      
+      // Add devDependencies if they don't exist
+      packageJson.devDependencies = {
+        ...packageJson.devDependencies,
+        'drizzle-kit': '^0.31.4'
+      };
+      
+      await fsExtra.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
+      context.logger.info('Updated package.json with Drizzle dependencies');
+    }
   }
 
   private async initializeDrizzleKit(context: PluginContext): Promise<void> {

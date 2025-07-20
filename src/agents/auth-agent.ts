@@ -163,59 +163,72 @@ export class AuthAgent extends AbstractAgent {
   // ============================================================================
 
   protected async executeInternal(context: AgentContext): Promise<AgentResult> {
-    const { projectName, projectPath } = context;
+    const startTime = Date.now();
     
-    context.logger.info(`Setting up authentication for project: ${projectName}`);
-
     try {
-      // Start spinner for actual work
-      await this.startSpinner(`🔐 Setting up authentication with Better Auth...`, context);
+      context.logger.info('Setting up authentication for project: ' + context.projectName);
 
-      // Step 1: Determine the correct path based on project structure
-      const packagePath = this.getPackagePath(context, 'auth');
-      context.logger.info(`Authentication package path: ${packagePath}`);
+      // For monorepo, install Better Auth in the auth package directory
+      const isMonorepo = context.projectStructure?.type === 'monorepo';
+      let installPath: string;
+      
+      if (isMonorepo) {
+        // Install in the auth package directory (packages/auth)
+        installPath = path.join(context.projectPath, 'packages', 'auth');
+        context.logger.info(`Authentication package path: ${installPath}`);
+        
+        // Ensure the auth package directory exists
+        await fsExtra.ensureDir(installPath);
+        context.logger.info(`Using auth package directory for auth setup: ${installPath}`);
+      } else {
+        // For single-app, use the project root
+        installPath = context.projectPath;
+        context.logger.info(`Using project root for auth setup: ${installPath}`);
+      }
 
-      // Step 2: Ensure package directory exists
-      await this.ensurePackageDirectory(context, 'auth', packagePath);
-
-      // Step 3: Get authentication configuration
+      // Get authentication configuration
       const authConfig = await this.getAuthConfig(context);
-      
-      // Step 4: Execute Better Auth plugin with correct path
-      const pluginResult = await this.executeBetterAuthPlugin(context, authConfig, packagePath);
-      
-      // Step 5: Validate authentication setup
-      await this.validateAuthenticationSetup(context, packagePath);
 
-      await this.succeedSpinner(`✅ Authentication setup completed successfully`);
+      // Execute Better Auth plugin in the correct location
+      context.logger.info('Executing Better Auth plugin...');
+      const result = await this.executeBetterAuthPlugin(context, authConfig, installPath);
 
+      // Validate the setup
+      await this.validateAuthSetup(context, installPath);
+
+      const duration = Date.now() - startTime;
+      
       return {
         success: true,
+        artifacts: result.artifacts || [],
         data: {
-          providers: authConfig.providers,
-          packagePath,
           plugin: 'better-auth',
-          artifacts: pluginResult.artifacts.length,
-          dependencies: pluginResult.dependencies.length,
-          scripts: pluginResult.scripts.length
+          installPath,
+          providers: authConfig.providers
         },
-        artifacts: pluginResult.artifacts,
-        warnings: pluginResult.warnings,
-        duration: Date.now() - this.startTime
+        errors: [],
+        warnings: result.warnings || [],
+        duration
       };
 
     } catch (error) {
-      await this.failSpinner(`❌ Authentication setup failed`);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`Authentication setup failed: ${errorMessage}`, error as Error);
+      context.logger.error('Authentication setup failed', error as Error);
       
-      return this.createErrorResult(
-        'AUTHENTICATION_SETUP_FAILED',
-        `Failed to setup authentication: ${errorMessage}`,
-        [],
-        this.startTime,
-        error
-      );
+      return {
+        success: false,
+        artifacts: [],
+        data: null,
+        errors: [{
+          code: 'AUTH_SETUP_FAILED',
+          message: `Authentication setup failed: ${errorMessage}`,
+          details: error,
+          recoverable: false,
+          timestamp: new Date()
+        }],
+        warnings: [],
+        duration: Date.now() - startTime
+      };
     }
   }
 
@@ -323,10 +336,29 @@ export class AuthAgent extends AbstractAgent {
     }
   }
 
+  private async validateAuthSetup(context: AgentContext, installPath: string): Promise<void> {
+    context.logger.info('Validating authentication setup...');
+
+    // Check for essential auth files
+    const essentialFiles = [
+      'lib/auth.ts',
+      '.env.local'
+    ];
+    
+    for (const file of essentialFiles) {
+      const filePath = path.join(installPath, file);
+      if (!await fsExtra.pathExists(filePath)) {
+        throw new Error(`Authentication file missing: ${file}`);
+      }
+    }
+
+    context.logger.success('Authentication setup validation passed');
+  }
+
   private async executeBetterAuthPlugin(
     context: AgentContext, 
     authConfig: AuthConfig,
-    packagePath: string
+    installPath: string
   ): Promise<any> {
     // Get the Better Auth plugin
     const betterAuthPlugin = this.pluginSystem.getRegistry().get('better-auth');
@@ -337,7 +369,7 @@ export class AuthAgent extends AbstractAgent {
     // Prepare plugin context with correct path
     const pluginContext: PluginContext = {
       ...context,
-      projectPath: packagePath, // Use package path instead of root path
+      projectPath: installPath, // Use install path instead of package path
       pluginId: 'better-auth',
       pluginConfig: this.getPluginConfig(authConfig),
       installedPlugins: [],
@@ -360,35 +392,6 @@ export class AuthAgent extends AbstractAgent {
     }
 
     return result;
-  }
-
-  private async validateAuthenticationSetup(context: AgentContext, packagePath: string): Promise<void> {
-    context.logger.info('Validating authentication setup...');
-
-    // Check for essential authentication files in the package path
-    const essentialFiles = [
-      'auth.config.ts',
-      'lib/auth.ts'
-    ];
-    for (const file of essentialFiles) {
-      const filePath = path.join(packagePath, file);
-      if (!await fsExtra.pathExists(filePath)) {
-        throw new Error(`Authentication file missing: ${file}`);
-      }
-    }
-
-    // Check for package.json dependencies
-    const packageJsonPath = path.join(packagePath, 'package.json');
-    if (await fsExtra.pathExists(packageJsonPath)) {
-      const packageJson = await fsExtra.readJSON(packageJsonPath);
-      const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
-      
-      if (!dependencies['better-auth']) {
-        throw new Error('Better Auth dependency not found in package.json');
-      }
-    }
-
-    context.logger.success('Authentication setup validation passed');
   }
 
   private async getAuthConfig(context: AgentContext): Promise<AuthConfig> {

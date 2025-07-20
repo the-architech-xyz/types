@@ -42,6 +42,11 @@ export declare class CommandRunner {
     private getNonInteractiveFlags;
     runScript(scriptName: string, cwd?: string): Promise<CommandResult>;
     exec(toolName: string, args?: string[], cwd?: string): Promise<CommandResult>;
+    /**
+     * Execute a command non-interactively by providing input via stdin
+     * Useful for CLI tools that ask for user input
+     */
+    execNonInteractive(toolName: string, args?: string[], input?: string[], cwd?: string): Promise<CommandResult>;
     initProject(projectPath: string, framework?: string, options?: Record<string, unknown>): Promise<CommandResult>;
 }
 export default CommandRunner;

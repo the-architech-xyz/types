@@ -17,6 +17,9 @@ export declare class UIAgent extends AbstractAgent {
     validate(context: AgentContext): Promise<ValidationResult>;
     private getPackagePath;
     private ensurePackageDirectory;
+    private getUIConfig;
+    private executeShadcnUIPlugin;
+    private validateUISetup;
     private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;
 }
