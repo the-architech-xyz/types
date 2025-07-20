@@ -514,7 +514,7 @@ export class UIAgent extends AbstractAgent {
             const unifiedFiles = [
                 path.join(installPath, 'src', 'lib', 'ui', 'index.ts'),
                 path.join(installPath, 'src', 'lib', 'ui', 'components.tsx'),
-                path.join(installPath, 'src', 'lib', 'ui', 'config.ts')
+                path.join(installPath, 'src', 'lib', 'ui', 'theme.ts')
             ];
             for (const file of unifiedFiles) {
                 if (!await fsExtra.pathExists(file)) {

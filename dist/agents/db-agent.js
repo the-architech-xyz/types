@@ -465,9 +465,16 @@ export class DBAgent extends AbstractAgent {
         if (!plugin) {
             throw new Error(`Database plugin not found: ${actualPluginId}`);
         }
-        // Prepare plugin context
+        // Determine the correct project path for the plugin
+        const isMonorepo = context.projectStructure?.type === 'monorepo';
+        const pluginProjectPath = isMonorepo
+            ? path.join(context.projectPath, 'packages', 'db')
+            : context.projectPath;
+        context.logger.info(`Plugin will generate files in: ${pluginProjectPath}`);
+        // Prepare plugin context with correct project path
         const pluginContext = {
             ...context,
+            projectPath: pluginProjectPath, // Use the correct path for the plugin
             pluginId: actualPluginId,
             pluginConfig: {
                 provider: pluginSelection?.database?.provider || 'neon',
@@ -499,8 +506,17 @@ export class DBAgent extends AbstractAgent {
     async validateDatabaseSetupUnified(context, pluginName, installPath) {
         context.logger.info(`Validating ${pluginName} setup with unified interface...`);
         try {
-            // Check if unified interface files were generated
-            const dbLibPath = path.join(installPath, 'src', 'lib', 'db');
+            // Determine the correct path to check based on project structure
+            const isMonorepo = context.projectStructure?.type === 'monorepo';
+            let dbLibPath;
+            if (isMonorepo) {
+                // For monorepo, check in the package directory
+                dbLibPath = path.join(installPath, 'src', 'lib', 'db');
+            }
+            else {
+                // For single-app, check in the project root
+                dbLibPath = path.join(installPath, 'src', 'lib', 'db');
+            }
             const dbIndexPath = path.join(dbLibPath, 'index.ts');
             if (!existsSync(dbIndexPath)) {
                 throw new Error(`Unified database interface not found at ${dbIndexPath}`);

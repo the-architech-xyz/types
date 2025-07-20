@@ -281,9 +281,16 @@ export class AuthAgent extends AbstractAgent {
             if (!plugin) {
                 throw new Error(`Auth plugin not found: ${pluginName}`);
             }
-            // Prepare plugin context
+            // Determine the correct project path for the plugin
+            const isMonorepo = context.projectStructure?.type === 'monorepo';
+            const pluginProjectPath = isMonorepo
+                ? path.join(context.projectPath, 'packages', 'auth')
+                : context.projectPath;
+            context.logger.info(`Plugin will generate files in: ${pluginProjectPath}`);
+            // Prepare plugin context with correct project path
             const pluginContext = {
                 ...context,
+                projectPath: pluginProjectPath, // Use the correct path for the plugin
                 pluginId: pluginName,
                 pluginConfig: this.getPluginConfig(authConfig, pluginName),
                 installedPlugins: [],
