@@ -1,36 +1,20 @@
 /**
  * Scale to Monorepo Command
  * 
- * Automatically restructures a single-app project into a full monorepo.
- * This is the "killer feature" that demonstrates the power of The Architech.
- * 
- * Transforms:
- * my-quick-project/
- * ├── src/
- * │   ├── app/
- * │   ├── components/     # @my-project/ui
- * │   └── lib/            # @my-project/db, @my-project/auth
- * └── package.json
- * 
- * Into:
- * my-quick-project/
- * ├── apps/
- * │   └── web/
- * ├── packages/
- * │   ├── ui/
- * │   ├── db/
- * │   └── auth/
- * ├── turbo.json
- * └── package.json
+ * Migrates single-app projects to scalable monorepo structure
+ * while preserving all existing functionality.
  */
 
-import * as path from 'path';
+import { Command } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
-import { CommandRunner } from '../utils/command-runner.js';
-import { ContextFactory } from '../utils/context-factory.js';
-import { OrchestratorAgent } from '../agents/orchestrator-agent.js';
+import * as path from 'path';
 import fsExtra from 'fs-extra';
+import { ProjectStructureManager } from '../core/project/project-structure-manager.js';
+import { ConfigurationManager } from '../core/project/configuration-manager.js';
+import { TemplateService } from '../core/templates/template-service.js';
+import { CommandRunner } from '../core/cli/command-runner.js';
+import { ContextFactory } from '../core/project/context-factory.js';
 
 export interface ScaleOptions {
   packageManager?: string;

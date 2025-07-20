@@ -1,19 +1,18 @@
 /**
- * New Command - Unified Project Generation
+ * New Command - Project Generation
  * 
- * Single entry point for project generation with guided decision making:
- * - Quick Prototype (Single App) - Start fast and simple
- * - Scalable Application (Monorepo) - Build serious projects that will grow
- * 
- * The secret: Same underlying architecture, different surface structure
+ * Handles the creation of new projects with intelligent plugin selection
+ * and configuration.
  */
 
 import * as path from 'path';
+import { Command } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
-import { CommandRunner } from '../utils/command-runner.js';
-import { ContextFactory } from '../utils/context-factory.js';
 import { OrchestratorAgent } from '../agents/orchestrator-agent.js';
+import { AgentContext, ExecutionOptions } from '../types/agent.js';
+import { CommandRunner } from '../core/cli/command-runner.js';
+import { ContextFactory } from '../core/project/context-factory.js';
 import fsExtra from 'fs-extra';
 
 export interface NewOptions {
@@ -174,7 +173,7 @@ async function validateProject(config: NewConfig): Promise<void> {
 function createEnhancedContext(config: NewConfig) {
   // Map user preference to internal structure
   const structureType = config.projectType === 'quick-prototype' ? 'single-app' : 'monorepo';
-  const modules = structureType === 'monorepo' ? ['ui', 'db', 'auth', 'config'] : [];
+  const modules = structureType === 'monorepo' ? ['ui', 'db', 'auth'] : [];
 
   // Create enhanced context with project structure awareness
   const context = ContextFactory.createContext(
@@ -199,11 +198,13 @@ function createEnhancedContext(config: NewConfig) {
   context.projectStructure = {
     type: structureType,
     userPreference: config.projectType,
-    modules: modules,
-    template: config.template
+    template: config.template,
+    modules: modules
   };
-  
-  context.userInput = config.userInput || '';
+
+  // Store additional configuration in context
+  context.config.projectType = config.projectType;
+  context.config.userInput = config.userInput;
 
   return context;
 }

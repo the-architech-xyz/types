@@ -7,8 +7,8 @@
  */
 
 import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../types/plugin.js';
-import { TemplateService, templateService } from '../../utils/template-service.js';
-import { CommandRunner } from '../../utils/command-runner.js';
+import { TemplateService, templateService } from '../../core/templates/template-service.js';
+import { CommandRunner } from '../../core/cli/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 

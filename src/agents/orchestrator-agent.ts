@@ -1,16 +1,19 @@
 /**
- * Main Orchestrator Agent
+ * Orchestrator Agent - Main Project Generation Coordinator
  * 
- * AI-powered project planning and decision making.
- * Coordinates all specialized agents and manages plugin selection.
- * Handles user interaction and requirements gathering.
+ * Coordinates the entire project generation process by:
+ * - Analyzing user requirements
+ * - Selecting appropriate plugins
+ * - Orchestrating agent execution
+ * - Managing dependencies and conflicts
  */
 
-import { IAgent, AgentContext, AgentResult, ValidationResult, AgentMetadata, AgentCategory } from '../types/agent.js';
-import { PluginSystem } from '../utils/plugin-system.js';
-import { Logger } from '../types/agent.js';
-import { CommandRunner } from '../utils/command-runner.js';
+import { IAgent, AgentContext, AgentResult, AgentMetadata, Logger, AgentCategory, ValidationResult } from '../types/agent.js';
+import { PluginSystem } from '../core/plugin/plugin-system.js';
+import { PluginSelectionService } from '../core/plugin/plugin-selection-service.js';
+import { CommandRunner } from '../core/cli/command-runner.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
+import { PluginSelection } from '../types/plugin-selection.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 
@@ -21,24 +24,24 @@ interface ProjectRequirements {
   features: string[];
   ui: {
     framework: 'nextjs' | 'react' | 'vue' | 'angular';
-    designSystem: 'shadcn-ui' | 'mui' | 'chakra-ui' | 'antd';
+    designSystem: 'shadcn-ui' | 'mui' | 'chakra-ui' | 'antd' | 'radix' | 'none';
     styling: 'tailwind' | 'css-modules' | 'styled-components';
   };
   database: {
     type: 'postgresql' | 'mysql' | 'sqlite' | 'mongodb';
-    orm: 'drizzle' | 'prisma' | 'typeorm';
+    orm: 'drizzle' | 'prisma' | 'typeorm' | 'none';
     provider: 'neon' | 'local' | 'vercel' | 'supabase';
   };
   authentication: {
-    providers: ('email' | 'github' | 'google' | 'oauth')[];
+    providers: ('email' | 'github' | 'google' | 'oauth' | 'discord' | 'twitter')[];
     requireEmailVerification: boolean;
   };
   deployment: {
-    platform: 'vercel' | 'netlify' | 'railway' | 'aws';
+    platform: 'vercel' | 'netlify' | 'railway' | 'aws' | 'none';
     environment: 'development' | 'staging' | 'production';
   };
   testing: {
-    framework: 'jest' | 'vitest' | 'playwright';
+    framework: 'jest' | 'vitest' | 'playwright' | 'none';
     coverage: boolean;
   };
 }
@@ -62,12 +65,14 @@ interface OrchestrationPhase {
 
 export class OrchestratorAgent implements IAgent {
   private pluginSystem: PluginSystem;
+  private pluginSelectionService: PluginSelectionService;
   private logger: Logger;
   private runner: CommandRunner;
 
   constructor() {
     this.pluginSystem = PluginSystem.getInstance();
     this.logger = this.pluginSystem.getLogger();
+    this.pluginSelectionService = new PluginSelectionService(this.logger);
     this.runner = new CommandRunner();
   }
 
@@ -156,124 +161,139 @@ export class OrchestratorAgent implements IAgent {
     // Extract requirements from context
     const projectName = context.projectName;
     const projectPath = context.projectPath;
-    
-    // Parse user input for requirements (from config or state)
     const userInput = context.config.userInput || '';
-    const requirements = this.parseUserRequirements(userInput, projectName);
+    const projectType = context.config.projectType || 'scalable-monorepo';
+    
+    // Debug logging
+    this.logger.info(`DEBUG: useDefaults = ${context.options.useDefaults}`);
+    this.logger.info(`DEBUG: projectType = ${projectType}`);
+    this.logger.info(`DEBUG: userInput = ${userInput}`);
+    
+    // Use interactive plugin selection if not in --yes mode
+    let pluginSelection: PluginSelection;
+    
+    if (!context.options.useDefaults) {
+      this.logger.info('DEBUG: Using interactive plugin selection');
+      // Interactive plugin selection
+      pluginSelection = await this.pluginSelectionService.selectPlugins(projectType, userInput);
+    } else {
+      this.logger.info('DEBUG: Using default plugin selection');
+      // Use default selections for --yes mode
+      pluginSelection = this.getDefaultPluginSelection(projectType);
+    }
 
-    // Validate and enhance requirements
-    const enhancedRequirements = await this.enhanceRequirements(requirements, context);
+    // Convert plugin selection to project requirements
+    const requirements = this.convertPluginSelectionToRequirements(pluginSelection, projectName, userInput);
+
+    // Store plugin selection in context for later use
+    context.state.set('pluginSelection', pluginSelection);
 
     this.logger.success('Requirements analysis completed');
-    return enhancedRequirements;
+    return requirements;
   }
 
-  private parseUserRequirements(userInput: string, projectName: string): Partial<ProjectRequirements> {
-    // AI-powered parsing of natural language requirements
-    const requirements: Partial<ProjectRequirements> = {
+  private getDefaultPluginSelection(projectType: 'quick-prototype' | 'scalable-monorepo'): PluginSelection {
+    return {
+      database: {
+        enabled: true,
+        type: 'drizzle',
+        provider: 'neon',
+        features: { migrations: true, seeding: true, backup: false }
+      },
+      authentication: {
+        enabled: true,
+        type: 'better-auth',
+        providers: ['email'],
+        features: { emailVerification: true, passwordReset: true, socialLogin: true, sessionManagement: true }
+      },
+      ui: {
+        enabled: true,
+        type: 'shadcn',
+        theme: 'system',
+        components: ['button', 'input', 'card', 'dialog', 'dropdown-menu', 'form'],
+        features: { animations: true, icons: true, responsive: true }
+      },
+      deployment: {
+        enabled: true,
+        platform: 'vercel',
+        environment: 'production',
+        features: { autoDeploy: true, previewDeployments: true, customDomain: false }
+      },
+      testing: {
+        enabled: false,
+        framework: 'vitest',
+        coverage: true,
+        e2e: false
+      },
+      monitoring: {
+        enabled: false,
+        service: 'sentry',
+        features: { errorTracking: true, performance: true, analytics: false }
+      },
+      email: {
+        enabled: false,
+        provider: 'resend',
+        features: { transactional: true, marketing: false, templates: true }
+      },
+      advanced: {
+        linting: true,
+        formatting: true,
+        gitHooks: true,
+        bundling: 'vite',
+        optimization: true,
+        security: true,
+        rateLimiting: false
+      }
+    };
+  }
+
+  private convertPluginSelectionToRequirements(
+    selection: PluginSelection, 
+    projectName: string, 
+    userInput: string
+  ): ProjectRequirements {
+    return {
       name: projectName,
-      description: 'Generated by The Architech',
+      description: userInput || 'Generated by The Architech',
       type: 'web-app',
-      features: [],
+      features: this.extractFeaturesFromSelection(selection),
       ui: {
         framework: 'nextjs',
-        designSystem: 'shadcn-ui',
+        designSystem: selection.ui.enabled ? (selection.ui.type === 'shadcn' ? 'shadcn-ui' : selection.ui.type) : 'none',
         styling: 'tailwind'
       },
       database: {
         type: 'postgresql',
-        orm: 'drizzle',
-        provider: 'neon'
+        orm: selection.database.enabled ? selection.database.type : 'none',
+        provider: selection.database.enabled ? selection.database.provider : 'local'
       },
       authentication: {
-        providers: ['email'],
-        requireEmailVerification: true
+        providers: selection.authentication.enabled ? selection.authentication.providers : [],
+        requireEmailVerification: selection.authentication.enabled && selection.authentication.features.emailVerification
       },
       deployment: {
-        platform: 'vercel',
-        environment: 'development'
+        platform: selection.deployment.enabled ? selection.deployment.platform : 'none',
+        environment: selection.deployment.enabled ? selection.deployment.environment : 'development'
       },
       testing: {
-        framework: 'jest',
-        coverage: true
+        framework: selection.testing.enabled ? selection.testing.framework : 'none',
+        coverage: selection.testing.enabled && selection.testing.coverage
       }
     };
-
-    // Parse user input for specific requirements
-    const input = userInput.toLowerCase();
-    
-    // Framework detection
-    if (input.includes('vue')) requirements.ui!.framework = 'vue';
-    if (input.includes('angular')) requirements.ui!.framework = 'angular';
-    if (input.includes('react') && !input.includes('next')) requirements.ui!.framework = 'react';
-    
-    // Database detection
-    if (input.includes('mysql')) requirements.database!.type = 'mysql';
-    if (input.includes('sqlite')) requirements.database!.type = 'sqlite';
-    if (input.includes('mongodb')) requirements.database!.type = 'mongodb';
-    if (input.includes('prisma')) requirements.database!.orm = 'prisma';
-    
-    // Authentication detection
-    if (input.includes('github')) requirements.authentication!.providers.push('github');
-    if (input.includes('google')) requirements.authentication!.providers.push('google');
-    if (input.includes('oauth')) requirements.authentication!.providers.push('oauth');
-    
-    // Deployment detection
-    if (input.includes('netlify')) requirements.deployment!.platform = 'netlify';
-    if (input.includes('railway')) requirements.deployment!.platform = 'railway';
-    if (input.includes('aws')) requirements.deployment!.platform = 'aws';
-    
-    // Testing detection
-    if (input.includes('vitest')) requirements.testing!.framework = 'vitest';
-    if (input.includes('playwright')) requirements.testing!.framework = 'playwright';
-
-    return requirements;
   }
 
-  private async enhanceRequirements(
-    requirements: Partial<ProjectRequirements>, 
-    context: AgentContext
-  ): Promise<ProjectRequirements> {
-    // AI-powered requirement enhancement
-    const enhanced: ProjectRequirements = {
-      name: requirements.name || 'my-app',
-      description: requirements.description || 'Generated by The Architech',
-      type: requirements.type || 'web-app',
-      features: requirements.features || [],
-      ui: {
-        framework: requirements.ui?.framework || 'nextjs',
-        designSystem: requirements.ui?.designSystem || 'shadcn-ui',
-        styling: requirements.ui?.styling || 'tailwind'
-      },
-      database: {
-        type: requirements.database?.type || 'postgresql',
-        orm: requirements.database?.orm || 'drizzle',
-        provider: requirements.database?.provider || 'neon'
-      },
-      authentication: {
-        providers: requirements.authentication?.providers || ['email'],
-        requireEmailVerification: requirements.authentication?.requireEmailVerification ?? true
-      },
-      deployment: {
-        platform: requirements.deployment?.platform || 'vercel',
-        environment: requirements.deployment?.environment || 'development'
-      },
-      testing: {
-        framework: requirements.testing?.framework || 'jest',
-        coverage: requirements.testing?.coverage ?? true
-      }
-    };
-
-    // Add intelligent defaults based on project type
-    if (enhanced.type === 'monorepo') {
-      enhanced.features.push('monorepo', 'turborepo', 'shared-packages');
-    }
-
-    if (enhanced.ui.framework === 'nextjs') {
-      enhanced.features.push('app-router', 'server-components', 'typescript');
-    }
-
-    return enhanced;
+  private extractFeaturesFromSelection(selection: PluginSelection): string[] {
+    const features: string[] = [];
+    
+    if (selection.database.enabled) features.push('database');
+    if (selection.authentication.enabled) features.push('authentication');
+    if (selection.ui.enabled) features.push('ui-components');
+    if (selection.deployment.enabled) features.push('deployment');
+    if (selection.testing.enabled) features.push('testing');
+    if (selection.monitoring.enabled) features.push('monitoring');
+    if (selection.email.enabled) features.push('email');
+    
+    return features;
   }
 
   // ============================================================================
@@ -286,6 +306,9 @@ export class OrchestratorAgent implements IAgent {
   ): Promise<OrchestrationPlan> {
     this.logger.info('Generating orchestration plan...');
 
+    // Get plugin selection from context
+    const pluginSelection = context.state.get('pluginSelection') as PluginSelection;
+    
     const phases: OrchestrationPhase[] = [];
     const dependencies: string[] = [];
     const conflicts: string[] = [];
@@ -306,42 +329,42 @@ export class OrchestratorAgent implements IAgent {
       name: 'Framework Installation',
       description: 'Install and configure the selected frontend framework',
       agents: ['framework'],
-      plugins: [requirements.ui.framework],
+      plugins: ['nextjs'],
       order: 2,
       dependencies: ['Project Foundation']
     });
 
     // Phase 3: Database Layer
-    if (requirements.database.orm === 'drizzle') {
+    if (pluginSelection.database.enabled && pluginSelection.database.type !== 'none') {
       phases.push({
         name: 'Database Layer',
-        description: 'Setup database with Drizzle ORM',
+        description: `Setup database with ${pluginSelection.database.type}`,
         agents: ['db'],
-        plugins: ['drizzle'],
+        plugins: [pluginSelection.database.type],
         order: 3,
         dependencies: ['Project Foundation']
       });
     }
 
     // Phase 4: Authentication
-    if (requirements.authentication.providers.length > 0) {
+    if (pluginSelection.authentication.enabled && pluginSelection.authentication.type !== 'none') {
       phases.push({
         name: 'Authentication',
-        description: 'Setup authentication with Better Auth',
+        description: `Setup authentication with ${pluginSelection.authentication.type}`,
         agents: ['auth'],
-        plugins: ['better-auth'],
+        plugins: [pluginSelection.authentication.type],
         order: 4,
-        dependencies: ['Database Layer']
+        dependencies: pluginSelection.database.enabled ? ['Database Layer'] : ['Project Foundation']
       });
     }
 
     // Phase 5: UI/Design System
-    if (requirements.ui.designSystem === 'shadcn-ui') {
+    if (pluginSelection.ui.enabled && pluginSelection.ui.type !== 'none') {
       phases.push({
         name: 'UI/Design System',
-        description: 'Setup Shadcn/ui design system',
+        description: `Setup ${pluginSelection.ui.type} design system`,
         agents: ['ui'],
-        plugins: ['shadcn-ui'],
+        plugins: [this.mapUIPluginToSystem(pluginSelection.ui.type)],
         order: 5,
         dependencies: ['Project Foundation']
       });
@@ -350,15 +373,17 @@ export class OrchestratorAgent implements IAgent {
     // Calculate estimated duration
     const estimatedDuration = phases.reduce((total, phase) => total + 30, 0); // 30 seconds per phase
 
-    // Generate recommendations
-    if (requirements.ui.framework === 'nextjs') {
-      recommendations.push('Consider using App Router for better performance');
+    // Generate recommendations based on plugin selection
+    if (pluginSelection.database.enabled && pluginSelection.database.type === 'drizzle') {
+      recommendations.push('Drizzle ORM works best with PostgreSQL. Consider using Neon or Supabase.');
     }
-    if (requirements.database.provider === 'neon') {
-      recommendations.push('Neon provides excellent PostgreSQL hosting with branching');
+    
+    if (pluginSelection.authentication.enabled && pluginSelection.authentication.type === 'better-auth') {
+      recommendations.push('Better Auth requires a database. Make sure to configure your database connection.');
     }
-    if (requirements.authentication.providers.includes('github')) {
-      recommendations.push('GitHub OAuth provides seamless developer experience');
+    
+    if (pluginSelection.ui.enabled && pluginSelection.ui.type === 'shadcn') {
+      recommendations.push('Shadcn/ui provides beautiful, accessible components out of the box.');
     }
 
     return {
@@ -368,6 +393,16 @@ export class OrchestratorAgent implements IAgent {
       conflicts,
       recommendations
     };
+  }
+
+  private mapUIPluginToSystem(uiType: string): string {
+    // Map plugin selection UI types to actual plugin system IDs
+    const mapping: Record<string, string> = {
+      'shadcn': 'shadcn-ui',
+      'radix': 'shadcn-ui', // Radix is included with shadcn-ui
+      'none': 'none'
+    };
+    return mapping[uiType] || 'shadcn-ui';
   }
 
   // ============================================================================

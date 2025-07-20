@@ -10,7 +10,7 @@ import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginSystem } from '../utils/plugin-system.js';
+import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
 import { globalRegistry, globalAdapterFactory } from '../types/unified-registry.js';
 import { UnifiedAuth } from '../types/unified.js';
@@ -320,6 +320,15 @@ export class AuthAgent extends AbstractAgent {
   // ============================================================================
 
   private async selectAuthPlugin(context: AgentContext): Promise<string> {
+    // Get plugin selection from context to determine which auth to use
+    const pluginSelection = context.state.get('pluginSelection') as any;
+    const selectedAuth = pluginSelection?.authentication?.type;
+    
+    if (selectedAuth && selectedAuth !== 'none') {
+      context.logger.info(`Using user selection for auth: ${selectedAuth}`);
+      return selectedAuth;
+    }
+    
     // Check if user has specified a preference
     const userPreference = context.state.get('authTechnology');
     if (userPreference) {

@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * The Architech CLI - Revolutionary AI-Powered Application Generator
+ * The Architech CLI - Main Entry Point
  * 
- * Entry point for the CLI tool that transforms weeks of development work
- * into minutes through intelligent project generation and automation.
+ * Revolutionary AI-Powered Application Generator
+ * Transforming weeks of work into minutes
  */
 
-import { program } from 'commander';
+import { Command } from 'commander';
 import chalk from 'chalk';
 import { newCommand } from './commands/new.js';
 import { scaleToMonorepoCommand } from './commands/scale-to-monorepo.js';
-import { displayBanner } from './utils/banner.js';
+import { displayBanner } from './core/cli/banner.js';
 
 // Async IIFE to handle dynamic imports
 (async () => {
@@ -37,6 +37,7 @@ import { displayBanner } from './utils/banner.js';
   displayBanner();
 
   // Define CLI program
+  const program = new Command();
   program
     .name('architech')
     .description('🚀 Revolutionary AI-Powered Application Generator')

@@ -7,9 +7,9 @@
  */
 
 import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginSystem } from '../utils/plugin-system.js';
+import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
-import { TemplateService, templateService } from '../utils/template-service.js';
+import { TemplateService, templateService } from '../core/templates/template-service.js';
 import { globalRegistry, globalAdapterFactory } from '../types/unified-registry.js';
 import { UnifiedDatabase } from '../types/unified.js';
 import * as path from 'path';
@@ -173,7 +173,7 @@ export class DBAgent extends AbstractAgent {
 
       // Execute selected database plugin through unified interface
       context.logger.info(`Executing ${selectedPlugin} plugin through unified interface...`);
-      const result = await this.executeDatabasePluginUnified(context, selectedPlugin, dbConfig, packagePath);
+      const result = await this.executeDatabasePluginUnified(selectedPlugin, context);
 
       // Validate the setup using unified interface
       await this.validateDatabaseSetupUnified(context, selectedPlugin, packagePath);
@@ -387,67 +387,64 @@ export class DBAgent extends AbstractAgent {
   // ============================================================================
 
   private async executeDatabasePluginUnified(
-    context: AgentContext, 
-    pluginName: string,
-    dbConfig: DatabaseConfig,
-    packagePath: string
-  ): Promise<any> {
-    try {
-      context.logger.info(`Starting unified execution of ${pluginName} plugin...`);
-      
-      // Get the selected plugin
-      const plugin = this.pluginSystem.getRegistry().get(pluginName);
-      if (!plugin) {
-        throw new Error(`${pluginName} plugin not found in registry`);
-      }
-
-      context.logger.info(`Found ${pluginName} plugin in registry`);
-
-      // Prepare plugin context with correct path
-      const pluginContext: PluginContext = {
-        ...context,
-        projectPath: packagePath, // Use package path instead of root path
-        pluginId: pluginName,
-        pluginConfig: this.getPluginConfig(dbConfig, pluginName),
-        installedPlugins: [],
-        projectType: ProjectType.NEXTJS,
-        targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
-      };
-
-      context.logger.info(`Plugin context prepared for ${pluginName}`);
-
-      // Validate plugin compatibility
-      context.logger.info(`Validating ${pluginName} plugin...`);
-      const validation = await plugin.validate(pluginContext);
-      if (!validation.valid) {
-        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
-      }
-
-      context.logger.info(`${pluginName} plugin validation passed`);
-
-      // Execute the plugin
-      context.logger.info(`Executing ${pluginName} plugin...`);
-      const result = await plugin.install(pluginContext);
-
-      if (!result.success) {
-        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
-      }
-
-      context.logger.info(`${pluginName} plugin execution completed successfully`);
-
-      // Create unified interface adapter
-      context.logger.info(`Creating unified interface adapter for ${pluginName}...`);
-      const dbAdapter = await globalAdapterFactory.createDatabaseAdapter(pluginName);
-      
-      // Register the adapter in the global registry
-      globalRegistry.register('database', pluginName, dbAdapter);
-      context.logger.info(`Registered ${pluginName} adapter in unified registry`);
-
-      return result;
-    } catch (error) {
-      context.logger.error(`Error in executeDatabasePluginUnified for ${pluginName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw error;
+    pluginId: string, 
+    context: AgentContext
+  ): Promise<{ artifacts: any[]; warnings: string[] }> {
+    context.logger.info(`Starting unified execution of ${pluginId} plugin...`);
+    
+    // Get plugin selection from context to determine which database to use
+    const pluginSelection = context.state.get('pluginSelection') as any;
+    const selectedDatabase = pluginSelection?.database?.type || pluginId;
+    
+    context.logger.info(`Using database technology: ${selectedDatabase} (user selection: ${pluginSelection?.database?.type})`);
+    
+    // Use the selected database instead of the default
+    const actualPluginId = selectedDatabase === 'none' ? pluginId : selectedDatabase;
+    
+    context.logger.info(`Found ${actualPluginId} plugin in registry`);
+    
+    // Get plugin from registry
+    const plugin = this.pluginSystem.getRegistry().get(actualPluginId);
+    if (!plugin) {
+      throw new Error(`Database plugin not found: ${actualPluginId}`);
     }
+
+    // Prepare plugin context
+    const pluginContext: PluginContext = {
+      ...context,
+      pluginId: actualPluginId,
+      pluginConfig: {
+        provider: pluginSelection?.database?.provider || 'neon',
+        features: pluginSelection?.database?.features || {}
+      },
+      installedPlugins: [],
+      projectType: ProjectType.NEXTJS,
+      targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
+    };
+
+    context.logger.info('Plugin context prepared for ' + actualPluginId);
+    
+    // Validate plugin
+    const validation = await plugin.validate(pluginContext);
+    if (!validation.valid) {
+      throw new Error(`${actualPluginId} plugin validation failed: ${validation.errors.map((e: any) => e.message).join(', ')}`);
+    }
+    context.logger.info(`${actualPluginId} plugin validation passed`);
+
+    // Execute plugin
+    context.logger.info(`Executing ${actualPluginId} plugin...`);
+    const result = await plugin.install(pluginContext);
+    
+    if (!result.success) {
+      throw new Error(`${actualPluginId} plugin execution failed: ${result.errors?.map((e: any) => e.message).join(', ') || 'Unknown error'}`);
+    }
+    
+    context.logger.info(`${actualPluginId} plugin execution completed successfully`);
+    
+    return {
+      artifacts: result.artifacts || [],
+      warnings: result.warnings || []
+    };
   }
 
   private async validateDatabaseSetupUnified(

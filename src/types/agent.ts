@@ -1,11 +1,10 @@
 /**
- * Core Agent Interface Types
+ * Agent Types and Interfaces
  * 
- * Defines the standardized interface for all Architech agents.
- * Based on modern AI agent standards and designed for extensibility.
+ * Defines the core types and interfaces for the agent system.
  */
 
-import { CommandRunner } from '../utils/command-runner.js';
+import { CommandRunner } from '../core/cli/command-runner.js';
 
 // ============================================================================
 // CORE INTERFACES

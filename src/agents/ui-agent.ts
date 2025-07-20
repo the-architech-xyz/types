@@ -7,10 +7,10 @@
  */
 
 import { IAgent, AgentContext, AgentResult, AgentMetadata, AgentCategory, ValidationResult, AgentCapability, CapabilityCategory } from '../types/agent.js';
-import { PluginSystem } from '../utils/plugin-system.js';
+import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
-import { TemplateService, templateService } from '../utils/template-service.js';
+import { TemplateService, templateService } from '../core/templates/template-service.js';
 import { globalRegistry, globalAdapterFactory } from '../types/unified-registry.js';
 import { UnifiedUI } from '../types/unified.js';
 import * as path from 'path';
@@ -309,6 +309,22 @@ export class UIAgent extends AbstractAgent {
   // ============================================================================
 
   private async selectUIPlugin(context: AgentContext): Promise<string> {
+    // Get plugin selection from context to determine which UI to use
+    const pluginSelection = context.state.get('pluginSelection') as any;
+    const selectedUI = pluginSelection?.ui?.type;
+    
+    if (selectedUI && selectedUI !== 'none') {
+      // Map plugin selection UI types to actual plugin system IDs
+      const uiMapping: Record<string, string> = {
+        'shadcn': 'shadcn-ui',
+        'radix': 'shadcn-ui', // Radix is included with shadcn-ui
+        'none': 'shadcn-ui'
+      };
+      const actualPluginId = uiMapping[selectedUI] || 'shadcn-ui';
+      context.logger.info(`Using user selection for UI: ${selectedUI} -> ${actualPluginId}`);
+      return actualPluginId;
+    }
+    
     // Check if user has specified a preference
     const userPreference = context.state.get('uiTechnology');
     if (userPreference) {
