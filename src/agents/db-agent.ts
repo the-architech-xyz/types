@@ -6,12 +6,15 @@
  * No direct installation logic - delegates everything to plugins.
  */
 
-import { existsSync } from 'fs';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../utils/plugin-system.js';
-import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
+import { ProjectType, TargetPlatform } from '../types/plugin.js';
+import { TemplateService, templateService } from '../utils/template-service.js';
+import * as path from 'path';
+import fsExtra from 'fs-extra';
+import { PluginContext } from '../types/plugin.js';
+import inquirer from 'inquirer';
+import chalk from 'chalk';
 import {
   AgentContext,
   AgentResult,
@@ -164,59 +167,72 @@ export class DBAgent extends AbstractAgent {
   // ============================================================================
 
   protected async executeInternal(context: AgentContext): Promise<AgentResult> {
-    const { projectName, projectPath } = context;
+    const startTime = Date.now();
     
-    context.logger.info(`Setting up database for project: ${projectName}`);
-
     try {
-      // Start spinner for actual work
-      await this.startSpinner(`🗄️ Setting up database with Drizzle ORM...`, context);
+      context.logger.info('Starting database orchestration...');
 
-      // Step 1: Determine the correct path based on project structure
-      const packagePath = this.getPackagePath(context, 'db');
-      context.logger.info(`Database package path: ${packagePath}`);
+      // For monorepo, install database in the db package directory
+      const isMonorepo = context.projectStructure?.type === 'monorepo';
+      let packagePath: string;
+      
+      if (isMonorepo) {
+        // Install in the db package directory (packages/db)
+        packagePath = path.join(context.projectPath, 'packages', 'db');
+        context.logger.info(`Database package path: ${packagePath}`);
+        
+        // Ensure the db package directory exists
+        await fsExtra.ensureDir(packagePath);
+        context.logger.info(`Using db package directory for database setup: ${packagePath}`);
+      } else {
+        // For single-app, use the project root
+        packagePath = context.projectPath;
+        context.logger.info(`Using project root for database setup: ${packagePath}`);
+      }
 
-      // Step 2: Ensure package directory exists
-      await this.ensurePackageDirectory(context, 'db', packagePath);
+      // Select database plugin based on user preferences or project requirements
+      const selectedPlugin = await this.selectDatabasePlugin(context);
 
-      // Step 3: Get database configuration
+      // Get database configuration
       const dbConfig = await this.getDatabaseConfig(context);
-      
-      // Step 4: Execute Drizzle plugin with correct path
-      const pluginResult = await this.executeDrizzlePlugin(context, dbConfig, packagePath);
-      
-      // Step 5: Validate database setup
+
+      // Execute selected database plugin in the correct location
+      context.logger.info(`Executing ${selectedPlugin} plugin...`);
+      const result = await this.executeDatabasePlugin(context, selectedPlugin, dbConfig, packagePath);
+
+      // Validate the setup
       await this.validateDatabaseSetup(context, packagePath);
 
-      await this.succeedSpinner(`✅ Database setup completed successfully`);
-
+      const duration = Date.now() - startTime;
+      
       return {
         success: true,
+        artifacts: result.artifacts || [],
         data: {
-          provider: dbConfig.provider,
+          plugin: selectedPlugin,
           packagePath,
-          plugin: 'drizzle',
-          artifacts: pluginResult.artifacts.length,
-          dependencies: pluginResult.dependencies.length,
-          scripts: pluginResult.scripts.length
+          provider: dbConfig.provider
         },
-        artifacts: pluginResult.artifacts,
-        warnings: pluginResult.warnings,
-        duration: Date.now() - this.startTime
+        errors: [],
+        warnings: result.warnings || [],
+        duration
       };
 
     } catch (error) {
-      await this.failSpinner(`❌ Database setup failed`);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`Database setup failed: ${errorMessage}`, error as Error);
-      
-      return this.createErrorResult(
-        'DATABASE_SETUP_FAILED',
-        `Failed to setup database: ${errorMessage}`,
-        [],
-        this.startTime,
-        error
-      );
+      return {
+        success: false,
+        data: null,
+        errors: [{
+          code: 'DB_AGENT_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error occurred',
+          details: error,
+          recoverable: false,
+          suggestion: 'Check database plugin configuration and try again',
+          timestamp: new Date()
+        }],
+        warnings: [],
+        duration: Date.now() - startTime
+      };
     }
   }
 
@@ -449,5 +465,122 @@ export class DBAgent extends AbstractAgent {
     } catch (error) {
       context.logger.error('Database rollback failed', error as Error);
     }
+  }
+
+  // ============================================================================
+  // PLUGIN SELECTION
+  // ============================================================================
+
+  private async selectDatabasePlugin(context: AgentContext): Promise<string> {
+    // Check if user has specified a database plugin preference
+    const userPreference = context.config?.database?.plugin;
+    if (userPreference) {
+      context.logger.info(`Using user-specified database plugin: ${userPreference}`);
+      return userPreference;
+    }
+
+    // Check if we're in non-interactive mode (--yes flag) and no user preference
+    if (context.options.useDefaults && !userPreference) {
+      context.logger.info('Using default database plugin: drizzle');
+      // Store the default selection in context
+      if (!context.config.database) context.config.database = {};
+      context.config.database.plugin = 'drizzle';
+      return 'drizzle';
+    }
+
+    // Interactive plugin selection
+    const availablePlugins = this.getAvailableDatabasePlugins();
+    
+    if (availablePlugins.length === 1) {
+      context.logger.info(`Only one database plugin available: ${availablePlugins[0].id}`);
+      // Store the selection in context
+      if (!context.config.database) context.config.database = {};
+      context.config.database.plugin = availablePlugins[0].id;
+      return availablePlugins[0].id;
+    }
+
+    // Show plugin selection prompt
+    console.log(chalk.blue.bold('\n🗄️ Choose your database ORM:\n'));
+    
+    const choices = availablePlugins.map(plugin => {
+      const metadata = plugin.getMetadata();
+      return {
+        name: `${metadata.name} - ${metadata.description}`,
+        value: metadata.id,
+        description: `Tags: ${metadata.tags.join(', ')}`
+      };
+    });
+
+    const { selectedPlugin } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'selectedPlugin',
+        message: chalk.yellow('Select database ORM:'),
+        choices,
+        default: 'drizzle'
+      }
+    ]);
+
+    context.logger.info(`Selected database plugin: ${selectedPlugin}`);
+    
+    // Store the selection in context
+    if (!context.config.database) context.config.database = {};
+    context.config.database.plugin = selectedPlugin;
+    
+    return selectedPlugin;
+  }
+
+  private getAvailableDatabasePlugins(): any[] {
+    const registry = this.pluginSystem.getRegistry();
+    const allPlugins = registry.getAll();
+    
+    return allPlugins.filter(plugin => {
+      const metadata = plugin.getMetadata();
+      return metadata.category === 'orm' || metadata.category === 'database';
+    });
+  }
+
+  // ============================================================================
+  // PLUGIN EXECUTION
+  // ============================================================================
+
+  private async executeDatabasePlugin(
+    context: AgentContext, 
+    pluginName: string,
+    dbConfig: DatabaseConfig,
+    packagePath: string
+  ): Promise<any> {
+    // Get the selected plugin
+    const plugin = this.pluginSystem.getRegistry().get(pluginName);
+    if (!plugin) {
+      throw new Error(`${pluginName} plugin not found in registry`);
+    }
+
+    // Prepare plugin context with correct path
+    const pluginContext: PluginContext = {
+      ...context,
+      projectPath: packagePath, // Use package path instead of root path
+      pluginId: pluginName,
+      pluginConfig: this.getPluginConfig(dbConfig),
+      installedPlugins: [],
+      projectType: ProjectType.NEXTJS,
+      targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
+    };
+
+    // Validate plugin compatibility
+    const validation = await plugin.validate(pluginContext);
+    if (!validation.valid) {
+      throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+    }
+
+    // Execute the plugin
+    context.logger.info(`Executing ${pluginName} plugin...`);
+    const result = await plugin.install(pluginContext);
+
+    if (!result.success) {
+      throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+    }
+
+    return result;
   }
 } 

@@ -21,4 +21,7 @@ export declare class DBAgent extends AbstractAgent {
     private getDatabaseConfig;
     private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;
+    private selectDatabasePlugin;
+    private getAvailableDatabasePlugins;
+    private executeDatabasePlugin;
 }

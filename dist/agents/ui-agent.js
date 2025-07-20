@@ -12,6 +12,8 @@ import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { templateService } from '../utils/template-service.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
+import inquirer from 'inquirer';
+import chalk from 'chalk';
 export class UIAgent extends AbstractAgent {
     pluginSystem;
     templateService;
@@ -70,11 +72,13 @@ export class UIAgent extends AbstractAgent {
                 installPath = context.projectPath;
                 context.logger.info(`Using project root for UI setup: ${installPath}`);
             }
+            // Select UI plugin based on user preferences or project requirements
+            const selectedPlugin = await this.selectUIPlugin(context);
             // Get UI configuration
             const uiConfig = await this.getUIConfig(context);
-            // Execute Shadcn/ui plugin in the correct location
-            context.logger.info('Executing Shadcn/ui plugin...');
-            const result = await this.executeShadcnUIPlugin(context, uiConfig, installPath);
+            // Execute selected UI plugin in the correct location
+            context.logger.info(`Executing ${selectedPlugin} plugin...`);
+            const result = await this.executeUIPlugin(context, selectedPlugin, uiConfig, installPath);
             // Validate the setup
             await this.validateUISetup(context, installPath);
             const duration = Date.now() - startTime;
@@ -82,7 +86,7 @@ export class UIAgent extends AbstractAgent {
                 success: true,
                 artifacts: result.artifacts || [],
                 data: {
-                    plugin: 'shadcn-ui',
+                    plugin: selectedPlugin,
                     installPath,
                     designSystem: uiConfig.designSystem
                 },
@@ -92,17 +96,15 @@ export class UIAgent extends AbstractAgent {
             };
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            context.logger.error('UI setup failed', error);
             return {
                 success: false,
-                artifacts: [],
                 data: null,
                 errors: [{
-                        code: 'UI_SETUP_FAILED',
-                        message: `UI setup failed: ${errorMessage}`,
+                        code: 'UI_AGENT_ERROR',
+                        message: error instanceof Error ? error.message : 'Unknown error occurred',
                         details: error,
                         recoverable: false,
+                        suggestion: 'Check UI plugin configuration and try again',
                         timestamp: new Date()
                     }],
                 warnings: [],
@@ -199,6 +201,69 @@ export class UIAgent extends AbstractAgent {
         }
     }
     // ============================================================================
+    // PLUGIN SELECTION
+    // ============================================================================
+    async selectUIPlugin(context) {
+        // Check if user has specified a UI plugin preference
+        const userPreference = context.config?.ui?.plugin;
+        if (userPreference) {
+            context.logger.info(`Using user-specified UI plugin: ${userPreference}`);
+            return userPreference;
+        }
+        // Check if we're in non-interactive mode (--yes flag) and no user preference
+        if (context.options.useDefaults && !userPreference) {
+            context.logger.info('Using default UI plugin: shadcn-ui');
+            // Store the default selection in context
+            if (!context.config.ui)
+                context.config.ui = {};
+            context.config.ui.plugin = 'shadcn-ui';
+            return 'shadcn-ui';
+        }
+        // Interactive plugin selection
+        const availablePlugins = this.getAvailableUIPlugins();
+        if (availablePlugins.length === 1) {
+            context.logger.info(`Only one UI plugin available: ${availablePlugins[0].id}`);
+            // Store the selection in context
+            if (!context.config.ui)
+                context.config.ui = {};
+            context.config.ui.plugin = availablePlugins[0].id;
+            return availablePlugins[0].id;
+        }
+        // Show plugin selection prompt
+        console.log(chalk.blue.bold('\n🎨 Choose your UI framework:\n'));
+        const choices = availablePlugins.map(plugin => {
+            const metadata = plugin.getMetadata();
+            return {
+                name: `${metadata.name} - ${metadata.description}`,
+                value: metadata.id,
+                description: `Tags: ${metadata.tags.join(', ')}`
+            };
+        });
+        const { selectedPlugin } = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'selectedPlugin',
+                message: chalk.yellow('Select UI framework:'),
+                choices,
+                default: 'shadcn-ui'
+            }
+        ]);
+        context.logger.info(`Selected UI plugin: ${selectedPlugin}`);
+        // Store the selection in context
+        if (!context.config.ui)
+            context.config.ui = {};
+        context.config.ui.plugin = selectedPlugin;
+        return selectedPlugin;
+    }
+    getAvailableUIPlugins() {
+        const registry = this.pluginSystem.getRegistry();
+        const allPlugins = registry.getAll();
+        return allPlugins.filter(plugin => {
+            const metadata = plugin.getMetadata();
+            return metadata.category === 'ui-library' || metadata.category === 'design-system';
+        });
+    }
+    // ============================================================================
     // PRIVATE METHODS
     // ============================================================================
     async getUIConfig(context) {
@@ -211,32 +276,32 @@ export class UIAgent extends AbstractAgent {
             components: userConfig.components || ['button', 'card', 'input', 'form']
         };
     }
-    async executeShadcnUIPlugin(context, uiConfig, installPath) {
-        // Get the Shadcn/ui plugin
-        const shadcnPlugin = this.pluginSystem.getRegistry().get('shadcn-ui');
-        if (!shadcnPlugin) {
-            throw new Error('Shadcn/ui plugin not found in registry');
+    async executeUIPlugin(context, pluginName, uiConfig, installPath) {
+        // Get the selected plugin
+        const plugin = this.pluginSystem.getRegistry().get(pluginName);
+        if (!plugin) {
+            throw new Error(`${pluginName} plugin not found in registry`);
         }
         // Prepare plugin context with correct path
         const pluginContext = {
             ...context,
             projectPath: installPath, // Use the correct install path
-            pluginId: 'shadcn-ui',
+            pluginId: pluginName,
             pluginConfig: this.getPluginConfig(context),
             installedPlugins: [],
             projectType: ProjectType.NEXTJS,
             targetPlatform: [TargetPlatform.WEB]
         };
         // Validate plugin compatibility
-        const validation = await shadcnPlugin.validate(pluginContext);
+        const validation = await plugin.validate(pluginContext);
         if (!validation.valid) {
-            throw new Error(`Shadcn/ui plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+            throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
         }
         // Execute the plugin
-        context.logger.info('Executing Shadcn/ui plugin...');
-        const result = await shadcnPlugin.install(pluginContext);
+        context.logger.info(`Executing ${pluginName} plugin...`);
+        const result = await plugin.install(pluginContext);
         if (!result.success) {
-            throw new Error(`Shadcn/ui plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
+            throw new Error(`${pluginName} plugin execution failed: ${result.errors.map(e => e.message).join(', ')}`);
         }
         return result;
     }

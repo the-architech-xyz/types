@@ -10,7 +10,9 @@ import { PluginManagerImpl } from './plugin-manager.js';
 import { Logger, LogLevel, LogContext } from '../types/agent.js';
 import { PluginRegistry, PluginManager } from '../types/plugin.js';
 import { ShadcnUIPlugin } from '../plugins/ui/shadcn-ui.js';
+import { TamaguiPlugin } from '../plugins/ui/tamagui-plugin.js';
 import { DrizzlePlugin } from '../plugins/db/drizzle-plugin.js';
+import { PrismaPlugin } from '../plugins/db/prisma-plugin.js';
 import { BetterAuthPlugin } from '../plugins/auth/better-auth-plugin.js';
 import { NextJSPlugin } from '../plugins/framework/nextjs-plugin.js';
 
@@ -78,6 +80,7 @@ export class PluginSystem {
 
     // UI Plugins
     this.registry.register(new ShadcnUIPlugin());
+    this.registry.register(new TamaguiPlugin());
     // TODO: Add more UI plugins
     // this.registry.register(new MuiPlugin());
     // this.registry.register(new ChakraUIPlugin());
@@ -85,8 +88,8 @@ export class PluginSystem {
 
     // Database Plugins
     this.registry.register(new DrizzlePlugin());
+    this.registry.register(new PrismaPlugin());
     // TODO: Add more database plugins
-    // this.registry.register(new PrismaPlugin());
     // this.registry.register(new TypeORMPlugin());
 
     // Auth Plugins
