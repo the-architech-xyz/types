@@ -34,8 +34,10 @@
     "src/utils/**/*",
     "src/agents/base/**/*",
     "src/agents/*.ts",
-    "src/commands/**/*"
-, "src/core/templates/template-service.ts", "src/core/cli/command-runner.ts", "src/core/cli/banner.ts", "src/core/cli/logger.ts"  ],
+    "src/commands/**/*",
+    "src/core/**/*",
+    "src/plugins/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",
