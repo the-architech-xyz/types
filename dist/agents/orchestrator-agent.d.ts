@@ -7,7 +7,7 @@
  * - Orchestrating agent execution
  * - Managing dependencies and conflicts
  */
-import { IAgent, AgentContext, AgentResult, AgentMetadata } from '../types/agent.js';
+import { IAgent, AgentMetadata, AgentContext, AgentResult } from '../types/agent.js';
 export declare class OrchestratorAgent implements IAgent {
     private pluginSystem;
     private pluginSelectionService;

@@ -9,12 +9,19 @@
 import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../types/plugin.js';
 import { TemplateService, templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
+import { ValidationError } from '../../types/agent.js';
+import { 
+  AUTH_PROVIDERS, 
+  AUTH_FEATURES, 
+  AuthProvider, 
+  AuthFeature 
+} from '../../types/shared-config.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { structureService, StructureInfo } from '../../core/project/structure-service.js';
 
 interface AuthConfig {
-  providers: ('email' | 'github' | 'google')[];
+  providers: AuthProvider[];
   requireEmailVerification: boolean;
   sessionDuration: number;
   databaseUrl: string;
@@ -307,11 +314,11 @@ export class BetterAuthPlugin implements IPlugin {
           type: 'array',
           items: { 
             type: 'string',
-            enum: ['email', 'github', 'google'],
+            enum: Object.values(AUTH_PROVIDERS),
             description: 'Authentication provider name'
           },
           description: 'Authentication providers to enable',
-          default: ['email']
+          default: [AUTH_PROVIDERS.EMAIL]
         },
         requireEmailVerification: {
           type: 'boolean',
@@ -414,30 +421,30 @@ export class BetterAuthPlugin implements IPlugin {
       await fsExtra.ensureDir(authPackagePath);
       
       // Create package.json for auth package
-      const packageJson = {
+    const packageJson = {
         name: `@${projectName}/auth`,
-        version: "0.1.0",
-        private: true,
+      version: "0.1.0",
+      private: true,
         main: "./index.ts",
         types: "./index.ts",
-        scripts: {
-          "build": "tsc",
-          "dev": "tsc --watch",
+      scripts: {
+        "build": "tsc",
+        "dev": "tsc --watch",
           "lint": "eslint . --ext .ts,.tsx"
-        },
-        dependencies: {
+      },
+      dependencies: {
           "better-auth": "^1.3.0",
           "@better-auth/utils": "^0.2.6",
-          "bcryptjs": "^2.4.3",
-          "jsonwebtoken": "^9.0.2"
-        },
-        devDependencies: {
+        "bcryptjs": "^2.4.3",
+        "jsonwebtoken": "^9.0.2"
+      },
+      devDependencies: {
           "@better-auth/cli": "^1.3.0",
           "typescript": "^5.0.0"
-        }
-      };
-      
-      await fsExtra.writeJSON(path.join(authPackagePath, 'package.json'), packageJson, { spaces: 2 });
+      }
+    };
+
+    await fsExtra.writeJSON(path.join(authPackagePath, 'package.json'), packageJson, { spaces: 2 });
       
       // Create the main auth configuration file
       const authConfig = this.generateAuthConfig(pluginConfig);

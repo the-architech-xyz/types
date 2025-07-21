@@ -8,6 +8,7 @@
 import { PluginCategory, TargetPlatform } from '../../types/plugin.js';
 import { templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
+import { DATABASE_PROVIDERS } from '../../types/shared-config.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { structureService } from '../../core/project/structure-service.js';
@@ -283,9 +284,9 @@ export class DrizzlePlugin {
             properties: {
                 provider: {
                     type: 'string',
-                    enum: ['neon'],
+                    enum: [DATABASE_PROVIDERS.NEON, DATABASE_PROVIDERS.SUPABASE, DATABASE_PROVIDERS.VERCEL, DATABASE_PROVIDERS.LOCAL],
                     description: 'Database provider',
-                    default: 'neon'
+                    default: DATABASE_PROVIDERS.NEON
                 },
                 databaseUrl: {
                     type: 'string',

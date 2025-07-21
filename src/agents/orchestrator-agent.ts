@@ -8,14 +8,21 @@
  * - Managing dependencies and conflicts
  */
 
-import { IAgent, AgentContext, AgentResult, AgentMetadata, Logger, AgentCategory, ValidationResult } from '../types/agent.js';
+import { IAgent, AgentMetadata, AgentContext, AgentResult, AgentCategory, ValidationResult, Logger } from '../types/agent.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { PluginSelectionService } from '../core/plugin/plugin-selection-service.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
-import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { PluginSelection } from '../types/plugin-selection.js';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
+import { 
+  DatabaseProvider, 
+  AuthProvider, 
+  DatabaseFeature, 
+  AuthFeature,
+  PluginType,
+  DATABASE_PROVIDERS,
+  AUTH_PROVIDERS,
+  PLUGIN_TYPES
+} from '../types/shared-config.js';
 
 interface ProjectRequirements {
   name: string;
@@ -28,12 +35,12 @@ interface ProjectRequirements {
     styling: 'tailwind' | 'css-modules' | 'styled-components';
   };
   database: {
-    type: 'postgresql' | 'mysql' | 'sqlite' | 'mongodb';
-    orm: 'drizzle' | 'prisma' | 'typeorm' | 'none';
-    provider: 'neon' | 'local' | 'vercel' | 'supabase';
+    type: DatabaseProvider;
+    orm: PluginType;
+    provider: DatabaseProvider;
   };
   authentication: {
-    providers: ('email' | 'github' | 'google' | 'oauth' | 'discord' | 'twitter')[];
+    providers: AuthProvider[];
     requireEmailVerification: boolean;
   };
   deployment: {
@@ -263,13 +270,14 @@ export class OrchestratorAgent implements IAgent {
         styling: 'tailwind'
       },
       database: {
-        type: 'postgresql',
-        orm: selection.database.enabled ? selection.database.type : 'none',
-        provider: selection.database.enabled ? selection.database.provider : 'local'
+        type: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.POSTGRESQL,
+        orm: selection.database.enabled ? selection.database.type : PLUGIN_TYPES.NONE,
+        provider: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.LOCAL
       },
       authentication: {
         providers: selection.authentication.enabled ? selection.authentication.providers : [],
-        requireEmailVerification: selection.authentication.enabled && selection.authentication.features.emailVerification
+        requireEmailVerification: selection.authentication.enabled && 
+          (selection.authentication.features.emailVerification ?? false)
       },
       deployment: {
         platform: selection.deployment.enabled ? selection.deployment.platform : 'none',

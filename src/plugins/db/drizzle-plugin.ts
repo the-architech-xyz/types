@@ -9,12 +9,17 @@
 import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../types/plugin.js';
 import { TemplateService, templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
+import { ValidationError } from '../../types/agent.js';
+import { 
+  DATABASE_PROVIDERS, 
+  DatabaseProvider 
+} from '../../types/shared-config.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { structureService, StructureInfo } from '../../core/project/structure-service.js';
 
 interface DatabaseConfig {
-  provider: 'neon';
+  provider: DatabaseProvider;
   connectionString: string;
   databaseUrl: string;
 }
@@ -330,9 +335,9 @@ export class DrizzlePlugin implements IPlugin {
       properties: {
         provider: {
           type: 'string',
-          enum: ['neon'],
+          enum: [DATABASE_PROVIDERS.NEON, DATABASE_PROVIDERS.SUPABASE, DATABASE_PROVIDERS.VERCEL, DATABASE_PROVIDERS.LOCAL],
           description: 'Database provider',
-          default: 'neon'
+          default: DATABASE_PROVIDERS.NEON
         },
         databaseUrl: {
           type: 'string',
@@ -417,7 +422,7 @@ export class DrizzlePlugin implements IPlugin {
       // Create schema file
       const schemaContent = this.generateDatabaseSchema();
       await fsExtra.writeFile(path.join(dbPath, 'schema.ts'), schemaContent);
-        
+      
       // Create database connection
       const connectionContent = this.generateDatabaseConnection();
       await fsExtra.writeFile(path.join(dbPath, 'index.ts'), connectionContent);

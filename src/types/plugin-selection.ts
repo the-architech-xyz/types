@@ -5,6 +5,23 @@
  * during project generation.
  */
 
+import { 
+  DatabaseProvider, 
+  AuthProvider, 
+  DatabaseFeature, 
+  AuthFeature,
+  SessionStrategy,
+  DatabaseAdapter,
+  PluginType,
+  DATABASE_PROVIDERS,
+  AUTH_PROVIDERS,
+  DATABASE_FEATURES,
+  AUTH_FEATURES,
+  SESSION_STRATEGIES,
+  DATABASE_ADAPTERS,
+  PLUGIN_TYPES
+} from './shared-config.js';
+
 // ============================================================================
 // PLUGIN SELECTION INTERFACES
 // ============================================================================
@@ -27,26 +44,17 @@ export interface PluginSelection {
 
 export interface DatabaseSelection {
   enabled: boolean;
-  type: 'drizzle' | 'prisma' | 'none';
-  provider: 'neon' | 'supabase' | 'local' | 'vercel';
-  features: {
-    migrations: boolean;
-    seeding: boolean;
-    backup: boolean;
-  };
+  type: PluginType;
+  provider: DatabaseProvider;
+  features: Partial<Record<DatabaseFeature, boolean>>;
   configuration?: Record<string, any>;
 }
 
 export interface AuthSelection {
   enabled: boolean;
-  type: 'better-auth' | 'next-auth' | 'none';
-  providers: ('email' | 'github' | 'google' | 'discord' | 'twitter')[];
-  features: {
-    emailVerification: boolean;
-    passwordReset: boolean;
-    socialLogin: boolean;
-    sessionManagement: boolean;
-  };
+  type: PluginType;
+  providers: AuthProvider[];
+  features: Partial<Record<AuthFeature, boolean>>;
   configuration?: Record<string, any>;
 }
 

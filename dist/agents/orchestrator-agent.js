@@ -11,6 +11,7 @@ import { AgentCategory } from '../types/agent.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { PluginSelectionService } from '../core/plugin/plugin-selection-service.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
+import { DATABASE_PROVIDERS, PLUGIN_TYPES } from '../types/shared-config.js';
 export class OrchestratorAgent {
     pluginSystem;
     pluginSelectionService;
@@ -175,13 +176,14 @@ export class OrchestratorAgent {
                 styling: 'tailwind'
             },
             database: {
-                type: 'postgresql',
-                orm: selection.database.enabled ? selection.database.type : 'none',
-                provider: selection.database.enabled ? selection.database.provider : 'local'
+                type: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.POSTGRESQL,
+                orm: selection.database.enabled ? selection.database.type : PLUGIN_TYPES.NONE,
+                provider: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.LOCAL
             },
             authentication: {
                 providers: selection.authentication.enabled ? selection.authentication.providers : [],
-                requireEmailVerification: selection.authentication.enabled && selection.authentication.features.emailVerification
+                requireEmailVerification: selection.authentication.enabled &&
+                    (selection.authentication.features.emailVerification ?? false)
             },
             deployment: {
                 platform: selection.deployment.enabled ? selection.deployment.platform : 'none',

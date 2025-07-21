@@ -8,6 +8,7 @@
 import { PluginCategory, TargetPlatform } from '../../types/plugin.js';
 import { templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
+import { AUTH_PROVIDERS } from '../../types/shared-config.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { structureService } from '../../core/project/structure-service.js';
@@ -256,11 +257,11 @@ export class BetterAuthPlugin {
                     type: 'array',
                     items: {
                         type: 'string',
-                        enum: ['email', 'github', 'google'],
+                        enum: Object.values(AUTH_PROVIDERS),
                         description: 'Authentication provider name'
                     },
                     description: 'Authentication providers to enable',
-                    default: ['email']
+                    default: [AUTH_PROVIDERS.EMAIL]
                 },
                 requireEmailVerification: {
                     type: 'boolean',

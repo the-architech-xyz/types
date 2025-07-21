@@ -11,7 +11,9 @@ import { Logger, LogLevel, LogContext } from '../../types/agent.js';
 import { PluginRegistry, PluginManager } from '../../types/plugin.js';
 import { ShadcnUIPlugin } from '../../plugins/ui/shadcn-ui.js';
 import { DrizzlePlugin } from '../../plugins/db/drizzle-plugin.js';
+import { PrismaPlugin } from '../../plugins/db/prisma-plugin.js';
 import { BetterAuthPlugin } from '../../plugins/auth/better-auth-plugin.js';
+import { NextAuthPlugin } from '../../plugins/auth/nextauth-plugin.js';
 import { NextJSPlugin } from '../../plugins/framework/nextjs-plugin.js';
 
 // Simple logger implementation for the plugin system
@@ -85,13 +87,14 @@ export class PluginSystem {
 
     // Database Plugins
     this.registry.register(new DrizzlePlugin());
+    this.registry.register(new PrismaPlugin());
     // TODO: Add more database plugins
     // this.registry.register(new TypeORMPlugin());
 
     // Auth Plugins
     this.registry.register(new BetterAuthPlugin());
+    this.registry.register(new NextAuthPlugin());
     // TODO: Add more auth plugins
-    // this.registry.register(new NextAuthPlugin());
     // this.registry.register(new SupabaseAuthPlugin());
 
     // Feature Plugins

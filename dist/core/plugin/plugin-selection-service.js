@@ -6,6 +6,7 @@
  * and plugin configuration.
  */
 import { PluginSystem } from './plugin-system.js';
+import { DATABASE_PROVIDER_LABELS, DATABASE_FEATURE_LABELS, AUTH_PROVIDER_LABELS, AUTH_FEATURE_LABELS, PLUGIN_TYPE_LABELS, getDatabaseProvidersForPlugin, getDatabaseFeaturesForPlugin, getAuthProvidersForPlugin, getAuthFeaturesForPlugin, PLUGIN_TYPES, DATABASE_PROVIDERS, DATABASE_FEATURES, AUTH_PROVIDERS } from '../../types/shared-config.js';
 import inquirer from 'inquirer';
 export class PluginSelectionService {
     logger;
@@ -65,9 +66,9 @@ export class PluginSelectionService {
         if (!enabled) {
             return {
                 enabled: false,
-                type: 'none',
-                provider: 'local',
-                features: { migrations: false, seeding: false, backup: false }
+                type: PLUGIN_TYPES.NONE,
+                provider: DATABASE_PROVIDERS.LOCAL,
+                features: {}
             };
         }
         const { type } = await inquirer.prompt([
@@ -76,48 +77,61 @@ export class PluginSelectionService {
                 name: 'type',
                 message: 'Which database ORM would you like to use?',
                 choices: [
-                    { name: 'Drizzle ORM (Recommended)', value: 'drizzle' },
-                    { name: 'Prisma ORM', value: 'prisma' },
-                    { name: 'No ORM', value: 'none' }
+                    { name: `${PLUGIN_TYPE_LABELS[PLUGIN_TYPES.DRIZZLE]} (Recommended)`, value: PLUGIN_TYPES.DRIZZLE },
+                    { name: PLUGIN_TYPE_LABELS[PLUGIN_TYPES.PRISMA], value: PLUGIN_TYPES.PRISMA },
+                    { name: 'No ORM', value: PLUGIN_TYPES.NONE }
                 ],
-                default: 'drizzle'
+                default: PLUGIN_TYPES.DRIZZLE
             }
         ]);
+        if (type === PLUGIN_TYPES.NONE) {
+            return {
+                enabled: true,
+                type: PLUGIN_TYPES.NONE,
+                provider: DATABASE_PROVIDERS.LOCAL,
+                features: {}
+            };
+        }
+        // Get available providers for the selected plugin type
+        const availableProviders = getDatabaseProvidersForPlugin(type);
+        const providerChoices = availableProviders.map(provider => ({
+            name: DATABASE_PROVIDER_LABELS[provider],
+            value: provider
+        }));
         const { provider } = await inquirer.prompt([
             {
                 type: 'list',
                 name: 'provider',
                 message: 'Which database provider would you like to use?',
-                choices: [
-                    { name: 'Neon (PostgreSQL)', value: 'neon' },
-                    { name: 'Supabase (PostgreSQL)', value: 'supabase' },
-                    { name: 'Local SQLite', value: 'local' },
-                    { name: 'Vercel Postgres', value: 'vercel' }
-                ],
-                default: 'neon'
+                choices: providerChoices,
+                default: availableProviders[0]
             }
         ]);
+        // Get available features for the selected plugin type
+        const availableFeatures = getDatabaseFeaturesForPlugin(type);
+        const featureChoices = availableFeatures.map(feature => ({
+            name: DATABASE_FEATURE_LABELS[feature],
+            value: feature,
+            checked: feature === DATABASE_FEATURES.MIGRATIONS || feature === DATABASE_FEATURES.SEEDING
+        }));
         const { features } = await inquirer.prompt([
             {
                 type: 'checkbox',
                 name: 'features',
                 message: 'Which database features do you need?',
-                choices: [
-                    { name: 'Migrations', value: 'migrations', checked: true },
-                    { name: 'Seeding', value: 'seeding', checked: true },
-                    { name: 'Backup', value: 'backup', checked: false }
-                ]
+                choices: featureChoices
             }
         ]);
+        // Convert features array to object
+        const featuresObject = {};
+        availableFeatures.forEach(feature => {
+            featuresObject[feature] = features.includes(feature);
+        });
         return {
             enabled: true,
             type,
             provider,
-            features: {
-                migrations: features.includes('migrations'),
-                seeding: features.includes('seeding'),
-                backup: features.includes('backup')
-            }
+            features: featuresObject
         };
     }
     /**
@@ -135,9 +149,9 @@ export class PluginSelectionService {
         if (!enabled) {
             return {
                 enabled: false,
-                type: 'none',
+                type: PLUGIN_TYPES.NONE,
                 providers: [],
-                features: { emailVerification: false, passwordReset: false, socialLogin: false, sessionManagement: false }
+                features: {}
             };
         }
         const { type } = await inquirer.prompt([
@@ -146,50 +160,61 @@ export class PluginSelectionService {
                 name: 'type',
                 message: 'Which authentication provider would you like to use?',
                 choices: [
-                    { name: 'Better Auth (Recommended)', value: 'better-auth' },
-                    { name: 'NextAuth.js', value: 'next-auth' },
-                    { name: 'No authentication', value: 'none' }
+                    { name: `${PLUGIN_TYPE_LABELS[PLUGIN_TYPES.BETTER_AUTH]} (Recommended)`, value: PLUGIN_TYPES.BETTER_AUTH },
+                    { name: PLUGIN_TYPE_LABELS[PLUGIN_TYPES.NEXTAUTH], value: PLUGIN_TYPES.NEXTAUTH },
+                    { name: 'No authentication', value: PLUGIN_TYPES.NONE }
                 ],
-                default: 'better-auth'
+                default: PLUGIN_TYPES.BETTER_AUTH
             }
         ]);
+        if (type === PLUGIN_TYPES.NONE) {
+            return {
+                enabled: true,
+                type: PLUGIN_TYPES.NONE,
+                providers: [],
+                features: {}
+            };
+        }
+        // Get available providers for the selected plugin type
+        const availableProviders = getAuthProvidersForPlugin(type);
+        const providerChoices = availableProviders.map(provider => ({
+            name: AUTH_PROVIDER_LABELS[provider],
+            value: provider,
+            checked: provider === AUTH_PROVIDERS.EMAIL
+        }));
         const { providers } = await inquirer.prompt([
             {
                 type: 'checkbox',
                 name: 'providers',
                 message: 'Which authentication providers do you want to support?',
-                choices: [
-                    { name: 'Email/Password', value: 'email', checked: true },
-                    { name: 'GitHub', value: 'github', checked: false },
-                    { name: 'Google', value: 'google', checked: false },
-                    { name: 'Discord', value: 'discord', checked: false },
-                    { name: 'Twitter', value: 'twitter', checked: false }
-                ]
+                choices: providerChoices
             }
         ]);
+        // Get available features for the selected plugin type
+        const availableFeatures = getAuthFeaturesForPlugin(type);
+        const featureChoices = availableFeatures.map(feature => ({
+            name: AUTH_FEATURE_LABELS[feature],
+            value: feature,
+            checked: true
+        }));
         const { features } = await inquirer.prompt([
             {
                 type: 'checkbox',
                 name: 'features',
                 message: 'Which authentication features do you need?',
-                choices: [
-                    { name: 'Email verification', value: 'emailVerification', checked: true },
-                    { name: 'Password reset', value: 'passwordReset', checked: true },
-                    { name: 'Social login', value: 'socialLogin', checked: true },
-                    { name: 'Session management', value: 'sessionManagement', checked: true }
-                ]
+                choices: featureChoices
             }
         ]);
+        // Convert features array to object
+        const featuresObject = {};
+        availableFeatures.forEach(feature => {
+            featuresObject[feature] = features.includes(feature);
+        });
         return {
             enabled: true,
             type,
             providers,
-            features: {
-                emailVerification: features.includes('emailVerification'),
-                passwordReset: features.includes('passwordReset'),
-                socialLogin: features.includes('socialLogin'),
-                sessionManagement: features.includes('sessionManagement')
-            }
+            features: featuresObject
         };
     }
     /**
