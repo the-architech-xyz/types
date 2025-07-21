@@ -16,17 +16,6 @@ import * as path from 'path';
 import fsExtra from 'fs-extra';
 
 export class FrameworkAgent extends AbstractAgent {
-  private pluginSystem: PluginSystem;
-  private runner: CommandRunner;
-  private templateService: TemplateService;
-
-  constructor() {
-    super();
-    this.pluginSystem = PluginSystem.getInstance();
-    this.runner = new CommandRunner();
-    this.templateService = templateService;
-  }
-
   // ============================================================================
   // AGENT METADATA
   // ============================================================================

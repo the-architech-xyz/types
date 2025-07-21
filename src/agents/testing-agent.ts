@@ -37,13 +37,6 @@ interface TestingConfig {
 }
 
 export class TestingAgent extends AbstractAgent {
-  private pluginSystem: PluginSystem;
-
-  constructor() {
-    super();
-    this.pluginSystem = PluginSystem.getInstance();
-  }
-
   // ============================================================================
   // AGENT METADATA
   // ============================================================================

@@ -232,25 +232,17 @@ async function gatherProjectConfig(projectName?: string, options: NewOptions = {
       };
     }
   } else {
-    // Non-interactive mode (--yes flag): Use specified template or default
-    const templateId = options.template || 'quick-start';
-    const selectedTemplate = templateId === 'custom' 
-      ? WorkflowTemplateService.getCustomTemplate()
-      : WorkflowTemplateService.getTemplate(templateId);
-    
-    if (selectedTemplate) {
-      config.selectedTemplate = selectedTemplate;
-      config.template = templateId;
-      config.userInput = `Template-based project: ${selectedTemplate.name}`;
+    // For --yes flag, use default template based on project name or type
+    const defaultTemplate = WorkflowTemplateService.getTemplate('quick-start');
+    if (defaultTemplate) {
+      config.selectedTemplate = defaultTemplate;
+      config.template = 'quick-start';
+      config.userInput = `Template-based project: ${defaultTemplate.name}`;
       
-      // Set default customizations
-      config.customizations = {
-        projectName: config.projectName || 'my-architech-app',
-        packageManager: 'auto'
-      };
-      config.projectName = config.customizations.projectName;
-    } else {
-      throw new Error(`Template not found: ${templateId}`);
+      // Set default project name if not provided
+      if (!config.projectName) {
+        config.projectName = 'my-architech-app';
+      }
     }
   }
 

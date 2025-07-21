@@ -15,13 +15,11 @@ import fsExtra from 'fs-extra';
 import { structureService, StructureInfo } from '../core/project/structure-service.js';
 
 export class BaseProjectAgent extends AbstractAgent {
-  private pluginSystem: PluginSystem;
   private runner: CommandRunner;
   private templateService: TemplateService;
 
   constructor() {
     super();
-    this.pluginSystem = PluginSystem.getInstance();
     this.runner = new CommandRunner();
     this.templateService = templateService;
   }

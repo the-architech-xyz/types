@@ -7,12 +7,27 @@
  */
 
 import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../types/plugin.js';
+import { 
+  IUIDatabasePlugin, 
+  ParameterSchema, 
+  PluginQuestion, 
+  DatabaseProvider, 
+  ORMOption, 
+  DatabaseFeature,
+  ConnectionOption,
+  NeonConfig,
+  UnifiedInterfaceTemplate,
+  ExportDefinition,
+  TypeDefinition,
+  UtilityDefinition,
+  ConstantDefinition
+} from '../../types/plugin-interfaces.js';
 import { TemplateService, templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
 import { ValidationError } from '../../types/agent.js';
 import { 
   DATABASE_PROVIDERS, 
-  DatabaseProvider 
+  DatabaseProvider as LegacyDatabaseProvider 
 } from '../../types/shared-config.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
@@ -24,7 +39,7 @@ interface DatabaseConfig {
   databaseUrl: string;
 }
 
-export class DrizzlePlugin implements IPlugin {
+export class DrizzlePlugin implements IUIDatabasePlugin {
   private templateService: TemplateService;
   private runner: CommandRunner;
 
@@ -49,6 +64,328 @@ export class DrizzlePlugin implements IPlugin {
       license: 'Apache-2.0',
       repository: 'https://github.com/drizzle-team/drizzle-orm',
       homepage: 'https://orm.drizzle.team'
+    };
+  }
+
+  // ============================================================================
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATION
+  // ============================================================================
+
+  getParameterSchema(): ParameterSchema {
+    return {
+      category: PluginCategory.DATABASE,
+      parameters: [
+        {
+          id: 'provider',
+          name: 'provider',
+          type: 'select',
+          description: 'Select database provider',
+          required: true,
+          default: DatabaseProvider.NEON,
+          options: [
+            { value: DatabaseProvider.NEON, label: 'Neon (PostgreSQL - Recommended)', description: 'Serverless PostgreSQL', recommended: true },
+            { value: DatabaseProvider.SUPABASE, label: 'Supabase (PostgreSQL)', description: 'Open source Firebase alternative' },
+            { value: DatabaseProvider.MONGODB, label: 'MongoDB Atlas', description: 'Document database' },
+            { value: DatabaseProvider.PLANETSCALE, label: 'PlanetScale (MySQL)', description: 'Serverless MySQL' },
+            { value: DatabaseProvider.LOCAL, label: 'Local PostgreSQL', description: 'Local development database' }
+          ],
+          group: 'connection',
+          order: 1
+        },
+        {
+          id: 'connectionString',
+          name: 'connectionString',
+          type: 'string',
+          description: 'Database connection string',
+          required: true,
+          conditions: [
+            { parameter: 'provider', operator: 'equals', value: DatabaseProvider.NEON, action: 'show' }
+          ],
+          validation: [
+            { type: 'required', message: 'Connection string is required' },
+            { type: 'pattern', value: '^postgresql://', message: 'Must be a valid PostgreSQL connection string' }
+          ],
+          group: 'connection',
+          order: 2
+        },
+        {
+          id: 'region',
+          name: 'region',
+          type: 'select',
+          description: 'Select database region',
+          required: false,
+          options: [
+            { value: 'us-east-1', label: 'US East (N. Virginia)', description: 'us-east-1' },
+            { value: 'us-west-2', label: 'US West (Oregon)', description: 'us-west-2' },
+            { value: 'eu-west-1', label: 'Europe (Ireland)', description: 'eu-west-1' },
+            { value: 'ap-southeast-1', label: 'Asia Pacific (Singapore)', description: 'ap-southeast-1' }
+          ],
+          conditions: [
+            { parameter: 'provider', operator: 'equals', value: DatabaseProvider.NEON, action: 'show' }
+          ],
+          group: 'connection',
+          order: 3
+        },
+        {
+          id: 'features',
+          name: 'features',
+          type: 'multiselect',
+          description: 'Select database features',
+          required: false,
+          default: [DatabaseFeature.MIGRATIONS, DatabaseFeature.SEEDING],
+          options: [
+            { value: DatabaseFeature.MIGRATIONS, label: 'Database Migrations', description: 'Automatic schema migrations' },
+            { value: DatabaseFeature.SEEDING, label: 'Data Seeding', description: 'Seed database with initial data' },
+            { value: DatabaseFeature.BACKUP, label: 'Automated Backups', description: 'Regular database backups' },
+            { value: DatabaseFeature.CONNECTION_POOLING, label: 'Connection Pooling', description: 'Optimize database connections' },
+            { value: DatabaseFeature.SSL, label: 'SSL Encryption', description: 'Secure database connections' },
+            { value: DatabaseFeature.READ_REPLICAS, label: 'Read Replicas', description: 'Scale read operations' }
+          ],
+          group: 'features',
+          order: 4
+        },
+        {
+          id: 'ormType',
+          name: 'ormType',
+          type: 'select',
+          description: 'Select ORM type',
+          required: true,
+          default: ORMOption.DRIZZLE,
+          options: [
+            { value: ORMOption.DRIZZLE, label: 'Drizzle ORM (Recommended)', description: 'Modern TypeScript ORM', recommended: true },
+            { value: ORMOption.PRISMA, label: 'Prisma', description: 'Next-generation ORM' },
+            { value: ORMOption.TYPEORM, label: 'TypeORM', description: 'Traditional ORM' },
+            { value: ORMOption.MONGOOSE, label: 'Mongoose', description: 'MongoDB ODM' }
+          ],
+          group: 'orm',
+          order: 5
+        }
+      ],
+      dependencies: [
+        {
+          parameter: 'ormType',
+          dependsOn: 'provider',
+          condition: {
+            parameter: 'provider',
+            operator: 'equals',
+            value: DatabaseProvider.MONGODB,
+            action: 'require'
+          },
+          message: 'MongoDB requires Mongoose ORM'
+        }
+      ],
+      validations: [
+        {
+          parameter: 'connectionString',
+          rules: [
+            { type: 'required', message: 'Connection string is required' },
+            { type: 'pattern', value: '^postgresql://|^mongodb://', message: 'Invalid connection string format' }
+          ]
+        }
+      ],
+      groups: [
+        {
+          id: 'connection',
+          name: 'Database Connection',
+          description: 'Configure database connection settings',
+          order: 1,
+          parameters: ['provider', 'connectionString', 'region']
+        },
+        {
+          id: 'features',
+          name: 'Database Features',
+          description: 'Select additional database features',
+          order: 2,
+          parameters: ['features']
+        },
+        {
+          id: 'orm',
+          name: 'ORM Configuration',
+          description: 'Configure Object-Relational Mapping',
+          order: 3,
+          parameters: ['ormType']
+        }
+      ]
+    };
+  }
+
+  getDynamicQuestions(context: PluginContext): PluginQuestion[] {
+    // This would typically use the DynamicQuestionGenerator
+    // For now, return a simplified version
+    return [
+      {
+        id: 'provider',
+        type: 'select',
+        name: 'provider',
+        message: 'Select database provider:',
+        choices: [
+          { name: 'Neon (PostgreSQL - Recommended)', value: DatabaseProvider.NEON },
+          { name: 'Supabase (PostgreSQL)', value: DatabaseProvider.SUPABASE },
+          { name: 'MongoDB Atlas', value: DatabaseProvider.MONGODB },
+          { name: 'PlanetScale (MySQL)', value: DatabaseProvider.PLANETSCALE },
+          { name: 'Local PostgreSQL', value: DatabaseProvider.LOCAL }
+        ],
+        default: DatabaseProvider.NEON
+      },
+      {
+        id: 'connectionString',
+        type: 'input',
+        name: 'connectionString',
+        message: 'Enter database connection string:',
+        validate: (input: string) => {
+          if (!input) return 'Connection string is required';
+          if (!input.startsWith('postgresql://') && !input.startsWith('mongodb://')) {
+            return 'Invalid connection string format';
+          }
+          return true;
+        },
+        when: (answers: any) => answers.provider === DatabaseProvider.NEON
+      }
+    ];
+  }
+
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: string[] = [];
+
+    if (!config.provider) {
+      errors.push({
+        field: 'provider',
+        message: 'Database provider is required',
+        code: 'MISSING_PROVIDER',
+        severity: 'error'
+      });
+    }
+
+    if (config.provider === DatabaseProvider.NEON && !config.connectionString) {
+      errors.push({
+        field: 'connectionString',
+        message: 'Connection string is required for Neon',
+        code: 'MISSING_CONNECTION_STRING',
+        severity: 'error'
+      });
+    }
+
+    if (config.provider === DatabaseProvider.MONGODB && config.ormType !== ORMOption.MONGOOSE) {
+      warnings.push('MongoDB works best with Mongoose ORM');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    return {
+      category: PluginCategory.DATABASE,
+      exports: [
+        {
+          name: 'connect',
+          type: 'function',
+          implementation: `export async function connect(): Promise<DatabaseClient> {
+  const client = new DatabaseClient(config.connectionString);
+  await client.connect();
+  return client;
+}`,
+          documentation: 'Connect to the database',
+          parameters: [],
+          returnType: 'Promise<DatabaseClient>',
+          examples: [
+            'const db = await connect();',
+            'const users = await db.query("SELECT * FROM users");'
+          ]
+        },
+        {
+          name: 'query',
+          type: 'function',
+          implementation: `export async function query<T = any>(sql: string, params?: any[]): Promise<T[]> {
+  const client = await connect();
+  return client.query(sql, params);
+}`,
+          documentation: 'Execute a database query',
+          parameters: [
+            { id: 'sql', name: 'sql', type: 'string', description: 'SQL query string', required: true },
+            { id: 'params', name: 'params', type: 'array', description: 'Query parameters', required: false }
+          ],
+          returnType: 'Promise<T[]>',
+          examples: [
+            'const users = await query("SELECT * FROM users WHERE active = ?", [true]);'
+          ]
+        },
+        {
+          name: 'DatabaseClient',
+          type: 'class',
+          implementation: `export class DatabaseClient {
+  constructor(private connectionString: string) {}
+  
+  async connect(): Promise<void> {
+    // Implementation details
+  }
+  
+  async query<T = any>(sql: string, params?: any[]): Promise<T[]> {
+    // Implementation details
+  }
+  
+  async close(): Promise<void> {
+    // Implementation details
+  }
+}`,
+          documentation: 'Database client for executing queries',
+          parameters: [],
+          returnType: 'class',
+          examples: [
+            'const client = new DatabaseClient(connectionString);',
+            'await client.connect();'
+          ]
+        }
+      ],
+      types: [
+        {
+          name: 'DatabaseConfig',
+          type: 'interface',
+          definition: `export interface DatabaseConfig {
+  provider: DatabaseProvider;
+  connectionString: string;
+  region?: string;
+  features: DatabaseFeature[];
+}`,
+          documentation: 'Database configuration interface',
+          properties: [
+            { name: 'provider', type: 'DatabaseProvider', required: true, description: 'Database provider' },
+            { name: 'connectionString', type: 'string', required: true, description: 'Connection string' },
+            { name: 'region', type: 'string', required: false, description: 'Database region' },
+            { name: 'features', type: 'DatabaseFeature[]', required: true, description: 'Enabled features' }
+          ]
+        }
+      ],
+      utilities: [
+        {
+          name: 'createConnection',
+          type: 'function',
+          implementation: `export function createConnection(config: DatabaseConfig): DatabaseClient {
+  return new DatabaseClient(config.connectionString);
+}`,
+          documentation: 'Create a database connection from config',
+          parameters: [
+            { id: 'config', name: 'config', type: 'object', description: 'Database configuration', required: true }
+          ],
+          returnType: 'DatabaseClient',
+          examples: [
+            'const client = createConnection(databaseConfig);'
+          ]
+        }
+      ],
+      constants: [
+        {
+          name: 'DEFAULT_TIMEOUT',
+          value: 30000,
+          documentation: 'Default database connection timeout in milliseconds',
+          type: 'number'
+        }
+      ],
+      documentation: '# Database Module\n\nThis module provides a unified interface for database operations across different providers.\n\n## Usage\n\n```typescript\nimport { connect, query, DatabaseClient } from \'@/lib/db\';\n\n// Connect to database\nconst db = await connect();\n\n// Execute query\nconst users = await query(\'SELECT * FROM users WHERE active = ?\', [true]);\n\n// Use client directly\nconst client = new DatabaseClient(connectionString);\nawait client.connect();\n```'
     };
   }
 
@@ -213,7 +550,7 @@ export class DrizzlePlugin implements IPlugin {
           await fsExtra.remove(filePath);
         }
       }
-
+      
       return {
         success: true,
         artifacts: [],
@@ -374,6 +711,59 @@ export class DrizzlePlugin implements IPlugin {
   }
 
   // ============================================================================
+  // CATEGORY-SPECIFIC INTERFACE IMPLEMENTATION
+  // ============================================================================
+
+  getDatabaseProviders(): DatabaseProvider[] {
+    return [
+      DatabaseProvider.NEON,
+      DatabaseProvider.SUPABASE,
+      DatabaseProvider.MONGODB,
+      DatabaseProvider.PLANETSCALE,
+      DatabaseProvider.LOCAL
+    ];
+  }
+
+  getORMOptions(): ORMOption[] {
+    return [
+      ORMOption.DRIZZLE,
+      ORMOption.PRISMA,
+      ORMOption.TYPEORM,
+      ORMOption.MONGOOSE
+    ];
+  }
+
+  getDatabaseFeatures(): DatabaseFeature[] {
+    return [
+      DatabaseFeature.MIGRATIONS,
+      DatabaseFeature.SEEDING,
+      DatabaseFeature.BACKUP,
+      DatabaseFeature.CONNECTION_POOLING,
+      DatabaseFeature.SSL,
+      DatabaseFeature.READ_REPLICAS
+    ];
+  }
+
+  getConnectionOptions(): ConnectionOption[] {
+    return [
+      {
+        name: 'connectionString',
+        value: 'DATABASE_URL',
+        description: 'Database connection string',
+        required: true,
+        secret: true
+      },
+      {
+        name: 'region',
+        value: 'DATABASE_REGION',
+        description: 'Database region',
+        required: false,
+        secret: false
+      }
+    ];
+  }
+
+  // ============================================================================
   // PRIVATE METHODS
   // ============================================================================
 
@@ -511,9 +901,9 @@ export default {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-// ============================================================================
+  // ============================================================================
 // AUTHENTICATION TABLES (Better Auth / NextAuth.js compatible)
-// ============================================================================
+  // ============================================================================
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -565,9 +955,9 @@ export const verificationTokens = pgTable('verification_tokens', {
   identifierTokenIdx: index('identifier_token_idx').on(table.identifier, table.token),
 }));
 
-// ============================================================================
+  // ============================================================================
 // APPLICATION TABLES
-// ============================================================================
+  // ============================================================================
 
 export const posts = pgTable('posts', {
   id: serial('id').primaryKey(),

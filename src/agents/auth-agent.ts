@@ -1,17 +1,17 @@
 /**
  * Auth Agent - Authentication Orchestrator
  * 
- * Pure orchestrator for authentication setup using unified interfaces.
+ * The brain for authentication decisions and plugin orchestration.
  * Handles user interaction, decision making, and coordinates auth plugins through unified interfaces.
- * No direct installation logic - delegates everything to plugins through adapters.
+ * Pure orchestrator - no direct installation logic.
  */
 
 import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
+import { TemplateService, templateService } from '../core/templates/template-service.js';
 import {
   AgentContext,
   AgentResult,
@@ -23,24 +23,27 @@ import {
   Artifact,
   ValidationError
 } from '../types/agent.js';
-
+import inquirer from 'inquirer';
+import chalk from 'chalk';
 import { structureService, StructureInfo } from '../core/project/structure-service.js';
 
 interface AuthConfig {
-  providers: ('email' | 'github' | 'google')[];
-  requireEmailVerification: boolean;
+  providers: string[];
+  features: {
+    emailVerification: boolean;
+    passwordReset: boolean;
+    twoFactor: boolean;
+    sessionManagement: boolean;
+    rbac: boolean;
+    oauthCallbacks: boolean;
+  };
   sessionDuration: number;
-  databaseUrl: string;
+  redirectUrl: string;
+  callbackUrl: string;
+  databaseUrl?: string;
 }
 
 export class AuthAgent extends AbstractAgent {
-  private pluginSystem: PluginSystem;
-
-  constructor() {
-    super();
-    this.pluginSystem = PluginSystem.getInstance();
-  }
-
   // ============================================================================
   // AGENT METADATA
   // ============================================================================
@@ -423,8 +426,17 @@ export class AuthAgent extends AbstractAgent {
     
     return {
       providers: userConfig.providers || ['email'],
-      requireEmailVerification: userConfig.requireEmailVerification !== false,
+      features: {
+        emailVerification: userConfig.features?.emailVerification !== false,
+        passwordReset: userConfig.features?.passwordReset !== false,
+        twoFactor: userConfig.features?.twoFactor || false,
+        sessionManagement: userConfig.features?.sessionManagement !== false,
+        rbac: userConfig.features?.rbac || false,
+        oauthCallbacks: userConfig.features?.oauthCallbacks !== false
+      },
       sessionDuration: userConfig.sessionDuration || 604800,
+      redirectUrl: userConfig.redirectUrl || 'http://localhost:3000',
+      callbackUrl: userConfig.callbackUrl || 'http://localhost:3000/auth/callback',
       databaseUrl: dbConfig.connectionString || dbConfig.databaseUrl || ''
     };
   }
@@ -432,8 +444,10 @@ export class AuthAgent extends AbstractAgent {
   private getPluginConfig(authConfig: AuthConfig, pluginName: string): Record<string, any> {
     const config: Record<string, any> = {
       providers: authConfig.providers,
-      requireEmailVerification: authConfig.requireEmailVerification,
+      features: authConfig.features,
       sessionDuration: authConfig.sessionDuration,
+      redirectUrl: authConfig.redirectUrl,
+      callbackUrl: authConfig.callbackUrl,
       databaseUrl: authConfig.databaseUrl,
       secret: process.env.AUTH_SECRET || 'your-secret-key-here',
       skipDb: false,

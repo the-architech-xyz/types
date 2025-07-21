@@ -55,13 +55,6 @@ interface DatabaseConfig {
 }
 
 export class DBAgent extends AbstractAgent {
-  private pluginSystem: PluginSystem;
-
-  constructor() {
-    super();
-    this.pluginSystem = PluginSystem.getInstance();
-  }
-
   // ============================================================================
   // AGENT METADATA
   // ============================================================================

@@ -7,6 +7,8 @@
  * - Performance monitoring
  * - State management
  * - Logging
+ * - Expert mode support
+ * - Standardized plugin execution
  */
 
 import chalk from 'chalk';
@@ -31,6 +33,12 @@ import {
   DEFAULT_TIMEOUT,
   Artifact
 } from '../../types/agent.js';
+import { ExpertModeService } from '../../core/expert/expert-mode-service.js';
+import { PluginSystem } from '../../core/plugin/plugin-system.js';
+import { PluginContext, PluginResult, ProjectType, TargetPlatform } from '../../types/plugin.js';
+import { structureService } from '../../core/project/structure-service.js';
+import * as fsExtra from 'fs-extra';
+import * as path from 'path';
 
 // Type definition for ora
 interface Ora {
@@ -57,6 +65,13 @@ export abstract class AbstractAgent implements IAgent {
   protected spinner: Ora | null = null;
   protected startTime: number = 0;
   protected currentState: AgentState | undefined = undefined;
+  protected expertModeService: ExpertModeService;
+  protected pluginSystem: PluginSystem;
+
+  constructor() {
+    this.expertModeService = new ExpertModeService();
+    this.pluginSystem = PluginSystem.getInstance();
+  }
 
   // ============================================================================
   // CORE EXECUTION
@@ -129,7 +144,7 @@ export abstract class AbstractAgent implements IAgent {
   }
 
   // ============================================================================
-  // ABSTRACT METHODS (must be implemented by subclasses)
+  // ABSTRACT METHODS
   // ============================================================================
 
   protected abstract executeInternal(context: AgentContext): Promise<AgentResult>;
@@ -137,7 +152,162 @@ export abstract class AbstractAgent implements IAgent {
   protected abstract getAgentCapabilities(): AgentCapability[];
 
   // ============================================================================
-  // LIFECYCLE HOOKS (optional, can be overridden)
+  // EXPERT MODE SUPPORT
+  // ============================================================================
+
+  /**
+   * Check if expert mode is enabled for this agent
+   */
+  protected isExpertMode(context: AgentContext): boolean {
+    return this.expertModeService.isExpertMode(context);
+  }
+
+  /**
+   * Get expert mode options for this agent
+   */
+  protected getExpertModeOptions(context: AgentContext) {
+    return this.expertModeService.getExpertModeOptions(context);
+  }
+
+  /**
+   * Get expert questions for a specific category
+   */
+  protected getExpertQuestions(category: string) {
+    return this.expertModeService.getExpertQuestions(category);
+  }
+
+  /**
+   * Validate expert mode choices
+   */
+  protected validateExpertChoices(choices: any, category: string) {
+    return this.expertModeService.validateExpertChoices(choices, category);
+  }
+
+  /**
+   * Get dynamic questions from a specific plugin
+   */
+  protected async getPluginDynamicQuestions(pluginId: string, context: AgentContext) {
+    return this.expertModeService.getDynamicQuestions(pluginId, context);
+  }
+
+  /**
+   * Get dynamic questions for a category when no specific plugin is selected
+   */
+  protected getCategoryDynamicQuestions(category: string) {
+    return this.expertModeService.getCategoryDynamicQuestions(category);
+  }
+
+  // ============================================================================
+  // STANDARDIZED PLUGIN EXECUTION
+  // ============================================================================
+
+  /**
+   * Execute a plugin with standardized error handling and validation
+   */
+  protected async executePlugin(
+    pluginId: string,
+    context: AgentContext,
+    pluginConfig: Record<string, any>,
+    installPath?: string
+  ): Promise<PluginResult> {
+    const plugin = this.pluginSystem.getRegistry().get(pluginId);
+    if (!plugin) {
+      throw new Error(`Plugin not found: ${pluginId}`);
+    }
+
+    const pluginContext: PluginContext = {
+      ...context,
+      projectPath: installPath || context.projectPath,
+      pluginId,
+      pluginConfig,
+      installedPlugins: [],
+      projectType: ProjectType.NEXTJS,
+      targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
+    };
+
+    // Validate plugin
+    context.logger.info(`Validating ${pluginId} plugin...`);
+    const validation = await plugin.validate(pluginContext);
+    if (!validation.valid) {
+      throw new Error(`Plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+    }
+
+    context.logger.info(`${pluginId} plugin validation passed`);
+
+    // Execute plugin
+    context.logger.info(`Executing ${pluginId} plugin...`);
+    const result = await plugin.install(pluginContext);
+
+    if (!result.success) {
+      throw new Error(`${pluginId} plugin execution failed: ${result.errors.map((e: any) => e.message).join(', ')}`);
+    }
+
+    context.logger.info(`${pluginId} plugin execution completed successfully`);
+    return result;
+  }
+
+  /**
+   * Validate unified interface files for a module
+   */
+  protected async validateUnifiedInterface(
+    moduleName: string,
+    context: AgentContext,
+    pluginName: string
+  ): Promise<void> {
+    const structure = context.projectStructure!;
+    const unifiedPath = structureService.getUnifiedInterfacePath(context.projectPath, structure, moduleName);
+    
+    // Check for unified interface files
+    const requiredFiles = [
+      'index.ts',
+      'utils.ts'
+    ];
+
+    for (const file of requiredFiles) {
+      const filePath = path.join(unifiedPath, file);
+      if (!await fsExtra.pathExists(filePath)) {
+        throw new Error(`Missing unified interface file: ${filePath}`);
+      }
+    }
+
+    context.logger.success(`✅ ${pluginName} unified interface validation passed`);
+  }
+
+  /**
+   * Get selected plugin based on context and user preferences
+   */
+  protected getSelectedPlugin(context: AgentContext, category: string): string {
+    // Check for template-based selection
+    const pluginSelection = context.state.get('pluginSelection') as any;
+    if (pluginSelection?.[category]?.library || pluginSelection?.[category]?.provider) {
+      return pluginSelection[category].library || pluginSelection[category].provider;
+    }
+
+    // Check for user preference
+    const userPreference = context.state.get(`${category}Technology`);
+    if (userPreference) {
+      context.logger.info(`Using user preference for ${category}: ${userPreference}`);
+      return userPreference;
+    }
+
+    // Return default based on category
+    const defaults: Record<string, string> = {
+      ui: 'shadcn-ui',
+      database: 'drizzle',
+      auth: 'better-auth',
+      deployment: 'vercel',
+      testing: 'vitest',
+      email: 'resend',
+      monitoring: 'sentry',
+      payment: 'stripe',
+      blockchain: 'ethereum'
+    };
+
+    return defaults[category] || 'default';
+  }
+
+  // ============================================================================
+  // LIFECYCLE METHODS
   // ============================================================================
 
   async validate(context: AgentContext): Promise<ValidationResult> {

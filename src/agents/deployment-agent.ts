@@ -38,13 +38,6 @@ interface DeploymentConfig {
 }
 
 export class DeploymentAgent extends AbstractAgent {
-  private pluginSystem: PluginSystem;
-
-  constructor() {
-    super();
-    this.pluginSystem = PluginSystem.getInstance();
-  }
-
   // ============================================================================
   // AGENT METADATA
   // ============================================================================

@@ -10,7 +10,6 @@ import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
 import { TemplateService, templateService } from '../core/templates/template-service.js';
 import {
@@ -64,13 +63,6 @@ interface UIConfig {
 }
 
 export class UIAgent extends AbstractAgent {
-  private pluginSystem: PluginSystem;
-
-  constructor() {
-    super();
-    this.pluginSystem = PluginSystem.getInstance();
-  }
-
   // ============================================================================
   // AGENT METADATA
   // ============================================================================
@@ -100,214 +92,78 @@ export class UIAgent extends AbstractAgent {
   protected getAgentCapabilities(): AgentCapability[] {
     return [
       {
-        name: 'ui-setup',
+        name: 'UI Setup',
         description: 'Setup UI/design system with unified interfaces',
         category: CapabilityCategory.SETUP,
         parameters: [
           {
             name: 'designSystem',
             type: 'string',
-            description: 'Design system to use',
             required: false,
+            description: 'UI library to use (shadcn-ui, chakra-ui, mui, tamagui)',
             defaultValue: 'shadcn-ui'
           },
           {
             name: 'theme',
             type: 'string',
-            description: 'Theme mode',
             required: false,
+            description: 'Theme mode (light, dark, auto)',
             defaultValue: 'auto'
-          },
-          {
-            name: 'components',
-            type: 'array',
-            description: 'Components to install',
-            required: false,
-            defaultValue: ['button', 'input', 'card', 'form']
-          },
-          {
-            name: 'styling',
-            type: 'string',
-            description: 'Styling approach',
-            required: false,
-            defaultValue: 'tailwind'
-          },
-          {
-            name: 'features',
-            type: 'object',
-            description: 'Advanced UI features',
-            required: false,
-            defaultValue: {
-              animations: false,
-              responsiveDesign: true,
-              themeCustomization: false,
-              componentLibrary: true,
-              iconLibrary: false,
-              accessibility: true
-            }
-          },
-          {
-            name: 'animations',
-            type: 'object',
-            description: 'Animation configuration',
-            required: false,
-            defaultValue: {
-              library: 'framer-motion',
-              duration: 300,
-              easing: 'ease-in-out'
-            }
-          },
-          {
-            name: 'responsiveDesign',
-            type: 'object',
-            description: 'Responsive design configuration',
-            required: false,
-            defaultValue: {
-              breakpoints: ['sm', 'md', 'lg', 'xl', '2xl'],
-              mobileFirst: true,
-              fluidTypography: false
-            }
-          },
-          {
-            name: 'themeCustomization',
-            type: 'object',
-            description: 'Theme customization',
-            required: false,
-            defaultValue: {
-              colors: {},
-              fonts: {},
-              spacing: {},
-              borderRadius: {}
-            }
-          },
-          {
-            name: 'iconLibrary',
-            type: 'object',
-            description: 'Icon library configuration',
-            required: false,
-            defaultValue: {
-              provider: 'lucide',
-              includeIcons: ['home', 'user', 'settings', 'search']
-            }
           }
-        ],
+        ]
+      },
+      {
+        name: 'Shadcn/ui Setup',
+        description: 'Creates UI setup with Shadcn/ui components using unified interfaces',
+        category: CapabilityCategory.SETUP,
         examples: [
           {
-            name: 'Setup Shadcn/ui',
-            description: 'Creates UI setup with Shadcn/ui components using unified interfaces',
-            parameters: { designSystem: 'shadcn-ui', theme: 'auto' },
+            name: 'Basic Shadcn/ui setup',
+            description: 'Setup Shadcn/ui with default components',
+            parameters: { designSystem: 'shadcn-ui', components: ['button', 'card', 'input'] },
             expectedResult: 'Complete UI setup with Shadcn/ui via unified interface'
-          },
+          }
+        ]
+      },
+      {
+        name: 'Tamagui Setup',
+        description: 'Creates UI setup with Tamagui components using unified interfaces',
+        category: CapabilityCategory.SETUP,
+        examples: [
           {
-            name: 'Setup Tamagui',
-            description: 'Creates UI setup with Tamagui components using unified interfaces',
-            parameters: { designSystem: 'tamagui', theme: 'dark' },
+            name: 'Basic Tamagui setup',
+            description: 'Setup Tamagui with default components',
+            parameters: { designSystem: 'tamagui', components: ['button', 'card', 'input'] },
             expectedResult: 'UI setup with Tamagui via unified interface'
-          },
+          }
+        ]
+      },
+      {
+        name: 'Advanced UI Features',
+        description: 'Creates UI setup with animations and responsive design using unified interfaces',
+        category: CapabilityCategory.SETUP,
+        examples: [
           {
-            name: 'Setup advanced UI',
-            description: 'Creates UI setup with animations and responsive design using unified interfaces',
+            name: 'Advanced UI setup',
+            description: 'Setup UI with animations, responsive design, and accessibility',
             parameters: { 
               designSystem: 'shadcn-ui', 
-              theme: 'auto',
-              features: { animations: true, responsiveDesign: true, iconLibrary: true },
-              animations: { library: 'framer-motion', duration: 250, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
-              responsiveDesign: { breakpoints: ['sm', 'md', 'lg', 'xl'], mobileFirst: true, fluidTypography: true },
-              iconLibrary: { provider: 'lucide', includeIcons: ['home', 'user', 'settings', 'search', 'menu', 'close'] }
+              features: ['animations', 'responsiveDesign', 'accessibility'] 
             },
             expectedResult: 'Advanced UI setup with animations and responsive design via unified interface'
           }
         ]
       },
       {
-        name: 'ui-validation',
-        description: 'Validate UI setup',
+        name: 'UI Validation',
+        description: 'Validates the UI setup using unified interfaces',
         category: CapabilityCategory.VALIDATION,
-        parameters: [],
         examples: [
           {
-            name: 'Validate UI setup',
-            description: 'Validates the UI setup using unified interfaces',
-            parameters: {},
-            expectedResult: 'UI setup validation report'
-          }
-        ]
-      },
-      {
-        name: 'ui-animations',
-        description: 'Setup UI animations',
-        category: CapabilityCategory.SETUP,
-        parameters: [
-          {
-            name: 'library',
-            type: 'string',
-            description: 'Animation library to use',
-            required: true
-          },
-          {
-            name: 'duration',
-            type: 'number',
-            description: 'Default animation duration',
-            required: false,
-            defaultValue: 300
-          },
-          {
-            name: 'easing',
-            type: 'string',
-            description: 'Default easing function',
-            required: false,
-            defaultValue: 'ease-in-out'
-          }
-        ],
-        examples: [
-          {
-            name: 'Setup animations',
-            description: 'Creates animation system with Framer Motion',
-            parameters: { 
-              library: 'framer-motion', 
-              duration: 250, 
-              easing: 'cubic-bezier(0.4, 0, 0.2, 1)' 
-            },
-            expectedResult: 'Animation system setup with Framer Motion'
-          }
-        ]
-      },
-      {
-        name: 'ui-responsive',
-        description: 'Setup responsive design',
-        category: CapabilityCategory.SETUP,
-        parameters: [
-          {
-            name: 'breakpoints',
-            type: 'array',
-            description: 'Breakpoint definitions',
-            required: true
-          },
-          {
-            name: 'mobileFirst',
-            type: 'boolean',
-            description: 'Use mobile-first approach',
-            required: false,
-            defaultValue: true
-          },
-          {
-            name: 'fluidTypography',
-            type: 'boolean',
-            description: 'Enable fluid typography',
-            required: false,
-            defaultValue: false
-          }
-        ],
-        examples: [
-          {
-            name: 'Setup responsive design',
-            description: 'Creates responsive design system',
-            parameters: { 
-              breakpoints: ['sm', 'md', 'lg', 'xl', '2xl'], 
-              mobileFirst: true, 
-              fluidTypography: true 
-            },
-            expectedResult: 'Responsive design system with mobile-first approach'
+            name: 'UI validation',
+            description: 'Validate UI setup and unified interface files',
+            parameters: { designSystem: 'shadcn-ui' },
+            expectedResult: 'UI setup validation completed successfully'
           }
         ]
       }
@@ -350,10 +206,10 @@ export class UIAgent extends AbstractAgent {
 
       // Execute selected UI plugin through unified interface
       context.logger.info(`Executing ${selectedPlugin} plugin through unified interface...`);
-      const result = await this.executeUIPluginUnified(context, selectedPlugin, uiConfig, installPath);
+      const result = await this.executePlugin(selectedPlugin, context, this.getPluginConfig(uiConfig, selectedPlugin), installPath);
 
       // Validate the setup using unified interface
-      await this.validateUISetupUnified(context, selectedPlugin, installPath);
+      await this.validateUnifiedInterface('ui', context, selectedPlugin);
 
       const duration = Date.now() - startTime;
       
@@ -362,9 +218,10 @@ export class UIAgent extends AbstractAgent {
         artifacts: result.artifacts || [],
         data: {
           plugin: selectedPlugin,
-          installPath,
           designSystem: uiConfig.designSystem,
           theme: uiConfig.theme,
+          components: uiConfig.components,
+          features: uiConfig.features,
           unifiedInterface: true
         },
         errors: [],
@@ -374,11 +231,9 @@ export class UIAgent extends AbstractAgent {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      context.logger.error(`UI setup failed: ${errorMessage}`);
-      
       return this.createErrorResult(
         'UI_SETUP_FAILED',
-        `Failed to setup UI: ${errorMessage}`,
+        `UI setup failed: ${errorMessage}`,
         [],
         startTime,
         error
@@ -391,30 +246,47 @@ export class UIAgent extends AbstractAgent {
   // ============================================================================
 
   async validate(context: AgentContext): Promise<ValidationResult> {
-    const baseValidation = await super.validate(context);
-    
-    if (!baseValidation.valid) {
-      return baseValidation;
-    }
-
-    const errors: any[] = [];
+    const errors: ValidationError[] = [];
     const warnings: string[] = [];
 
-    // Check if UI package exists (but don't fail if it doesn't - we'll create it)
-    const packagePath = this.getPackagePath(context, 'ui');
-    if (!await fsExtra.pathExists(packagePath)) {
-      warnings.push(`UI package directory will be created at: ${packagePath}`);
-    }
-
-    // Check if Shadcn/ui plugin is available
-    const shadcnPlugin = this.pluginSystem.getRegistry().get('shadcn-ui');
-    if (!shadcnPlugin) {
+    // Check if project structure is valid
+    if (!context.projectStructure) {
       errors.push({
-        field: 'plugin',
-        message: 'Shadcn/ui plugin not found in registry',
-        code: 'PLUGIN_NOT_FOUND',
+        field: 'projectStructure',
+        message: 'Project structure is required',
+        code: 'MISSING_PROJECT_STRUCTURE',
         severity: 'error'
       });
+    }
+
+    // Check if required dependencies are available
+    const requiredDeps = ['fs-extra', 'path'];
+    for (const dep of requiredDeps) {
+      try {
+        require.resolve(dep);
+      } catch {
+        errors.push({
+          field: 'dependencies',
+          message: `Required dependency not found: ${dep}`,
+          code: 'MISSING_DEPENDENCY',
+          severity: 'error'
+        });
+      }
+    }
+
+    // Check if UI package directory can be created (for monorepo)
+    if (context.projectStructure?.type === 'monorepo') {
+      const uiPackagePath = path.join(context.projectPath, 'packages', 'ui');
+      try {
+        await fsExtra.ensureDir(uiPackagePath);
+      } catch {
+        errors.push({
+          field: 'uiPackagePath',
+          message: `Cannot create UI package directory: ${uiPackagePath}`,
+          code: 'UI_PACKAGE_CREATION_FAILED',
+          severity: 'error'
+        });
+      }
     }
 
     return {
@@ -425,69 +297,23 @@ export class UIAgent extends AbstractAgent {
   }
 
   // ============================================================================
-  // HELPER METHODS
-  // ============================================================================
-
-  private getPackagePath(context: AgentContext, packageName: string): string {
-    const structure = context.projectStructure!;
-    return structureService.getModulePath(context.projectPath, structure, packageName);
-  }
-
-  private async ensurePackageDirectory(context: AgentContext, packageName: string, packagePath: string): Promise<void> {
-    const structure = context.projectStructure!;
-    
-    if (structure.isMonorepo) {
-      // For monorepo, ensure the package directory exists
-      await fsExtra.ensureDir(packagePath);
-      
-      // Create package.json if it doesn't exist
-      const packageJsonPath = path.join(packagePath, 'package.json');
-      if (!await fsExtra.pathExists(packageJsonPath)) {
-        const packageJson = {
-          name: `@${context.projectName}/${packageName}`,
-          version: "0.1.0",
-          private: true,
-          main: "./index.ts",
-          types: "./index.ts",
-          scripts: {
-            "build": "tsc",
-            "dev": "tsc --watch",
-            "lint": "eslint . --ext .ts,.tsx"
-          },
-          dependencies: {},
-          devDependencies: {
-            "typescript": "^5.0.0"
-          }
-        };
-        
-        await fsExtra.writeJSON(packageJsonPath, packageJson, { spaces: 2 });
-      }
-    }
-    // For single app, the directory is already created by the base project agent
-  }
-
-  // ============================================================================
   // PLUGIN SELECTION
   // ============================================================================
 
   private async selectUIPlugin(context: AgentContext): Promise<string> {
-    // Get plugin selection from context to determine which UI to use
-    const pluginSelection = context.state.get('pluginSelection') as any;
-    const selectedUI = pluginSelection?.ui?.type;
-    
-    if (selectedUI && selectedUI !== 'none') {
-      // Map plugin selection UI types to actual plugin system IDs
-      const uiMapping: Record<string, string> = {
-        'shadcn': 'shadcn-ui',
-        'radix': 'shadcn-ui', // Radix is included with shadcn-ui
-        'none': 'shadcn-ui'
-      };
-      const actualPluginId = uiMapping[selectedUI] || 'shadcn-ui';
-      context.logger.info(`Using user selection for UI: ${selectedUI} -> ${actualPluginId}`);
-      return actualPluginId;
+    // Check for expert mode first
+    if (this.isExpertMode(context)) {
+      return await this.selectUIPluginExpertMode(context);
     }
-    
-    // Check if user has specified a preference
+
+    // Check for template-based selection
+    const pluginSelection = context.state.get('pluginSelection') as any;
+    if (pluginSelection?.ui?.library) {
+      context.logger.info(`Using template-based UI selection: ${pluginSelection.ui.library}`);
+      return pluginSelection.ui.library;
+    }
+
+    // Check for user preference
     const userPreference = context.state.get('uiTechnology');
     if (userPreference) {
       context.logger.info(`Using user preference for UI: ${userPreference}`);
@@ -495,7 +321,7 @@ export class UIAgent extends AbstractAgent {
     }
 
     // Check if project has specified UI technology
-    const projectUI = context.config.ui?.technology;
+    const projectUI = context.config.ui?.designSystem;
     if (projectUI) {
       context.logger.info(`Using project UI technology: ${projectUI}`);
       return projectUI;
@@ -506,21 +332,37 @@ export class UIAgent extends AbstractAgent {
     return 'shadcn-ui';
   }
 
-  private getAvailableUIPlugins(): any[] {
-    const registry = this.pluginSystem.getRegistry();
-    const allPlugins = registry.getAll();
-    
-    return allPlugins.filter((plugin: any) => {
-      const metadata = plugin.getMetadata();
-      return metadata.category === 'ui-library' || metadata.category === 'design-system';
-    });
+  private async selectUIPluginExpertMode(context: AgentContext): Promise<string> {
+    const { library } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'library',
+        message: 'Select UI library:',
+        choices: [
+          { name: 'Shadcn/ui (Recommended)', value: 'shadcn-ui' },
+          { name: 'Chakra UI', value: 'chakra-ui' },
+          { name: 'Material-UI (MUI)', value: 'mui' },
+          { name: 'Tamagui', value: 'tamagui' },
+          { name: 'Ant Design', value: 'antd' },
+          { name: 'Radix UI (Headless)', value: 'radix' }
+        ],
+        default: 'shadcn-ui'
+      }
+    ]);
+
+    return library;
   }
 
   // ============================================================================
-  // PRIVATE METHODS
+  // CONFIGURATION
   // ============================================================================
 
   private async getUIConfig(context: AgentContext): Promise<UIConfig> {
+    // Check for expert mode first
+    if (this.isExpertMode(context)) {
+      return await this.getUIConfigExpertMode(context);
+    }
+
     // Get configuration from context or use defaults
     const userConfig = context.config.ui || {};
     
@@ -544,95 +386,109 @@ export class UIAgent extends AbstractAgent {
     };
   }
 
-  private async executeUIPluginUnified(
-    context: AgentContext,
-    pluginName: string,
-    uiConfig: UIConfig,
-    installPath: string
-  ): Promise<any> {
-    try {
-      context.logger.info(`Starting unified execution of ${pluginName} plugin...`);
-      
-      // Get the selected plugin
-      const plugin = this.pluginSystem.getRegistry().get(pluginName);
-      if (!plugin) {
-        throw new Error(`${pluginName} plugin not found in registry`);
-      }
-
-      context.logger.info(`Found ${pluginName} plugin in registry`);
-
-      // Prepare plugin context
-      const pluginContext: PluginContext = {
-        ...context,
-        projectPath: installPath,
-        pluginId: pluginName,
-        pluginConfig: this.getPluginConfig(uiConfig, pluginName),
-        installedPlugins: [],
-        projectType: ProjectType.NEXTJS,
-        targetPlatform: [TargetPlatform.WEB]
-      };
-
-      context.logger.info(`Plugin context prepared for ${pluginName}`);
-
-      // Validate plugin compatibility
-      context.logger.info(`Validating ${pluginName} plugin...`);
-      const validation = await plugin.validate(pluginContext);
-      if (!validation.valid) {
-        throw new Error(`${pluginName} plugin validation failed: ${validation.errors.map((e: ValidationError) => e.message).join(', ')}`);
-      }
-
-      context.logger.info(`${pluginName} plugin validation passed`);
-
-      // Execute the plugin
-      context.logger.info(`Executing ${pluginName} plugin...`);
-      const result = await plugin.install(pluginContext);
-
-      if (!result.success) {
-        throw new Error(`${pluginName} plugin execution failed: ${result.errors.map((e: any) => e.message).join(', ')}`);
-      }
-
-      context.logger.info(`${pluginName} plugin execution completed successfully`);
-      return result;
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to execute UI plugin ${pluginName}: ${errorMessage}`);
-    }
-  }
-
-  private async validateUISetupUnified(
-    context: AgentContext,
-    pluginName: string,
-    installPath: string
-  ): Promise<void> {
-    const structure = context.projectStructure!;
-    const unifiedPath = structureService.getUnifiedInterfacePath(context.projectPath, structure, 'ui');
+  private async getUIConfigExpertMode(context: AgentContext): Promise<UIConfig> {
+    const baseConfig = context.config.ui || {};
     
-    // Check for unified interface files
-    const requiredFiles = [
-      'index.ts',
-      'utils.ts',
-      'theme.ts'
-    ];
-
-    for (const file of requiredFiles) {
-      const filePath = path.join(unifiedPath, file);
-      if (!await fsExtra.pathExists(filePath)) {
-        throw new Error(`Missing unified interface file: ${filePath}`);
+    const { designSystem, theme, components, features } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'designSystem',
+        message: 'Select design system:',
+        choices: [
+          { name: 'Shadcn/ui', value: 'shadcn-ui' },
+          { name: 'Chakra UI', value: 'chakra-ui' },
+          { name: 'Material-UI (MUI)', value: 'mui' },
+          { name: 'Tamagui', value: 'tamagui' },
+          { name: 'Ant Design', value: 'antd' },
+          { name: 'Radix UI (Headless)', value: 'radix' }
+        ],
+        default: baseConfig.designSystem || 'shadcn-ui'
+      },
+      {
+        type: 'list',
+        name: 'theme',
+        message: 'Select theme mode:',
+        choices: [
+          { name: 'Light', value: 'light' },
+          { name: 'Dark', value: 'dark' },
+          { name: 'Auto (system preference)', value: 'auto' }
+        ],
+        default: baseConfig.theme || 'auto'
+      },
+      {
+        type: 'checkbox',
+        name: 'components',
+        message: 'Select components to include:',
+        choices: [
+          { name: 'Button', value: 'button' },
+          { name: 'Card', value: 'card' },
+          { name: 'Input', value: 'input' },
+          { name: 'Form', value: 'form' },
+          { name: 'Modal/Dialog', value: 'modal' },
+          { name: 'Table', value: 'table' },
+          { name: 'Navigation', value: 'navigation' },
+          { name: 'Dropdown/Select', value: 'select' },
+          { name: 'Checkbox/Radio', value: 'checkbox' },
+          { name: 'Switch/Toggle', value: 'switch' },
+          { name: 'Badge', value: 'badge' },
+          { name: 'Avatar', value: 'avatar' },
+          { name: 'Alert/Toast', value: 'alert' }
+        ],
+        default: baseConfig.components || ['button', 'card', 'input', 'form']
+      },
+      {
+        type: 'checkbox',
+        name: 'features',
+        message: 'Select advanced features:',
+        choices: [
+          { name: 'Animations', value: 'animations' },
+          { name: 'Responsive Design', value: 'responsiveDesign' },
+          { name: 'Theme Customization', value: 'themeCustomization' },
+          { name: 'Icon Library', value: 'iconLibrary' },
+          { name: 'Accessibility (a11y)', value: 'accessibility' },
+          { name: 'Internationalization (i18n)', value: 'internationalization' }
+        ],
+        default: baseConfig.features || ['responsiveDesign', 'accessibility']
       }
-    }
-
-    context.logger.success(`✅ ${pluginName} unified interface validation passed`);
+    ]);
+    
+    return {
+      designSystem,
+      theme,
+      components,
+      styling: 'tailwind', // Default to Tailwind for most UI libraries
+      features: {
+        animations: features.includes('animations'),
+        responsiveDesign: features.includes('responsiveDesign'),
+        themeCustomization: features.includes('themeCustomization'),
+        componentLibrary: true,
+        iconLibrary: features.includes('iconLibrary'),
+        accessibility: features.includes('accessibility')
+      }
+    };
   }
 
   private getPluginConfig(uiConfig: UIConfig, pluginName: string): Record<string, any> {
-    return {
+    const config: Record<string, any> = {
+      designSystem: uiConfig.designSystem,
+      theme: uiConfig.theme,
       components: uiConfig.components,
-      includeExamples: true,
+      features: uiConfig.features,
+      styling: uiConfig.styling,
       useTypeScript: true,
-      yes: true,
-      defaults: true
+      includeExamples: true
     };
+
+    // Add specific plugin-specific configurations if needed
+    if (pluginName === 'shadcn-ui') {
+      config.skipDb = true; // Shadcn/ui doesn't need database
+      config.skipPlugins = true; // Shadcn/ui handles its own setup
+    } else if (pluginName === 'chakra-ui') {
+      config.skipDb = true;
+      config.skipPlugins = true;
+    }
+
+    return config;
   }
 
   // ============================================================================
@@ -640,25 +496,34 @@ export class UIAgent extends AbstractAgent {
   // ============================================================================
 
   async rollback(context: AgentContext): Promise<void> {
-    context.logger.info('Rolling back UIAgent changes...');
-    
+    context.logger.warn('Rolling back UI setup...');
+
     try {
-      const shadcnPlugin = this.pluginSystem.getRegistry().get('shadcn-ui');
-      if (shadcnPlugin) {
-        const pluginContext = {
+      // Get the UI plugin for uninstallation
+      const selectedPlugin = this.getSelectedPlugin(context, 'ui');
+      const uiPlugin = this.pluginSystem.getRegistry().get(selectedPlugin);
+      
+      if (uiPlugin) {
+        const installPath = context.projectStructure?.type === 'monorepo' 
+          ? path.join(context.projectPath, 'packages', 'ui')
+          : context.projectPath;
+          
+        const pluginContext: PluginContext = {
           ...context,
-          pluginId: 'shadcn-ui',
+          projectPath: installPath,
+          pluginId: selectedPlugin,
           pluginConfig: {},
           installedPlugins: [],
           projectType: ProjectType.NEXTJS,
           targetPlatform: [TargetPlatform.WEB]
         };
-        
-        await shadcnPlugin.uninstall(pluginContext);
-        context.logger.success('Shadcn/ui plugin uninstalled');
+
+        await uiPlugin.uninstall(pluginContext);
       }
+
+      context.logger.success('UI setup rollback completed');
     } catch (error) {
-      context.logger.error(`Failed to rollback UI changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      context.logger.error('UI rollback failed', error as Error);
     }
   }
 }
