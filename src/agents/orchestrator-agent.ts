@@ -14,14 +14,22 @@ import { PluginSelectionService } from '../core/plugin/plugin-selection-service.
 import { CommandRunner } from '../core/cli/command-runner.js';
 import { PluginSelection } from '../types/plugin-selection.js';
 import { 
-  DatabaseProvider, 
+  DATABASE_PROVIDERS, 
+  ORM_LIBRARIES,
+  AUTH_PROVIDERS, 
+  AUTH_FEATURES,
+  UI_LIBRARIES,
+  DEPLOYMENT_PLATFORMS,
+  EMAIL_SERVICES,
+  TESTING_FRAMEWORKS,
+  DatabaseProvider,
+  ORMLibrary,
   AuthProvider, 
-  DatabaseFeature, 
   AuthFeature,
-  PluginType,
-  DATABASE_PROVIDERS,
-  AUTH_PROVIDERS,
-  PLUGIN_TYPES
+  UILibrary,
+  DeploymentPlatform,
+  EmailService,
+  TestingFramework
 } from '../types/shared-config.js';
 
 interface ProjectRequirements {
@@ -31,12 +39,12 @@ interface ProjectRequirements {
   features: string[];
   ui: {
     framework: 'nextjs' | 'react' | 'vue' | 'angular';
-    designSystem: 'shadcn-ui' | 'mui' | 'chakra-ui' | 'antd' | 'radix' | 'none';
+    designSystem: string;
     styling: 'tailwind' | 'css-modules' | 'styled-components';
   };
   database: {
     type: DatabaseProvider;
-    orm: PluginType;
+    orm: ORMLibrary;
     provider: DatabaseProvider;
   };
   authentication: {
@@ -44,11 +52,11 @@ interface ProjectRequirements {
     requireEmailVerification: boolean;
   };
   deployment: {
-    platform: 'vercel' | 'netlify' | 'railway' | 'aws' | 'none';
+    platform: DeploymentPlatform;
     environment: 'development' | 'staging' | 'production';
   };
   testing: {
-    framework: 'jest' | 'vitest' | 'playwright' | 'none';
+    framework: TestingFramework;
     coverage: boolean;
   };
 }
@@ -79,7 +87,7 @@ export class OrchestratorAgent implements IAgent {
   constructor() {
     this.pluginSystem = PluginSystem.getInstance();
     this.logger = this.pluginSystem.getLogger();
-    this.pluginSelectionService = new PluginSelectionService(this.logger);
+    this.pluginSelectionService = new PluginSelectionService(this.pluginSystem);
     this.runner = new CommandRunner();
   }
 
@@ -171,22 +179,29 @@ export class OrchestratorAgent implements IAgent {
     const userInput = context.config.userInput || '';
     const projectType = context.config.projectType || 'scalable-monorepo';
     
-    // Debug logging
+    // Check if we're using a template-based workflow
+    const selectedTemplate = context.state.get('selectedTemplate');
+    const isTemplateBased = context.state.get('isTemplateBased') || false;
+    
     this.logger.info(`DEBUG: useDefaults = ${context.options.useDefaults}`);
     this.logger.info(`DEBUG: projectType = ${projectType}`);
     this.logger.info(`DEBUG: userInput = ${userInput}`);
+    this.logger.info(`DEBUG: isTemplateBased = ${isTemplateBased}`);
     
-    // Use interactive plugin selection if not in --yes mode
+    // Get plugin selection based on workflow type
     let pluginSelection: PluginSelection;
-    
-    if (!context.options.useDefaults) {
-      this.logger.info('DEBUG: Using interactive plugin selection');
-      // Interactive plugin selection
-      pluginSelection = await this.pluginSelectionService.selectPlugins(projectType, userInput);
-    } else {
-      this.logger.info('DEBUG: Using default plugin selection');
-      // Use default selections for --yes mode
+    if (isTemplateBased && selectedTemplate) {
+      // Use template-based plugin selection
+      this.logger.info(`Using template-based plugin selection: ${selectedTemplate.name}`);
+      pluginSelection = selectedTemplate.pluginSelection;
+    } else if (context.options.useDefaults) {
+      // Use default plugin selection
+      this.logger.info('Using default plugin selection');
       pluginSelection = this.getDefaultPluginSelection(projectType);
+    } else {
+      // Use interactive plugin selection (legacy)
+      this.logger.info('Using interactive plugin selection');
+      pluginSelection = await this.pluginSelectionService.selectPlugins(userInput);
     }
 
     // Convert plugin selection to project requirements
@@ -203,53 +218,54 @@ export class OrchestratorAgent implements IAgent {
     return {
       database: {
         enabled: true,
-        type: 'drizzle',
-        provider: 'neon',
-        features: { migrations: true, seeding: true, backup: false }
+        provider: DATABASE_PROVIDERS.NEON,
+        orm: ORM_LIBRARIES.DRIZZLE,
+        features: { migrations: true, seeding: false, studio: true }
       },
       authentication: {
         enabled: true,
-        type: 'better-auth',
-        providers: ['email'],
-        features: { emailVerification: true, passwordReset: true, socialLogin: true, sessionManagement: true }
+        providers: [AUTH_PROVIDERS.EMAIL],
+        features: { 
+          [AUTH_FEATURES.EMAIL_VERIFICATION]: true, 
+          [AUTH_FEATURES.PASSWORD_RESET]: true, 
+          [AUTH_FEATURES.SOCIAL_LOGIN]: false, 
+          [AUTH_FEATURES.SESSION_MANAGEMENT]: true 
+        }
       },
       ui: {
         enabled: true,
-        type: 'shadcn',
-        theme: 'system',
-        components: ['button', 'input', 'card', 'dialog', 'dropdown-menu', 'form'],
-        features: { animations: true, icons: true, responsive: true }
+        library: UI_LIBRARIES.SHADCN_UI,
+        features: { components: true, theming: true, responsive: true }
       },
       deployment: {
-        enabled: true,
-        platform: 'vercel',
-        environment: 'production',
-        features: { autoDeploy: true, previewDeployments: true, customDomain: false }
+        enabled: false,
+        platform: DEPLOYMENT_PLATFORMS.VERCEL,
+        features: { autoDeploy: true, preview: true, analytics: false }
       },
       testing: {
-        enabled: false,
-        framework: 'vitest',
-        coverage: true,
-        e2e: false
-      },
-      monitoring: {
-        enabled: false,
-        service: 'sentry',
-        features: { errorTracking: true, performance: true, analytics: false }
+        enabled: true,
+        framework: TESTING_FRAMEWORKS.VITEST,
+        features: { unit: true, integration: false, e2e: false, coverage: true }
       },
       email: {
         enabled: false,
-        provider: 'resend',
-        features: { transactional: true, marketing: false, templates: true }
+        service: EMAIL_SERVICES.RESEND,
+        features: { templates: true, tracking: false, analytics: false }
       },
-      advanced: {
-        linting: true,
-        formatting: true,
-        gitHooks: true,
-        bundling: 'vite',
-        optimization: true,
-        security: true,
-        rateLimiting: false
+      monitoring: {
+        enabled: false,
+        services: [],
+        features: { errorTracking: false, performanceMonitoring: false, analytics: false }
+      },
+      payment: {
+        enabled: false,
+        providers: [],
+        features: { subscriptions: false, oneTimePayments: false, invoices: false }
+      },
+      blockchain: {
+        enabled: false,
+        networks: [],
+        features: { smartContracts: false, nftSupport: false, defiIntegration: false }
       }
     };
   }
@@ -259,6 +275,51 @@ export class OrchestratorAgent implements IAgent {
     projectName: string, 
     userInput: string
   ): ProjectRequirements {
+    const config = {
+      database: {
+        provider: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.NEON,
+        orm: selection.database.enabled ? selection.database.orm : ORM_LIBRARIES.DRIZZLE,
+        features: selection.database.enabled ? selection.database.features : {}
+      },
+      authentication: {
+        providers: selection.authentication.enabled ? selection.authentication.providers : [AUTH_PROVIDERS.EMAIL],
+        features: selection.authentication.enabled ? {
+          [AUTH_FEATURES.EMAIL_VERIFICATION]: true,
+          [AUTH_FEATURES.PASSWORD_RESET]: true,
+          [AUTH_FEATURES.SOCIAL_LOGIN]: false,
+          [AUTH_FEATURES.SESSION_MANAGEMENT]: true
+        } : {}
+      },
+      ui: {
+        library: selection.ui.enabled ? selection.ui.library : UI_LIBRARIES.SHADCN_UI,
+        features: selection.ui.enabled ? selection.ui.features : {}
+      },
+      deployment: {
+        platform: selection.deployment.enabled ? selection.deployment.platform : DEPLOYMENT_PLATFORMS.VERCEL,
+        features: selection.deployment.enabled ? selection.deployment.features : {}
+      },
+      testing: {
+        framework: selection.testing.enabled ? selection.testing.framework : TESTING_FRAMEWORKS.VITEST,
+        features: selection.testing.enabled ? selection.testing.features : {}
+      },
+      email: {
+        service: selection.email.enabled ? selection.email.service : EMAIL_SERVICES.RESEND,
+        features: selection.email.enabled ? selection.email.features : {}
+      },
+      monitoring: {
+        services: selection.monitoring.enabled ? selection.monitoring.services : [],
+        features: selection.monitoring.enabled ? selection.monitoring.features : {}
+      },
+      payment: {
+        providers: selection.payment.enabled ? selection.payment.providers : [],
+        features: selection.payment.enabled ? selection.payment.features : {}
+      },
+      blockchain: {
+        networks: selection.blockchain.enabled ? selection.blockchain.networks : [],
+        features: selection.blockchain.enabled ? selection.blockchain.features : {}
+      }
+    };
+
     return {
       name: projectName,
       description: userInput || 'Generated by The Architech',
@@ -266,41 +327,71 @@ export class OrchestratorAgent implements IAgent {
       features: this.extractFeaturesFromSelection(selection),
       ui: {
         framework: 'nextjs',
-        designSystem: selection.ui.enabled ? (selection.ui.type === 'shadcn' ? 'shadcn-ui' : selection.ui.type) : 'none',
+        designSystem: selection.ui.enabled ? this.mapUIPluginToSystem(selection.ui.library) : 'none',
         styling: 'tailwind'
       },
       database: {
-        type: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.POSTGRESQL,
-        orm: selection.database.enabled ? selection.database.type : PLUGIN_TYPES.NONE,
-        provider: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.LOCAL
+        type: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.NEON,
+        orm: selection.database.enabled ? selection.database.orm : ORM_LIBRARIES.DRIZZLE,
+        provider: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.NEON
       },
       authentication: {
-        providers: selection.authentication.enabled ? selection.authentication.providers : [],
+        providers: selection.authentication.enabled ? selection.authentication.providers : [AUTH_PROVIDERS.EMAIL],
         requireEmailVerification: selection.authentication.enabled && 
-          (selection.authentication.features.emailVerification ?? false)
+          (selection.authentication.features[AUTH_FEATURES.EMAIL_VERIFICATION] ?? false)
       },
       deployment: {
-        platform: selection.deployment.enabled ? selection.deployment.platform : 'none',
-        environment: selection.deployment.enabled ? selection.deployment.environment : 'development'
+        platform: selection.deployment.enabled ? selection.deployment.platform : DEPLOYMENT_PLATFORMS.VERCEL,
+        environment: 'development'
       },
       testing: {
-        framework: selection.testing.enabled ? selection.testing.framework : 'none',
-        coverage: selection.testing.enabled && selection.testing.coverage
+        framework: selection.testing.enabled ? selection.testing.framework : TESTING_FRAMEWORKS.VITEST,
+        coverage: selection.testing.enabled && (selection.testing.features.coverage ?? false)
       }
     };
   }
 
   private extractFeaturesFromSelection(selection: PluginSelection): string[] {
     const features: string[] = [];
-    
-    if (selection.database.enabled) features.push('database');
-    if (selection.authentication.enabled) features.push('authentication');
-    if (selection.ui.enabled) features.push('ui-components');
-    if (selection.deployment.enabled) features.push('deployment');
-    if (selection.testing.enabled) features.push('testing');
-    if (selection.monitoring.enabled) features.push('monitoring');
-    if (selection.email.enabled) features.push('email');
-    
+
+    if (selection.database.enabled) {
+      features.push(`database-${selection.database.provider}`);
+      features.push(`orm-${selection.database.orm}`);
+    }
+
+    if (selection.authentication.enabled) {
+      features.push(`auth-${selection.authentication.providers.join('-')}`);
+    }
+
+    if (selection.ui.enabled) {
+      features.push(`ui-${selection.ui.library}`);
+    }
+
+    if (selection.deployment.enabled) {
+      features.push(`deploy-${selection.deployment.platform}`);
+    }
+
+    if (selection.testing.enabled) {
+      features.push(`testing-${selection.testing.framework}`);
+    }
+
+    if (selection.email.enabled) {
+      features.push(`email-${selection.email.service}`);
+    }
+
+    // New categories
+    if (selection.monitoring.enabled && selection.monitoring.services.length > 0) {
+      features.push(`monitoring-${selection.monitoring.services.join('-')}`);
+    }
+
+    if (selection.payment.enabled && selection.payment.providers.length > 0) {
+      features.push(`payment-${selection.payment.providers.join('-')}`);
+    }
+
+    if (selection.blockchain.enabled && selection.blockchain.networks.length > 0) {
+      features.push(`blockchain-${selection.blockchain.networks.join('-')}`);
+    }
+
     return features;
   }
 
@@ -342,39 +433,75 @@ export class OrchestratorAgent implements IAgent {
       dependencies: ['Project Foundation']
     });
 
-    // Phase 3: Database Layer
-    if (pluginSelection.database.enabled && pluginSelection.database.type !== 'none') {
+    // Database phase
+    if (pluginSelection.database.enabled) {
       phases.push({
-        name: 'Database Layer',
-        description: `Setup database with ${pluginSelection.database.type}`,
-        agents: ['db'],
-        plugins: [pluginSelection.database.type],
+        name: 'database-setup',
+        description: `Setup database with ${pluginSelection.database.provider} and ${pluginSelection.database.orm}`,
+        agents: ['database-agent'],
+        plugins: [pluginSelection.database.provider, pluginSelection.database.orm],
+        order: 1,
+        dependencies: []
+      });
+    }
+
+    // Authentication phase
+    if (pluginSelection.authentication.enabled) {
+      phases.push({
+        name: 'authentication-setup',
+        description: `Setup authentication with ${pluginSelection.authentication.providers.join(', ')}`,
+        agents: ['auth-agent'],
+        plugins: ['better-auth'],
+        order: 2,
+        dependencies: ['database-setup']
+      });
+    }
+
+    // UI phase
+    if (pluginSelection.ui.enabled) {
+      phases.push({
+        name: 'ui-setup',
+        description: `Setup ${pluginSelection.ui.library} design system`,
+        agents: ['ui-agent'],
+        plugins: [this.mapUIPluginToSystem(pluginSelection.ui.library)],
         order: 3,
-        dependencies: ['Project Foundation']
+        dependencies: []
       });
     }
 
-    // Phase 4: Authentication
-    if (pluginSelection.authentication.enabled && pluginSelection.authentication.type !== 'none') {
+    // Additional database-specific phases
+    if (pluginSelection.database.enabled && pluginSelection.database.orm === ORM_LIBRARIES.DRIZZLE) {
       phases.push({
-        name: 'Authentication',
-        description: `Setup authentication with ${pluginSelection.authentication.type}`,
-        agents: ['auth'],
-        plugins: [pluginSelection.authentication.type],
-        order: 4,
-        dependencies: pluginSelection.database.enabled ? ['Database Layer'] : ['Project Foundation']
+        name: 'drizzle-setup',
+        description: 'Setup Drizzle ORM with migrations and schema',
+        agents: ['database-agent'],
+        plugins: ['drizzle'],
+        order: 1.5,
+        dependencies: ['database-setup']
       });
     }
 
-    // Phase 5: UI/Design System
-    if (pluginSelection.ui.enabled && pluginSelection.ui.type !== 'none') {
+    // Additional auth-specific phases
+    if (pluginSelection.authentication.enabled && pluginSelection.authentication.providers.includes(AUTH_PROVIDERS.EMAIL)) {
       phases.push({
-        name: 'UI/Design System',
-        description: `Setup ${pluginSelection.ui.type} design system`,
-        agents: ['ui'],
-        plugins: [this.mapUIPluginToSystem(pluginSelection.ui.type)],
-        order: 5,
-        dependencies: ['Project Foundation']
+        name: 'email-auth-setup',
+        description: 'Setup email authentication with verification',
+        agents: ['auth-agent'],
+        plugins: ['better-auth'],
+        order: 2.5,
+        dependencies: ['authentication-setup']
+      });
+    }
+
+    // Additional UI-specific phases
+    if (pluginSelection.ui.enabled && pluginSelection.ui.library === UI_LIBRARIES.SHADCN_UI) {
+      phases.push({
+        name: 'shadcn-setup',
+        description: 'Setup Shadcn/ui components and styling',
+        agents: ['ui-agent'],
+        plugins: ['shadcn-ui'],
+        order: 3.5,
+        dependencies: ['ui-setup']
       });
     }
 
@@ -382,15 +509,15 @@ export class OrchestratorAgent implements IAgent {
     const estimatedDuration = phases.reduce((total, phase) => total + 30, 0); // 30 seconds per phase
 
     // Generate recommendations based on plugin selection
-    if (pluginSelection.database.enabled && pluginSelection.database.type === 'drizzle') {
+    if (pluginSelection.database.enabled && pluginSelection.database.orm === ORM_LIBRARIES.DRIZZLE) {
       recommendations.push('Drizzle ORM works best with PostgreSQL. Consider using Neon or Supabase.');
     }
     
-    if (pluginSelection.authentication.enabled && pluginSelection.authentication.type === 'better-auth') {
+    if (pluginSelection.authentication.enabled && pluginSelection.authentication.providers.includes(AUTH_PROVIDERS.EMAIL)) {
       recommendations.push('Better Auth requires a database. Make sure to configure your database connection.');
     }
     
-    if (pluginSelection.ui.enabled && pluginSelection.ui.type === 'shadcn') {
+    if (pluginSelection.ui.enabled && pluginSelection.ui.library === UI_LIBRARIES.SHADCN_UI) {
       recommendations.push('Shadcn/ui provides beautiful, accessible components out of the box.');
     }
 
@@ -403,14 +530,21 @@ export class OrchestratorAgent implements IAgent {
     };
   }
 
-  private mapUIPluginToSystem(uiType: string): string {
-    // Map plugin selection UI types to actual plugin system IDs
+  private mapUIPluginToSystem(uiLibrary: string): string {
     const mapping: Record<string, string> = {
-      'shadcn': 'shadcn-ui',
-      'radix': 'shadcn-ui', // Radix is included with shadcn-ui
-      'none': 'none'
+      [UI_LIBRARIES.SHADCN_UI]: 'shadcn-ui',
+      [UI_LIBRARIES.CHAKRA_UI]: 'chakra-ui',
+      [UI_LIBRARIES.MATERIAL_UI]: 'mui',
+      [UI_LIBRARIES.ANT_DESIGN]: 'antd',
+      [UI_LIBRARIES.RADIX_UI]: 'radix',
+      [UI_LIBRARIES.MANTINE]: 'mantine',
+      [UI_LIBRARIES.HEADLESS_UI]: 'headless-ui',
+      [UI_LIBRARIES.ARIANE]: 'ariane',
+      [UI_LIBRARIES.NEXT_UI]: 'next-ui',
+      [UI_LIBRARIES.DAISY_UI]: 'daisy-ui'
     };
-    return mapping[uiType] || 'shadcn-ui';
+    
+    return mapping[uiLibrary] || 'none';
   }
 
   // ============================================================================

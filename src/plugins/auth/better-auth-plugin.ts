@@ -252,7 +252,10 @@ export class BetterAuthPlugin implements IPlugin {
   }
 
   getDependencies(): string[] {
-    return ['drizzle'];
+    return [
+      'better-auth@^1.3.0',
+      '@better-auth/cli@^1.3.0'
+    ];
   }
 
   getConflicts(): string[] {
@@ -361,18 +364,16 @@ export class BetterAuthPlugin implements IPlugin {
   private async installDependencies(context: PluginContext): Promise<void> {
     const { projectPath } = context;
     
+    // Better Auth provides everything we need - no additional dependencies required
     const dependencies = [
-      'better-auth@^1.3.0',
-      '@better-auth/utils@^0.2.6',
-      'bcryptjs@^2.4.3',
-      'jsonwebtoken@^9.0.2'
+      'better-auth@^1.3.0'
     ];
     
     const devDependencies = [
       '@better-auth/cli@^1.3.0'
     ];
 
-    context.logger.info('Installing Better Auth dependencies...');
+    context.logger.info('Installing Better Auth...');
     await this.runner.install(dependencies, false, projectPath);
     await this.runner.install(devDependencies, true, projectPath);
   }
@@ -736,6 +737,7 @@ import { DrizzleAdapter } from "better-auth/adapters/drizzle-adapter";
 import { db } from "../db";
 import { users, sessions, accounts, verificationTokens } from "../db/schema";
 
+// Better Auth handles all security, validation, and configuration automatically
 export const auth = new BetterAuth({
   adapter: DrizzleAdapter(db, {
     users,
@@ -744,53 +746,71 @@ export const auth = new BetterAuth({
     verificationTokens,
   }),
   providers: [
-    // Configure your providers here
-    // Example:
-    // GithubProvider({
-    //   clientId: process.env.GITHUB_CLIENT_ID!,
-    //   clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    // }),
+    // Better Auth CLI will configure providers automatically
+    // or you can add them manually here
   ],
   session: {
     strategy: "jwt",
-    maxAge: ${config.sessionDuration || 604800}, // ${config.sessionDuration || 604800} seconds
+    maxAge: ${config.sessionDuration || 604800}, // 7 days
   },
-  callbacks: {
-    async session({ session, token }) {
-      return session;
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-  },
+  // Better Auth provides sensible defaults for all security features
+  // No need to manually configure CSRF, rate limiting, etc.
 });
 
 export const { handlers, signIn, signOut, auth: getAuth } = auth;
+
+// Type exports for better TypeScript support
+export type Session = Awaited<ReturnType<typeof getAuth>>;
+export type User = NonNullable<Session>['user'];
 `;
   }
 
   private generateEnvConfig(config: Record<string, any>): string {
-    return `# Better Auth Configuration
+    return `# ============================================================================
+# Better Auth Configuration
+# ============================================================================
+
+# REQUIRED: Authentication secret (generate with: openssl rand -base64 32)
 AUTH_SECRET="${config.secret || 'your-secret-key-here'}"
 
-# Database URL (if not already set)
+# REQUIRED: Database URL (if not already set)
 DATABASE_URL="${config.databaseUrl || config.connectionString || 'postgresql://user:password@localhost:5432/database'}"
 
-# OAuth Provider Configuration (uncomment and configure as needed)
-# GITHUB_CLIENT_ID="your-github-client-id"
-# GITHUB_CLIENT_SECRET="your-github-client-secret"
-# GOOGLE_CLIENT_ID="your-google-client-id"
-# GOOGLE_CLIENT_SECRET="your-google-client-secret"
+# ============================================================================
+# OAuth Provider Configuration (optional)
+# ============================================================================
 
-# Email Configuration (for email verification)
-# EMAIL_SERVER_HOST="smtp.gmail.com"
-# EMAIL_SERVER_PORT=587
-# EMAIL_SERVER_USER="your-email@gmail.com"
-# EMAIL_SERVER_PASSWORD="your-app-password"
-# EMAIL_FROM="noreply@yourdomain.com"
+# GitHub OAuth (optional)
+# 1. Go to https://github.com/settings/developers
+# 2. Create a new OAuth App
+# 3. Set Authorization callback URL to: http://localhost:3000/api/auth/callback/github
+GITHUB_CLIENT_ID="your-github-client-id"
+GITHUB_CLIENT_SECRET="your-github-client-secret"
+
+# Google OAuth (optional)
+# 1. Go to https://console.cloud.google.com/apis/credentials
+# 2. Create a new OAuth 2.0 Client ID
+# 3. Set Authorized redirect URIs to: http://localhost:3000/api/auth/callback/google
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# ============================================================================
+# Application Configuration
+# ============================================================================
+
+# Base URL for your application
+NEXTAUTH_URL="http://localhost:3000"
+
+# Environment
+NODE_ENV="development"
+
+# Better Auth handles all security features automatically:
+# - CSRF protection
+# - Rate limiting
+# - Session management
+# - Email verification
+# - Password hashing
+# - JWT token handling
 `;
   }
 

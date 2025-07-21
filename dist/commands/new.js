@@ -1,29 +1,29 @@
 /**
  * New Command - Project Generation
  *
- * Handles the creation of new projects with intelligent plugin selection
- * and configuration.
+ * Handles the creation of new projects with intelligent template selection
+ * and guided customization.
  */
 import * as path from 'path';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { OrchestratorAgent } from '../agents/orchestrator-agent.js';
 import { ContextFactory } from '../core/project/context-factory.js';
+import { WorkflowTemplateService } from '../core/workflow/workflow-templates.js';
+import { KeywordAnalyzer } from '../core/workflow/keyword-analyzer.js';
 import fsExtra from 'fs-extra';
 import { structureService } from '../core/project/structure-service.js';
+// ============================================================================
+// MAIN COMMAND
+// ============================================================================
 export async function newCommand(projectName, options = {}) {
     console.log(chalk.blue.bold('🎭 Welcome to The Architech!\n'));
-    // Debug: Log the options being passed
-    console.log('DEBUG: newCommand called with options:', JSON.stringify(options, null, 2));
-    console.log('DEBUG: projectName:', projectName);
     try {
-        // Step 1: Gather project configuration with guided decision making
+        // Step 1: Gather project configuration with template-based workflow
         const config = await gatherProjectConfig(projectName, options);
-        // Debug: Log the final config
-        console.log('DEBUG: Final config:', JSON.stringify(config, null, 2));
         // Step 2: Validate project doesn't exist
         await validateProject(config);
-        // Step 3: Create enhanced context with project structure awareness
+        // Step 3: Create enhanced context with template information
         const context = createEnhancedContext(config);
         // Step 4: Execute orchestrator agent with enhanced context
         await executeOrchestrator(context);
@@ -35,110 +35,168 @@ export async function newCommand(projectName, options = {}) {
         process.exit(1);
     }
 }
+// ============================================================================
+// CONFIGURATION GATHERING
+// ============================================================================
 async function gatherProjectConfig(projectName, options = {}) {
     let config = {
         projectName: projectName || '',
-        projectType: options.projectType || 'quick-prototype', // Default to single app
+        projectType: options.projectType || 'quick-prototype',
         packageManager: options.packageManager || 'auto',
         skipGit: options.noGit || false,
         skipInstall: options.noInstall || false,
         useDefaults: options.yes || false,
-        template: 'nextjs-14',
+        template: options.template || 'nextjs-14',
         userInput: ''
     };
     // If using interactive mode (not --yes flag)
     if (!options.yes) {
-        const answers = await inquirer.prompt([
-            {
-                type: 'input',
-                name: 'projectName',
-                message: chalk.yellow('🎯 What is the name of your project?'),
-                default: projectName || 'my-architech-app',
-                when: !projectName,
-                validate: (input) => {
-                    if (!input.trim())
-                        return 'Project name is required';
-                    if (!/^[a-zA-Z0-9-_]+$/.test(input)) {
-                        return 'Project name can only contain letters, numbers, hyphens, and underscores';
-                    }
-                    return true;
-                }
-            },
-            {
-                type: 'list',
-                name: 'projectType',
-                message: chalk.yellow('🎯 What is the primary goal for this project?'),
-                choices: [
-                    {
-                        name: 'Quick Prototype / Single App (I want to start fast and simple)',
-                        value: 'quick-prototype',
-                        description: 'Perfect for MVPs, prototypes, and learning'
-                    },
-                    {
-                        name: 'Scalable Application / Monorepo (I\'m building a serious project that will grow - Recommended)',
-                        value: 'scalable-monorepo',
-                        description: 'Enterprise-grade structure with packages and shared tooling'
-                    }
-                ],
-                default: 'scalable-monorepo'
-            },
+        // Step 1: Get user input for intelligent template suggestions
+        const { userInput } = await inquirer.prompt([
             {
                 type: 'input',
                 name: 'userInput',
-                message: chalk.yellow('🤖 Describe your project requirements (optional):'),
+                message: chalk.yellow('🤖 What are you building? (optional):'),
                 default: '',
-                description: 'Describe what you want to build, e.g., "A blog with authentication, database, and modern UI"'
-            },
-            {
-                type: 'list',
-                name: 'packageManager',
-                message: chalk.yellow('📦 Choose your package manager:'),
-                choices: [
-                    { name: 'npm - Default Node.js package manager', value: 'npm' },
-                    { name: 'yarn - Fast, reliable, and secure', value: 'yarn' },
-                    { name: 'pnpm - Fast, disk space efficient', value: 'pnpm' },
-                    { name: 'bun - All-in-one JavaScript runtime & toolkit', value: 'bun' },
-                    { name: 'Auto-detect (recommended)', value: 'auto' }
-                ],
-                default: 'auto'
-            },
-            {
-                type: 'confirm',
-                name: 'skipGit',
-                message: chalk.yellow('🚫 Skip git repository initialization?'),
-                default: false
-            },
-            {
-                type: 'confirm',
-                name: 'skipInstall',
-                message: chalk.yellow('🚫 Skip dependency installation?'),
-                default: false
+                description: 'Describe your project, e.g., "A blog with payments" or "Quick prototype"'
             }
         ]);
-        // Update config with user answers
-        config = {
-            ...config,
-            projectName: answers.projectName || config.projectName,
-            projectType: answers.projectType || config.projectType,
-            packageManager: answers.packageManager || config.packageManager,
-            skipGit: answers.skipGit !== undefined ? answers.skipGit : config.skipGit,
-            skipInstall: answers.skipInstall !== undefined ? answers.skipInstall : config.skipInstall,
-            userInput: answers.userInput || config.userInput
-        };
+        config.userInput = userInput;
+        // Step 2: Get intelligent template suggestions
+        const suggestions = KeywordAnalyzer.analyzeInput(userInput);
+        const allTemplates = WorkflowTemplateService.getTemplates();
+        const customTemplate = WorkflowTemplateService.getCustomTemplate();
+        // Step 3: Let user choose template
+        const { selectedTemplateId } = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'selectedTemplateId',
+                message: chalk.yellow('🎯 Choose your project template:'),
+                choices: [
+                    // Show intelligent suggestions first
+                    ...(suggestions.length > 0 ? [
+                        new inquirer.Separator(chalk.cyan('💡 Recommended for you:')),
+                        ...suggestions.map(suggestion => ({
+                            name: `${suggestion.template.name} ${chalk.gray(`(${suggestion.template.questions} questions, ${suggestion.template.estimatedTime})`)}`,
+                            value: suggestion.template.id,
+                            description: `${suggestion.reason} - ${suggestion.template.description}`
+                        }))
+                    ] : []),
+                    // Show all available templates
+                    new inquirer.Separator(chalk.cyan('📋 All templates:')),
+                    ...allTemplates.map(template => ({
+                        name: `${template.name} ${chalk.gray(`(${template.questions} questions, ${template.estimatedTime})`)}`,
+                        value: template.id,
+                        description: template.description
+                    })),
+                    // Custom option
+                    new inquirer.Separator(chalk.cyan('⚙️  Advanced:')),
+                    {
+                        name: `${customTemplate.name} ${chalk.gray(`(${customTemplate.questions} questions, ${customTemplate.estimatedTime})`)}`,
+                        value: customTemplate.id,
+                        description: customTemplate.description
+                    }
+                ],
+                default: suggestions.length > 0 ? suggestions[0]?.template.id : 'quick-start'
+            }
+        ]);
+        // Step 4: Get selected template and gather customizations
+        const selectedTemplate = selectedTemplateId === 'custom'
+            ? customTemplate
+            : WorkflowTemplateService.getTemplate(selectedTemplateId);
+        if (!selectedTemplate) {
+            throw new Error(`Template not found: ${selectedTemplateId}`);
+        }
+        config.selectedTemplate = selectedTemplate;
+        config.template = selectedTemplateId;
+        // Step 5: Gather template-specific customizations
+        if (selectedTemplate.customizations.length > 0) {
+            console.log(chalk.blue(`\n📝 Customizing your ${selectedTemplate.name} project...\n`));
+            const customizationAnswers = await inquirer.prompt(selectedTemplate.customizations.map(customization => {
+                const question = {
+                    type: customization.type === 'boolean' ? 'confirm' :
+                        customization.type === 'choice' ? 'list' : 'input',
+                    name: customization.id,
+                    message: chalk.yellow(customization.name),
+                    description: customization.description
+                };
+                if (customization.type === 'choice' && customization.options) {
+                    question.choices = customization.options;
+                }
+                if (customization.default !== undefined) {
+                    question.default = customization.default;
+                }
+                if (customization.required) {
+                    question.validate = (input) => {
+                        if (!input || input.trim().length === 0) {
+                            return `${customization.name} is required`;
+                        }
+                        return true;
+                    };
+                }
+                return question;
+            }));
+            config.customizations = customizationAnswers;
+            config.projectName = customizationAnswers?.projectName || config.projectName;
+        }
+        // Step 6: Additional configuration for non-custom templates
+        if (selectedTemplateId !== 'custom') {
+            const additionalConfig = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'packageManager',
+                    message: chalk.yellow('📦 Choose your package manager:'),
+                    choices: [
+                        { name: 'npm - Default Node.js package manager', value: 'npm' },
+                        { name: 'yarn - Fast, reliable, and secure', value: 'yarn' },
+                        { name: 'pnpm - Fast, disk space efficient', value: 'pnpm' },
+                        { name: 'bun - All-in-one JavaScript runtime & toolkit', value: 'bun' },
+                        { name: 'Auto-detect (recommended)', value: 'auto' }
+                    ],
+                    default: 'auto'
+                },
+                {
+                    type: 'confirm',
+                    name: 'skipGit',
+                    message: chalk.yellow('🚫 Skip git repository initialization?'),
+                    default: false
+                },
+                {
+                    type: 'confirm',
+                    name: 'skipInstall',
+                    message: chalk.yellow('🚫 Skip dependency installation?'),
+                    default: false
+                }
+            ]);
+            config = {
+                ...config,
+                packageManager: additionalConfig.packageManager || config.packageManager,
+                skipGit: additionalConfig.skipGit !== undefined ? additionalConfig.skipGit : config.skipGit,
+                skipInstall: additionalConfig.skipInstall !== undefined ? additionalConfig.skipInstall : config.skipInstall
+            };
+        }
     }
     return config;
 }
+// ============================================================================
+// VALIDATION
+// ============================================================================
 async function validateProject(config) {
     const projectPath = path.resolve(config.projectName);
     if (await fsExtra.pathExists(projectPath)) {
         throw new Error(`Project directory already exists: ${config.projectName}`);
     }
 }
+// ============================================================================
+// CONTEXT CREATION
+// ============================================================================
 function createEnhancedContext(config) {
-    // Map user preference to internal structure
-    const structureType = config.projectType === 'quick-prototype' ? 'single-app' : 'monorepo';
-    const modules = structureType === 'monorepo' ? ['ui', 'db', 'auth'] : [];
-    // Create enhanced context with project structure awareness
+    // Determine project structure based on template
+    const isCustom = config.selectedTemplate?.id === 'custom';
+    const structureType = isCustom ?
+        (config.projectType === 'quick-prototype' ? 'single-app' : 'monorepo') :
+        'single-app'; // Templates default to single-app for simplicity
+    // Create enhanced context with template information
     const context = ContextFactory.createContext(config.projectName, {
         packageManager: config.packageManager,
         skipGit: config.skipGit,
@@ -148,71 +206,62 @@ function createEnhancedContext(config) {
     }, {
         template: config.template,
         structure: structureType,
-        modules: modules,
+        modules: [],
         userInput: config.userInput,
         projectType: config.projectType
     });
-    // Enhance the context with project structure information using the structure service
+    // Add template information to context
+    context.state.set('selectedTemplate', config.selectedTemplate);
+    context.state.set('customizations', config.customizations);
+    context.state.set('isTemplateBased', !isCustom);
+    // Enhance the context with project structure information
     context.projectStructure = structureService.createStructureInfo(config.projectType, config.template);
-    // Store additional configuration in context
-    context.config.projectType = config.projectType;
-    context.config.userInput = config.userInput;
     return context;
 }
+// ============================================================================
+// ORCHESTRATION
+// ============================================================================
 async function executeOrchestrator(context) {
-    console.log(chalk.magenta.bold('\n🤖 Deploying AI Orchestrator Agent...\n'));
-    // Execute orchestrator agent with enhanced context
+    console.log(chalk.blue('\n🚀 Starting project generation...\n'));
     const orchestrator = new OrchestratorAgent();
     const result = await orchestrator.execute(context);
     if (!result.success) {
-        throw new Error(`Orchestration failed: ${result.errors?.map((e) => e.message).join(', ')}`);
+        throw new Error(`Orchestration failed: ${result.errors?.map(e => e.message).join(', ')}`);
     }
-    console.log(chalk.green.bold('\n✅ Project generation completed successfully!\n'));
 }
+// ============================================================================
+// SUCCESS DISPLAY
+// ============================================================================
 function displayProjectSummary(config) {
-    console.log(chalk.green.bold('🎉 Your project is ready!\n'));
-    console.log(chalk.blue.bold('📁 Project Structure:'));
-    if (config.projectType === 'quick-prototype') {
-        console.log(chalk.gray('  my-quick-project/'));
-        console.log(chalk.gray('  ├── src/'));
-        console.log(chalk.gray('  │   ├── app/            # Pages'));
-        console.log(chalk.gray('  │   ├── components/     # UI components'));
-        console.log(chalk.gray('  │   └── lib/            # Utilities'));
-        console.log(chalk.gray('  ├── config/             # Configuration'));
-        console.log(chalk.gray('  └── package.json'));
-        console.log(chalk.yellow('\n💡 Quick Start Structure: Simple on surface, modular underneath'));
-        console.log(chalk.gray('    Uses path aliases to simulate monorepo structure'));
+    const template = config.selectedTemplate;
+    console.log(chalk.green.bold('\n🎉 Project generated successfully!\n'));
+    if (template) {
+        console.log(chalk.blue(`📋 Template: ${template.name}`));
+        console.log(chalk.gray(`   ${template.description}`));
+        console.log(chalk.gray(`   Questions answered: ${template.questions}`));
+        console.log(chalk.gray(`   Estimated time: ${template.estimatedTime}\n`));
     }
-    else {
-        console.log(chalk.gray('  my-scalable-project/'));
-        console.log(chalk.gray('  ├── apps/'));
-        console.log(chalk.gray('  │   └── web/            # Main application'));
-        console.log(chalk.gray('  ├── packages/'));
-        console.log(chalk.gray('  │   ├── ui/             # Shared UI components'));
-        console.log(chalk.gray('  │   ├── db/             # Database layer'));
-        console.log(chalk.gray('  │   └── auth/           # Authentication'));
-        console.log(chalk.gray('  ├── turbo.json          # Turborepo config'));
-        console.log(chalk.gray('  └── package.json'));
-        console.log(chalk.yellow('\n🏗️  Enterprise Structure: Full monorepo with packages'));
+    console.log(chalk.yellow('📁 Next steps:'));
+    console.log(`   cd ${config.projectName}`);
+    if (!config.skipInstall) {
+        console.log(`   npm install`);
     }
-    console.log(chalk.blue.bold('\n🚀 Next Steps:'));
-    console.log(chalk.white(`  cd ${config.projectName}`));
-    console.log(chalk.white('  npm run dev'));
-    console.log(chalk.white('  # or yarn dev / pnpm dev / bun dev'));
-    if (config.projectType === 'quick-prototype') {
-        console.log(chalk.blue.bold('\n🔄 Future Scaling:'));
-        console.log(chalk.yellow('  When your project grows, run:'));
-        console.log(chalk.white('  npx the-architech scale'));
-        console.log(chalk.gray('  This will automatically restructure your project into a full monorepo'));
+    console.log(`   npm run dev`);
+    console.log(`   npm run build`);
+    if (template?.id === 'custom') {
+        console.log(chalk.blue('\n🔧 Custom setup complete!'));
+        console.log(chalk.gray('   You can now customize your project further.'));
     }
-    console.log(chalk.blue.bold('\n📚 Documentation:'));
-    console.log(chalk.white('  https://the-architech.dev'));
-    console.log(chalk.gray('  Get help, examples, and advanced features'));
-    console.log(chalk.green.bold('\n🎯 Happy coding!\n'));
+    else if (template) {
+        console.log(chalk.blue('\n✨ Your project is ready!'));
+        console.log(chalk.gray(`   Built with ${template.name} template.`));
+    }
+    console.log(chalk.green('\n🚀 Happy coding!\n'));
 }
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
 function displayError(message) {
-    console.log(chalk.red.bold('\n❌ Error:'));
-    console.log(chalk.red(message));
-    console.log(chalk.yellow('\n💡 Need help? Visit: https://the-architech.dev\n'));
+    console.error(chalk.red(`\n❌ ${message}\n`));
 }
 //# sourceMappingURL=new.js.map

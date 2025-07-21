@@ -6,90 +6,66 @@
  * and plugin configuration.
  */
 
-import { Logger } from '../../types/agent.js';
-import { PluginSelection, PluginPrompt, PluginChoice, ConfigParameter, PluginConfiguration } from '../../types/plugin-selection.js';
 import { PluginSystem } from './plugin-system.js';
 import { 
-  DATABASE_PROVIDER_LABELS,
-  DATABASE_FEATURE_LABELS,
-  AUTH_PROVIDER_LABELS,
-  AUTH_FEATURE_LABELS,
-  PLUGIN_TYPE_LABELS,
-  getDatabaseProvidersForPlugin,
-  getDatabaseFeaturesForPlugin,
-  getAuthProvidersForPlugin,
-  getAuthFeaturesForPlugin,
-  PLUGIN_TYPES,
-  DATABASE_PROVIDERS,
-  DATABASE_FEATURES,
-  DatabaseFeature,
-  AUTH_PROVIDERS,
-  AuthFeature
+  DATABASE_PROVIDERS, 
+  ORM_LIBRARIES,
+  AUTH_PROVIDERS, 
+  AUTH_FEATURES,
+  UI_LIBRARIES,
+  DEPLOYMENT_PLATFORMS,
+  EMAIL_SERVICES,
+  TESTING_FRAMEWORKS,
+  DatabaseProvider,
+  ORMLibrary,
+  AuthProvider, 
+  AuthFeature,
+  UILibrary,
+  DeploymentPlatform,
+  EmailService,
+  TestingFramework
 } from '../../types/shared-config.js';
+import { 
+  PluginSelection, 
+  DatabaseSelection, 
+  AuthSelection, 
+  UISelection, 
+  DeploymentSelection, 
+  EmailSelection, 
+  TestingSelection,
+  MonitoringSelection,
+  PaymentSelection,
+  BlockchainSelection
+} from '../../types/plugin-selection.js';
 import inquirer from 'inquirer';
-import chalk from 'chalk';
 
 export class PluginSelectionService {
-  private logger: Logger;
   private pluginSystem: PluginSystem;
 
-  constructor(logger: Logger) {
-    this.logger = logger;
-    this.pluginSystem = PluginSystem.getInstance();
+  constructor(pluginSystem: PluginSystem) {
+    this.pluginSystem = pluginSystem;
   }
 
-  /**
-   * Main method to select plugins interactively
-   */
-  async selectPlugins(projectType: string, userInput: string): Promise<PluginSelection> {
-    this.logger.info('Starting interactive plugin selection...');
-
-    const selection: PluginSelection = {
+  async selectPlugins(userInput: string): Promise<PluginSelection> {
+    return {
       database: await this.selectDatabase(userInput),
       authentication: await this.selectAuthentication(userInput),
       ui: await this.selectUI(userInput),
       deployment: await this.selectDeployment(userInput),
       testing: await this.selectTesting(userInput),
-      monitoring: await this.selectMonitoring(userInput),
       email: await this.selectEmail(userInput),
-      advanced: await this.selectAdvanced(userInput)
+      monitoring: await this.selectMonitoring(userInput),
+      payment: await this.selectPayment(userInput),
+      blockchain: await this.selectBlockchain(userInput)
     };
-
-    this.logger.success('Plugin selection completed');
-    return selection;
   }
 
-  /**
-   * Collect plugin-specific parameters
-   */
-  async collectPluginParameters(pluginId: string): Promise<Record<string, any>> {
-    const plugin = this.pluginSystem.getRegistry().get(pluginId);
-    if (!plugin) {
-      throw new Error(`Plugin not found: ${pluginId}`);
-    }
-
-    const configSchema = plugin.getConfigSchema();
-    const parameters: Record<string, any> = {};
-
-    for (const [key, property] of Object.entries(configSchema.properties)) {
-      if (configSchema.required?.includes(key)) {
-        const answer = await this.promptParameter(key, property);
-        parameters[key] = answer;
-      }
-    }
-
-    return parameters;
-  }
-
-  /**
-   * Database selection
-   */
-  private async selectDatabase(userInput: string): Promise<PluginSelection['database']> {
+  private async selectDatabase(userInput: string): Promise<DatabaseSelection> {
     const { enabled } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'enabled',
-        message: 'Do you need a database?',
+        message: 'Would you like to add a database to your project?',
         default: true
       }
     ]);
@@ -97,92 +73,80 @@ export class PluginSelectionService {
     if (!enabled) {
       return {
         enabled: false,
-        type: PLUGIN_TYPES.NONE,
-        provider: DATABASE_PROVIDERS.LOCAL,
+        provider: DATABASE_PROVIDERS.NEON,
+        orm: ORM_LIBRARIES.DRIZZLE,
         features: {}
       };
     }
 
-    const { type } = await inquirer.prompt([
+    const { orm } = await inquirer.prompt([
       {
         type: 'list',
-        name: 'type',
+        name: 'orm',
         message: 'Which database ORM would you like to use?',
         choices: [
-          { name: `${PLUGIN_TYPE_LABELS[PLUGIN_TYPES.DRIZZLE]} (Recommended)`, value: PLUGIN_TYPES.DRIZZLE },
-          { name: PLUGIN_TYPE_LABELS[PLUGIN_TYPES.PRISMA], value: PLUGIN_TYPES.PRISMA },
-          { name: 'No ORM', value: PLUGIN_TYPES.NONE }
+          { name: 'Drizzle ORM (Recommended)', value: ORM_LIBRARIES.DRIZZLE },
+          { name: 'Prisma ORM', value: ORM_LIBRARIES.PRISMA },
+          { name: 'TypeORM', value: ORM_LIBRARIES.TYPEORM },
+          { name: 'No ORM', value: 'none' }
         ],
-        default: PLUGIN_TYPES.DRIZZLE
+        default: ORM_LIBRARIES.DRIZZLE
       }
     ]);
 
-    if (type === PLUGIN_TYPES.NONE) {
+    if (orm === 'none') {
       return {
         enabled: true,
-        type: PLUGIN_TYPES.NONE,
-        provider: DATABASE_PROVIDERS.LOCAL,
+        provider: DATABASE_PROVIDERS.NEON,
+        orm: ORM_LIBRARIES.DRIZZLE,
         features: {}
       };
     }
 
-    // Get available providers for the selected plugin type
-    const availableProviders = getDatabaseProvidersForPlugin(type);
-    const providerChoices = availableProviders.map(provider => ({
-      name: DATABASE_PROVIDER_LABELS[provider],
-      value: provider
-    }));
-
+    // Get available providers for the selected ORM
+    const availableProviders = this.getDatabaseProvidersForORM(orm);
     const { provider } = await inquirer.prompt([
       {
         type: 'list',
         name: 'provider',
         message: 'Which database provider would you like to use?',
-        choices: providerChoices,
-        default: availableProviders[0]
+        choices: availableProviders,
+        default: availableProviders[0]?.value
       }
     ]);
 
-    // Get available features for the selected plugin type
-    const availableFeatures = getDatabaseFeaturesForPlugin(type);
-    const featureChoices = availableFeatures.map(feature => ({
-      name: DATABASE_FEATURE_LABELS[feature],
-      value: feature,
-      checked: feature === DATABASE_FEATURES.MIGRATIONS || feature === DATABASE_FEATURES.SEEDING
-    }));
-
+    // Get available features for the selected ORM
+    const availableFeatures = this.getDatabaseFeaturesForORM(orm);
     const { features } = await inquirer.prompt([
       {
         type: 'checkbox',
         name: 'features',
-        message: 'Which database features do you need?',
-        choices: featureChoices
+        message: 'Which database features would you like to enable?',
+        choices: availableFeatures,
+        default: ['migrations', 'studio']
       }
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<DatabaseFeature, boolean>> = {};
+    const featuresObject: Partial<Record<string, boolean>> = {};
     availableFeatures.forEach(feature => {
-      featuresObject[feature] = features.includes(feature);
+      featuresObject[feature.value] = features.includes(feature.value);
     });
 
     return {
       enabled: true,
-      type,
       provider,
+      orm,
       features: featuresObject
     };
   }
 
-  /**
-   * Authentication selection
-   */
-  private async selectAuthentication(userInput: string): Promise<PluginSelection['authentication']> {
+  private async selectAuthentication(userInput: string): Promise<AuthSelection> {
     const { enabled } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'enabled',
-        message: 'Do you need authentication?',
+        message: 'Would you like to add authentication to your project?',
         default: true
       }
     ]);
@@ -190,92 +154,60 @@ export class PluginSelectionService {
     if (!enabled) {
       return {
         enabled: false,
-        type: PLUGIN_TYPES.NONE,
         providers: [],
         features: {}
       };
     }
-
-    const { type } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'type',
-        message: 'Which authentication provider would you like to use?',
-        choices: [
-          { name: `${PLUGIN_TYPE_LABELS[PLUGIN_TYPES.BETTER_AUTH]} (Recommended)`, value: PLUGIN_TYPES.BETTER_AUTH },
-          { name: PLUGIN_TYPE_LABELS[PLUGIN_TYPES.NEXTAUTH], value: PLUGIN_TYPES.NEXTAUTH },
-          { name: 'No authentication', value: PLUGIN_TYPES.NONE }
-        ],
-        default: PLUGIN_TYPES.BETTER_AUTH
-      }
-    ]);
-
-    if (type === PLUGIN_TYPES.NONE) {
-      return {
-        enabled: true,
-        type: PLUGIN_TYPES.NONE,
-        providers: [],
-        features: {}
-      };
-    }
-
-    // Get available providers for the selected plugin type
-    const availableProviders = getAuthProvidersForPlugin(type);
-    const providerChoices = availableProviders.map(provider => ({
-      name: AUTH_PROVIDER_LABELS[provider],
-      value: provider,
-      checked: provider === AUTH_PROVIDERS.EMAIL
-    }));
 
     const { providers } = await inquirer.prompt([
       {
         type: 'checkbox',
         name: 'providers',
-        message: 'Which authentication providers do you want to support?',
-        choices: providerChoices
+        message: 'Which authentication providers would you like to use?',
+        choices: [
+          { name: 'Email/Password', value: AUTH_PROVIDERS.EMAIL, checked: true },
+          { name: 'Google', value: AUTH_PROVIDERS.GOOGLE },
+          { name: 'GitHub', value: AUTH_PROVIDERS.GITHUB },
+          { name: 'Discord', value: AUTH_PROVIDERS.DISCORD }
+        ],
+        default: [AUTH_PROVIDERS.EMAIL]
       }
     ]);
-
-    // Get available features for the selected plugin type
-    const availableFeatures = getAuthFeaturesForPlugin(type);
-    const featureChoices = availableFeatures.map(feature => ({
-      name: AUTH_FEATURE_LABELS[feature],
-      value: feature,
-      checked: true
-    }));
 
     const { features } = await inquirer.prompt([
       {
         type: 'checkbox',
         name: 'features',
-        message: 'Which authentication features do you need?',
-        choices: featureChoices
+        message: 'Which authentication features would you like to enable?',
+        choices: [
+          { name: 'Email Verification', value: AUTH_FEATURES.EMAIL_VERIFICATION, checked: true },
+          { name: 'Password Reset', value: AUTH_FEATURES.PASSWORD_RESET, checked: true },
+          { name: 'Social Login', value: AUTH_FEATURES.SOCIAL_LOGIN },
+          { name: 'Session Management', value: AUTH_FEATURES.SESSION_MANAGEMENT, checked: true }
+        ],
+        default: [AUTH_FEATURES.EMAIL_VERIFICATION, AUTH_FEATURES.PASSWORD_RESET, AUTH_FEATURES.SESSION_MANAGEMENT]
       }
     ]);
 
     // Convert features array to object
     const featuresObject: Partial<Record<AuthFeature, boolean>> = {};
-    availableFeatures.forEach(feature => {
-      featuresObject[feature] = features.includes(feature);
+    features.forEach((feature: string) => {
+      featuresObject[feature as AuthFeature] = true;
     });
 
     return {
       enabled: true,
-      type,
       providers,
       features: featuresObject
     };
   }
 
-  /**
-   * UI selection
-   */
-  private async selectUI(userInput: string): Promise<PluginSelection['ui']> {
+  private async selectUI(userInput: string): Promise<UISelection> {
     const { enabled } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'enabled',
-        message: 'Do you need a UI component library?',
+        message: 'Would you like to add a UI library to your project?',
         default: true
       }
     ]);
@@ -283,54 +215,23 @@ export class PluginSelectionService {
     if (!enabled) {
       return {
         enabled: false,
-        type: 'none',
-        theme: 'system',
-        components: [],
-        features: { animations: false, icons: false, responsive: false }
+        library: UI_LIBRARIES.SHADCN_UI,
+        features: {}
       };
     }
 
-    const { type } = await inquirer.prompt([
+    const { library } = await inquirer.prompt([
       {
         type: 'list',
-        name: 'type',
+        name: 'library',
         message: 'Which UI library would you like to use?',
         choices: [
-          { name: 'Shadcn/ui (Recommended)', value: 'shadcn' },
-          { name: 'Radix UI', value: 'radix' },
-          { name: 'No UI library', value: 'none' }
+          { name: 'Shadcn/ui (Recommended)', value: UI_LIBRARIES.SHADCN_UI },
+          { name: 'Chakra UI', value: UI_LIBRARIES.CHAKRA_UI },
+          { name: 'Material-UI', value: UI_LIBRARIES.MATERIAL_UI },
+          { name: 'Ant Design', value: UI_LIBRARIES.ANT_DESIGN }
         ],
-        default: 'shadcn'
-      }
-    ]);
-
-    const { theme } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'theme',
-        message: 'Which theme mode would you like?',
-        choices: [
-          { name: 'System (auto)', value: 'system' },
-          { name: 'Light only', value: 'light' },
-          { name: 'Dark only', value: 'dark' }
-        ],
-        default: 'system'
-      }
-    ]);
-
-    const { components } = await inquirer.prompt([
-      {
-        type: 'checkbox',
-        name: 'components',
-        message: 'Which components do you want to include?',
-        choices: [
-          { name: 'Button', value: 'button', checked: true },
-          { name: 'Input', value: 'input', checked: true },
-          { name: 'Card', value: 'card', checked: true },
-          { name: 'Dialog', value: 'dialog', checked: true },
-          { name: 'Dropdown Menu', value: 'dropdown-menu', checked: true },
-          { name: 'Form', value: 'form', checked: true }
-        ]
+        default: UI_LIBRARIES.SHADCN_UI
       }
     ]);
 
@@ -338,47 +239,44 @@ export class PluginSelectionService {
       {
         type: 'checkbox',
         name: 'features',
-        message: 'Which UI features do you need?',
+        message: 'Which UI features would you like to enable?',
         choices: [
-          { name: 'Animations', value: 'animations', checked: true },
-          { name: 'Icons', value: 'icons', checked: true },
-          { name: 'Responsive design', value: 'responsive', checked: true }
-        ]
+          { name: 'Components', value: 'components', checked: true },
+          { name: 'Theming', value: 'theming', checked: true },
+          { name: 'Responsive Design', value: 'responsive', checked: true }
+        ],
+        default: ['components', 'theming', 'responsive']
       }
     ]);
 
+    // Convert features array to object
+    const featuresObject: Partial<Record<string, boolean>> = {};
+    features.forEach((feature: string) => {
+      featuresObject[feature] = true;
+    });
+
     return {
       enabled: true,
-      type,
-      theme,
-      components,
-      features: {
-        animations: features.includes('animations'),
-        icons: features.includes('icons'),
-        responsive: features.includes('responsive')
-      }
+      library,
+      features: featuresObject
     };
   }
 
-  /**
-   * Deployment selection
-   */
-  private async selectDeployment(userInput: string): Promise<PluginSelection['deployment']> {
+  private async selectDeployment(userInput: string): Promise<DeploymentSelection> {
     const { enabled } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'enabled',
-        message: 'Do you want to configure deployment?',
-        default: true
+        message: 'Would you like to configure deployment for your project?',
+        default: false
       }
     ]);
 
     if (!enabled) {
       return {
         enabled: false,
-        platform: 'none',
-        environment: 'development',
-        features: { autoDeploy: false, previewDeployments: false, customDomain: false }
+        platform: DEPLOYMENT_PLATFORMS.VERCEL,
+        features: {}
       };
     }
 
@@ -388,27 +286,12 @@ export class PluginSelectionService {
         name: 'platform',
         message: 'Which deployment platform would you like to use?',
         choices: [
-          { name: 'Vercel (Recommended)', value: 'vercel' },
-          { name: 'Railway', value: 'railway' },
-          { name: 'Netlify', value: 'netlify' },
-          { name: 'AWS', value: 'aws' },
-          { name: 'No deployment', value: 'none' }
+          { name: 'Vercel (Recommended)', value: DEPLOYMENT_PLATFORMS.VERCEL },
+          { name: 'Railway', value: DEPLOYMENT_PLATFORMS.RAILWAY },
+          { name: 'Netlify', value: DEPLOYMENT_PLATFORMS.NETLIFY },
+          { name: 'AWS', value: DEPLOYMENT_PLATFORMS.AWS }
         ],
-        default: 'vercel'
-      }
-    ]);
-
-    const { environment } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'environment',
-        message: 'Which environment would you like to deploy to?',
-        choices: [
-          { name: 'Production', value: 'production' },
-          { name: 'Staging', value: 'staging' },
-          { name: 'Development', value: 'development' }
-        ],
-        default: 'production'
+        default: DEPLOYMENT_PLATFORMS.VERCEL
       }
     ]);
 
@@ -416,46 +299,44 @@ export class PluginSelectionService {
       {
         type: 'checkbox',
         name: 'features',
-        message: 'Which deployment features do you need?',
+        message: 'Which deployment features would you like to enable?',
         choices: [
-          { name: 'Auto deploy', value: 'autoDeploy', checked: true },
-          { name: 'Preview deployments', value: 'previewDeployments', checked: true },
-          { name: 'Custom domain', value: 'customDomain', checked: false }
-        ]
+          { name: 'Auto Deploy', value: 'autoDeploy', checked: true },
+          { name: 'Preview Deployments', value: 'preview', checked: true },
+          { name: 'Analytics', value: 'analytics' }
+        ],
+        default: ['autoDeploy', 'preview']
       }
     ]);
+
+    // Convert features array to object
+    const featuresObject: Partial<Record<string, boolean>> = {};
+    features.forEach((feature: string) => {
+      featuresObject[feature] = true;
+    });
 
     return {
       enabled: true,
       platform,
-      environment,
-      features: {
-        autoDeploy: features.includes('autoDeploy'),
-        previewDeployments: features.includes('previewDeployments'),
-        customDomain: features.includes('customDomain')
-      }
+      features: featuresObject
     };
   }
 
-  /**
-   * Testing selection
-   */
-  private async selectTesting(userInput: string): Promise<PluginSelection['testing']> {
+  private async selectTesting(userInput: string): Promise<TestingSelection> {
     const { enabled } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'enabled',
-        message: 'Do you want to configure testing?',
-        default: false
+        message: 'Would you like to add testing to your project?',
+        default: true
       }
     ]);
 
     if (!enabled) {
       return {
         enabled: false,
-        framework: 'none',
-        coverage: false,
-        e2e: false
+        framework: TESTING_FRAMEWORKS.VITEST,
+        features: {}
       };
     }
 
@@ -465,12 +346,11 @@ export class PluginSelectionService {
         name: 'framework',
         message: 'Which testing framework would you like to use?',
         choices: [
-          { name: 'Vitest (Recommended)', value: 'vitest' },
-          { name: 'Jest', value: 'jest' },
-          { name: 'Playwright (E2E)', value: 'playwright' },
-          { name: 'No testing', value: 'none' }
+          { name: 'Vitest (Recommended)', value: TESTING_FRAMEWORKS.VITEST },
+          { name: 'Jest', value: TESTING_FRAMEWORKS.JEST },
+          { name: 'Playwright', value: TESTING_FRAMEWORKS.PLAYWRIGHT }
         ],
-        default: 'vitest'
+        default: TESTING_FRAMEWORKS.VITEST
       }
     ]);
 
@@ -478,31 +358,36 @@ export class PluginSelectionService {
       {
         type: 'checkbox',
         name: 'features',
-        message: 'Which testing features do you need?',
+        message: 'Which testing features would you like to enable?',
         choices: [
-          { name: 'Code coverage', value: 'coverage', checked: true },
-          { name: 'End-to-end testing', value: 'e2e', checked: false }
-        ]
+          { name: 'Unit Tests', value: 'unit', checked: true },
+          { name: 'Integration Tests', value: 'integration' },
+          { name: 'E2E Tests', value: 'e2e' },
+          { name: 'Code Coverage', value: 'coverage', checked: true }
+        ],
+        default: ['unit', 'coverage']
       }
     ]);
+
+    // Convert features array to object
+    const featuresObject: Partial<Record<string, boolean>> = {};
+    features.forEach((feature: string) => {
+      featuresObject[feature] = true;
+    });
 
     return {
       enabled: true,
       framework,
-      coverage: features.includes('coverage'),
-      e2e: features.includes('e2e')
+      features: featuresObject
     };
   }
 
-  /**
-   * Monitoring selection
-   */
-  private async selectMonitoring(userInput: string): Promise<PluginSelection['monitoring']> {
+  private async selectEmail(userInput: string): Promise<EmailSelection> {
     const { enabled } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'enabled',
-        message: 'Do you want to configure monitoring?',
+        message: 'Would you like to add email functionality to your project?',
         default: false
       }
     ]);
@@ -510,8 +395,8 @@ export class PluginSelectionService {
     if (!enabled) {
       return {
         enabled: false,
-        service: 'none',
-        features: { errorTracking: false, performance: false, analytics: false }
+        service: EMAIL_SERVICES.RESEND,
+        features: {}
       };
     }
 
@@ -519,13 +404,13 @@ export class PluginSelectionService {
       {
         type: 'list',
         name: 'service',
-        message: 'Which monitoring service would you like to use?',
+        message: 'Which email service would you like to use?',
         choices: [
-          { name: 'Sentry', value: 'sentry' },
-          { name: 'LogRocket', value: 'logrocket' },
-          { name: 'No monitoring', value: 'none' }
+          { name: 'Resend (Recommended)', value: EMAIL_SERVICES.RESEND },
+          { name: 'SendGrid', value: EMAIL_SERVICES.SENDGRID },
+          { name: 'Mailgun', value: EMAIL_SERVICES.MAILGUN }
         ],
-        default: 'sentry'
+        default: EMAIL_SERVICES.RESEND
       }
     ]);
 
@@ -533,35 +418,35 @@ export class PluginSelectionService {
       {
         type: 'checkbox',
         name: 'features',
-        message: 'Which monitoring features do you need?',
+        message: 'Which email features would you like to enable?',
         choices: [
-          { name: 'Error tracking', value: 'errorTracking', checked: true },
-          { name: 'Performance monitoring', value: 'performance', checked: true },
-          { name: 'Analytics', value: 'analytics', checked: false }
-        ]
+          { name: 'Email Templates', value: 'templates', checked: true },
+          { name: 'Email Tracking', value: 'tracking' },
+          { name: 'Analytics', value: 'analytics' }
+        ],
+        default: ['templates']
       }
     ]);
+
+    // Convert features array to object
+    const featuresObject: Partial<Record<string, boolean>> = {};
+    features.forEach((feature: string) => {
+      featuresObject[feature] = true;
+    });
 
     return {
       enabled: true,
       service,
-      features: {
-        errorTracking: features.includes('errorTracking'),
-        performance: features.includes('performance'),
-        analytics: features.includes('analytics')
-      }
+      features: featuresObject
     };
   }
 
-  /**
-   * Email selection
-   */
-  private async selectEmail(userInput: string): Promise<PluginSelection['email']> {
+  private async selectMonitoring(userInput: string): Promise<MonitoringSelection> {
     const { enabled } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'enabled',
-        message: 'Do you want to configure email services?',
+        message: 'Would you like to add monitoring and analytics to your project?',
         default: false
       }
     ]);
@@ -569,23 +454,22 @@ export class PluginSelectionService {
     if (!enabled) {
       return {
         enabled: false,
-        provider: 'none',
-        features: { transactional: false, marketing: false, templates: false }
+        services: [],
+        features: {}
       };
     }
 
-    const { provider } = await inquirer.prompt([
+    const { services } = await inquirer.prompt([
       {
-        type: 'list',
-        name: 'provider',
-        message: 'Which email provider would you like to use?',
+        type: 'checkbox',
+        name: 'services',
+        message: 'Which monitoring services would you like to use?',
         choices: [
-          { name: 'Resend (Recommended)', value: 'resend' },
-          { name: 'SendGrid', value: 'sendgrid' },
-          { name: 'Mailgun', value: 'mailgun' },
-          { name: 'No email', value: 'none' }
+          { name: 'Sentry (Error Tracking)', value: 'sentry' },
+          { name: 'Vercel Analytics (Web Analytics)', value: 'vercel-analytics' },
+          { name: 'Google Analytics (Web Analytics)', value: 'google-analytics' }
         ],
-        default: 'resend'
+        default: ['sentry']
       }
     ]);
 
@@ -593,105 +477,193 @@ export class PluginSelectionService {
       {
         type: 'checkbox',
         name: 'features',
-        message: 'Which email features do you need?',
+        message: 'Which monitoring features would you like to enable?',
         choices: [
-          { name: 'Transactional emails', value: 'transactional', checked: true },
-          { name: 'Marketing emails', value: 'marketing', checked: false },
-          { name: 'Email templates', value: 'templates', checked: true }
-        ]
+          { name: 'Error Tracking', value: 'errorTracking', checked: true },
+          { name: 'Performance Monitoring', value: 'performanceMonitoring' },
+          { name: 'User Analytics', value: 'analytics' },
+          { name: 'Session Recording', value: 'sessionRecording' }
+        ],
+        default: ['errorTracking']
       }
     ]);
+
+    // Convert features array to object
+    const featuresObject: Partial<Record<string, boolean>> = {};
+    features.forEach((feature: string) => {
+      featuresObject[feature] = true;
+    });
 
     return {
       enabled: true,
-      provider,
-      features: {
-        transactional: features.includes('transactional'),
-        marketing: features.includes('marketing'),
-        templates: features.includes('templates')
-      }
+      services,
+      features: featuresObject
     };
   }
 
-  /**
-   * Advanced options selection
-   */
-  private async selectAdvanced(userInput: string): Promise<PluginSelection['advanced']> {
+  private async selectPayment(userInput: string): Promise<PaymentSelection> {
+    const { enabled } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'enabled',
+        message: 'Would you like to add payment processing to your project?',
+        default: false
+      }
+    ]);
+
+    if (!enabled) {
+      return {
+        enabled: false,
+        providers: [],
+        features: {}
+      };
+    }
+
+    const { providers } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'providers',
+        message: 'Which payment providers would you like to use?',
+        choices: [
+          { name: 'Stripe (Recommended)', value: 'stripe', checked: true },
+          { name: 'PayPal', value: 'paypal' }
+        ],
+        default: ['stripe']
+      }
+    ]);
+
     const { features } = await inquirer.prompt([
       {
         type: 'checkbox',
         name: 'features',
-        message: 'Which advanced features do you want to configure?',
+        message: 'Which payment features would you like to enable?',
         choices: [
-          { name: 'ESLint (Linting)', value: 'linting', checked: true },
-          { name: 'Prettier (Formatting)', value: 'formatting', checked: true },
-          { name: 'Husky (Git hooks)', value: 'gitHooks', checked: true },
-          { name: 'Security headers', value: 'security', checked: true },
-          { name: 'Rate limiting', value: 'rateLimiting', checked: false }
-        ]
+          { name: 'One-time Payments', value: 'oneTimePayments', checked: true },
+          { name: 'Subscriptions', value: 'subscriptions' },
+          { name: 'Invoices', value: 'invoices' },
+          { name: 'Marketplace Support', value: 'marketplace' }
+        ],
+        default: ['oneTimePayments']
       }
     ]);
 
-    const { bundling } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'bundling',
-        message: 'Which bundler would you like to use?',
-        choices: [
-          { name: 'Vite (Recommended)', value: 'vite' },
-          { name: 'Webpack', value: 'webpack' },
-          { name: 'Turbopack', value: 'turbopack' }
-        ],
-        default: 'vite'
-      }
-    ]);
+    // Convert features array to object
+    const featuresObject: Partial<Record<string, boolean>> = {};
+    features.forEach((feature: string) => {
+      featuresObject[feature] = true;
+    });
 
     return {
-      linting: features.includes('linting'),
-      formatting: features.includes('formatting'),
-      gitHooks: features.includes('gitHooks'),
-      bundling,
-      optimization: true,
-      security: features.includes('security'),
-      rateLimiting: features.includes('rateLimiting')
+      enabled: true,
+      providers,
+      features: featuresObject
     };
   }
 
-  /**
-   * Prompt for a single parameter
-   */
-  private async promptParameter(name: string, property: any): Promise<any> {
-    const question = {
-      type: this.mapPropertyTypeToPromptType(property.type),
-      name,
-      message: property.description || `Enter value for ${name}`,
-      default: property.default
-    };
+  private async selectBlockchain(userInput: string): Promise<BlockchainSelection> {
+    const { enabled } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'enabled',
+        message: 'Would you like to add blockchain integration to your project?',
+        default: false
+      }
+    ]);
 
-    if (property.enum) {
-      (question as any).choices = property.enum.map((value: any) => ({
-        name: value,
-        value
-      }));
+    if (!enabled) {
+      return {
+        enabled: false,
+        networks: [],
+        features: {}
+      };
     }
 
-    const answer = await inquirer.prompt([question]);
-    return answer[name];
+    const { networks } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'networks',
+        message: 'Which blockchain networks would you like to support?',
+        choices: [
+          { name: 'Ethereum (Recommended)', value: 'ethereum', checked: true },
+          { name: 'Polygon', value: 'polygon' },
+          { name: 'Solana', value: 'solana' }
+        ],
+        default: ['ethereum']
+      }
+    ]);
+
+    const { features } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'features',
+        message: 'Which blockchain features would you like to enable?',
+        choices: [
+          { name: 'Smart Contracts', value: 'smartContracts', checked: true },
+          { name: 'NFT Support', value: 'nftSupport' },
+          { name: 'DeFi Integration', value: 'defiIntegration' },
+          { name: 'Wallet Integration', value: 'walletIntegration' }
+        ],
+        default: ['smartContracts']
+      }
+    ]);
+
+    // Convert features array to object
+    const featuresObject: Partial<Record<string, boolean>> = {};
+    features.forEach((feature: string) => {
+      featuresObject[feature] = true;
+    });
+
+    return {
+      enabled: true,
+      networks,
+      features: featuresObject
+    };
   }
 
-  /**
-   * Map property type to prompt type
-   */
-  private mapPropertyTypeToPromptType(type: string): string {
-    switch (type) {
-      case 'boolean':
-        return 'confirm';
-      case 'number':
-        return 'number';
-      case 'array':
-        return 'checkbox';
+  private getDatabaseProvidersForORM(orm: string): Array<{ name: string; value: DatabaseProvider }> {
+    switch (orm) {
+      case ORM_LIBRARIES.DRIZZLE:
+        return [
+          { name: 'Neon (PostgreSQL)', value: DATABASE_PROVIDERS.NEON },
+          { name: 'Supabase (PostgreSQL)', value: DATABASE_PROVIDERS.SUPABASE },
+          { name: 'Turso (SQLite)', value: DATABASE_PROVIDERS.TURSO },
+          { name: 'PlanetScale (MySQL)', value: DATABASE_PROVIDERS.PLANETSCALE }
+        ];
+      case ORM_LIBRARIES.PRISMA:
+        return [
+          { name: 'Neon (PostgreSQL)', value: DATABASE_PROVIDERS.NEON },
+          { name: 'Supabase (PostgreSQL)', value: DATABASE_PROVIDERS.SUPABASE },
+          { name: 'PlanetScale (MySQL)', value: DATABASE_PROVIDERS.PLANETSCALE }
+        ];
       default:
-        return 'input';
+        return [
+          { name: 'Neon (PostgreSQL)', value: DATABASE_PROVIDERS.NEON },
+          { name: 'Supabase (PostgreSQL)', value: DATABASE_PROVIDERS.SUPABASE }
+        ];
+    }
+  }
+
+  private getDatabaseFeaturesForORM(orm: string): Array<{ name: string; value: string }> {
+    switch (orm) {
+      case ORM_LIBRARIES.DRIZZLE:
+        return [
+          { name: 'Migrations', value: 'migrations' },
+          { name: 'Seeding', value: 'seeding' },
+          { name: 'Drizzle Studio', value: 'studio' },
+          { name: 'Type Safety', value: 'typeSafety' }
+        ];
+      case ORM_LIBRARIES.PRISMA:
+        return [
+          { name: 'Migrations', value: 'migrations' },
+          { name: 'Seeding', value: 'seeding' },
+          { name: 'Prisma Studio', value: 'studio' },
+          { name: 'Type Safety', value: 'typeSafety' }
+        ];
+      default:
+        return [
+          { name: 'Migrations', value: 'migrations' },
+          { name: 'Seeding', value: 'seeding' }
+        ];
     }
   }
 } 

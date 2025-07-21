@@ -12,9 +12,7 @@ import { CommandRunner } from '../../core/cli/command-runner.js';
 import { ValidationError } from '../../types/agent.js';
 import { 
   AUTH_PROVIDERS, 
-  SESSION_STRATEGIES, 
-  AuthProvider, 
-  SessionStrategy 
+  AuthProvider
 } from '../../types/shared-config.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
@@ -23,7 +21,7 @@ import { structureService, StructureInfo } from '../../core/project/structure-se
 interface AuthConfig {
   providers: AuthProvider[];
   database?: 'postgresql' | 'mysql' | 'sqlite' | 'mongodb';
-  sessionStrategy: SessionStrategy;
+  sessionStrategy: 'jwt' | 'database';
   secret: string;
 }
 
@@ -366,8 +364,8 @@ export class NextAuthPlugin implements IPlugin {
         sessionStrategy: {
           type: 'string',
           description: 'Session strategy to use',
-          enum: Object.values(SESSION_STRATEGIES),
-          default: SESSION_STRATEGIES.JWT
+          enum: ['jwt', 'database'],
+          default: 'jwt'
         },
         secret: {
           type: 'string',

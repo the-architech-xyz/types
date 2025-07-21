@@ -282,7 +282,11 @@ export class DrizzlePlugin implements IPlugin {
   }
 
   getDependencies(): string[] {
-    return [];
+    return [
+      'drizzle-orm@^0.44.3',
+      '@neondatabase/serverless@^1.0.1',
+      'drizzle-kit@^0.31.4'
+    ];
   }
 
   getConflicts(): string[] {
@@ -335,7 +339,7 @@ export class DrizzlePlugin implements IPlugin {
       properties: {
         provider: {
           type: 'string',
-          enum: [DATABASE_PROVIDERS.NEON, DATABASE_PROVIDERS.SUPABASE, DATABASE_PROVIDERS.VERCEL, DATABASE_PROVIDERS.LOCAL],
+          enum: [DATABASE_PROVIDERS.NEON, DATABASE_PROVIDERS.SUPABASE, DATABASE_PROVIDERS.VERCEL_POSTGRES, DATABASE_PROVIDERS.LOCAL_POSTGRES],
           description: 'Database provider',
           default: DATABASE_PROVIDERS.NEON
         },
@@ -376,17 +380,17 @@ export class DrizzlePlugin implements IPlugin {
   private async installDependencies(context: PluginContext): Promise<void> {
     const { projectPath } = context;
     
+    // Drizzle provides everything we need - minimal dependencies
     const dependencies = [
       'drizzle-orm@^0.44.3',
-      '@neondatabase/serverless@^1.0.1',
-      'postgres@^3.4.0'
+      '@neondatabase/serverless@^1.0.1'
     ];
     
     const devDependencies = [
       'drizzle-kit@^0.31.4'
     ];
 
-    context.logger.info('Installing Drizzle ORM dependencies...');
+    context.logger.info('Installing Drizzle ORM...');
     await this.runner.install(dependencies, false, projectPath);
     await this.runner.install(devDependencies, true, projectPath);
   }
@@ -492,28 +496,47 @@ export default {
   }
 
   private generateDatabaseSchema(): string {
-    return `import { pgTable, serial, text, timestamp, boolean, varchar, index } from 'drizzle-orm/pg-core';
+    return `import { 
+  pgTable, 
+  serial, 
+  text, 
+  timestamp, 
+  boolean, 
+  varchar, 
+  index, 
+  integer,
+  uuid,
+  jsonb,
+  primaryKey
+} from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
-// Better Auth required tables
+// ============================================================================
+// AUTHENTICATION TABLES (Better Auth / NextAuth.js compatible)
+// ============================================================================
+
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
   name: text('name'),
   emailVerified: timestamp('email_verified'),
   image: text('image'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: index('users_email_idx').on(table.email),
+  createdAtIdx: index('users_created_at_idx').on(table.createdAt),
+}));
 
 export const accounts = pgTable('accounts', {
   id: serial('id').primaryKey(),
-  userId: serial('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: varchar('type', { length: 255 }).notNull(),
   provider: varchar('provider', { length: 255 }).notNull(),
   providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
   refresh_token: text('refresh_token'),
   access_token: text('access_token'),
-  expires_at: timestamp('expires_at'),
+  expires_at: integer('expires_at'),
   token_type: varchar('token_type', { length: 255 }),
   scope: varchar('scope', { length: 255 }),
   id_token: text('id_token'),
@@ -526,7 +549,7 @@ export const accounts = pgTable('accounts', {
 export const sessions = pgTable('sessions', {
   id: serial('id').primaryKey(),
   sessionToken: varchar('session_token', { length: 255 }).notNull().unique(),
-  userId: serial('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   expires: timestamp('expires').notNull(),
 }, (table) => ({
   sessionTokenIdx: index('sessions_session_token_idx').on(table.sessionToken),
@@ -542,16 +565,145 @@ export const verificationTokens = pgTable('verification_tokens', {
   identifierTokenIdx: index('identifier_token_idx').on(table.identifier, table.token),
 }));
 
-// Example application tables
+// ============================================================================
+// APPLICATION TABLES
+// ============================================================================
+
 export const posts = pgTable('posts', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
   content: text('content'),
-  published: boolean('published').default(false),
-  authorId: serial('author_id').references(() => users.id),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
+  excerpt: text('excerpt'),
+  published: boolean('published').default(false).notNull(),
+  authorId: integer('author_id').references(() => users.id, { onDelete: 'cascade' }),
+  featuredImage: text('featured_image'),
+  meta: jsonb('meta'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  slugIdx: index('posts_slug_idx').on(table.slug),
+  authorIdIdx: index('posts_author_id_idx').on(table.authorId),
+  publishedIdx: index('posts_published_idx').on(table.published),
+  createdAtIdx: index('posts_created_at_idx').on(table.createdAt),
+}));
+
+export const categories = pgTable('categories', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  slugIdx: index('categories_slug_idx').on(table.slug),
+}));
+
+export const postCategories = pgTable('post_categories', {
+  postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+  categoryId: integer('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.postId, table.categoryId] }),
+  postIdIdx: index('post_categories_post_id_idx').on(table.postId),
+  categoryIdIdx: index('post_categories_category_id_idx').on(table.categoryId),
+}));
+
+export const comments = pgTable('comments', {
+  id: serial('id').primaryKey(),
+  content: text('content').notNull(),
+  postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+  authorId: integer('author_id').references(() => users.id, { onDelete: 'set null' }),
+  authorName: text('author_name'),
+  authorEmail: text('author_email'),
+  approved: boolean('approved').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  postIdIdx: index('comments_post_id_idx').on(table.postId),
+  authorIdIdx: index('comments_author_id_idx').on(table.authorId),
+  approvedIdx: index('comments_approved_idx').on(table.approved),
+}));
+
+// ============================================================================
+// RELATIONS
+// ============================================================================
+
+export const usersRelations = relations(users, ({ many }) => ({
+  accounts: many(accounts),
+  sessions: many(sessions),
+  posts: many(posts),
+  comments: many(comments),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  author: one(users, {
+    fields: [posts.authorId],
+    references: [users.id],
+  }),
+  comments: many(comments),
+  postCategories: many(postCategories),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  postCategories: many(postCategories),
+}));
+
+export const postCategoriesRelations = relations(postCategories, ({ one }) => ({
+  post: one(posts, {
+    fields: [postCategories.postId],
+    references: [posts.id],
+  }),
+  category: one(categories, {
+    fields: [postCategories.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  post: one(posts, {
+    fields: [comments.postId],
+    references: [posts.id],
+  }),
+  author: one(users, {
+    fields: [comments.authorId],
+    references: [users.id],
+  }),
+}));
+
+// ============================================================================
+// TYPE EXPORTS
+// ============================================================================
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+export type VerificationToken = typeof verificationTokens.$inferSelect;
+export type NewVerificationToken = typeof verificationTokens.$inferInsert;
+export type Post = typeof posts.$inferSelect;
+export type NewPost = typeof posts.$inferInsert;
+export type Category = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;
+export type PostCategory = typeof postCategories.$inferSelect;
+export type NewPostCategory = typeof postCategories.$inferInsert;
+export type Comment = typeof comments.$inferSelect;
+export type NewComment = typeof comments.$inferInsert;
 
 // Export all tables
 export * from 'drizzle-orm/pg-core';
@@ -563,6 +715,7 @@ export * from 'drizzle-orm/pg-core';
 import { neon } from '@neondatabase/serverless';
 import * as schema from './schema';
 
+// Drizzle handles connection management automatically
 const sql = neon(process.env.DATABASE_URL!);
 export const db = drizzle(sql, { schema });
 
@@ -588,7 +741,7 @@ async function main() {
     await migrate(db, { migrationsFolder: './drizzle' });
     console.log('Migrations completed successfully!');
     process.exit(0);
-    } catch (error) {
+  } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);
   }

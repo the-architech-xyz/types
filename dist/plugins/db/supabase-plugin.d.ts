@@ -1,10 +1,9 @@
 /**
- * Supabase Plugin - Pure Technology Implementation
+ * Supabase Database Provider Plugin - Pure Technology Implementation
  *
- * Provides Supabase integration for both database and authentication services.
- * Supabase is a powerful open-source alternative to Firebase with PostgreSQL database
- * and built-in authentication, real-time subscriptions, and edge functions.
- * Focuses only on technology setup and artifact generation.
+ * Provides Supabase PostgreSQL database infrastructure setup.
+ * Focuses only on database technology setup and artifact generation.
+ * Authentication functionality is handled by separate auth plugins.
  * No user interaction or business logic - that's handled by agents.
  */
 import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../types/plugin.js';
@@ -26,18 +25,11 @@ export declare class SupabasePlugin implements IPlugin {
     private installDependencies;
     private initializeSupabaseConfig;
     private createDatabaseFiles;
-    private createAuthConfiguration;
-    private createAPIRoutes;
-    private createSupabaseClient;
     private generateUnifiedInterfaceFiles;
-    private generateSupabaseConfig;
-    private generateInitialMigration;
     private generateSupabaseClient;
     private generateTypes;
     private generateDatabaseClient;
-    private generateAuthUtilities;
-    private generateAuthCallbackRoute;
-    private generateSchemaTypes;
     private generateUnifiedIndex;
+    private generateEnvConfig;
     private createErrorResult;
 }

@@ -12,7 +12,8 @@ import { PluginRegistry, PluginManager } from '../../types/plugin.js';
 import { ShadcnUIPlugin } from '../../plugins/ui/shadcn-ui.js';
 import { ChakraUIPlugin } from '../../plugins/ui/chakra-ui.js';
 import { MuiPlugin } from '../../plugins/ui/mui.js';
-import { DrizzlePlugin } from '../../plugins/db/drizzle-plugin.js';
+import { TamaguiPlugin } from '../../plugins/ui/tamagui-plugin.js';
+import { DrizzlePlugin } from '../../plugins/orm/drizzle/drizzle.plugin.js';
 import { PrismaPlugin } from '../../plugins/db/prisma-plugin.js';
 import { TypeORMPlugin } from '../../plugins/db/typeorm-plugin.js';
 import { SupabasePlugin } from '../../plugins/db/supabase-plugin.js';
@@ -21,9 +22,25 @@ import { NextAuthPlugin } from '../../plugins/auth/nextauth-plugin.js';
 import { NextJSPlugin } from '../../plugins/framework/nextjs-plugin.js';
 import { VercelPlugin } from '../../plugins/deployment/vercel/vercel.plugin.js';
 import { RailwayPlugin } from '../../plugins/deployment/railway/railway.plugin.js';
+import { DockerPlugin } from '../../plugins/deployment/docker/docker.plugin.js';
 import { VitestPlugin } from '../../plugins/testing/vitest/vitest.plugin.js';
 import { ResendPlugin } from '../../plugins/email/resend-plugin.js';
 import { SendGridPlugin } from '../../plugins/email/sendgrid-plugin.js';
+import { NeonPlugin } from '../../plugins/database/neon/neon.plugin.js';
+import { MongoDBPlugin } from '../../plugins/database/mongodb/mongodb.plugin.js';
+import { MongoosePlugin } from '../../plugins/orm/mongoose/mongoose.plugin.js';
+
+// Monitoring Plugins
+import { SentryPlugin } from '../../plugins/monitoring/sentry/sentry.plugin.js';
+import { VercelAnalyticsPlugin } from '../../plugins/monitoring/vercel-analytics/vercel-analytics.plugin.js';
+import { GoogleAnalyticsPlugin } from '../../plugins/monitoring/google-analytics/google-analytics.plugin.js';
+
+// Payment Plugins
+import { StripePlugin } from '../../plugins/payment/stripe/stripe.plugin.js';
+import { PayPalPlugin } from '../../plugins/payment/paypal/paypal.plugin.js';
+
+// Blockchain Plugins
+import { EthereumPlugin } from '../../plugins/blockchain/ethereum/ethereum.plugin.js';
 
 // Simple logger implementation for the plugin system
 class SimpleLogger implements Logger {
@@ -91,26 +108,30 @@ export class PluginSystem {
     this.registry.register(new ShadcnUIPlugin());
     this.registry.register(new ChakraUIPlugin());
     this.registry.register(new MuiPlugin());
-    // TODO: Add more UI plugins
-    // this.registry.register(new AntdPlugin());
+    this.registry.register(new TamaguiPlugin());
 
-    // Database Plugins
+    // Database Provider Plugins (Infrastructure)
+    this.registry.register(new NeonPlugin());
+    this.registry.register(new MongoDBPlugin());
+    this.registry.register(new SupabasePlugin());
+    // TODO: Add more database providers
+    // this.registry.register(new TursoPlugin());
+
+    // ORM Library Plugins (Data Access Layer)
     this.registry.register(new DrizzlePlugin());
     this.registry.register(new PrismaPlugin());
     this.registry.register(new TypeORMPlugin());
-    this.registry.register(new SupabasePlugin());
-    // TODO: Add more database plugins
-    // this.registry.register(new MongoDBPlugin());
+    this.registry.register(new MongoosePlugin());
+    // TODO: Add more ORM libraries
 
     // Auth Plugins
     this.registry.register(new BetterAuthPlugin());
     this.registry.register(new NextAuthPlugin());
-    // TODO: Add more auth plugins
-    // this.registry.register(new SupabaseAuthPlugin());
 
     // Deployment Plugins
     this.registry.register(new VercelPlugin());
     this.registry.register(new RailwayPlugin());
+    this.registry.register(new DockerPlugin());
 
     // Email Plugins
     this.registry.register(new ResendPlugin());
@@ -119,11 +140,17 @@ export class PluginSystem {
     // Testing Plugins
     this.registry.register(new VitestPlugin());
 
-    // Feature Plugins
-    // TODO: Add feature plugins
-    // this.registry.register(new PaymentPlugin());
-    // this.registry.register(new EmailPlugin());
-    // this.registry.register(new AnalyticsPlugin());
+    // Monitoring Plugins
+    this.registry.register(new SentryPlugin());
+    this.registry.register(new VercelAnalyticsPlugin());
+    this.registry.register(new GoogleAnalyticsPlugin());
+
+    // Payment Plugins
+    this.registry.register(new StripePlugin());
+    this.registry.register(new PayPalPlugin());
+
+    // Blockchain Plugins
+    this.registry.register(new EthereumPlugin());
 
     this.logger.info(`Registered ${(this.registry as any).getPluginCount()} plugins`);
   }

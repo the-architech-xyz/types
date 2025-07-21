@@ -1,8 +1,9 @@
 /**
- * Prisma Plugin - Pure Technology Implementation
+ * Prisma ORM Plugin - Pure Technology Implementation
  *
- * Provides Prisma ORM integration with PostgreSQL using the official Prisma CLI.
- * Focuses only on technology setup and artifact generation.
+ * Provides Prisma ORM integration with any database provider.
+ * Focuses only on ORM technology setup and artifact generation.
+ * Database provider setup is handled by separate database plugins.
  * No user interaction or business logic - that's handled by agents.
  */
 import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../types/plugin.js';

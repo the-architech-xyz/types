@@ -26,8 +26,8 @@ export class VercelPlugin {
     async install(context) {
         try {
             this.logger.info('Installing Vercel deployment plugin...');
-            // Install Vercel CLI
-            const installResult = await this.commandRunner.exec('npm', ['install', '-g', 'vercel']);
+            // Install Vercel CLI with specific version
+            const installResult = await this.commandRunner.exec('npm', ['install', '-g', 'vercel@latest']);
             if (installResult.code !== 0) {
                 return {
                     success: false,
@@ -54,22 +54,171 @@ export class VercelPlugin {
             packageJson.scripts.deploy = 'vercel --prod';
             packageJson.scripts['deploy:dev'] = 'vercel';
             packageJson.scripts['deploy:preview'] = 'vercel --preview';
-            // Create Vercel configuration file
+            packageJson.scripts['vercel:build'] = 'next build';
+            packageJson.scripts['vercel:dev'] = 'next dev';
+            // Create improved Vercel configuration file
             const vercelConfig = {
                 version: 2,
-                builds: [
-                    {
-                        src: 'package.json',
-                        use: '@vercel/next'
+                buildCommand: 'npm run vercel:build',
+                devCommand: 'npm run vercel:dev',
+                installCommand: 'npm install',
+                framework: 'nextjs',
+                functions: {
+                    'app/api/**/*.ts': {
+                        runtime: 'nodejs18.x'
                     }
-                ],
+                },
+                env: {
+                    NODE_ENV: 'production'
+                },
+                build: {
+                    env: {
+                        NODE_ENV: 'production'
+                    }
+                },
                 routes: [
                     {
+                        src: '/api/(.*)',
+                        dest: '/app/api/$1'
+                    },
+                    {
                         src: '/(.*)',
-                        dest: '/'
+                        dest: '/$1'
+                    }
+                ],
+                headers: [
+                    {
+                        source: '/(.*)',
+                        headers: [
+                            {
+                                key: 'X-Content-Type-Options',
+                                value: 'nosniff'
+                            },
+                            {
+                                key: 'X-Frame-Options',
+                                value: 'DENY'
+                            },
+                            {
+                                key: 'X-XSS-Protection',
+                                value: '1; mode=block'
+                            }
+                        ]
                     }
                 ]
             };
+            // Create environment variables template
+            const envTemplate = `# Vercel Environment Variables
+# Copy this to .env.local and fill in your values
+
+# Vercel Configuration
+VERCEL_PROJECT_ID=your_project_id_here
+VERCEL_ORG_ID=your_org_id_here
+VERCEL_TOKEN=your_token_here
+
+# Environment-specific variables
+NEXT_PUBLIC_VERCEL_ENV=production
+NEXT_PUBLIC_VERCEL_URL=https://your-app.vercel.app
+
+# Add your other environment variables below
+# DATABASE_URL=your_database_url
+# API_KEY=your_api_key
+`;
+            // Create deployment script
+            const deployScript = `#!/bin/bash
+
+# Vercel Deployment Script
+# Usage: ./scripts/deploy.sh [environment]
+
+set -e
+
+ENVIRONMENT=\${1:-production}
+PROJECT_DIR="$(pwd)"
+
+echo "🚀 Deploying to Vercel (\$ENVIRONMENT)..."
+
+# Check if Vercel CLI is installed
+if ! command -v vercel &> /dev/null; then
+    echo "❌ Vercel CLI not found. Installing..."
+    npm install -g vercel@latest
+fi
+
+# Check if logged in to Vercel
+if ! vercel whoami &> /dev/null; then
+    echo "🔐 Please log in to Vercel..."
+    vercel login
+fi
+
+# Build the project
+echo "📦 Building project..."
+npm run build
+
+# Deploy based on environment
+case "\$ENVIRONMENT" in
+    "production")
+        echo "🚀 Deploying to production..."
+        vercel --prod --yes
+        ;;
+    "preview")
+        echo "👀 Deploying preview..."
+        vercel --preview --yes
+        ;;
+    "development")
+        echo "🔧 Deploying development..."
+        vercel --yes
+        ;;
+    *)
+        echo "❌ Invalid environment. Use: production, preview, or development"
+        exit 1
+        ;;
+esac
+
+echo "✅ Deployment completed successfully!"
+echo "🌐 Your app is live at: https://your-app.vercel.app"
+`;
+            // Create GitHub Actions workflow
+            const githubWorkflow = `name: Deploy to Vercel
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: \${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: npm test
+    
+    - name: Build application
+      run: npm run build
+    
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: \${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: \${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: \${{ secrets.VERCEL_PROJECT_ID }}
+        vercel-args: \${{ github.ref == 'refs/heads/main' && '--prod' || '--preview' }}
+        working-directory: ./
+`;
             this.logger.success('Vercel deployment plugin installed successfully');
             return {
                 success: true,
@@ -78,6 +227,21 @@ export class VercelPlugin {
                         type: 'config',
                         path: 'vercel.json',
                         content: JSON.stringify(vercelConfig, null, 2)
+                    },
+                    {
+                        type: 'file',
+                        path: '.env.vercel.example',
+                        content: envTemplate
+                    },
+                    {
+                        type: 'file',
+                        path: 'scripts/deploy.sh',
+                        content: deployScript
+                    },
+                    {
+                        type: 'file',
+                        path: '.github/workflows/deploy.yml',
+                        content: githubWorkflow
                     }
                 ],
                 dependencies: [
@@ -106,6 +270,18 @@ export class VercelPlugin {
                         command: 'vercel --preview',
                         description: 'Deploy preview',
                         category: 'deploy'
+                    },
+                    {
+                        name: 'vercel:build',
+                        command: 'next build',
+                        description: 'Build for Vercel',
+                        category: 'build'
+                    },
+                    {
+                        name: 'vercel:dev',
+                        command: 'next dev',
+                        description: 'Development server',
+                        category: 'dev'
                     }
                 ],
                 configs: [
@@ -144,9 +320,12 @@ export class VercelPlugin {
             this.logger.info('Uninstalling Vercel deployment plugin...');
             // Remove Vercel configuration files
             await this.commandRunner.exec('rm', ['-f', `${context.projectPath}/vercel.json`]);
-            await this.commandRunner.exec('rm', ['-f', `${context.projectPath}/deploy.sh`]);
-            await this.commandRunner.exec('rm', ['-rf', `${context.projectPath}/lib/deployment`]);
+            await this.commandRunner.exec('rm', ['-f', `${context.projectPath}/.env.vercel.example`]);
+            await this.commandRunner.exec('rm', ['-f', `${context.projectPath}/scripts/deploy.sh`]);
             await this.commandRunner.exec('rm', ['-rf', `${context.projectPath}/.github/workflows/deploy.yml`]);
+            await this.commandRunner.exec('rm', ['-rf', `${context.projectPath}/lib/deployment`]);
+            // Remove Vercel-related environment variables from .env.local
+            await this.commandRunner.exec('sed', ['-i', '', '/VERCEL_/d', `${context.projectPath}/.env.local`]);
             this.logger.success('Vercel deployment plugin uninstalled successfully');
             return {
                 success: true,

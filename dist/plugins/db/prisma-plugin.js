@@ -1,14 +1,14 @@
 /**
- * Prisma Plugin - Pure Technology Implementation
+ * Prisma ORM Plugin - Pure Technology Implementation
  *
- * Provides Prisma ORM integration with PostgreSQL using the official Prisma CLI.
- * Focuses only on technology setup and artifact generation.
+ * Provides Prisma ORM integration with any database provider.
+ * Focuses only on ORM technology setup and artifact generation.
+ * Database provider setup is handled by separate database plugins.
  * No user interaction or business logic - that's handled by agents.
  */
 import { PluginCategory, TargetPlatform } from '../../types/plugin.js';
 import { templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
-import { DATABASE_PROVIDERS, DATABASE_FEATURES } from '../../types/shared-config.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 export class PrismaPlugin {
@@ -28,7 +28,7 @@ export class PrismaPlugin {
             version: '1.0.0',
             description: 'Next-generation TypeScript ORM with auto-generated queries',
             author: 'The Architech Team',
-            category: PluginCategory.DATABASE,
+            category: PluginCategory.ORM,
             tags: ['database', 'orm', 'typescript', 'postgresql', 'mysql', 'sqlite', 'prisma'],
             license: 'Apache-2.0',
             repository: 'https://github.com/prisma/prisma',
@@ -43,17 +43,17 @@ export class PrismaPlugin {
         const startTime = Date.now();
         try {
             const { projectName, projectPath, pluginConfig } = context;
-            context.logger.info('Installing Prisma ORM with PostgreSQL database...');
+            context.logger.info('Installing Prisma ORM...');
             // Step 1: Install dependencies
             await this.installDependencies(context);
             // Step 2: Initialize Prisma
             await this.initializePrisma(context);
             // Step 3: Create database schema and connection
             await this.createDatabaseFiles(context);
-            // Step 4: Generate unified interface files
-            await this.generateUnifiedInterfaceFiles(context);
-            // Step 5: Generate Prisma client
+            // Step 4: Generate Prisma client
             await this.generatePrismaClient(context);
+            // Step 5: Generate unified interface files
+            await this.generateUnifiedInterfaceFiles(context);
             const duration = Date.now() - startTime;
             return {
                 success: true,
@@ -73,61 +73,45 @@ export class PrismaPlugin {
                     {
                         type: 'file',
                         path: path.join(projectPath, 'prisma', 'schema.prisma')
-                    },
-                    {
-                        type: 'file',
-                        path: path.join(projectPath, 'prisma', 'seed.ts')
                     }
                 ],
                 dependencies: [
                     {
                         name: 'prisma',
-                        version: '^5.0.0',
-                        type: 'development',
-                        category: PluginCategory.DATABASE
+                        version: '^5.7.0',
+                        type: 'production',
+                        category: PluginCategory.ORM
                     },
                     {
                         name: '@prisma/client',
-                        version: '^5.0.0',
+                        version: '^5.7.0',
                         type: 'production',
-                        category: PluginCategory.DATABASE
-                    },
-                    {
-                        name: 'postgresql',
-                        version: '^3.4.0',
-                        type: 'production',
-                        category: PluginCategory.DATABASE
+                        category: PluginCategory.ORM
                     }
                 ],
                 scripts: [
                     {
                         name: 'db:generate',
-                        command: 'prisma generate',
+                        command: 'npx prisma generate',
                         description: 'Generate Prisma client',
                         category: 'dev'
                     },
                     {
-                        name: 'db:push',
-                        command: 'prisma db push',
-                        description: 'Push schema changes to database',
-                        category: 'dev'
-                    },
-                    {
                         name: 'db:migrate',
-                        command: 'prisma migrate dev',
-                        description: 'Create and apply database migrations',
+                        command: 'npx prisma migrate dev',
+                        description: 'Run database migrations',
                         category: 'dev'
                     },
                     {
                         name: 'db:studio',
-                        command: 'prisma studio',
+                        command: 'npx prisma studio',
                         description: 'Open Prisma Studio',
                         category: 'dev'
                     },
                     {
                         name: 'db:seed',
-                        command: 'tsx prisma/seed.ts',
-                        description: 'Seed database with initial data',
+                        command: 'npx prisma db seed',
+                        description: 'Seed database',
                         category: 'dev'
                     }
                 ],
@@ -155,8 +139,8 @@ export class PrismaPlugin {
             // Remove Prisma files
             const filesToRemove = [
                 path.join(projectPath, 'prisma'),
-                path.join(projectPath, 'src', 'lib', 'db'),
-                path.join(projectPath, '.env')
+                path.join(projectPath, 'src', 'lib', 'db', 'client.ts'),
+                path.join(projectPath, 'src', 'lib', 'db', 'schema.ts')
             ];
             for (const file of filesToRemove) {
                 if (await fsExtra.pathExists(file)) {
@@ -184,7 +168,7 @@ export class PrismaPlugin {
         try {
             context.logger.info('Updating Prisma ORM...');
             // Update dependencies
-            await this.runner.execCommand(['npm', 'update', '@prisma/client', 'prisma']);
+            await this.runner.execCommand(['npm', 'update', 'prisma', '@prisma/client']);
             // Regenerate client
             await this.runner.execCommand(['npx', 'prisma', 'generate']);
             const duration = Date.now() - startTime;
@@ -207,9 +191,9 @@ export class PrismaPlugin {
         const errors = [];
         const warnings = [];
         try {
-            // Check if Prisma is properly installed
-            const prismaPath = path.join(context.projectPath, 'prisma', 'schema.prisma');
-            if (!await fsExtra.pathExists(prismaPath)) {
+            // Check if Prisma schema exists
+            const schemaPath = path.join(context.projectPath, 'prisma', 'schema.prisma');
+            if (!await fsExtra.pathExists(schemaPath)) {
                 errors.push({
                     field: 'prisma.schema',
                     message: 'Prisma schema file not found',
@@ -217,10 +201,15 @@ export class PrismaPlugin {
                     severity: 'error'
                 });
             }
-            // Check if client is generated
-            const clientPath = path.join(context.projectPath, 'node_modules', '@prisma', 'client');
+            // Check if Prisma client exists
+            const clientPath = path.join(context.projectPath, 'src', 'lib', 'db', 'client.ts');
             if (!await fsExtra.pathExists(clientPath)) {
-                warnings.push('Prisma client not generated. Run "npm run db:generate"');
+                errors.push({
+                    field: 'prisma.client',
+                    message: 'Prisma client file not found',
+                    code: 'MISSING_CLIENT',
+                    severity: 'error'
+                });
             }
             // Validate environment variables
             const envPath = path.join(context.projectPath, '.env');
@@ -251,16 +240,16 @@ export class PrismaPlugin {
     }
     getCompatibility() {
         return {
-            frameworks: ['nextjs', 'react', 'vue', 'nuxt', 'svelte', 'angular'],
+            frameworks: ['nextjs', 'react', 'vue', 'angular'],
             platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
             nodeVersions: ['>=16.0.0'],
             packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
-            databases: ['postgresql', 'mysql', 'sqlite'],
-            conflicts: []
+            databases: ['postgresql', 'mysql', 'sqlite', 'mongodb'],
+            conflicts: ['drizzle', 'typeorm']
         };
     }
     getDependencies() {
-        return ['@prisma/client', 'prisma'];
+        return ['prisma', '@prisma/client'];
     }
     getConflicts() {
         return ['drizzle', 'typeorm'];
@@ -269,73 +258,64 @@ export class PrismaPlugin {
         return [
             {
                 type: 'package',
-                name: '@prisma/client',
-                description: 'Prisma client for database access',
-                version: '^5.0.0'
+                name: 'prisma',
+                description: 'Prisma CLI and core library',
+                version: '^5.7.0'
             },
             {
                 type: 'package',
-                name: 'prisma',
-                description: 'Prisma CLI and development tools',
-                version: '^5.0.0'
+                name: '@prisma/client',
+                description: 'Prisma client for database access',
+                version: '^5.7.0'
             },
             {
                 type: 'config',
                 name: 'DATABASE_URL',
-                description: 'Database connection string',
+                description: 'Database connection URL',
                 optional: false
             }
         ];
     }
     getDefaultConfig() {
         return {
-            provider: 'postgresql',
-            databaseUrl: 'postgresql://user:password@localhost:5432/mydb',
-            features: {
-                migrations: true,
-                seeding: true,
-                studio: true
-            }
+            databaseUrl: 'postgresql://user:password@localhost:5432/database',
+            schemaPath: './prisma/schema.prisma',
+            migrationsDir: './prisma/migrations',
+            seedFile: './prisma/seed.ts',
+            studio: true
         };
     }
     getConfigSchema() {
         return {
             type: 'object',
             properties: {
-                provider: {
-                    type: 'string',
-                    description: 'Database provider',
-                    enum: [DATABASE_PROVIDERS.POSTGRESQL, DATABASE_PROVIDERS.MYSQL, DATABASE_PROVIDERS.SQLITE],
-                    default: DATABASE_PROVIDERS.POSTGRESQL
-                },
                 databaseUrl: {
                     type: 'string',
                     description: 'Database connection URL',
-                    pattern: '^[a-zA-Z]+://.*$'
+                    default: 'postgresql://user:password@localhost:5432/database'
                 },
-                features: {
-                    type: 'object',
-                    description: 'Prisma features to enable',
-                    properties: {
-                        [DATABASE_FEATURES.MIGRATIONS]: {
-                            type: 'boolean',
-                            description: 'Enable database migrations',
-                            default: true
-                        },
-                        [DATABASE_FEATURES.SEEDING]: {
-                            type: 'boolean',
-                            description: 'Enable database seeding',
-                            default: true
-                        },
-                        [DATABASE_FEATURES.STUDIO]: {
-                            type: 'boolean',
-                            description: 'Enable Prisma Studio',
-                            default: true
-                        }
-                    }
+                schemaPath: {
+                    type: 'string',
+                    description: 'Path to Prisma schema file',
+                    default: './prisma/schema.prisma'
+                },
+                migrationsDir: {
+                    type: 'string',
+                    description: 'Directory for database migrations',
+                    default: './prisma/migrations'
+                },
+                seedFile: {
+                    type: 'string',
+                    description: 'Path to database seed file',
+                    default: './prisma/seed.ts'
+                },
+                studio: {
+                    type: 'boolean',
+                    description: 'Enable Prisma Studio',
+                    default: true
                 }
             },
-            required: ['provider', 'databaseUrl']
+            required: ['databaseUrl']
         };
     }
     // ============================================================================
@@ -345,39 +325,40 @@ export class PrismaPlugin {
         const { projectPath } = context;
         context.logger.info('Installing Prisma dependencies...');
         const dependencies = [
-            '@prisma/client@^5.0.0',
-            'prisma@^5.0.0'
+            'prisma@^5.7.0',
+            '@prisma/client@^5.7.0'
         ];
         await this.runner.execCommand(['npm', 'install', ...dependencies], { cwd: projectPath });
     }
     async initializePrisma(context) {
-        const { projectPath } = context;
+        const { projectPath, pluginConfig } = context;
         context.logger.info('Initializing Prisma...');
         // Create prisma directory
         const prismaDir = path.join(projectPath, 'prisma');
         await fsExtra.ensureDir(prismaDir);
-        // Initialize Prisma
-        await this.runner.execCommand(['npx', 'prisma', 'init'], { cwd: projectPath });
-    }
-    async createDatabaseFiles(context) {
-        const { projectPath, pluginConfig } = context;
-        context.logger.info('Creating database files...');
-        // Create database lib directory
-        const dbLibDir = path.join(projectPath, 'src', 'lib', 'db');
-        await fsExtra.ensureDir(dbLibDir);
         // Generate Prisma schema
         const schemaContent = this.generatePrismaSchema(pluginConfig);
-        await fsExtra.writeFile(path.join(projectPath, 'prisma', 'schema.prisma'), schemaContent);
+        await fsExtra.writeFile(path.join(prismaDir, 'schema.prisma'), schemaContent);
+        // Generate seed file
+        const seedContent = this.generateSeedFile();
+        await fsExtra.writeFile(path.join(prismaDir, 'seed.ts'), seedContent);
+    }
+    async createDatabaseFiles(context) {
+        const { projectPath } = context;
+        context.logger.info('Creating database files...');
+        const dbLibDir = path.join(projectPath, 'src', 'lib', 'db');
+        await fsExtra.ensureDir(dbLibDir);
         // Generate database client
         const clientContent = this.generateDatabaseClient();
         await fsExtra.writeFile(path.join(dbLibDir, 'client.ts'), clientContent);
-        // Generate seed file
-        const seedContent = this.generateSeedFile();
-        await fsExtra.writeFile(path.join(projectPath, 'prisma', 'seed.ts'), seedContent);
+        // Generate schema types
+        const schemaContent = this.generateSchemaTypes();
+        await fsExtra.writeFile(path.join(dbLibDir, 'schema.ts'), schemaContent);
     }
     async generatePrismaClient(context) {
         const { projectPath } = context;
         context.logger.info('Generating Prisma client...');
+        // Generate Prisma client
         await this.runner.execCommand(['npx', 'prisma', 'generate'], { cwd: projectPath });
     }
     async generateUnifiedInterfaceFiles(context) {
@@ -388,9 +369,6 @@ export class PrismaPlugin {
         // Generate unified database interface
         const unifiedContent = this.generateUnifiedIndex();
         await fsExtra.writeFile(path.join(dbLibDir, 'index.ts'), unifiedContent);
-        // Generate schema types
-        const schemaContent = this.generateSchemaTypes();
-        await fsExtra.writeFile(path.join(dbLibDir, 'schema.ts'), schemaContent);
     }
     generatePrismaSchema(config) {
         return `// This is your Prisma schema file,
@@ -401,7 +379,7 @@ generator client {
 }
 
 datasource db {
-  provider = "${config.provider || 'postgresql'}"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -415,34 +393,75 @@ model User {
   @@map("users")
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
-  @@map("posts")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 `;
     }
     generateDatabaseClient() {
         return `import { PrismaClient } from '@prisma/client';
 
-declare global {
-  var __prisma: PrismaClient | undefined;
+// Prisma client instance
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+});
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+
+// Database connection for ORM usage
+export const db = prisma;
+
+// Health check utility
+export async function checkDatabaseConnection(): Promise<boolean> {
+  try {
+    await prisma.$queryRaw\`SELECT 1\`;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export const prisma = globalThis.__prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalThis.__prisma = prisma;
-}
-
-export default prisma;
+// Export for use with other plugins
+export { prisma as client };
 `;
     }
     generateSeedFile() {
@@ -451,6 +470,8 @@ export default prisma;
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log('🌱 Seeding database...');
+
   // Create a test user
   const user = await prisma.user.upsert({
     where: { email: 'test@example.com' },
@@ -461,30 +482,17 @@ async function main() {
     },
   });
 
-  // Create a test post
-  const post = await prisma.post.upsert({
-    where: { id: 'test-post-1' },
-    update: {},
-    create: {
-      id: 'test-post-1',
-      title: 'Hello World',
-      content: 'This is a test post',
-      published: true,
-      authorId: user.id,
-    },
-  });
-
-  console.log({ user, post });
+  console.log('✅ Database seeded successfully');
+  console.log('Created user:', user);
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
+  .catch((e) => {
+    console.error('❌ Error seeding database:', e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
 `;
     }
@@ -493,45 +501,40 @@ main()
  * Unified Database Interface - Prisma Implementation
  * 
  * This file provides a unified interface for database operations
- * that works with the Prisma ORM. It abstracts away Prisma-specific
+ * that works with Prisma ORM. It abstracts away Prisma-specific
  * details and provides a clean API for database operations.
  */
 
 import { prisma } from './client.js';
-import type { User, Post, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 // ============================================================================
 // UNIFIED DATABASE INTERFACE
 // ============================================================================
 
 export interface UnifiedDatabase {
-  // User operations
-  createUser: (data: Prisma.UserCreateInput) => Promise<User>;
-  getUser: (id: string) => Promise<User | null>;
-  getUserByEmail: (email: string) => Promise<User | null>;
-  updateUser: (id: string, data: Prisma.UserUpdateInput) => Promise<User>;
-  deleteUser: (id: string) => Promise<User>;
-  listUsers: (options?: ListOptions) => Promise<User[]>;
-  
-  // Post operations
-  createPost: (data: Prisma.PostCreateInput) => Promise<Post>;
-  getPost: (id: string) => Promise<Post | null>;
-  updatePost: (id: string, data: Prisma.PostUpdateInput) => Promise<Post>;
-  deletePost: (id: string) => Promise<Post>;
-  listPosts: (options?: ListOptions) => Promise<Post[]>;
-  listPostsByAuthor: (authorId: string, options?: ListOptions) => Promise<Post[]>;
-  
-  // Utility operations
+  // Connection management
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   healthCheck: () => Promise<boolean>;
+  
+  // Query operations
+  query: <T = any>(sql: string, params?: any[]) => Promise<T[]>;
+  execute: (sql: string, params?: any[]) => Promise<void>;
+  
+  // Transaction support
+  transaction: <T>(callback: (db: UnifiedDatabase) => Promise<T>) => Promise<T>;
+  
+  // Utility
+  getConnectionString: () => string;
+  getDatabaseInfo: () => Promise<DatabaseInfo>;
 }
 
-export interface ListOptions {
-  skip?: number;
-  take?: number;
-  orderBy?: Record<string, 'asc' | 'desc'>;
-  where?: Record<string, any>;
+export interface DatabaseInfo {
+  name: string;
+  version: string;
+  size: string;
+  tables: string[];
 }
 
 // ============================================================================
@@ -540,74 +543,7 @@ export interface ListOptions {
 
 export const createUnifiedDatabase = (): UnifiedDatabase => {
   return {
-    // User operations
-    async createUser(data) {
-      return await prisma.user.create({ data });
-    },
-
-    async getUser(id) {
-      return await prisma.user.findUnique({ where: { id } });
-    },
-
-    async getUserByEmail(email) {
-      return await prisma.user.findUnique({ where: { email } });
-    },
-
-    async updateUser(id, data) {
-      return await prisma.user.update({ where: { id }, data });
-    },
-
-    async deleteUser(id) {
-      return await prisma.user.delete({ where: { id } });
-    },
-
-    async listUsers(options = {}) {
-      return await prisma.user.findMany({
-        skip: options.skip,
-        take: options.take,
-        orderBy: options.orderBy,
-        where: options.where,
-      });
-    },
-
-    // Post operations
-    async createPost(data) {
-      return await prisma.post.create({ data });
-    },
-
-    async getPost(id) {
-      return await prisma.post.findUnique({ where: { id } });
-    },
-
-    async updatePost(id, data) {
-      return await prisma.post.update({ where: { id }, data });
-    },
-
-    async deletePost(id) {
-      return await prisma.post.delete({ where: { id } });
-    },
-
-    async listPosts(options = {}) {
-      return await prisma.post.findMany({
-        skip: options.skip,
-        take: options.take,
-        orderBy: options.orderBy,
-        where: options.where,
-        include: { author: true },
-      });
-    },
-
-    async listPostsByAuthor(authorId, options = {}) {
-      return await prisma.post.findMany({
-        where: { authorId },
-        skip: options.skip,
-        take: options.take,
-        orderBy: options.orderBy,
-        include: { author: true },
-      });
-    },
-
-    // Utility operations
+    // Connection management
     async connect() {
       await prisma.$connect();
     },
@@ -624,6 +560,63 @@ export const createUnifiedDatabase = (): UnifiedDatabase => {
         return false;
       }
     },
+
+    // Query operations
+    async query<T = any>(sql: string, params?: any[]): Promise<T[]> {
+      return await prisma.$queryRawUnsafe(sql, ...(params || []));
+    },
+
+    async execute(sql: string, params?: any[]): Promise<void> {
+      await prisma.$executeRawUnsafe(sql, ...(params || []));
+    },
+
+    // Transaction support
+    async transaction<T>(callback: (db: UnifiedDatabase) => Promise<T>): Promise<T> {
+      return await prisma.$transaction(async (tx) => {
+        // Create a transaction-scoped database interface
+        const txDb: UnifiedDatabase = {
+          ...this,
+          query: async (sql: string, params?: any[]) => {
+            return await tx.$queryRawUnsafe(sql, ...(params || []));
+          },
+          execute: async (sql: string, params?: any[]) => {
+            await tx.$executeRawUnsafe(sql, ...(params || []));
+          },
+        };
+        return await callback(txDb);
+      });
+    },
+
+    // Utility
+    getConnectionString(): string {
+      return process.env.DATABASE_URL || '';
+    },
+
+    async getDatabaseInfo(): Promise<DatabaseInfo> {
+      try {
+        const result = await prisma.$queryRaw\`
+          SELECT 
+            current_database() as name,
+            version() as version,
+            pg_size_pretty(pg_database_size(current_database())) as size
+        \`;
+        const info = result[0] as any;
+        
+        return {
+          name: info.name || 'Unknown',
+          version: info.version || 'Unknown',
+          size: info.size || 'Unknown',
+          tables: []
+        };
+      } catch {
+        return {
+          name: 'Unknown',
+          version: 'Unknown',
+          size: 'Unknown',
+          tables: []
+        };
+      }
+    },
   };
 };
 
@@ -631,61 +624,58 @@ export const createUnifiedDatabase = (): UnifiedDatabase => {
 // DEFAULT EXPORT
 // ============================================================================
 
-export const db = createUnifiedDatabase();
-export default db;
+export const database = createUnifiedDatabase();
+export default database;
+
+// ============================================================================
+// RE-EXPORTS
+// ============================================================================
+
+export { prisma, db } from './client.js';
+export type { Prisma } from '@prisma/client';
 `;
     }
     generateSchemaTypes() {
         return `/**
  * Database Schema Types - Prisma Implementation
  * 
- * This file exports TypeScript types for database entities
- * that can be used throughout the application.
+ * This file contains TypeScript types for your database schema.
+ * These types are auto-generated by Prisma and provide type safety
+ * for database operations.
  */
 
-import type { User, Post, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
-// ============================================================================
-// ENTITY TYPES
-// ============================================================================
+// Re-export Prisma types
+export type { Prisma };
 
-export type { User, Post };
+// Common model types
+export type User = Prisma.UserGetPayload<{}>;
+export type Account = Prisma.AccountGetPayload<{}>;
+export type Session = Prisma.SessionGetPayload<{}>;
+export type VerificationToken = Prisma.VerificationTokenGetPayload<{}>;
 
-// ============================================================================
-// INPUT TYPES
-// ============================================================================
+// Input types for mutations
+export type UserCreateInput = Prisma.UserCreateInput;
+export type UserUpdateInput = Prisma.UserUpdateInput;
+export type UserWhereInput = Prisma.UserWhereInput;
 
-export type CreateUserInput = Prisma.UserCreateInput;
-export type UpdateUserInput = Prisma.UserUpdateInput;
-export type CreatePostInput = Prisma.PostCreateInput;
-export type UpdatePostInput = Prisma.PostUpdateInput;
+// Select types for queries
+export type UserSelect = Prisma.UserSelect;
+export type AccountSelect = Prisma.AccountSelect;
+export type SessionSelect = Prisma.SessionSelect;
 
-// ============================================================================
-// RELATION TYPES
-// ============================================================================
-
-export type UserWithPosts = Prisma.UserGetPayload<{
-  include: { posts: true };
-}>;
-
-export type PostWithAuthor = Prisma.PostGetPayload<{
-  include: { author: true };
-}>;
-
-// ============================================================================
-// UTILITY TYPES
-// ============================================================================
-
-export type DatabaseEntity = User | Post;
-export type DatabaseInput = CreateUserInput | CreatePostInput;
-export type DatabaseUpdate = UpdateUserInput | UpdatePostInput;
+// Include types for relations
+export type UserInclude = Prisma.UserInclude;
+export type AccountInclude = Prisma.AccountInclude;
+export type SessionInclude = Prisma.SessionInclude;
 `;
     }
     generateEnvConfig(config) {
-        return `# Database Configuration
-DATABASE_URL="${config.databaseUrl || 'postgresql://user:password@localhost:5432/mydb'}"
+        return `# Prisma ORM Configuration
+DATABASE_URL="${config.databaseUrl || 'postgresql://user:password@localhost:5432/database'}"
 
-# Prisma Configuration
+# Prisma specific
 PRISMA_GENERATE_DATAPROXY=true
 `;
     }

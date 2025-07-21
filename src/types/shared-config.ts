@@ -6,56 +6,87 @@
  */
 
 // ============================================================================
-// DATABASE PROVIDERS
+// DATABASE PROVIDERS (Infrastructure Layer)
 // ============================================================================
 
 export const DATABASE_PROVIDERS = {
-  // Cloud PostgreSQL providers
+  // PostgreSQL-based
   NEON: 'neon',
   SUPABASE: 'supabase',
-  VERCEL: 'vercel',
+  VERCEL_POSTGRES: 'vercel-postgres',
+  PLANETSCALE: 'planetscale',
   
-  // Local providers
-  LOCAL: 'local',
+  // Document databases
+  MONGODB: 'mongodb',
+  MONGODB_ATLAS: 'mongodb-atlas',
   
-  // Traditional database providers
-  POSTGRESQL: 'postgresql',
-  MYSQL: 'mysql',
+  // SQLite-based
+  TURSO: 'turso',
   SQLITE: 'sqlite',
-  MONGODB: 'mongodb'
+  
+  // MySQL-based
+  MYSQL: 'mysql',
+  PLANETSCALE_MYSQL: 'planetscale-mysql',
+  
+  // Local development
+  LOCAL_POSTGRES: 'local-postgres',
+  LOCAL_MYSQL: 'local-mysql',
+  LOCAL_SQLITE: 'local-sqlite'
 } as const;
 
 export type DatabaseProvider = typeof DATABASE_PROVIDERS[keyof typeof DATABASE_PROVIDERS];
 
-export const DATABASE_PROVIDER_LABELS: Record<DatabaseProvider, string> = {
-  [DATABASE_PROVIDERS.NEON]: 'Neon (PostgreSQL)',
-  [DATABASE_PROVIDERS.SUPABASE]: 'Supabase (PostgreSQL)',
-  [DATABASE_PROVIDERS.VERCEL]: 'Vercel Postgres',
-  [DATABASE_PROVIDERS.LOCAL]: 'Local SQLite',
-  [DATABASE_PROVIDERS.POSTGRESQL]: 'PostgreSQL',
-  [DATABASE_PROVIDERS.MYSQL]: 'MySQL',
-  [DATABASE_PROVIDERS.SQLITE]: 'SQLite',
-  [DATABASE_PROVIDERS.MONGODB]: 'MongoDB'
-};
-
 // ============================================================================
-// DATABASE FEATURES
+// ORM LIBRARIES (Data Access Layer)
 // ============================================================================
 
-export const DATABASE_FEATURES = {
-  MIGRATIONS: 'migrations',
-  SEEDING: 'seeding',
-  BACKUP: 'backup',
-  STUDIO: 'studio'
+export const ORM_LIBRARIES = {
+  // SQL ORMs
+  DRIZZLE: 'drizzle',
+  PRISMA: 'prisma',
+  TYPEORM: 'typeorm',
+  KYSELY: 'kysely',
+  SEQUELIZE: 'sequelize',
+  
+  // MongoDB ODMs
+  MONGOOSE: 'mongoose',
+  PRISMA_MONGO: 'prisma-mongo',
+  
+  // Edge/Serverless
+  D1: 'd1',
+  UPSTASH_REDIS: 'upstash-redis',
+  
+  // Query Builders
+  KNEX: 'knex'
 } as const;
 
-export type DatabaseFeature = typeof DATABASE_FEATURES[keyof typeof DATABASE_FEATURES];
+export type ORMLibrary = typeof ORM_LIBRARIES[keyof typeof ORM_LIBRARIES];
 
-export const DATABASE_FEATURE_LABELS: Record<DatabaseFeature, string> = {
-  [DATABASE_FEATURES.MIGRATIONS]: 'Migrations',
-  [DATABASE_FEATURES.SEEDING]: 'Seeding',
-  [DATABASE_FEATURES.BACKUP]: 'Backup',
-  [DATABASE_FEATURES.STUDIO]: 'Studio'
+// ============================================================================
+// COMPATIBILITY MATRIX
+// ============================================================================
+
+export const DATABASE_ORM_COMPATIBILITY: Record<DatabaseProvider, ORMLibrary[]> = {
+  // PostgreSQL-based databases
+  [DATABASE_PROVIDERS.NEON]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.TYPEORM, ORM_LIBRARIES.KYSELY],
+  [DATABASE_PROVIDERS.SUPABASE]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.TYPEORM, ORM_LIBRARIES.KYSELY],
+  [DATABASE_PROVIDERS.VERCEL_POSTGRES]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.TYPEORM, ORM_LIBRARIES.KYSELY],
+  [DATABASE_PROVIDERS.LOCAL_POSTGRES]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.TYPEORM, ORM_LIBRARIES.KYSELY],
+  
+  // MySQL-based databases
+  [DATABASE_PROVIDERS.PLANETSCALE]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.TYPEORM, ORM_LIBRARIES.KYSELY],
+  [DATABASE_PROVIDERS.PLANETSCALE_MYSQL]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.TYPEORM, ORM_LIBRARIES.KYSELY],
+  [DATABASE_PROVIDERS.MYSQL]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.TYPEORM, ORM_LIBRARIES.KYSELY],
+  [DATABASE_PROVIDERS.LOCAL_MYSQL]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.TYPEORM, ORM_LIBRARIES.KYSELY],
+  
+  // SQLite-based databases
+  [DATABASE_PROVIDERS.TURSO]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.KYSELY],
+  [DATABASE_PROVIDERS.SQLITE]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.KYSELY],
+  [DATABASE_PROVIDERS.LOCAL_SQLITE]: [ORM_LIBRARIES.DRIZZLE, ORM_LIBRARIES.PRISMA, ORM_LIBRARIES.KYSELY],
+  
+  // Document databases
+  [DATABASE_PROVIDERS.MONGODB]: [ORM_LIBRARIES.MONGOOSE, ORM_LIBRARIES.PRISMA_MONGO],
+  [DATABASE_PROVIDERS.MONGODB_ATLAS]: [ORM_LIBRARIES.MONGOOSE, ORM_LIBRARIES.PRISMA_MONGO]
 };
 
 // ============================================================================
@@ -63,197 +94,116 @@ export const DATABASE_FEATURE_LABELS: Record<DatabaseFeature, string> = {
 // ============================================================================
 
 export const AUTH_PROVIDERS = {
-  // Email-based authentication
   EMAIL: 'email',
-  
-  // OAuth providers
   GITHUB: 'github',
   GOOGLE: 'google',
   DISCORD: 'discord',
   TWITTER: 'twitter',
   FACEBOOK: 'facebook',
-  
-  // Additional providers
-  CREDENTIALS: 'credentials'
+  LINKEDIN: 'linkedin',
+  APPLE: 'apple',
+  MICROSOFT: 'microsoft',
+  SLACK: 'slack',
+  TWITCH: 'twitch',
+  SPOTIFY: 'spotify',
+  GITLAB: 'gitlab',
+  BITBUCKET: 'bitbucket',
+  AUTH0: 'auth0',
+  CLERK: 'clerk',
+  SUPABASE_AUTH: 'supabase-auth',
+  FIREBASE_AUTH: 'firebase-auth'
 } as const;
 
 export type AuthProvider = typeof AUTH_PROVIDERS[keyof typeof AUTH_PROVIDERS];
-
-export const AUTH_PROVIDER_LABELS: Record<AuthProvider, string> = {
-  [AUTH_PROVIDERS.EMAIL]: 'Email/Password',
-  [AUTH_PROVIDERS.GITHUB]: 'GitHub',
-  [AUTH_PROVIDERS.GOOGLE]: 'Google',
-  [AUTH_PROVIDERS.DISCORD]: 'Discord',
-  [AUTH_PROVIDERS.TWITTER]: 'Twitter',
-  [AUTH_PROVIDERS.FACEBOOK]: 'Facebook',
-  [AUTH_PROVIDERS.CREDENTIALS]: 'Credentials'
-};
 
 // ============================================================================
 // AUTHENTICATION FEATURES
 // ============================================================================
 
 export const AUTH_FEATURES = {
-  EMAIL_VERIFICATION: 'emailVerification',
-  PASSWORD_RESET: 'passwordReset',
-  SOCIAL_LOGIN: 'socialLogin',
-  SESSION_MANAGEMENT: 'sessionManagement'
+  EMAIL_VERIFICATION: 'email-verification',
+  PASSWORD_RESET: 'password-reset',
+  SOCIAL_LOGIN: 'social-login',
+  SESSION_MANAGEMENT: 'session-management',
+  TWO_FACTOR_AUTH: 'two-factor-auth',
+  ORGANIZATION_SUPPORT: 'organization-support',
+  ROLE_BASED_ACCESS: 'role-based-access',
+  MULTI_TENANT: 'multi-tenant'
 } as const;
 
 export type AuthFeature = typeof AUTH_FEATURES[keyof typeof AUTH_FEATURES];
 
-export const AUTH_FEATURE_LABELS: Record<AuthFeature, string> = {
-  [AUTH_FEATURES.EMAIL_VERIFICATION]: 'Email Verification',
-  [AUTH_FEATURES.PASSWORD_RESET]: 'Password Reset',
-  [AUTH_FEATURES.SOCIAL_LOGIN]: 'Social Login',
-  [AUTH_FEATURES.SESSION_MANAGEMENT]: 'Session Management'
-};
-
 // ============================================================================
-// SESSION STRATEGIES
+// UI LIBRARIES
 // ============================================================================
 
-export const SESSION_STRATEGIES = {
-  JWT: 'jwt',
-  DATABASE: 'database'
+export const UI_LIBRARIES = {
+  SHADCN_UI: 'shadcn-ui',
+  CHAKRA_UI: 'chakra-ui',
+  MATERIAL_UI: 'mui',
+  ANT_DESIGN: 'antd',
+  MANTINE: 'mantine',
+  HEADLESS_UI: 'headless-ui',
+  RADIX_UI: 'radix-ui',
+  ARIANE: 'ariane',
+  NEXT_UI: 'next-ui',
+  DAISY_UI: 'daisy-ui'
 } as const;
 
-export type SessionStrategy = typeof SESSION_STRATEGIES[keyof typeof SESSION_STRATEGIES];
-
-export const SESSION_STRATEGY_LABELS: Record<SessionStrategy, string> = {
-  [SESSION_STRATEGIES.JWT]: 'JWT',
-  [SESSION_STRATEGIES.DATABASE]: 'Database'
-};
+export type UILibrary = typeof UI_LIBRARIES[keyof typeof UI_LIBRARIES];
 
 // ============================================================================
-// DATABASE ADAPTERS
+// DEPLOYMENT PLATFORMS
 // ============================================================================
 
-export const DATABASE_ADAPTERS = {
-  DRIZZLE: 'drizzle',
-  PRISMA: 'prisma',
-  MONGODB: 'mongodb'
+export const DEPLOYMENT_PLATFORMS = {
+  VERCEL: 'vercel',
+  NETLIFY: 'netlify',
+  RAILWAY: 'railway',
+  HEROKU: 'heroku',
+  AWS: 'aws',
+  GOOGLE_CLOUD: 'google-cloud',
+  AZURE: 'azure',
+  DIGITAL_OCEAN: 'digital-ocean',
+  FLY_IO: 'fly-io',
+  RENDER: 'render',
+  SUPABASE_EDGE: 'supabase-edge',
+  CLOUDFLARE_PAGES: 'cloudflare-pages',
+  CLOUDFLARE_WORKERS: 'cloudflare-workers'
 } as const;
 
-export type DatabaseAdapter = typeof DATABASE_ADAPTERS[keyof typeof DATABASE_ADAPTERS];
-
-export const DATABASE_ADAPTER_LABELS: Record<DatabaseAdapter, string> = {
-  [DATABASE_ADAPTERS.DRIZZLE]: 'Drizzle ORM',
-  [DATABASE_ADAPTERS.PRISMA]: 'Prisma ORM',
-  [DATABASE_ADAPTERS.MONGODB]: 'MongoDB'
-};
+export type DeploymentPlatform = typeof DEPLOYMENT_PLATFORMS[keyof typeof DEPLOYMENT_PLATFORMS];
 
 // ============================================================================
-// PLUGIN TYPES
+// EMAIL SERVICES
 // ============================================================================
 
-export const PLUGIN_TYPES = {
-  // Database plugins
-  DRIZZLE: 'drizzle',
-  PRISMA: 'prisma',
-  
-  // Authentication plugins
-  BETTER_AUTH: 'better-auth',
-  NEXTAUTH: 'next-auth',
-  
-  // Framework plugins
-  NEXTJS: 'nextjs',
-  
-  // UI plugins
-  SHADCN: 'shadcn',
-  
-  // No plugin selected
-  NONE: 'none'
+export const EMAIL_SERVICES = {
+  RESEND: 'resend',
+  SENDGRID: 'sendgrid',
+  MAILGUN: 'mailgun',
+  POSTMARK: 'postmark',
+  AWS_SES: 'aws-ses',
+  GMAIL: 'gmail',
+  OUTLOOK: 'outlook',
+  SMTP: 'smtp'
 } as const;
 
-export type PluginType = typeof PLUGIN_TYPES[keyof typeof PLUGIN_TYPES];
-
-export const PLUGIN_TYPE_LABELS: Record<PluginType, string> = {
-  [PLUGIN_TYPES.DRIZZLE]: 'Drizzle ORM',
-  [PLUGIN_TYPES.PRISMA]: 'Prisma ORM',
-  [PLUGIN_TYPES.BETTER_AUTH]: 'Better Auth',
-  [PLUGIN_TYPES.NEXTAUTH]: 'NextAuth.js',
-  [PLUGIN_TYPES.NEXTJS]: 'Next.js',
-  [PLUGIN_TYPES.SHADCN]: 'Shadcn/ui',
-  [PLUGIN_TYPES.NONE]: 'None'
-};
+export type EmailService = typeof EMAIL_SERVICES[keyof typeof EMAIL_SERVICES];
 
 // ============================================================================
-// CONFIGURATION SCHEMAS
+// TESTING FRAMEWORKS
 // ============================================================================
 
-export interface DatabaseConfigSchema {
-  provider: DatabaseProvider;
-  features: Partial<Record<DatabaseFeature, boolean>>;
-  schema?: {
-    tables?: string[];
-    relationships?: boolean;
-  };
-}
+export const TESTING_FRAMEWORKS = {
+  VITEST: 'vitest',
+  JEST: 'jest',
+  PLAYWRIGHT: 'playwright',
+  CYPRESS: 'cypress',
+  TESTING_LIBRARY: 'testing-library',
+  MSW: 'msw',
+  HAPPY_DOM: 'happy-dom',
+  JSDOM: 'jsdom'
+} as const;
 
-export interface AuthConfigSchema {
-  providers: AuthProvider[];
-  features: Partial<Record<AuthFeature, boolean>>;
-  database?: {
-    adapter: DatabaseAdapter;
-  };
-  session?: {
-    strategy: SessionStrategy;
-    maxAge?: number;
-  };
-}
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-export function getDatabaseProvidersForPlugin(pluginType: PluginType): DatabaseProvider[] {
-  switch (pluginType) {
-    case PLUGIN_TYPES.DRIZZLE:
-      return [DATABASE_PROVIDERS.NEON, DATABASE_PROVIDERS.SUPABASE, DATABASE_PROVIDERS.VERCEL, DATABASE_PROVIDERS.LOCAL];
-    case PLUGIN_TYPES.PRISMA:
-      return [DATABASE_PROVIDERS.POSTGRESQL, DATABASE_PROVIDERS.MYSQL, DATABASE_PROVIDERS.SQLITE];
-    case PLUGIN_TYPES.NONE:
-      return [];
-    default:
-      return [];
-  }
-}
-
-export function getAuthProvidersForPlugin(pluginType: PluginType): AuthProvider[] {
-  switch (pluginType) {
-    case PLUGIN_TYPES.BETTER_AUTH:
-      return [AUTH_PROVIDERS.EMAIL, AUTH_PROVIDERS.GITHUB, AUTH_PROVIDERS.GOOGLE, AUTH_PROVIDERS.DISCORD, AUTH_PROVIDERS.TWITTER];
-    case PLUGIN_TYPES.NEXTAUTH:
-      return [AUTH_PROVIDERS.GITHUB, AUTH_PROVIDERS.GOOGLE, AUTH_PROVIDERS.DISCORD, AUTH_PROVIDERS.TWITTER, AUTH_PROVIDERS.FACEBOOK, AUTH_PROVIDERS.EMAIL];
-    case PLUGIN_TYPES.NONE:
-      return [];
-    default:
-      return [];
-  }
-}
-
-export function getDatabaseFeaturesForPlugin(pluginType: PluginType): DatabaseFeature[] {
-  switch (pluginType) {
-    case PLUGIN_TYPES.DRIZZLE:
-      return [DATABASE_FEATURES.MIGRATIONS, DATABASE_FEATURES.SEEDING, DATABASE_FEATURES.BACKUP];
-    case PLUGIN_TYPES.PRISMA:
-      return [DATABASE_FEATURES.MIGRATIONS, DATABASE_FEATURES.SEEDING, DATABASE_FEATURES.STUDIO];
-    case PLUGIN_TYPES.NONE:
-      return [];
-    default:
-      return [];
-  }
-}
-
-export function getAuthFeaturesForPlugin(pluginType: PluginType): AuthFeature[] {
-  switch (pluginType) {
-    case PLUGIN_TYPES.BETTER_AUTH:
-    case PLUGIN_TYPES.NEXTAUTH:
-      return [AUTH_FEATURES.EMAIL_VERIFICATION, AUTH_FEATURES.PASSWORD_RESET, AUTH_FEATURES.SOCIAL_LOGIN, AUTH_FEATURES.SESSION_MANAGEMENT];
-    case PLUGIN_TYPES.NONE:
-      return [];
-    default:
-      return [];
-  }
-} 
+export type TestingFramework = typeof TESTING_FRAMEWORKS[keyof typeof TESTING_FRAMEWORKS]; 

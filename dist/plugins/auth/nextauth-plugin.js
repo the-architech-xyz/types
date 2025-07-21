@@ -8,7 +8,7 @@
 import { PluginCategory, TargetPlatform } from '../../types/plugin.js';
 import { templateService } from '../../core/templates/template-service.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
-import { AUTH_PROVIDERS, SESSION_STRATEGIES } from '../../types/shared-config.js';
+import { AUTH_PROVIDERS } from '../../types/shared-config.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 export class NextAuthPlugin {
@@ -298,8 +298,8 @@ export class NextAuthPlugin {
                 sessionStrategy: {
                     type: 'string',
                     description: 'Session strategy to use',
-                    enum: Object.values(SESSION_STRATEGIES),
-                    default: SESSION_STRATEGIES.JWT
+                    enum: ['jwt', 'database'],
+                    default: 'jwt'
                 },
                 secret: {
                     type: 'string',

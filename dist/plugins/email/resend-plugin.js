@@ -273,9 +273,21 @@ export class ResendPlugin {
     }
     getDependencies() {
         return [
-            'resend',
-            '@react-email/components',
-            '@react-email/render'
+            'resend@^3.0.0',
+            '@react-email/components@^0.0.15',
+            '@react-email/render@^0.0.12',
+            '@react-email/html@^0.0.12',
+            '@react-email/head@^0.0.12',
+            '@react-email/body@^0.0.12',
+            '@react-email/container@^0.0.12',
+            '@react-email/text@^0.0.12',
+            '@react-email/button@^0.0.12',
+            '@react-email/link@^0.0.12',
+            '@react-email/img@^0.0.12',
+            '@react-email/section@^0.0.12',
+            '@react-email/row@^0.0.12',
+            '@react-email/column@^0.0.12',
+            '@react-email/preview@^0.0.12'
         ];
     }
     getConflicts() {
@@ -292,20 +304,25 @@ export class ResendPlugin {
                 type: 'service',
                 name: 'Resend Account',
                 description: 'A Resend account with API key',
-                optional: false
+                version: 'latest'
             },
             {
                 type: 'config',
                 name: 'Environment Variables',
                 description: 'RESEND_API_KEY and EMAIL_FROM must be configured',
-                optional: false
+                version: 'latest'
             },
             {
-                type: 'binary',
-                name: 'Node.js',
-                description: 'Node.js version 16 or higher',
-                version: '>=16.0.0',
-                optional: false
+                type: 'package',
+                name: 'resend',
+                description: 'Resend Node.js SDK',
+                version: '^3.0.0'
+            },
+            {
+                type: 'package',
+                name: '@react-email/components',
+                description: 'React Email components for templates',
+                version: '^0.0.15'
             }
         ];
     }
@@ -427,9 +444,21 @@ export class ResendPlugin {
         const { projectPath } = context;
         context.logger.info('Installing Resend dependencies...');
         const dependencies = [
-            'resend',
-            '@react-email/components',
-            '@react-email/render'
+            'resend@^3.0.0',
+            '@react-email/components@^0.0.15',
+            '@react-email/render@^0.0.12',
+            '@react-email/html@^0.0.12',
+            '@react-email/head@^0.0.12',
+            '@react-email/body@^0.0.12',
+            '@react-email/container@^0.0.12',
+            '@react-email/text@^0.0.12',
+            '@react-email/button@^0.0.12',
+            '@react-email/link@^0.0.12',
+            '@react-email/img@^0.0.12',
+            '@react-email/section@^0.0.12',
+            '@react-email/row@^0.0.12',
+            '@react-email/column@^0.0.12',
+            '@react-email/preview@^0.0.12'
         ];
         await this.runner.install(dependencies, false, projectPath);
     }

@@ -4,86 +4,74 @@
  * Defines interfaces for interactive plugin selection and configuration
  * during project generation.
  */
-import { DatabaseProvider, AuthProvider, DatabaseFeature, AuthFeature, PluginType } from './shared-config.js';
+import { DatabaseProvider, ORMLibrary, AuthProvider, AuthFeature, UILibrary, DeploymentPlatform, EmailService, TestingFramework } from './shared-config.js';
+export interface DatabaseSelection {
+    enabled: boolean;
+    provider: DatabaseProvider;
+    orm: ORMLibrary;
+    features: Partial<Record<string, boolean>>;
+}
+export interface AuthSelection {
+    enabled: boolean;
+    providers: AuthProvider[];
+    features: Partial<Record<AuthFeature, boolean>>;
+}
+export interface UISelection {
+    enabled: boolean;
+    library: UILibrary;
+    features: Partial<Record<string, boolean>>;
+}
+export interface DeploymentSelection {
+    enabled: boolean;
+    platform: DeploymentPlatform;
+    features: Partial<Record<string, boolean>>;
+}
+export interface EmailSelection {
+    enabled: boolean;
+    service: EmailService;
+    features: Partial<Record<string, boolean>>;
+}
+export interface TestingSelection {
+    enabled: boolean;
+    framework: TestingFramework;
+    features: Partial<Record<string, boolean>>;
+}
+export interface MonitoringSelection {
+    enabled: boolean;
+    services: string[];
+    features: Partial<Record<string, boolean>>;
+}
+export interface PaymentSelection {
+    enabled: boolean;
+    providers: string[];
+    features: Partial<Record<string, boolean>>;
+}
+export interface BlockchainSelection {
+    enabled: boolean;
+    networks: string[];
+    features: Partial<Record<string, boolean>>;
+}
 export interface PluginSelection {
     database: DatabaseSelection;
     authentication: AuthSelection;
     ui: UISelection;
     deployment: DeploymentSelection;
+    email: EmailSelection;
     testing: TestingSelection;
     monitoring: MonitoringSelection;
-    email: EmailSelection;
-    advanced: AdvancedSelection;
+    payment: PaymentSelection;
+    blockchain: BlockchainSelection;
 }
-export interface DatabaseSelection {
-    enabled: boolean;
-    type: PluginType;
-    provider: DatabaseProvider;
-    features: Partial<Record<DatabaseFeature, boolean>>;
-    configuration?: Record<string, any>;
-}
-export interface AuthSelection {
-    enabled: boolean;
-    type: PluginType;
-    providers: AuthProvider[];
-    features: Partial<Record<AuthFeature, boolean>>;
-    configuration?: Record<string, any>;
-}
-export interface UISelection {
-    enabled: boolean;
-    type: 'shadcn' | 'radix' | 'none';
-    theme: 'light' | 'dark' | 'system';
-    components: string[];
-    features: {
-        animations: boolean;
-        icons: boolean;
-        responsive: boolean;
-    };
-    configuration?: Record<string, any>;
-}
-export interface DeploymentSelection {
-    enabled: boolean;
-    platform: 'vercel' | 'railway' | 'netlify' | 'aws' | 'none';
-    environment: 'development' | 'staging' | 'production';
-    features: {
-        autoDeploy: boolean;
-        previewDeployments: boolean;
-        customDomain: boolean;
-    };
-}
-export interface TestingSelection {
-    enabled: boolean;
-    framework: 'jest' | 'vitest' | 'playwright' | 'none';
-    coverage: boolean;
-    e2e: boolean;
-}
-export interface MonitoringSelection {
-    enabled: boolean;
-    service: 'sentry' | 'logrocket' | 'none';
-    features: {
-        errorTracking: boolean;
-        performance: boolean;
-        analytics: boolean;
-    };
-}
-export interface EmailSelection {
-    enabled: boolean;
-    provider: 'resend' | 'sendgrid' | 'mailgun' | 'none';
-    features: {
-        transactional: boolean;
-        marketing: boolean;
-        templates: boolean;
-    };
-}
-export interface AdvancedSelection {
-    linting: boolean;
-    formatting: boolean;
-    gitHooks: boolean;
-    bundling: 'webpack' | 'vite' | 'turbopack';
-    optimization: boolean;
-    security: boolean;
-    rateLimiting: boolean;
-}
+export declare const DEFAULT_DATABASE_SELECTION: DatabaseSelection;
+export declare const DEFAULT_AUTH_SELECTION: AuthSelection;
+export declare const DEFAULT_UI_SELECTION: UISelection;
+export declare const DEFAULT_DEPLOYMENT_SELECTION: DeploymentSelection;
+export declare const DEFAULT_EMAIL_SELECTION: EmailSelection;
+export declare const DEFAULT_TESTING_SELECTION: TestingSelection;
+export declare const DEFAULT_MONITORING_SELECTION: MonitoringSelection;
+export declare const DEFAULT_PAYMENT_SELECTION: PaymentSelection;
+export declare const DEFAULT_BLOCKCHAIN_SELECTION: BlockchainSelection;
+export declare const DEFAULT_PLUGIN_SELECTION: PluginSelection;
 export interface PluginRecommendation {
     pluginId: string;
     reason: string;

@@ -6,123 +6,205 @@
  */
 
 import { 
-  DatabaseProvider, 
-  AuthProvider, 
-  DatabaseFeature, 
-  AuthFeature,
-  SessionStrategy,
-  DatabaseAdapter,
-  PluginType,
-  DATABASE_PROVIDERS,
-  AUTH_PROVIDERS,
-  DATABASE_FEATURES,
+  DATABASE_PROVIDERS, 
+  ORM_LIBRARIES,
+  AUTH_PROVIDERS, 
   AUTH_FEATURES,
-  SESSION_STRATEGIES,
-  DATABASE_ADAPTERS,
-  PLUGIN_TYPES
+  UI_LIBRARIES,
+  DEPLOYMENT_PLATFORMS,
+  EMAIL_SERVICES,
+  TESTING_FRAMEWORKS,
+  DatabaseProvider,
+  ORMLibrary,
+  AuthProvider, 
+  AuthFeature,
+  UILibrary,
+  DeploymentPlatform,
+  EmailService,
+  TestingFramework
 } from './shared-config.js';
 
 // ============================================================================
 // PLUGIN SELECTION INTERFACES
 // ============================================================================
 
-export interface PluginSelection {
-  // Core technology choices
-  database: DatabaseSelection;
-  authentication: AuthSelection;
-  ui: UISelection;
-  deployment: DeploymentSelection;
-  
-  // Optional features
-  testing: TestingSelection;
-  monitoring: MonitoringSelection;
-  email: EmailSelection;
-  
-  // Advanced options
-  advanced: AdvancedSelection;
-}
-
 export interface DatabaseSelection {
   enabled: boolean;
-  type: PluginType;
   provider: DatabaseProvider;
-  features: Partial<Record<DatabaseFeature, boolean>>;
-  configuration?: Record<string, any>;
+  orm: ORMLibrary;
+  features: Partial<Record<string, boolean>>;
 }
 
 export interface AuthSelection {
   enabled: boolean;
-  type: PluginType;
   providers: AuthProvider[];
   features: Partial<Record<AuthFeature, boolean>>;
-  configuration?: Record<string, any>;
 }
 
 export interface UISelection {
   enabled: boolean;
-  type: 'shadcn' | 'radix' | 'none';
-  theme: 'light' | 'dark' | 'system';
-  components: string[];
-  features: {
-    animations: boolean;
-    icons: boolean;
-    responsive: boolean;
-  };
-  configuration?: Record<string, any>;
+  library: UILibrary;
+  features: Partial<Record<string, boolean>>;
 }
 
 export interface DeploymentSelection {
   enabled: boolean;
-  platform: 'vercel' | 'railway' | 'netlify' | 'aws' | 'none';
-  environment: 'development' | 'staging' | 'production';
-  features: {
-    autoDeploy: boolean;
-    previewDeployments: boolean;
-    customDomain: boolean;
-  };
-}
-
-export interface TestingSelection {
-  enabled: boolean;
-  framework: 'jest' | 'vitest' | 'playwright' | 'none';
-  coverage: boolean;
-  e2e: boolean;
-}
-
-export interface MonitoringSelection {
-  enabled: boolean;
-  service: 'sentry' | 'logrocket' | 'none';
-  features: {
-    errorTracking: boolean;
-    performance: boolean;
-    analytics: boolean;
-  };
+  platform: DeploymentPlatform;
+  features: Partial<Record<string, boolean>>;
 }
 
 export interface EmailSelection {
   enabled: boolean;
-  provider: 'resend' | 'sendgrid' | 'mailgun' | 'none';
-  features: {
-    transactional: boolean;
-    marketing: boolean;
-    templates: boolean;
-  };
+  service: EmailService;
+  features: Partial<Record<string, boolean>>;
 }
 
-export interface AdvancedSelection {
-  // Development tools
-  linting: boolean;
-  formatting: boolean;
-  gitHooks: boolean;
-  
-  // Performance
-  bundling: 'webpack' | 'vite' | 'turbopack';
-  optimization: boolean;
-  
-  // Security
-  security: boolean;
-  rateLimiting: boolean;
+export interface TestingSelection {
+  enabled: boolean;
+  framework: TestingFramework;
+  features: Partial<Record<string, boolean>>;
 }
+
+// New categories
+export interface MonitoringSelection {
+  enabled: boolean;
+  services: string[]; // 'sentry', 'vercel-analytics', 'google-analytics'
+  features: Partial<Record<string, boolean>>;
+}
+
+export interface PaymentSelection {
+  enabled: boolean;
+  providers: string[]; // 'stripe', 'paypal'
+  features: Partial<Record<string, boolean>>;
+}
+
+export interface BlockchainSelection {
+  enabled: boolean;
+  networks: string[]; // 'ethereum', 'polygon', 'solana'
+  features: Partial<Record<string, boolean>>;
+}
+
+export interface PluginSelection {
+  database: DatabaseSelection;
+  authentication: AuthSelection;
+  ui: UISelection;
+  deployment: DeploymentSelection;
+  email: EmailSelection;
+  testing: TestingSelection;
+  monitoring: MonitoringSelection;
+  payment: PaymentSelection;
+  blockchain: BlockchainSelection;
+}
+
+// ============================================================================
+// DEFAULT SELECTIONS
+// ============================================================================
+
+export const DEFAULT_DATABASE_SELECTION: DatabaseSelection = {
+  enabled: true,
+  provider: DATABASE_PROVIDERS.NEON,
+  orm: ORM_LIBRARIES.DRIZZLE,
+  features: {
+    migrations: true,
+    seeding: false,
+    studio: true
+  }
+};
+
+export const DEFAULT_AUTH_SELECTION: AuthSelection = {
+  enabled: true,
+  providers: [AUTH_PROVIDERS.EMAIL],
+  features: {
+    [AUTH_FEATURES.EMAIL_VERIFICATION]: true,
+    [AUTH_FEATURES.PASSWORD_RESET]: true,
+    [AUTH_FEATURES.SOCIAL_LOGIN]: false,
+    [AUTH_FEATURES.SESSION_MANAGEMENT]: true
+  }
+};
+
+export const DEFAULT_UI_SELECTION: UISelection = {
+  enabled: true,
+  library: UI_LIBRARIES.SHADCN_UI,
+  features: {
+    components: true,
+    theming: true,
+    responsive: true
+  }
+};
+
+export const DEFAULT_DEPLOYMENT_SELECTION: DeploymentSelection = {
+  enabled: false,
+  platform: DEPLOYMENT_PLATFORMS.VERCEL,
+  features: {
+    autoDeploy: true,
+    preview: true,
+    analytics: false
+  }
+};
+
+export const DEFAULT_EMAIL_SELECTION: EmailSelection = {
+  enabled: false,
+  service: EMAIL_SERVICES.RESEND,
+  features: {
+    templates: true,
+    tracking: false,
+    analytics: false
+  }
+};
+
+export const DEFAULT_TESTING_SELECTION: TestingSelection = {
+  enabled: true,
+  framework: TESTING_FRAMEWORKS.VITEST,
+  features: {
+    unit: true,
+    integration: false,
+    e2e: false,
+    coverage: true
+  }
+};
+
+// New default selections
+export const DEFAULT_MONITORING_SELECTION: MonitoringSelection = {
+  enabled: false,
+  services: [],
+  features: {
+    errorTracking: false,
+    performanceMonitoring: false,
+    analytics: false
+  }
+};
+
+export const DEFAULT_PAYMENT_SELECTION: PaymentSelection = {
+  enabled: false,
+  providers: [],
+  features: {
+    subscriptions: false,
+    oneTimePayments: false,
+    invoices: false
+  }
+};
+
+export const DEFAULT_BLOCKCHAIN_SELECTION: BlockchainSelection = {
+  enabled: false,
+  networks: [],
+  features: {
+    smartContracts: false,
+    nftSupport: false,
+    defiIntegration: false
+  }
+};
+
+export const DEFAULT_PLUGIN_SELECTION: PluginSelection = {
+  database: DEFAULT_DATABASE_SELECTION,
+  authentication: DEFAULT_AUTH_SELECTION,
+  ui: DEFAULT_UI_SELECTION,
+  deployment: DEFAULT_DEPLOYMENT_SELECTION,
+  email: DEFAULT_EMAIL_SELECTION,
+  testing: DEFAULT_TESTING_SELECTION,
+  monitoring: DEFAULT_MONITORING_SELECTION,
+  payment: DEFAULT_PAYMENT_SELECTION,
+  blockchain: DEFAULT_BLOCKCHAIN_SELECTION
+};
 
 // ============================================================================
 // PLUGIN RECOMMENDATION INTERFACES

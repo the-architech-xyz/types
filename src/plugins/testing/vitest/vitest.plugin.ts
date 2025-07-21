@@ -32,8 +32,16 @@ export class VitestPlugin implements IPlugin {
     try {
       this.logger.info('Installing Vitest testing plugin...');
 
-      // Install Vitest and related packages
-      const packages = ['vitest', '@vitest/ui', '@testing-library/react', '@testing-library/jest-dom', 'jsdom'];
+      // Install Vitest and related packages with latest versions
+      const packages = [
+        'vitest@^1.0.0',
+        '@vitest/ui@^1.0.0',
+        '@testing-library/react@^14.0.0',
+        '@testing-library/jest-dom@^6.0.0',
+        '@testing-library/user-event@^14.0.0',
+        'jsdom@^23.0.0',
+        '@vitejs/plugin-react@^4.0.0'
+      ];
       const installResult = await this.commandRunner.install(packages, true, context.projectPath);
       
       if (installResult.code !== 0) {
@@ -66,8 +74,10 @@ export class VitestPlugin implements IPlugin {
       packageJson.scripts['test:ui'] = 'vitest --ui';
       packageJson.scripts['test:run'] = 'vitest run';
       packageJson.scripts['test:coverage'] = 'vitest run --coverage';
+      packageJson.scripts['test:watch'] = 'vitest --watch';
+      packageJson.scripts['test:related'] = 'vitest run --related';
 
-      // Create Vitest configuration
+      // Create improved Vitest configuration
       const vitestConfig = `import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
@@ -78,28 +88,70 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/cypress/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*'
+    ],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'src/test/',
         '**/*.d.ts',
         '**/*.config.*',
-        '**/*.setup.*'
-      ]
+        '**/*.setup.*',
+        '**/coverage/**',
+        '**/dist/**',
+        '**/.next/**',
+        '**/cypress/**',
+        '**/test{,s}/**',
+        '**/test{,-*}.{js,cjs,mjs,ts,tsx,jsx}',
+        '**/*{.,-}test.{js,cjs,mjs,ts,tsx,jsx}',
+        '**/*{.,-}spec.{js,cjs,mjs,ts,tsx,jsx}',
+        '**/__tests__/**',
+        '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*'
+      ],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 80,
+          lines: 80,
+          statements: 80
+        }
+      }
+    },
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    teardownTimeout: 1000,
+    isolate: true,
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true
+      }
     }
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src')
+      '@': resolve(__dirname, './src'),
+      '~': resolve(__dirname, './')
     }
   }
 });`;
 
-      // Create test setup file
+      // Create improved test setup file
       const testSetup = `import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+
+// Extend expect matchers
+import { expect } from 'vitest';
+import * as matchers from '@testing-library/jest-dom/matchers';
+expect.extend(matchers);
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -133,25 +185,155 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }));
 
+// Mock scrollTo
+Object.defineProperty(window, 'scrollTo', {
+  writable: true,
+  value: vi.fn(),
+});
+
+// Mock getComputedStyle
+Object.defineProperty(window, 'getComputedStyle', {
+  writable: true,
+  value: vi.fn(() => ({
+    getPropertyValue: vi.fn(),
+  })),
+});
+
 // Clean up after each test
 afterEach(() => {
   vi.clearAllMocks();
-});`;
+  vi.clearAllTimers();
+});
 
-      // Create example test file
-      const exampleTest = `import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+// Global test utilities
+global.testUtils = {
+  waitFor: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
+  mockConsole: () => {
+    const originalConsole = { ...console };
+    const mockConsole = {
+      log: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+    };
+    Object.assign(console, mockConsole);
+    return () => Object.assign(console, originalConsole);
+  }
+};`;
 
-describe('Example Test', () => {
-  it('should pass', () => {
-    expect(true).toBe(true);
+      // Create improved example test file
+      const exampleTest = `import { describe, it, expect, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+// Example component test
+describe('Example Component', () => {
+  beforeEach(() => {
+    // Setup before each test
   });
 
-  it('should render component', () => {
+  it('should render correctly', () => {
     render(<div data-testid="test-component">Hello World</div>);
     expect(screen.getByTestId('test-component')).toBeInTheDocument();
+    expect(screen.getByText('Hello World')).toBeInTheDocument();
+  });
+
+  it('should handle user interactions', async () => {
+    const user = userEvent.setup();
+    render(
+      <button data-testid="test-button" onClick={() => alert('clicked')}>
+        Click me
+      </button>
+    );
+    
+    const button = screen.getByTestId('test-button');
+    await user.click(button);
+    
+    expect(button).toBeInTheDocument();
+  });
+
+  it('should handle async operations', async () => {
+    const mockFetch = vi.fn(() =>
+      Promise.resolve({
+        json: () => Promise.resolve({ data: 'test' }),
+      })
+    );
+    global.fetch = mockFetch;
+
+    // Your async test logic here
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalled();
+    });
+  });
+});
+
+// Example utility function test
+describe('Utility Functions', () => {
+  it('should add two numbers correctly', () => {
+    const add = (a: number, b: number) => a + b;
+    expect(add(2, 3)).toBe(5);
+  });
+
+  it('should handle edge cases', () => {
+    const divide = (a: number, b: number) => {
+      if (b === 0) throw new Error('Division by zero');
+      return a / b;
+    };
+    
+    expect(() => divide(1, 0)).toThrow('Division by zero');
+    expect(divide(6, 2)).toBe(3);
   });
 });`;
+
+      // Create test utilities file
+      const testUtils = `import { render, RenderOptions } from '@testing-library/react';
+import { ReactElement } from 'react';
+
+// Custom render function with providers
+const customRender = (
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>
+) => render(ui, { ...options });
+
+// Re-export everything
+export * from '@testing-library/react';
+export { customRender as render };
+
+// Test data factories
+export const createMockUser = (overrides = {}) => ({
+  id: '1',
+  name: 'Test User',
+  email: 'test@example.com',
+  ...overrides,
+});
+
+export const createMockPost = (overrides = {}) => ({
+  id: '1',
+  title: 'Test Post',
+  content: 'Test content',
+  authorId: '1',
+  createdAt: new Date().toISOString(),
+  ...overrides,
+});
+
+// Mock API responses
+export const mockApiResponses = {
+  users: {
+    list: [
+      { id: '1', name: 'User 1', email: 'user1@example.com' },
+      { id: '2', name: 'User 2', email: 'user2@example.com' },
+    ],
+    single: { id: '1', name: 'User 1', email: 'user1@example.com' },
+  },
+  posts: {
+    list: [
+      { id: '1', title: 'Post 1', content: 'Content 1' },
+      { id: '2', title: 'Post 2', content: 'Content 2' },
+    ],
+    single: { id: '1', title: 'Post 1', content: 'Content 1' },
+  },
+};`;
 
       this.logger.success('Vitest testing plugin installed successfully');
       return {
@@ -171,36 +353,53 @@ describe('Example Test', () => {
             type: 'file',
             path: 'src/test/example.test.tsx',
             content: exampleTest
+          },
+          {
+            type: 'file',
+            path: 'src/test/utils.tsx',
+            content: testUtils
           }
         ],
         dependencies: [
           {
             name: 'vitest',
-            version: 'latest',
+            version: '^1.0.0',
             type: 'development',
             category: PluginCategory.TESTING
           },
           {
             name: '@vitest/ui',
-            version: 'latest',
+            version: '^1.0.0',
             type: 'development',
             category: PluginCategory.TESTING
           },
           {
             name: '@testing-library/react',
-            version: 'latest',
+            version: '^14.0.0',
             type: 'development',
             category: PluginCategory.TESTING
           },
           {
             name: '@testing-library/jest-dom',
-            version: 'latest',
+            version: '^6.0.0',
+            type: 'development',
+            category: PluginCategory.TESTING
+          },
+          {
+            name: '@testing-library/user-event',
+            version: '^14.0.0',
             type: 'development',
             category: PluginCategory.TESTING
           },
           {
             name: 'jsdom',
-            version: 'latest',
+            version: '^23.0.0',
+            type: 'development',
+            category: PluginCategory.TESTING
+          },
+          {
+            name: '@vitejs/plugin-react',
+            version: '^4.0.0',
             type: 'development',
             category: PluginCategory.TESTING
           }
@@ -228,6 +427,18 @@ describe('Example Test', () => {
             name: 'test:coverage',
             command: 'vitest run --coverage',
             description: 'Run tests with coverage',
+            category: 'test'
+          },
+          {
+            name: 'test:watch',
+            command: 'vitest --watch',
+            description: 'Run tests in watch mode',
+            category: 'test'
+          },
+          {
+            name: 'test:related',
+            command: 'vitest run --related',
+            description: 'Run tests related to changed files',
             category: 'test'
           }
         ],
@@ -407,7 +618,7 @@ describe('Example Test', () => {
   }
 
   getDependencies(): string[] {
-    return ['vitest', '@vitest/ui', '@testing-library/react', '@testing-library/jest-dom', 'jsdom'];
+    return ['vitest', '@vitest/ui', '@testing-library/react', '@testing-library/jest-dom', '@testing-library/user-event', 'jsdom', '@vitejs/plugin-react'];
   }
 
   getConflicts(): string[] {
@@ -420,13 +631,13 @@ describe('Example Test', () => {
         type: 'package',
         name: 'vitest',
         description: 'Fast unit testing framework',
-        version: 'latest'
+        version: '^1.0.0'
       },
       {
         type: 'package',
         name: '@testing-library/react',
         description: 'React testing utilities',
-        version: 'latest'
+        version: '^14.0.0'
       }
     ];
   }
@@ -436,7 +647,8 @@ describe('Example Test', () => {
       environment: 'jsdom',
       globals: true,
       coverage: true,
-      ui: false
+      ui: false,
+      userEvent: true
     };
   }
 
@@ -464,10 +676,15 @@ describe('Example Test', () => {
           type: 'boolean',
           description: 'Enable UI mode',
           default: false
+        },
+        userEvent: {
+          type: 'boolean',
+          description: 'Include user-event for interaction testing',
+          default: true
         }
       },
       required: [],
       additionalProperties: false
     };
   }
-} 
+}
