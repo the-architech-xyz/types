@@ -46,6 +46,7 @@ import { displayBanner } from './core/cli/banner.js';
         .argument('[project-name]', 'Name of the project to create')
         .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
         .option('--project-type <type>', 'Project type (quick-prototype, scalable-monorepo)', 'quick-prototype')
+        .option('--template <template>', 'Template to use (quick-start, blog-platform, ecommerce, saas, enterprise, custom)')
         .option('--no-git', 'Skip git repository initialization')
         .option('--no-install', 'Skip dependency installation')
         .option('-y, --yes', 'Skip interactive prompts and use defaults', false)

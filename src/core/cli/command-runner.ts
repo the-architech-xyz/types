@@ -134,7 +134,7 @@ export class CommandRunner {
       },
       yarn: {
         create: ['yarn', 'create', 'next-app'],
-        install: ['yarn', 'install'],
+        install: ['yarn', 'add'],
         installDev: ['yarn', 'add', '--dev'],
         run: ['yarn'],
         version: ['yarn', '--version'],

@@ -176,6 +176,27 @@ async function gatherProjectConfig(projectName, options = {}) {
             };
         }
     }
+    else {
+        // Non-interactive mode (--yes flag): Use specified template or default
+        const templateId = options.template || 'quick-start';
+        const selectedTemplate = templateId === 'custom'
+            ? WorkflowTemplateService.getCustomTemplate()
+            : WorkflowTemplateService.getTemplate(templateId);
+        if (selectedTemplate) {
+            config.selectedTemplate = selectedTemplate;
+            config.template = templateId;
+            config.userInput = `Template-based project: ${selectedTemplate.name}`;
+            // Set default customizations
+            config.customizations = {
+                projectName: config.projectName || 'my-architech-app',
+                packageManager: 'auto'
+            };
+            config.projectName = config.customizations.projectName;
+        }
+        else {
+            throw new Error(`Template not found: ${templateId}`);
+        }
+    }
     return config;
 }
 // ============================================================================

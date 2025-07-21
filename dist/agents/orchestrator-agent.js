@@ -315,7 +315,7 @@ export class OrchestratorAgent {
             phases.push({
                 name: 'database-setup',
                 description: `Setup database with ${pluginSelection.database.provider} and ${pluginSelection.database.orm}`,
-                agents: ['database-agent'],
+                agents: ['db'],
                 plugins: [pluginSelection.database.provider, pluginSelection.database.orm],
                 order: 1,
                 dependencies: []
@@ -326,7 +326,7 @@ export class OrchestratorAgent {
             phases.push({
                 name: 'authentication-setup',
                 description: `Setup authentication with ${pluginSelection.authentication.providers.join(', ')}`,
-                agents: ['auth-agent'],
+                agents: ['auth'],
                 plugins: ['better-auth'],
                 order: 2,
                 dependencies: ['database-setup']
@@ -337,7 +337,7 @@ export class OrchestratorAgent {
             phases.push({
                 name: 'ui-setup',
                 description: `Setup ${pluginSelection.ui.library} design system`,
-                agents: ['ui-agent'],
+                agents: ['ui'],
                 plugins: [this.mapUIPluginToSystem(pluginSelection.ui.library)],
                 order: 3,
                 dependencies: []
@@ -348,7 +348,7 @@ export class OrchestratorAgent {
             phases.push({
                 name: 'drizzle-setup',
                 description: 'Setup Drizzle ORM with migrations and schema',
-                agents: ['database-agent'],
+                agents: ['db'],
                 plugins: ['drizzle'],
                 order: 1.5,
                 dependencies: ['database-setup']
@@ -359,7 +359,7 @@ export class OrchestratorAgent {
             phases.push({
                 name: 'email-auth-setup',
                 description: 'Setup email authentication with verification',
-                agents: ['auth-agent'],
+                agents: ['auth'],
                 plugins: ['better-auth'],
                 order: 2.5,
                 dependencies: ['authentication-setup']
@@ -370,7 +370,7 @@ export class OrchestratorAgent {
             phases.push({
                 name: 'shadcn-setup',
                 description: 'Setup Shadcn/ui components and styling',
-                agents: ['ui-agent'],
+                agents: ['ui'],
                 plugins: ['shadcn-ui'],
                 order: 3.5,
                 dependencies: ['ui-setup']
