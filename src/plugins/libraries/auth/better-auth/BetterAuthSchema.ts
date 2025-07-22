@@ -5,142 +5,117 @@
  * Based on: https://better-auth.com/docs
  */
 
-import { ConfigSchema } from '../../../../types/plugin.js';
+import { ParameterSchema, AuthProvider, AuthFeature, ParameterGroup, ParameterDependency, ParameterCondition } from '../../../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../../../types/plugin.js';
 
-export interface BetterAuthConfig {
-  providers: string[];
-  requireEmailVerification: boolean;
-  sessionDuration: number;
-  databaseUrl: string;
-  enableOAuth: boolean;
-  enableCredentials: boolean;
-  enableMagicLinks: boolean;
-  enableTwoFactor: boolean;
-  enableWebAuthn: boolean;
-  enableRateLimiting: boolean;
-  enableAuditLogs: boolean;
-  enableUserProfiles: boolean;
-  enableRoles: boolean;
-  enablePermissions: boolean;
-  enableSocialLogin: boolean;
-  enableEmailTemplates: boolean;
-  enableCustomFields: boolean;
+// Temporary local definition until export issue is resolved
+export interface ParameterValidationRule {
+  type: 'required' | 'pattern' | 'min' | 'max' | 'minLength' | 'maxLength' | 'custom';
+  value?: any;
+  message: string;
+  validator?: (value: any, config: Record<string, any>) => boolean | string;
 }
 
-export const BetterAuthConfigSchema: ConfigSchema = {
-  type: 'object',
-  properties: {
-    providers: {
-      type: 'array',
-      items: { 
-        type: 'string',
-        description: 'Authentication provider name'
-      },
-      description: 'Authentication providers to enable',
-      default: ['credentials', 'google', 'github']
-    },
-    requireEmailVerification: {
-      type: 'boolean',
-      description: 'Require email verification for new accounts',
-      default: true
-    },
-    sessionDuration: {
-      type: 'number',
-      description: 'Session duration in seconds',
-      default: 30 * 24 * 60 * 60, // 30 days
-      minimum: 60,
-      maximum: 365 * 24 * 60 * 60
-    },
-    databaseUrl: {
-      type: 'string',
-      description: 'Database connection URL',
-      default: 'postgresql://user:password@localhost:5432/better_auth'
-    },
-    enableOAuth: {
-      type: 'boolean',
-      description: 'Enable OAuth providers',
-      default: true
-    },
-    enableCredentials: {
-      type: 'boolean',
-      description: 'Enable email/password authentication',
-      default: true
-    },
-    enableMagicLinks: {
-      type: 'boolean',
-      description: 'Enable magic link authentication',
-      default: false
-    },
-    enableTwoFactor: {
-      type: 'boolean',
-      description: 'Enable two-factor authentication',
-      default: false
-    },
-    enableWebAuthn: {
-      type: 'boolean',
-      description: 'Enable WebAuthn (passkeys)',
-      default: false
-    },
-    enableRateLimiting: {
-      type: 'boolean',
-      description: 'Enable rate limiting',
-      default: true
-    },
-    enableAuditLogs: {
-      type: 'boolean',
-      description: 'Enable audit logging',
-      default: true
-    },
-    enableUserProfiles: {
-      type: 'boolean',
-      description: 'Enable user profiles',
-      default: true
-    },
-    enableRoles: {
-      type: 'boolean',
-      description: 'Enable role-based access control',
-      default: false
-    },
-    enablePermissions: {
-      type: 'boolean',
-      description: 'Enable permission-based access control',
-      default: false
-    },
-    enableSocialLogin: {
-      type: 'boolean',
-      description: 'Enable social login providers',
-      default: true
-    },
-    enableEmailTemplates: {
-      type: 'boolean',
-      description: 'Enable customizable email templates',
-      default: true
-    },
-    enableCustomFields: {
-      type: 'boolean',
-      description: 'Enable custom user fields',
-      default: false
-    }
-  },
-  required: ['databaseUrl']
-};
+export class BetterAuthSchema {
+  static getParameterSchema(): ParameterSchema {
+    return {
+      category: PluginCategory.AUTHENTICATION,
+      groups: [
+        { id: 'providers', name: 'Login Providers', description: 'Configure third-party and credential-based login methods.', order: 1, parameters: ['providers'] },
+        { id: 'features', name: 'Security Features', description: 'Enable additional security and user management features.', order: 2, parameters: ['requireEmailVerification', 'enableTwoFactor', 'enableRateLimiting', 'enableAuditLogs'] },
+        { id: 'session', name: 'Session Management', description: 'Control how user sessions are handled.', order: 3, parameters: ['sessionDuration'] },
+      ],
+      parameters: [
+        {
+          id: 'providers',
+          name: 'Authentication Providers',
+          type: 'multiselect',
+          description: 'Select the login providers to enable.',
+          required: true,
+          default: [AuthProvider.CREDENTIALS, AuthProvider.GOOGLE, AuthProvider.GITHUB],
+          options: Object.values(AuthProvider).map(p => ({ value: p, label: this.getProviderLabel(p) })),
+          group: 'providers'
+        },
+        {
+          id: 'requireEmailVerification',
+          name: 'Require Email Verification',
+          type: 'boolean',
+          description: 'Force users to verify their email address before they can log in.',
+          required: true,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enableTwoFactor',
+          name: 'Enable Two-Factor Authentication',
+          type: 'boolean',
+          description: 'Add an extra layer of security with 2FA.',
+          required: true,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'enableRateLimiting',
+          name: 'Enable Rate Limiting',
+          type: 'boolean',
+          description: 'Protect against brute-force attacks.',
+          required: true,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enableAuditLogs',
+          name: 'Enable Audit Logs',
+          type: 'boolean',
+          description: 'Log important security events like logins and password changes.',
+          required: true,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'sessionDuration',
+          name: 'Session Duration (seconds)',
+          type: 'number',
+          description: 'The duration for which a user session is valid.',
+          required: true,
+          default: 30 * 24 * 60 * 60, // 30 days
+          validation: [
+            { type: 'min', value: 60, message: 'Session duration must be at least 60 seconds.' },
+            { type: 'max', value: 365 * 24 * 60 * 60, message: 'Session duration cannot exceed one year.' }
+          ],
+          group: 'session'
+        }
+      ],
+      dependencies: [
+          {
+              parameter: 'enableTwoFactor',
+              dependsOn: 'requireEmailVerification',
+              condition: { parameter: 'enableTwoFactor', operator: 'equals', value: true, action: 'require' },
+              message: 'Two-Factor Authentication requires Email Verification to be enabled.'
+          }
+      ],
+      validations: []
+    };
+  }
+  
+  static getAuthProviders(): AuthProvider[] {
+    return Object.values(AuthProvider);
+  }
 
-export const BetterAuthDefaultConfig: BetterAuthConfig = {
-  providers: ['credentials', 'google', 'github'],
-  requireEmailVerification: true,
-  sessionDuration: 30 * 24 * 60 * 60, // 30 days
-  databaseUrl: 'postgresql://user:password@localhost:5432/better_auth',
-  enableOAuth: true,
-  enableCredentials: true,
-  enableMagicLinks: false,
-  enableTwoFactor: false,
-  enableWebAuthn: false,
-  enableRateLimiting: true,
-  enableAuditLogs: true,
-  enableUserProfiles: true,
-  enableRoles: false,
-  enablePermissions: false,
-  enableSocialLogin: true,
-  enableEmailTemplates: true,
-  enableCustomFields: false
-}; 
+  static getAuthFeatures(): AuthFeature[] {
+    return [AuthFeature.EMAIL_VERIFICATION, AuthFeature.TWO_FACTOR, AuthFeature.RBAC];
+  }
+
+  static getProviderLabel(provider: AuthProvider): string {
+    const labels: Record<AuthProvider, string> = {
+      [AuthProvider.CREDENTIALS]: 'Email & Password',
+      [AuthProvider.GOOGLE]: 'Google',
+      [AuthProvider.GITHUB]: 'GitHub',
+      [AuthProvider.DISCORD]: 'Discord',
+      [AuthProvider.TWITTER]: 'Twitter (X)',
+      [AuthProvider.FACEBOOK]: 'Facebook',
+      [AuthProvider.APPLE]: 'Apple'
+    };
+    return labels[provider];
+  }
+} 

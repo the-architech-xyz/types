@@ -5,8 +5,7 @@
  */
 
 export { PrismaPlugin } from './PrismaPlugin.js';
-export type { PrismaConfig } from './PrismaSchema.js';
-export { PrismaConfigSchema, PrismaDefaultConfig } from './PrismaSchema.js';
+export { PrismaSchema } from './PrismaSchema.js';
 export { PrismaGenerator } from './PrismaGenerator.js';
 
 // Default export

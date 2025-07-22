@@ -1,173 +1,118 @@
-/**
- * Material-UI (MUI) Schema Definitions
- * 
- * Contains all configuration schemas and parameter definitions for the MUI plugin.
- * Based on: https://mui.com/getting-started/installation
- */
+import { ParameterSchema, UILibrary, ComponentOption, ThemeOption, StylingOption, ParameterGroup } from '../../../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../../../types/plugin.js';
 
-import { ConfigSchema } from '../../../../types/plugin.js';
+export class MuiSchema {
+  static getParameterSchema(): ParameterSchema {
+    return {
+      category: PluginCategory.UI_LIBRARY,
+      groups: [
+        { id: 'core', name: 'Core Configuration', description: 'Configure the main MUI settings.', order: 1, parameters: ['theme', 'components'] },
+        { id: 'styling', name: 'Styling Options', description: 'Configure styling and theming options.', order: 2, parameters: ['customTheme', 'cssBaseline'] },
+        { id: 'features', name: 'Features', description: 'Enable additional MUI features.', order: 3, parameters: ['datePickers', 'dataGrid', 'charts'] },
+      ],
+      parameters: [
+        {
+          id: 'theme',
+          name: 'Theme Mode',
+          type: 'select',
+          description: 'Choose the default theme mode for your application.',
+          required: true,
+          default: ThemeOption.LIGHT,
+          options: [
+            { value: ThemeOption.LIGHT, label: 'Light', description: 'Light theme for bright environments' },
+            { value: ThemeOption.DARK, label: 'Dark', description: 'Dark theme for low-light environments' },
+            { value: ThemeOption.AUTO, label: 'Auto', description: 'Automatically switch based on system preference' }
+          ],
+          group: 'core'
+        },
+        {
+          id: 'components',
+          name: 'Components',
+          type: 'multiselect',
+          description: 'Select the MUI components to include in your project.',
+          required: true,
+          default: [ComponentOption.BUTTON, ComponentOption.CARD, ComponentOption.INPUT, ComponentOption.FORM],
+          options: [
+            { value: ComponentOption.BUTTON, label: 'Button', description: 'Interactive buttons with various styles' },
+            { value: ComponentOption.CARD, label: 'Card', description: 'Content containers with elevation' },
+            { value: ComponentOption.INPUT, label: 'Input', description: 'Form input components' },
+            { value: ComponentOption.FORM, label: 'Form', description: 'Form layout and validation components' },
+            { value: ComponentOption.MODAL, label: 'Modal', description: 'Dialog and modal components' },
+            { value: ComponentOption.TABLE, label: 'Table', description: 'Data table components' },
+            { value: ComponentOption.NAVIGATION, label: 'Navigation', description: 'Menu and navigation components' },
+            { value: ComponentOption.SELECT, label: 'Select', description: 'Dropdown and select components' },
+            { value: ComponentOption.CHECKBOX, label: 'Checkbox', description: 'Checkbox and radio components' },
+            { value: ComponentOption.SWITCH, label: 'Switch', description: 'Toggle switch components' },
+            { value: ComponentOption.BADGE, label: 'Badge', description: 'Notification badge components' },
+            { value: ComponentOption.AVATAR, label: 'Avatar', description: 'User avatar components' },
+            { value: ComponentOption.ALERT, label: 'Alert', description: 'Alert and notification components' }
+          ],
+          group: 'core'
+        },
+        {
+          id: 'customTheme',
+          name: 'Custom Theme',
+          type: 'boolean',
+          description: 'Enable custom theme configuration with your brand colors.',
+          required: true,
+          default: true,
+          group: 'styling'
+        },
+        {
+          id: 'cssBaseline',
+          name: 'CSS Baseline',
+          type: 'boolean',
+          description: 'Include MUI CSS baseline for consistent styling across browsers.',
+          required: true,
+          default: true,
+          group: 'styling'
+        },
+        {
+          id: 'datePickers',
+          name: 'Date Pickers',
+          type: 'boolean',
+          description: 'Include MUI date and time picker components.',
+          required: true,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'dataGrid',
+          name: 'Data Grid',
+          type: 'boolean',
+          description: 'Include MUI Data Grid for advanced table functionality.',
+          required: true,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'charts',
+          name: 'Charts',
+          type: 'boolean',
+          description: 'Include MUI charts and visualization components.',
+          required: true,
+          default: false,
+          group: 'features'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
+  }
 
-export interface MuiConfig {
-  theme: 'light' | 'dark' | 'system';
-  colorPrimary: string;
-  colorSecondary: string;
-  enableEmotion: boolean;
-  enableStyledComponents: boolean;
-  enableIcons: boolean;
-  enableAnimations: boolean;
-  enableRTL: boolean;
-  enableTypeScript: boolean;
-  enableReact: boolean;
-  enableNextJS: boolean;
-  enableVue: boolean;
-  enableSvelte: boolean;
-  enableAngular: boolean;
-  components: string[];
-  enableCustomTheme: boolean;
-  enableThemeTokens: boolean;
-  enableResponsiveDesign: boolean;
-  enableAccessibility: boolean;
-  enablePerformance: boolean;
-  enableSSR: boolean;
-}
+  static getUILibraries(): UILibrary[] {
+    return [UILibrary.MUI];
+  }
 
-export const MuiConfigSchema: ConfigSchema = {
-  type: 'object',
-  properties: {
-    theme: {
-      type: 'string',
-      enum: ['light', 'dark', 'system'],
-      description: 'Default theme mode',
-      default: 'light'
-    },
-    colorPrimary: {
-      type: 'string',
-      description: 'Primary color for the theme',
-      default: '#1976d2'
-    },
-    colorSecondary: {
-      type: 'string',
-      description: 'Secondary color for the theme',
-      default: '#dc004e'
-    },
-    enableEmotion: {
-      type: 'boolean',
-      description: 'Enable Emotion CSS-in-JS',
-      default: true
-    },
-    enableStyledComponents: {
-      type: 'boolean',
-      description: 'Enable styled-components support',
-      default: false
-    },
-    enableIcons: {
-      type: 'boolean',
-      description: 'Enable Material Icons',
-      default: true
-    },
-    enableAnimations: {
-      type: 'boolean',
-      description: 'Enable animation utilities',
-      default: true
-    },
-    enableRTL: {
-      type: 'boolean',
-      description: 'Enable RTL support',
-      default: false
-    },
-    enableTypeScript: {
-      type: 'boolean',
-      description: 'Enable TypeScript support',
-      default: true
-    },
-    enableReact: {
-      type: 'boolean',
-      description: 'Enable React components',
-      default: true
-    },
-    enableNextJS: {
-      type: 'boolean',
-      description: 'Enable Next.js integration',
-      default: false
-    },
-    enableVue: {
-      type: 'boolean',
-      description: 'Enable Vue components',
-      default: false
-    },
-    enableSvelte: {
-      type: 'boolean',
-      description: 'Enable Svelte components',
-      default: false
-    },
-    enableAngular: {
-      type: 'boolean',
-      description: 'Enable Angular components',
-      default: false
-    },
-    components: {
-      type: 'array',
-      items: { 
-        type: 'string',
-        description: 'Component name to install'
-      },
-      description: 'Components to install',
-      default: ['Button', 'TextField', 'Card', 'Typography', 'Box', 'Stack', 'Grid', 'AppBar', 'Drawer']
-    },
-    enableCustomTheme: {
-      type: 'boolean',
-      description: 'Enable custom theme configuration',
-      default: false
-    },
-    enableThemeTokens: {
-      type: 'boolean',
-      description: 'Enable theme tokens',
-      default: true
-    },
-    enableResponsiveDesign: {
-      type: 'boolean',
-      description: 'Enable responsive design utilities',
-      default: true
-    },
-    enableAccessibility: {
-      type: 'boolean',
-      description: 'Enable accessibility features',
-      default: true
-    },
-    enablePerformance: {
-      type: 'boolean',
-      description: 'Enable performance optimizations',
-      default: true
-    },
-    enableSSR: {
-      type: 'boolean',
-      description: 'Enable server-side rendering support',
-      default: true
-    }
-  },
-  required: ['theme', 'colorPrimary', 'colorSecondary']
-};
+  static getComponentOptions(): ComponentOption[] {
+    return Object.values(ComponentOption);
+  }
 
-export const MuiDefaultConfig: MuiConfig = {
-  theme: 'light',
-  colorPrimary: '#1976d2',
-  colorSecondary: '#dc004e',
-  enableEmotion: true,
-  enableStyledComponents: false,
-  enableIcons: true,
-  enableAnimations: true,
-  enableRTL: false,
-  enableTypeScript: true,
-  enableReact: true,
-  enableNextJS: false,
-  enableVue: false,
-  enableSvelte: false,
-  enableAngular: false,
-  components: ['Button', 'TextField', 'Card', 'Typography', 'Box', 'Stack', 'Grid', 'AppBar', 'Drawer'],
-  enableCustomTheme: false,
-  enableThemeTokens: true,
-  enableResponsiveDesign: true,
-  enableAccessibility: true,
-  enablePerformance: true,
-  enableSSR: true
-}; 
+  static getThemeOptions(): ThemeOption[] {
+    return Object.values(ThemeOption);
+  }
+
+  static getStylingOptions(): StylingOption[] {
+    return [StylingOption.EMOTION]; // MUI uses Emotion by default
+  }
+} 

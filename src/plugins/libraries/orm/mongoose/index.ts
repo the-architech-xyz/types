@@ -5,9 +5,9 @@
  */
 
 export { MongoosePlugin } from './MongoosePlugin.js';
-export type { MongooseConfig } from './MongooseSchema.js';
-export { MongooseConfigSchema, MongooseDefaultConfig } from './MongooseSchema.js';
+export { MongooseSchema } from './MongooseSchema.js';
 export { MongooseGenerator } from './MongooseGenerator.js';
 
+// Default export
 import { MongoosePlugin } from './MongoosePlugin.js';
 export default MongoosePlugin; 

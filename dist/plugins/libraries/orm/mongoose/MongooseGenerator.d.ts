@@ -1,18 +1,17 @@
-/**
- * Mongoose Code Generator
- *
- * Handles all code generation for Mongoose ODM integration.
- * Based on: https://mongoosejs.com/docs/typescript.html
- */
-import { MongooseConfig } from './MongooseSchema.js';
+import { DatabasePluginConfig } from '../../../../types/plugin-interfaces.js';
+export interface GeneratedFile {
+    path: string;
+    content: string;
+}
 export declare class MongooseGenerator {
-    static generateMongooseConnection(config: MongooseConfig): string;
-    static generateUserModel(config: MongooseConfig): string;
-    static generateDatabaseClient(): string;
-    static generateSchemaTypes(): string;
-    static generateUnifiedIndex(): string;
-    static generatePluginsIndex(): string;
-    static generateTimestampPlugin(): string;
-    static generateSoftDeletePlugin(): string;
-    static generateEnvConfig(config: MongooseConfig): string;
+    generateAllFiles(config: DatabasePluginConfig): GeneratedFile[];
+    generateMongooseConnection(config: DatabasePluginConfig): GeneratedFile;
+    generateUserModel(config: DatabasePluginConfig): GeneratedFile;
+    generateDatabaseClient(): GeneratedFile;
+    generateSchemaTypes(): GeneratedFile;
+    generateUnifiedIndex(): GeneratedFile;
+    generatePluginsIndex(): GeneratedFile;
+    generateTimestampPlugin(): GeneratedFile;
+    generateSoftDeletePlugin(): GeneratedFile;
+    generateEnvConfig(config: DatabasePluginConfig): Record<string, string>;
 }

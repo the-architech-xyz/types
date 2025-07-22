@@ -94,8 +94,11 @@ export interface IUIBlockchainPlugin extends IEnhancedPlugin {
 export interface ParameterSchema {
   category: PluginCategory;
   parameters: ParameterDefinition[];
+  /** Defines dependencies between parameters for intelligent validation and resolution. */
   dependencies: ParameterDependency[];
+  /** A list of complex, cross-parameter validation rules. */
   validations: ParameterValidation[];
+  /** Defines logical groupings for parameters to enhance user experience. */
   groups: ParameterGroup[];
 }
 
@@ -107,8 +110,11 @@ export interface ParameterDefinition {
   required: boolean;
   default?: any;
   options?: ParameterOption[];
+  /** Conditionally shows or requires this parameter based on other answers. */
   conditions?: ParameterCondition[];
+  /** A list of validation rules for this specific parameter. */
   validation?: ParameterValidationRule[];
+  /** The ID of the group this parameter belongs to. */
   group?: string;
   order?: number;
 }
@@ -128,10 +134,18 @@ export interface ParameterCondition {
   action: 'show' | 'hide' | 'enable' | 'disable' | 'require' | 'optional';
 }
 
+/**
+ * Describes a dependency between one parameter and another, allowing the Agent
+ * to perform validation, conflict resolution, and automatic configuration.
+ */
 export interface ParameterDependency {
+  /** The ID of the parameter that has a dependency (e.g., 'twoFactorAuth'). */
   parameter: string;
+  /** The ID of the parameter it depends on (e.g., 'emailVerification'). */
   dependsOn: string;
+  /** The condition that triggers this dependency rule. */
   condition: ParameterCondition;
+  /** A user-friendly message explaining the dependency (e.g., "2FA requires Email Verification to be enabled."). */
   message?: string;
 }
 
@@ -140,18 +154,27 @@ export interface ParameterValidation {
   rules: ParameterValidationRule[];
 }
 
+/**
+ * Defines a specific validation rule for a parameter.
+ */
 export interface ParameterValidationRule {
   type: 'required' | 'pattern' | 'min' | 'max' | 'minLength' | 'maxLength' | 'custom';
+  /** The value to validate against (e.g., a regex for 'pattern', a number for 'min'). */
   value?: any;
   message: string;
+  /** A custom validation function for complex, cross-field logic. */
   validator?: (value: any, config: Record<string, any>) => boolean | string;
 }
 
+/**
+ * Defines a logical grouping of parameters for a better user experience.
+ */
 export interface ParameterGroup {
   id: string;
   name: string;
   description: string;
   order: number;
+  /** An array of parameter IDs that belong to this group. */
   parameters: string[];
 }
 
@@ -655,8 +678,50 @@ export interface UIFeatures {
   internationalization: boolean;
 }
 
+// ============================================================================
+// FRAMEWORK PLUGIN INTERFACES
+// ============================================================================
+
+export interface FrameworkPluginConfig {
+  framework: string;
+  typescript: boolean;
+  eslint: boolean;
+  buildTool: string;
+  optimization: boolean;
+  deploymentPlatform?: string;
+  appRouter?: boolean;
+  srcDir?: boolean;
+  tailwind?: boolean;
+  importAlias?: string;
+}
+
+export interface FrameworkOption {
+  name: string;
+  value: string;
+  label: string;
+  description: string;
+}
+
+export interface BuildOption {
+  name: string;
+  value: string;
+  label: string;
+  description: string;
+}
+
+export interface DeploymentOption {
+  name: string;
+  value: string;
+  label: string;
+  description: string;
+}
+
 export interface EnvironmentOption {
   name: string;
   value: string;
   description: string;
-} 
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================ 

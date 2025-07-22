@@ -4,8 +4,7 @@
  * Exports all Prisma plugin components.
  */
 export { PrismaPlugin } from './PrismaPlugin.js';
-export type { PrismaConfig } from './PrismaSchema.js';
-export { PrismaConfigSchema, PrismaDefaultConfig } from './PrismaSchema.js';
+export { PrismaSchema } from './PrismaSchema.js';
 export { PrismaGenerator } from './PrismaGenerator.js';
 import { PrismaPlugin } from './PrismaPlugin.js';
 export default PrismaPlugin;

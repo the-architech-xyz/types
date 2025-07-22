@@ -1,0 +1,32 @@
+import { ConfigSchema } from '../../../../types/plugin.js';
+export interface SupabaseConfig {
+    databaseUrl: string;
+    supabaseUrl: string;
+    supabaseAnonKey: string;
+    supabaseServiceKey: string;
+    enableRealtime: boolean;
+    enableEdgeFunctions: boolean;
+    enableStorage: boolean;
+    enableSSL: boolean;
+    connectionPoolSize: number;
+    connectionTimeout: number;
+    queryTimeout: number;
+    enableRowLevelSecurity: boolean;
+    enableDatabaseWebhooks: boolean;
+    enableDatabaseBackups: boolean;
+    enableDatabaseLogs: boolean;
+    enableConnectionPooling: boolean;
+    enableQueryOptimization: boolean;
+    enableCaching: boolean;
+    cacheSize: number;
+    enableMonitoring: boolean;
+    enableMetrics: boolean;
+    enableAlerts: boolean;
+    enableAuditLogs: boolean;
+    enableEncryption: boolean;
+    enableCompression: boolean;
+    enableRateLimiting: boolean;
+    maxRequestsPerMinute: number;
+}
+export declare const SupabaseConfigSchema: ConfigSchema;
+export declare const SupabaseDefaultConfig: SupabaseConfig;

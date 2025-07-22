@@ -102,6 +102,22 @@ export class PathResolver {
   }
 
   /**
+   * Get root layout path (for UI plugins)
+   * Assumes Next.js App Router structure for now.
+   * Single app: src/app/layout.tsx
+   * Monorepo: apps/web/src/app/layout.tsx
+   */
+  getRootLayoutPath(): string {
+    const layoutFileName = 'layout.tsx'; // or .jsx
+    if (this.structure.isMonorepo) {
+      // A more robust solution would check for tsx/jsx and app/pages dir
+      return path.join(this.context.projectPath, 'apps', 'web', 'src', 'app', layoutFileName);
+    } else {
+      return path.join(this.context.projectPath, 'src', 'app', layoutFileName);
+    }
+  }
+
+  /**
    * Get UI components path (for UI plugins)
    * Single app: src/components/ui/{componentName}.tsx
    * Monorepo: packages/ui/components/{componentName}.tsx
@@ -159,6 +175,12 @@ export class PathResolver {
     } else {
       return path.join(this.context.projectPath, 'src', 'lib', moduleName, 'index.ts');
     }
+  }
+
+  getStylePath(fileName: string): string {
+    // Assuming styles are in a root 'styles' or 'src/styles' directory
+    const styleDir = path.join(this.context.projectPath, 'src', 'styles');
+    return path.join(styleDir, fileName);
   }
 
   /**

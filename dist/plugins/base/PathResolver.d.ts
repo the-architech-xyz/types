@@ -46,6 +46,13 @@ export declare class PathResolver {
      */
     getAuthConfigPath(): string;
     /**
+     * Get root layout path (for UI plugins)
+     * Assumes Next.js App Router structure for now.
+     * Single app: src/app/layout.tsx
+     * Monorepo: apps/web/src/app/layout.tsx
+     */
+    getRootLayoutPath(): string;
+    /**
      * Get UI components path (for UI plugins)
      * Single app: src/components/ui/{componentName}.tsx
      * Monorepo: packages/ui/components/{componentName}.tsx
@@ -74,6 +81,7 @@ export declare class PathResolver {
      * Monorepo: packages/{moduleName}/index.ts
      */
     getUnifiedInterfacePath(moduleName: string): string;
+    getStylePath(fileName: string): string;
     /**
      * Extract module name from plugin ID
      */

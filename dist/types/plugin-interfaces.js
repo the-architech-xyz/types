@@ -134,4 +134,7 @@ export var BlockchainNetwork;
     BlockchainNetwork["SOLANA"] = "solana";
     BlockchainNetwork["BSC"] = "bsc";
 })(BlockchainNetwork || (BlockchainNetwork = {}));
+// ============================================================================
+// ENUMS
+// ============================================================================ 
 //# sourceMappingURL=plugin-interfaces.js.map

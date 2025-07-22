@@ -165,7 +165,7 @@ export class PluginRegistryImpl implements PluginRegistry {
 
   getCategories(): PluginCategory[] {
     const categories = new Set<PluginCategory>();
-    for (const plugin of this.plugins.values()) {
+    for (const plugin of Array.from(this.plugins.values())) {
       categories.add(plugin.getMetadata().category);
     }
     return Array.from(categories);
@@ -201,7 +201,7 @@ export class PluginRegistryImpl implements PluginRegistry {
       byLicense: {}
     };
 
-    for (const plugin of this.plugins.values()) {
+    for (const plugin of Array.from(this.plugins.values())) {
       const metadata = plugin.getMetadata();
       
       // Count by category

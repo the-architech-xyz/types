@@ -3,10 +3,10 @@
  *
  * Exports all Mongoose plugin components.
  */
-export { MongoosePlugin } from './mongoose.plugin.js';
-export { MongooseConfigSchema, MongooseDefaultConfig } from './MongooseSchema.js';
+export { MongoosePlugin } from './MongoosePlugin.js';
+export { MongooseSchema } from './MongooseSchema.js';
 export { MongooseGenerator } from './MongooseGenerator.js';
 // Default export
-import { MongoosePlugin } from './mongoose.plugin.js';
+import { MongoosePlugin } from './MongoosePlugin.js';
 export default MongoosePlugin;
 //# sourceMappingURL=index.js.map

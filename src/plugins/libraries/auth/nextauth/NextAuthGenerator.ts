@@ -5,16 +5,32 @@
  * Based on: https://next-auth.js.org/configuration
  */
 
-import { NextAuthConfig } from './NextAuthSchema.js';
+import { AuthPluginConfig, AuthProvider } from '../../../../types/plugin-interfaces.js';
+
+export interface GeneratedFile {
+    path: string;
+    content: string;
+}
 
 export class NextAuthGenerator {
   
-  static generateAuthConfig(config: NextAuthConfig): string {
-    const providers = config.providers || ['credentials', 'google', 'github'];
-    const sessionDuration = config.sessionDuration || 30 * 24 * 60 * 60;
-    const sessionStrategy = config.enableJWT ? 'jwt' : 'database';
+  generateAllFiles(config: AuthPluginConfig): GeneratedFile[] {
+    return [
+      this.generateAuthConfig(config),
+      this.generateAuthUtils(),
+      this.generateAuthComponents(),
+      this.generateUnifiedIndex(),
+      this.generateDatabaseSchema(),
+      this.generatePrismaSchema()
+    ];
+  }
+
+  generateAuthConfig(config: AuthPluginConfig): GeneratedFile {
+    const providers = config.providers || [];
+    const sessionDuration = config.session.duration || 30 * 24 * 60 * 60;
+    const sessionStrategy = (config.session as any).strategy || 'jwt';
     
-    return `import NextAuth from "next-auth";
+    const content = `import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import GoogleProvider from "next-auth/providers/google";
@@ -106,11 +122,11 @@ export const authOptions = {
     signUp: "/auth/signup",
     error: "/auth/error",
   },
-  ${config.enableRateLimiting ? `
+  ${(config.features as any).enableRateLimiting ? `
   // Rate limiting configuration
   // You can implement rate limiting using middleware or external packages
   ` : ''}
-  ${config.enableAuditLogs ? `
+  ${(config.features as any).enableAuditLogs ? `
   // Audit logging configuration
   // You can implement audit logging using middleware or external packages
   ` : ''}
@@ -118,10 +134,11 @@ export const authOptions = {
 
 export default NextAuth(authOptions);
 `;
+    return { path: 'auth/auth.ts', content };
   }
 
-  static generateAuthUtils(): string {
-    return `import { getServerSession } from "next-auth/next";
+  generateAuthUtils(): GeneratedFile {
+    const content = `import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth";
 
 export async function getCurrentUser() {
@@ -156,10 +173,11 @@ export async function hasPermission(permission: string) {
 // Client-side utilities
 export { signIn, signOut, useSession } from "next-auth/react";
 `;
+    return { path: 'auth/auth-utils.ts', content };
   }
 
-  static generateAuthComponents(): string {
-    return `"use client";
+  generateAuthComponents(): GeneratedFile {
+      const content = `"use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -289,10 +307,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   );
 }
 `;
+      return { path: 'auth/auth-components.tsx', content };
   }
 
-  static generateUnifiedIndex(): string {
-    return `/**
+  generateUnifiedIndex(): GeneratedFile {
+      const content = `/**
  * Unified Auth Interface - NextAuth Implementation
  * 
  * This file provides a unified interface for authentication
@@ -340,46 +359,11 @@ export default {
   SessionProvider
 };
 `;
+      return { path: 'auth/index.ts', content };
   }
 
-  static generateEnvConfig(config: NextAuthConfig): string {
-    const providers = config.providers || ['credentials', 'google', 'github'];
-    
-    return `# NextAuth Configuration
-NEXTAUTH_SECRET="${Math.random().toString(36).substring(2, 15)}"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Database
-DATABASE_URL="${config.databaseUrl}"
-
-# OAuth Providers
-${providers.includes('google') ? `
-# Google OAuth
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"` : ''}
-
-${providers.includes('github') ? `
-# GitHub OAuth
-GITHUB_CLIENT_ID="your-github-client-id"
-GITHUB_CLIENT_SECRET="your-github-client-secret"` : ''}
-
-# Session Configuration
-NEXTAUTH_SESSION_MAX_AGE="${config.sessionDuration}"
-REQUIRE_EMAIL_VERIFICATION="${config.requireEmailVerification ? 'true' : 'false'}"
-
-# Features
-ENABLE_OAUTH="${config.enableOAuth ? 'true' : 'false'}"
-ENABLE_CREDENTIALS="${config.enableCredentials ? 'true' : 'false'}"
-ENABLE_MAGIC_LINKS="${config.enableMagicLinks ? 'true' : 'false'}"
-ENABLE_TWO_FACTOR="${config.enableTwoFactor ? 'true' : 'false'}"
-ENABLE_WEBAUTHN="${config.enableWebAuthn ? 'true' : 'false'}"
-ENABLE_RATE_LIMITING="${config.enableRateLimiting ? 'true' : 'false'}"
-ENABLE_AUDIT_LOGS="${config.enableAuditLogs ? 'true' : 'false'}"
-`;
-  }
-
-  static generateDatabaseSchema(): string {
-    return `-- NextAuth Database Schema
+  generateDatabaseSchema(): GeneratedFile {
+      const content = `-- NextAuth Database Schema
 -- This file contains the database schema for NextAuth
 
 CREATE TABLE IF NOT EXISTS users (
@@ -435,10 +419,11 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(session_token);
 CREATE INDEX IF NOT EXISTS idx_verification_tokens_token ON verification_tokens(token);
 `;
+      return { path: 'auth/schema.sql', content };
   }
 
-  static generatePrismaSchema(): string {
-    return `// NextAuth Prisma Schema
+  generatePrismaSchema(): GeneratedFile {
+      const content = `// NextAuth Prisma Schema
 // This file contains the Prisma schema for NextAuth
 
 generator client {
@@ -495,5 +480,26 @@ model VerificationToken {
   @@id([identifier, token])
 }
 `;
+      return { path: 'prisma/schema.prisma', content };
+  }
+
+  generateEnvConfig(config: AuthPluginConfig): Record<string, string> {
+    const envVars: Record<string, string> = {};
+    const providers = config.providers || [];
+    
+    envVars['NEXTAUTH_SECRET'] = Math.random().toString(36).substring(2, 15);
+    envVars['NEXTAUTH_URL'] = "http://localhost:3000";
+    envVars['DATABASE_URL'] = (config as any).databaseUrl; // Placeholder
+
+    if (providers.includes(AuthProvider.GOOGLE)) {
+        envVars['GOOGLE_CLIENT_ID'] = "your-google-client-id";
+        envVars['GOOGLE_CLIENT_SECRET'] = "your-google-client-secret";
+    }
+    if (providers.includes(AuthProvider.GITHUB)) {
+        envVars['GITHUB_CLIENT_ID'] = "your-github-client-id";
+        envVars['GITHUB_CLIENT_SECRET'] = "your-github-client-secret";
+    }
+    
+    return envVars;
   }
 } 

@@ -1,11 +1,10 @@
 /**
- * Shadcn/ui Plugin Index
+ * Shadcn UI Plugin Index
  *
- * Exports all Shadcn/ui plugin components.
+ * Exports all Shadcn UI plugin components.
  */
 export { ShadcnUIPlugin } from './ShadcnUIPlugin.js';
-export type { ShadcnUIConfig } from './ShadcnUISchema.js';
-export { ShadcnUIConfigSchema, ShadcnUIDefaultConfig } from './ShadcnUISchema.js';
+export { ShadcnUISchema } from './ShadcnUISchema.js';
 export { ShadcnUIGenerator } from './ShadcnUIGenerator.js';
 import { ShadcnUIPlugin } from './ShadcnUIPlugin.js';
 export default ShadcnUIPlugin;

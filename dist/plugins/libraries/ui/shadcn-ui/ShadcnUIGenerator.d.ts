@@ -4,13 +4,18 @@
  * Handles all code generation for Shadcn/ui design system integration.
  * Based on: https://ui.shadcn.com/docs/installation
  */
-import { ShadcnUIConfig } from './ShadcnUISchema.js';
+import { UIPluginConfig } from '../../../../types/plugin-interfaces.js';
+export interface GeneratedFile {
+    path: string;
+    content: string;
+}
 export declare class ShadcnUIGenerator {
-    static generateTailwindConfig(config: ShadcnUIConfig): string;
-    static generateCSSVariables(config: ShadcnUIConfig): string;
-    static generateUtilsFile(): string;
-    static generateButtonComponent(): string;
-    static generateCardComponent(): string;
-    static generateUnifiedIndex(): string;
-    static generateEnvConfig(config: ShadcnUIConfig): string;
+    generateAllFiles(config: UIPluginConfig): GeneratedFile[];
+    generateTailwindConfig(config: UIPluginConfig): GeneratedFile;
+    generateCSSVariables(config: UIPluginConfig): GeneratedFile;
+    generateUtilsFile(): GeneratedFile;
+    generateComponentsJson(config: UIPluginConfig): GeneratedFile;
+    generateButtonComponent(): GeneratedFile;
+    generateCardComponent(): GeneratedFile;
+    generateUnifiedIndex(): GeneratedFile;
 }

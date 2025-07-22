@@ -4,12 +4,18 @@
  * Handles all code generation for Prisma ORM integration.
  * Based on: https://www.prisma.io/docs/getting-started
  */
-import { PrismaConfig } from './PrismaSchema.js';
+import { DatabasePluginConfig } from '../../../../types/plugin-interfaces.js';
+export interface GeneratedFile {
+    path: string;
+    content: string;
+}
 export declare class PrismaGenerator {
-    static generatePrismaSchema(config: PrismaConfig): string;
-    static generateSeedFile(): string;
-    static generatePrismaClient(): string;
-    static generateDatabaseUtils(): string;
-    static generateUnifiedIndex(): string;
-    static generateEnvConfig(config: PrismaConfig): string;
+    generateAllFiles(config: DatabasePluginConfig): GeneratedFile[];
+    generatePrismaSchema(config: DatabasePluginConfig): GeneratedFile;
+    generateSeedFile(): GeneratedFile;
+    generatePrismaClient(): GeneratedFile;
+    generateDatabaseUtils(): GeneratedFile;
+    generateUnifiedIndex(): GeneratedFile;
+    generateEnvConfig(config: DatabasePluginConfig): Record<string, string>;
+    generateScripts(config: DatabasePluginConfig): Record<string, string>;
 }

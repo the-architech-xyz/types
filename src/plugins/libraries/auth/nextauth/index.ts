@@ -5,8 +5,7 @@
  */
 
 export { NextAuthPlugin } from './NextAuthPlugin.js';
-export type { NextAuthConfig } from './NextAuthSchema.js';
-export { NextAuthConfigSchema, NextAuthDefaultConfig } from './NextAuthSchema.js';
+export { NextAuthSchema } from './NextAuthSchema.js';
 export { NextAuthGenerator } from './NextAuthGenerator.js';
 
 // Default export

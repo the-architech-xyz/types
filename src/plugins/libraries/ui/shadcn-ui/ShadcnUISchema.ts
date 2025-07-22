@@ -5,121 +5,105 @@
  * Based on: https://ui.shadcn.com/docs/installation
  */
 
-import { ConfigSchema } from '../../../../types/plugin.js';
+import { ParameterSchema, UILibrary, ComponentOption, ThemeOption, StylingOption, ParameterGroup } from '../../../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../../../types/plugin.js';
 
-export interface ShadcnUIConfig {
-  style: 'default' | 'new-york';
-  baseColor: 'slate' | 'gray' | 'zinc' | 'neutral' | 'stone' | 'red' | 'orange' | 'green' | 'blue' | 'yellow' | 'violet';
-  cssVariables: boolean;
-  tailwindCSS: boolean;
-  components: string[];
-  enableAnimations: boolean;
-  enableDarkMode: boolean;
-  enableRTL: boolean;
-  enableCustomCSS: boolean;
-  enableTypeScript: boolean;
-  enableReact: boolean;
-  enableVue: boolean;
-  enableSvelte: boolean;
-  enableAngular: boolean;
-}
+export class ShadcnUISchema {
+  static getParameterSchema(): ParameterSchema {
+    return {
+      category: PluginCategory.DESIGN_SYSTEM,
+      groups: [
+        { id: 'styling', name: 'Styling & Theme', description: 'Configure the look and feel of your application.', order: 1, parameters: ['style', 'baseColor', 'themeMode', 'cssVariables'] },
+        { id: 'components', name: 'Default Components', description: 'Select the initial set of UI components to install.', order: 2, parameters: ['components'] },
+        { id: 'features', name: 'Advanced Features', description: 'Enable extra functionality for your UI.', order: 3, parameters: ['enableAnimations'] },
+      ],
+      parameters: [
+        {
+          id: 'library',
+          name: 'UI Library',
+          type: 'select',
+          description: 'The core UI library to use.',
+          required: true,
+          default: UILibrary.SHADCN_UI,
+          options: [{ value: UILibrary.SHADCN_UI, label: 'Shadcn/UI', recommended: true }],
+          group: 'styling'
+        },
+        {
+          id: 'style',
+          name: 'Style',
+          type: 'select',
+          description: 'Choose between the default and New York styles.',
+          required: true,
+          default: 'default',
+          options: [
+            { value: 'default', label: 'Default', description: 'The default, more rounded style.' },
+            { value: 'new-york', label: 'New York', description: 'A more squared, modern style.' }
+          ],
+          group: 'styling'
+        },
+        {
+          id: 'baseColor',
+          name: 'Base Color',
+          type: 'select',
+          description: 'The base color used for generating the color palette.',
+          required: true,
+          default: 'slate',
+          options: ['slate', 'gray', 'zinc', 'neutral', 'stone'].map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })),
+          group: 'styling'
+        },
+        {
+          id: 'themeMode',
+          name: 'Theme Mode',
+          type: 'select',
+          description: 'Configure light/dark mode support.',
+          required: true,
+          default: ThemeOption.AUTO,
+          options: [
+              { value: ThemeOption.LIGHT, label: 'Light Only' },
+              { value: ThemeOption.DARK, label: 'Dark Only' },
+              { value: ThemeOption.AUTO, label: 'Light & Dark (System)' }
+          ],
+          group: 'styling'
+        },
+        {
+          id: 'cssVariables',
+          name: 'Use CSS Variables',
+          type: 'boolean',
+          description: 'Use CSS variables for theming instead of Tailwind utility classes.',
+          required: true,
+          default: true,
+          group: 'styling'
+        },
+        {
+          id: 'components',
+          name: 'Default Components',
+          type: 'multiselect',
+          description: 'Select the components you want to install by default.',
+          required: false,
+          default: [ComponentOption.BUTTON, ComponentOption.CARD],
+          options: Object.values(ComponentOption).map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })),
+          group: 'components'
+        },
+        {
+          id: 'enableAnimations',
+          name: 'Enable Animations',
+          type: 'boolean',
+          description: 'Include `tailwindcss-animate` for animations.',
+          required: true,
+          default: true,
+          group: 'features'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
+  }
 
-export const ShadcnUIConfigSchema: ConfigSchema = {
-  type: 'object',
-  properties: {
-    style: {
-      type: 'string',
-      enum: ['default', 'new-york'],
-      description: 'Shadcn/ui style variant',
-      default: 'default'
-    },
-    baseColor: {
-      type: 'string',
-      enum: ['slate', 'gray', 'zinc', 'neutral', 'stone', 'red', 'orange', 'green', 'blue', 'yellow', 'violet'],
-      description: 'Base color for the design system',
-      default: 'slate'
-    },
-    cssVariables: {
-      type: 'boolean',
-      description: 'Enable CSS variables for theming',
-      default: true
-    },
-    tailwindCSS: {
-      type: 'boolean',
-      description: 'Enable Tailwind CSS integration',
-      default: true
-    },
-    components: {
-      type: 'array',
-      items: { 
-        type: 'string',
-        description: 'Component name to install'
-      },
-      description: 'Components to install',
-      default: ['button', 'card', 'input', 'label', 'form', 'dialog']
-    },
-    enableAnimations: {
-      type: 'boolean',
-      description: 'Enable animation utilities',
-      default: true
-    },
-    enableDarkMode: {
-      type: 'boolean',
-      description: 'Enable dark mode support',
-      default: true
-    },
-    enableRTL: {
-      type: 'boolean',
-      description: 'Enable RTL support',
-      default: false
-    },
-    enableCustomCSS: {
-      type: 'boolean',
-      description: 'Enable custom CSS utilities',
-      default: true
-    },
-    enableTypeScript: {
-      type: 'boolean',
-      description: 'Enable TypeScript support',
-      default: true
-    },
-    enableReact: {
-      type: 'boolean',
-      description: 'Enable React components',
-      default: true
-    },
-    enableVue: {
-      type: 'boolean',
-      description: 'Enable Vue components',
-      default: false
-    },
-    enableSvelte: {
-      type: 'boolean',
-      description: 'Enable Svelte components',
-      default: false
-    },
-    enableAngular: {
-      type: 'boolean',
-      description: 'Enable Angular components',
-      default: false
-    }
-  },
-  required: ['style', 'baseColor']
-};
+  static getUILibraries(): UILibrary[] {
+    return [UILibrary.SHADCN_UI];
+  }
 
-export const ShadcnUIDefaultConfig: ShadcnUIConfig = {
-  style: 'default',
-  baseColor: 'slate',
-  cssVariables: true,
-  tailwindCSS: true,
-  components: ['button', 'card', 'input', 'label', 'form', 'dialog'],
-  enableAnimations: true,
-  enableDarkMode: true,
-  enableRTL: false,
-  enableCustomCSS: true,
-  enableTypeScript: true,
-  enableReact: true,
-  enableVue: false,
-  enableSvelte: false,
-  enableAngular: false
-}; 
+  static getComponentOptions(): ComponentOption[] {
+    return Object.values(ComponentOption);
+  }
+} 

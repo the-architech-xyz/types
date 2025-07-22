@@ -5,152 +5,101 @@
  * Based on: https://www.prisma.io/docs/getting-started
  */
 
-import { ConfigSchema } from '../../../../types/plugin.js';
+import { ParameterSchema, DatabaseProvider, ORMOption, DatabaseFeature, ParameterGroup } from '../../../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../../../types/plugin.js';
 
-export interface PrismaConfig {
-  databaseUrl: string;
-  provider: 'postgresql' | 'mysql' | 'sqlite' | 'sqlserver' | 'mongodb';
-  enablePrismaStudio: boolean;
-  enableSeeding: boolean;
-  enableMigrations: boolean;
-  enableIntrospection: boolean;
-  enableGenerate: boolean;
-  enableFormat: boolean;
-  enableValidate: boolean;
-  enablePush: boolean;
-  enableDeploy: boolean;
-  enableReset: boolean;
-  enableSeed: boolean;
-  enableStudio: boolean;
-  enableDebug: boolean;
-  enableLogging: boolean;
-  enableMetrics: boolean;
-  enableTelemetry: boolean;
-  enablePreviewFeatures: string[];
-}
+export class PrismaSchema {
+  static getParameterSchema(): ParameterSchema {
+    return {
+      category: PluginCategory.ORM,
+      groups: [
+        { id: 'connection', name: 'Database Connection', description: 'Configure the database connection.', order: 1, parameters: ['provider', 'databaseUrl'] },
+        { id: 'features', name: 'Prisma Features', description: 'Enable or disable core Prisma features.', order: 2, parameters: ['enableMigrations', 'enableSeeding', 'enablePrismaStudio'] },
+        { id: 'advanced', name: 'Advanced Options', description: 'Configure advanced Prisma settings.', order: 3, parameters: ['enablePreviewFeatures', 'enableLogging'] },
+      ],
+      parameters: [
+        {
+          id: 'provider',
+          name: 'Database Provider',
+          type: 'select',
+          description: 'The underlying database provider.',
+          required: true,
+          default: 'postgresql',
+          options: [
+            { value: 'postgresql', label: 'PostgreSQL' },
+            { value: 'mysql', label: 'MySQL' },
+            { value: 'sqlite', label: 'SQLite' },
+            { value: 'sqlserver', label: 'SQL Server' },
+            { value: 'mongodb', label: 'MongoDB' },
+          ],
+          group: 'connection'
+        },
+        {
+          id: 'databaseUrl',
+          name: 'Database URL',
+          type: 'string',
+          description: 'The full connection URL for your database.',
+          required: true,
+          default: 'postgresql://user:password@localhost:5432/myapp',
+          group: 'connection'
+        },
+        {
+          id: 'enableMigrations',
+          name: 'Enable Migrations',
+          type: 'boolean',
+          description: 'Use `prisma migrate` for schema migrations.',
+          required: true,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enableSeeding',
+          name: 'Enable Seeding',
+          type: 'boolean',
+          description: 'Enable database seeding with a `seed.ts` file.',
+          required: true,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enablePrismaStudio',
+          name: 'Enable Prisma Studio',
+          type: 'boolean',
+          description: 'Enable the Prisma Studio GUI for database browsing.',
+          required: true,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enablePreviewFeatures',
+          name: 'Enable Preview Features',
+          type: 'multiselect',
+          description: 'Enable specific preview features in Prisma.',
+          required: false,
+          default: [],
+          options: [
+            { value: 'fullTextSearch', label: 'Full Text Search' },
+            { value: 'fullTextIndex', label: 'Full Text Index' },
+            { value: 'extendedWhereUnique', label: 'Extended Where Unique' }
+          ],
+          group: 'advanced'
+        },
+        {
+          id: 'enableLogging',
+          name: 'Enable Logging',
+          type: 'boolean',
+          description: 'Enable Prisma query logging in development.',
+          required: true,
+          default: true,
+          group: 'advanced'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
+  }
 
-export const PrismaConfigSchema: ConfigSchema = {
-  type: 'object',
-  properties: {
-    databaseUrl: {
-      type: 'string',
-      description: 'Database connection URL',
-      default: 'postgresql://user:password@localhost:5432/myapp'
-    },
-    provider: {
-      type: 'string',
-      enum: ['postgresql', 'mysql', 'sqlite', 'sqlserver', 'mongodb'],
-      description: 'Database provider',
-      default: 'postgresql'
-    },
-    enablePrismaStudio: {
-      type: 'boolean',
-      description: 'Enable Prisma Studio',
-      default: true
-    },
-    enableSeeding: {
-      type: 'boolean',
-      description: 'Enable database seeding',
-      default: true
-    },
-    enableMigrations: {
-      type: 'boolean',
-      description: 'Enable database migrations',
-      default: true
-    },
-    enableIntrospection: {
-      type: 'boolean',
-      description: 'Enable database introspection',
-      default: false
-    },
-    enableGenerate: {
-      type: 'boolean',
-      description: 'Enable Prisma Client generation',
-      default: true
-    },
-    enableFormat: {
-      type: 'boolean',
-      description: 'Enable schema formatting',
-      default: true
-    },
-    enableValidate: {
-      type: 'boolean',
-      description: 'Enable schema validation',
-      default: true
-    },
-    enablePush: {
-      type: 'boolean',
-      description: 'Enable schema push',
-      default: true
-    },
-    enableDeploy: {
-      type: 'boolean',
-      description: 'Enable schema deployment',
-      default: true
-    },
-    enableReset: {
-      type: 'boolean',
-      description: 'Enable database reset',
-      default: false
-    },
-    enableSeed: {
-      type: 'boolean',
-      description: 'Enable database seeding',
-      default: true
-    },
-    enableStudio: {
-      type: 'boolean',
-      description: 'Enable Prisma Studio',
-      default: true
-    },
-    enableDebug: {
-      type: 'boolean',
-      description: 'Enable debug mode',
-      default: false
-    },
-    enableLogging: {
-      type: 'boolean',
-      description: 'Enable logging',
-      default: true
-    },
-    enableMetrics: {
-      type: 'boolean',
-      description: 'Enable metrics',
-      default: true
-    },
-    enableTelemetry: {
-      type: 'boolean',
-      description: 'Enable telemetry',
-      default: true
-    },
-    enablePreviewFeatures: {
-      type: 'array',
-      items: { type: 'string', description: 'Preview feature name' },
-      description: 'Enable preview features',
-      default: ['fullTextSearch', 'fullTextIndex']
-    }
-  },
-  required: ['databaseUrl', 'provider']
-};
-
-export const PrismaDefaultConfig: PrismaConfig = {
-  databaseUrl: 'postgresql://user:password@localhost:5432/myapp',
-  provider: 'postgresql',
-  enablePrismaStudio: true,
-  enableSeeding: true,
-  enableMigrations: true,
-  enableIntrospection: false,
-  enableGenerate: true,
-  enableFormat: true,
-  enableValidate: true,
-  enablePush: true,
-  enableDeploy: true,
-  enableReset: false,
-  enableSeed: true,
-  enableStudio: true,
-  enableDebug: false,
-  enableLogging: true,
-  enableMetrics: true,
-  enableTelemetry: true,
-  enablePreviewFeatures: ['fullTextSearch', 'fullTextIndex']
-}; 
+  static getDatabaseProviders(): DatabaseProvider[] {
+    return [DatabaseProvider.NEON, DatabaseProvider.SUPABASE, DatabaseProvider.MONGODB, DatabaseProvider.PLANETSCALE, DatabaseProvider.LOCAL];
+  }
+} 

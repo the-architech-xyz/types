@@ -5,17 +5,35 @@
  * Based on: https://www.prisma.io/docs/getting-started
  */
 
-import { PrismaConfig } from './PrismaSchema.js';
+import { DatabasePluginConfig } from '../../../../types/plugin-interfaces.js';
+
+export interface GeneratedFile {
+    path: string;
+    content: string;
+}
 
 export class PrismaGenerator {
-  
-  static generatePrismaSchema(config: PrismaConfig): string {
-    const provider = config.provider || 'postgresql';
-    const enablePreviewFeatures = config.enablePreviewFeatures || [];
-    const enableMetrics = config.enableMetrics !== false;
-    const enableLogging = config.enableLogging !== false;
+
+  generateAllFiles(config: DatabasePluginConfig): GeneratedFile[] {
+    const files: GeneratedFile[] = [
+      this.generatePrismaSchema(config),
+      this.generatePrismaClient(),
+      this.generateDatabaseUtils(),
+      this.generateUnifiedIndex(),
+    ];
+
+    if ((config as any).features.seeding) {
+        files.push(this.generateSeedFile());
+    }
     
-    return `// This is your Prisma schema file,
+    return files;
+  }
+
+  generatePrismaSchema(config: DatabasePluginConfig): GeneratedFile {
+    const provider = config.provider;
+    const enablePreviewFeatures = (config.features as any).previewFeatures || [];
+    
+    const content = `// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -104,10 +122,11 @@ model Profile {
   @@map("profiles")
 }
 `;
+    return { path: 'prisma/schema.prisma', content };
   }
 
-  static generateSeedFile(): string {
-    return `import { PrismaClient } from '@prisma/client';
+  generateSeedFile(): GeneratedFile {
+    const content = `import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -174,10 +193,11 @@ main()
     await prisma.$disconnect();
   });
 `;
+    return { path: 'prisma/seed.ts', content };
   }
 
-  static generatePrismaClient(): string {
-    return `import { PrismaClient } from '@prisma/client';
+  generatePrismaClient(): GeneratedFile {
+    const content = `import { PrismaClient } from '@prisma/client';
 
 // PrismaClient is attached to the \`global\` object in development to prevent
 // exhausting your database connection limit.
@@ -200,10 +220,11 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 // Export for use in other files
 export default prisma;
 `;
+    return { path: 'db/client.ts', content };
   }
 
-  static generateDatabaseUtils(): string {
-    return `import { PrismaClient } from '@prisma/client';
+  generateDatabaseUtils(): GeneratedFile {
+    const content = `import { PrismaClient } from '@prisma/client';
 
 // Database utilities for common operations
 export const dbUtils = {
@@ -266,10 +287,11 @@ export const dbUtils = {
 // Re-export prisma client
 export { prisma } from './client.js';
 `;
+    return { path: 'db/utils.ts', content };
   }
 
-  static generateUnifiedIndex(): string {
-    return `/**
+  generateUnifiedIndex(): GeneratedFile {
+    const content = `/**
  * Unified Database Interface - Prisma Implementation
  * 
  * This file provides a unified interface for database operations
@@ -452,19 +474,37 @@ export { prisma } from './client.js';
 export { dbUtils } from './utils.js';
 export type { PrismaClient } from '@prisma/client';
 `;
+    return { path: 'db/index.ts', content };
   }
 
-  static generateEnvConfig(config: PrismaConfig): string {
-    return `# Prisma ORM Configuration
-DATABASE_URL="${config.databaseUrl || 'postgresql://user:password@localhost:5432/myapp'}"
+  generateEnvConfig(config: DatabasePluginConfig): Record<string, string> {
+    const envVars: Record<string, string> = {};
+    if ('connectionString' in config.connection) {
+        envVars['DATABASE_URL'] = config.connection.connectionString;
+    } else if ('projectUrl' in config.connection) {
+        // For providers like Supabase, we might construct a postgresql URL
+        // This is a simplification; a real implementation might need more logic
+        envVars['DATABASE_URL'] = config.connection.projectUrl;
+    }
+    return envVars;
+  }
 
-# Prisma specific settings
-PRISMA_GENERATE_DATAPROXY="${config.enableGenerate ? 'true' : 'false'}"
-PRISMA_CLI_QUERY_ENGINE_TYPE="${config.enableDebug ? 'debug' : 'release'}"
-PRISMA_CLI_QUERY_ENGINE_TYPE_BINARY="${config.enableDebug ? 'debug' : 'release'}"
-PRISMA_HIDE_UPDATE_MESSAGE="${config.enableTelemetry ? 'false' : 'true'}"
-PRISMA_TELEMETRY_DISABLED="${config.enableTelemetry ? 'false' : 'true'}"
-PRISMA_CLI_QUERY_ENGINE_TYPE_BINARY="${config.enableDebug ? 'debug' : 'release'}"
-`;
+  generateScripts(config: DatabasePluginConfig): Record<string, string> {
+    const scripts: Record<string, string> = {
+      'db:generate': 'npx prisma generate',
+      'db:format': 'npx prisma format',
+      'db:validate': 'npx prisma validate',
+    };
+    if ((config as any).features.migrations) {
+      scripts['db:migrate'] = 'npx prisma migrate dev';
+      scripts['db:push'] = 'npx prisma db push';
+    }
+    if ((config as any).features.seeding) {
+      scripts['db:seed'] = 'npx tsx prisma/seed.ts';
+    }
+    if ((config as any).features.prismaStudio) {
+      scripts['db:studio'] = 'npx prisma studio';
+    }
+    return scripts;
   }
 } 

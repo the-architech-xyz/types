@@ -103,14 +103,14 @@ export class PluginSystem {
 
     // UI Plugins
     this.registry.register(new ShadcnUIPlugin());
-    this.registry.register(new ChakraUIPlugin());
+    // this.registry.register(new ChakraUIPlugin()); // TODO: Fix fs-extra import
     this.registry.register(new MuiPlugin());
     this.registry.register(new TamaguiPlugin());
 
     // Database Provider Plugins (Infrastructure)
-    this.registry.register(new NeonPlugin());
-    this.registry.register(new MongoDBPlugin());
-    this.registry.register(new SupabasePlugin());
+    // this.registry.register(new NeonPlugin()); // TODO: Fix fs-extra import
+    // this.registry.register(new MongoDBPlugin()); // TODO: Fix fs-extra import
+    // this.registry.register(new SupabasePlugin()); // TODO: Fix fs-extra import
     // TODO: Add more database providers
     // this.registry.register(new TursoPlugin());
 
@@ -125,26 +125,26 @@ export class PluginSystem {
     this.registry.register(new NextAuthPlugin());
 
     // Deployment Plugins
-    this.registry.register(new RailwayPlugin());
-    this.registry.register(new DockerPlugin());
+    // this.registry.register(new RailwayPlugin()); // TODO: Fix fs-extra import
+    // this.registry.register(new DockerPlugin()); // TODO: Fix fs-extra import
 
     // Email Plugins
-    this.registry.register(new ResendPlugin());
-    this.registry.register(new SendGridPlugin());
+    // this.registry.register(new ResendPlugin()); // TODO: Fix fs-extra import
+    // this.registry.register(new SendGridPlugin()); // TODO: Fix fs-extra import
 
     // Testing Plugins
     this.registry.register(new VitestPlugin());
 
     // Monitoring Plugins
-    this.registry.register(new SentryPlugin());
-    this.registry.register(new GoogleAnalyticsPlugin());
+    // this.registry.register(new SentryPlugin()); // TODO: Fix fs-extra import
+    // this.registry.register(new GoogleAnalyticsPlugin()); // TODO: Fix fs-extra import
 
     // Payment Plugins
-    this.registry.register(new StripePlugin());
-    this.registry.register(new PayPalPlugin());
+    // this.registry.register(new StripePlugin()); // TODO: Fix fs-extra import
+    // this.registry.register(new PayPalPlugin()); // TODO: Fix fs-extra import
 
     // Blockchain Plugins
-    this.registry.register(new EthereumPlugin());
+    // this.registry.register(new EthereumPlugin()); // TODO: Fix fs-extra import
 
     this.logger.info(`Registered ${(this.registry as any).getPluginCount()} plugins`);
   }

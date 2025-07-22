@@ -10,26 +10,22 @@
  * - https://www.prisma.io/docs/concepts/components/prisma-client
  * - https://www.prisma.io/docs/guides/performance-and-optimization
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
-export declare class PrismaPlugin implements IPlugin {
-    private templateService;
-    private runner;
+import { BaseDatabasePlugin } from '../../../base/index.js';
+import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugin.js';
+import { DatabaseProvider, ORMOption, DatabaseFeature, ParameterSchema, UnifiedInterfaceTemplate, ConnectionOption } from '../../../../types/plugin-interfaces.js';
+export declare class PrismaPlugin extends BaseDatabasePlugin {
+    private generator;
     constructor();
     getMetadata(): PluginMetadata;
+    getParameterSchema(): ParameterSchema;
+    getDatabaseProviders(): DatabaseProvider[];
+    getORMOptions(): ORMOption[];
+    getDatabaseFeatures(): DatabaseFeature[];
+    getConnectionOptions(provider: DatabaseProvider): ConnectionOption[];
+    getProviderLabel(provider: DatabaseProvider): string;
+    getProviderDescription(provider: DatabaseProvider): string;
+    getFeatureLabel(feature: DatabaseFeature): string;
+    getFeatureDescription(feature: DatabaseFeature): string;
+    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
     install(context: PluginContext): Promise<PluginResult>;
-    uninstall(context: PluginContext): Promise<PluginResult>;
-    update(context: PluginContext): Promise<PluginResult>;
-    validate(context: PluginContext): Promise<ValidationResult>;
-    getCompatibility(): CompatibilityMatrix;
-    getDependencies(): string[];
-    getConflicts(): string[];
-    getRequirements(): PluginRequirement[];
-    getDefaultConfig(): Record<string, any>;
-    getConfigSchema(): ConfigSchema;
-    private installDependencies;
-    private initializePrismaConfig;
-    private createDatabaseFiles;
-    private generateUnifiedInterfaceFiles;
-    private setupPrismaStudio;
-    private createErrorResult;
 }

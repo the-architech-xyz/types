@@ -9,27 +9,19 @@
  * - https://ui.shadcn.com/docs/components
  * - https://ui.shadcn.com/docs/themes
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
-export declare class ShadcnUIPlugin implements IPlugin {
-    private templateService;
-    private runner;
+import { BaseUIPlugin } from '../../../base/index.js';
+import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugin.js';
+import { UILibrary, ComponentOption, ThemeOption, StylingOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugin-interfaces.js';
+export declare class ShadcnUIPlugin extends BaseUIPlugin {
+    private generator;
     constructor();
     getMetadata(): PluginMetadata;
+    getParameterSchema(): ParameterSchema;
+    getUILibraries(): UILibrary[];
+    getComponentOptions(): ComponentOption[];
+    getThemeOptions(): ThemeOption[];
+    getStylingOptions(): StylingOption[];
+    protected getLibraryLabel(library: UILibrary): string;
+    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
     install(context: PluginContext): Promise<PluginResult>;
-    uninstall(context: PluginContext): Promise<PluginResult>;
-    update(context: PluginContext): Promise<PluginResult>;
-    validate(context: PluginContext): Promise<ValidationResult>;
-    getCompatibility(): CompatibilityMatrix;
-    getDependencies(): string[];
-    getConflicts(): string[];
-    getRequirements(): PluginRequirement[];
-    getDefaultConfig(): Record<string, any>;
-    getConfigSchema(): ConfigSchema;
-    private installDependencies;
-    private createTailwindConfig;
-    private initializeShadcn;
-    private createUIComponents;
-    private createPackageExports;
-    private generateUnifiedInterfaceFiles;
-    private createErrorResult;
 }

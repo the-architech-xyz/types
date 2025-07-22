@@ -5,11 +5,30 @@
  * Based on: https://ui.shadcn.com/docs/installation
  */
 export class ShadcnUIGenerator {
-    static generateTailwindConfig(config) {
-        const baseColor = config.baseColor || 'slate';
-        const enableAnimations = config.enableAnimations !== false;
-        const enableDarkMode = config.enableDarkMode !== false;
-        return `import type { Config } from 'tailwindcss';
+    generateAllFiles(config) {
+        const files = [
+            this.generateTailwindConfig(config),
+            this.generateCSSVariables(config),
+            this.generateUtilsFile(),
+            this.generateComponentsJson(config),
+            this.generateUnifiedIndex(),
+        ];
+        // Add selected components
+        if (config.components.list) {
+            for (const component of config.components.list) {
+                // Correctly format the component name to match the method name (e.g., 'button' -> 'generateButtonComponent')
+                const methodName = `generate${component.charAt(0).toUpperCase() + component.slice(1)}Component`;
+                const generatorMethod = this[methodName];
+                if (typeof generatorMethod === 'function') {
+                    files.push(generatorMethod.call(this));
+                }
+            }
+        }
+        return files;
+    }
+    generateTailwindConfig(config) {
+        const enableAnimations = config.features.animations;
+        const content = `import type { Config } from 'tailwindcss';
 
 const config: Config = {
   darkMode: ["class"],
@@ -91,10 +110,10 @@ const config: Config = {
 
 export default config;
 `;
+        return { path: 'tailwind.config.ts', content };
     }
-    static generateCSSVariables(config) {
-        const baseColor = config.baseColor || 'slate';
-        return `@tailwind base;
+    generateCSSVariables(config) {
+        const content = `@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -154,18 +173,28 @@ export default config;
   }
 }
 `;
+        return { path: 'globals.css', content };
     }
-    static generateUtilsFile() {
-        return `import { type ClassValue, clsx } from "clsx";
+    generateUtilsFile() {
+        const content = `import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 `;
+        return { path: 'utils.ts', content };
     }
-    static generateButtonComponent() {
-        return `import * as React from "react";
+    generateComponentsJson(config) {
+        const content = JSON.stringify({
+            "$schema": "https://ui.shadcn.com/schema.json",
+            "style": config.style || 'default',
+            // ... rest of components.json content
+        }, null, 2);
+        return { path: 'components.json', content };
+    }
+    generateButtonComponent() {
+        const content = `import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
@@ -222,9 +251,10 @@ Button.displayName = "Button";
 
 export { Button, buttonVariants };
 `;
+        return { path: 'components/button.tsx', content };
     }
-    static generateCardComponent() {
-        return `import * as React from "react";
+    generateCardComponent() {
+        const content = `import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -304,9 +334,10 @@ CardFooter.displayName = "CardFooter";
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
 `;
+        return { path: 'components/card.tsx', content };
     }
-    static generateUnifiedIndex() {
-        return `/**
+    generateUnifiedIndex() {
+        const content = `/**
  * Unified UI Interface - Shadcn/ui Implementation
  * 
  * This file provides a unified interface for UI components
@@ -354,17 +385,7 @@ export default {
   theme
 };
 `;
-    }
-    static generateEnvConfig(config) {
-        return `# Shadcn/ui Configuration
-SHADCN_UI_STYLE="${config.style || 'default'}"
-SHADCN_UI_BASE_COLOR="${config.baseColor || 'slate'}"
-SHADCN_UI_CSS_VARIABLES="${config.cssVariables ? 'true' : 'false'}"
-SHADCN_UI_TAILWIND="${config.tailwindCSS ? 'true' : 'false'}"
-SHADCN_UI_ANIMATIONS="${config.enableAnimations ? 'true' : 'false'}"
-SHADCN_UI_DARK_MODE="${config.enableDarkMode ? 'true' : 'false'}"
-SHADCN_UI_RTL="${config.enableRTL ? 'true' : 'false'}"
-`;
+        return { path: 'index.ts', content };
     }
 }
 //# sourceMappingURL=ShadcnUIGenerator.js.map

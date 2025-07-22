@@ -5,8 +5,7 @@
  */
 
 export { BetterAuthPlugin } from './BetterAuthPlugin.js';
-export type { BetterAuthConfig } from './BetterAuthSchema.js';
-export { BetterAuthConfigSchema, BetterAuthDefaultConfig } from './BetterAuthSchema.js';
+export { BetterAuthSchema } from './BetterAuthSchema.js';
 export { BetterAuthGenerator } from './BetterAuthGenerator.js';
 
 // Default export

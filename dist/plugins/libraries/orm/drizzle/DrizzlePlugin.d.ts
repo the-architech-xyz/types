@@ -6,32 +6,22 @@
  * - DrizzleGenerator: File generation logic
  * - DrizzlePlugin: Main plugin class (this file)
  */
-import { BaseDatabasePlugin } from '../../../base/BaseDatabasePlugin.js';
+import { BaseDatabasePlugin } from '../../../base/index.js';
 import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugin.js';
-import { DatabaseProvider, ORMOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugin-interfaces.js';
-import { ValidationResult } from '../../../../types/agent.js';
+import { DatabaseProvider, ORMOption, DatabaseFeature, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugin-interfaces.js';
 export declare class DrizzlePlugin extends BaseDatabasePlugin {
     private generator;
     constructor();
     getMetadata(): PluginMetadata;
     getParameterSchema(): ParameterSchema;
-    getDynamicQuestions(context: PluginContext): any[];
-    validateConfiguration(config: Record<string, any>): ValidationResult;
-    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
     getDatabaseProviders(): DatabaseProvider[];
     getORMOptions(): ORMOption[];
-    getDatabaseFeatures(): string[];
-    getConnectionOptions(provider: DatabaseProvider): any[];
+    getDatabaseFeatures(): DatabaseFeature[];
     getProviderLabel(provider: DatabaseProvider): string;
+    getFeatureLabel(feature: DatabaseFeature): string;
+    getConnectionOptions(provider: DatabaseProvider): any[];
     getProviderDescription(provider: DatabaseProvider): string;
-    getFeatureLabel(feature: string): string;
-    getFeatureDescription(feature: string): string;
+    getFeatureDescription(feature: DatabaseFeature): string;
+    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
     install(context: PluginContext): Promise<PluginResult>;
-    getDependencies(): string[];
-    getDevDependencies(): string[];
-    getCompatibility(): any;
-    getConflicts(): string[];
-    getRequirements(): any[];
-    getDefaultConfig(): Record<string, any>;
-    getConfigSchema(): any;
 }

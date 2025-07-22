@@ -5,15 +5,30 @@
  * Based on: https://better-auth.com/docs
  */
 
-import { BetterAuthConfig } from './BetterAuthSchema.js';
+import { AuthPluginConfig, AuthProvider } from '../../../../types/plugin-interfaces.js';
+
+export interface GeneratedFile {
+    path: string;
+    content: string;
+}
 
 export class BetterAuthGenerator {
   
-  static generateAuthConfig(config: BetterAuthConfig): string {
-    const providers = config.providers || ['credentials', 'google', 'github'];
-    const sessionDuration = config.sessionDuration || 30 * 24 * 60 * 60;
+  generateAllFiles(config: AuthPluginConfig): GeneratedFile[] {
+    return [
+      this.generateAuthConfig(config),
+      this.generateAuthUtils(),
+      this.generateAuthComponents(),
+      this.generateUnifiedIndex(),
+      this.generateDatabaseSchema()
+    ];
+  }
+
+  generateAuthConfig(config: AuthPluginConfig): GeneratedFile {
+    const providers = config.providers || [AuthProvider.CREDENTIALS, AuthProvider.GOOGLE, AuthProvider.GITHUB];
+    const sessionDuration = config.session.duration || 30 * 24 * 60 * 60;
     
-    return `import { BetterAuth } from "better-auth";
+    const content = `import { BetterAuth } from "better-auth";
 import { DrizzleAdapter } from "@better-auth/drizzle-adapter";
 import { db } from "@/lib/db";
 
@@ -26,7 +41,7 @@ export const auth = new BetterAuth({
   providers: [
     ${providers.map(provider => {
       switch (provider) {
-        case 'credentials':
+        case AuthProvider.CREDENTIALS:
           return `{
       id: "credentials",
       type: "credentials",
@@ -39,14 +54,14 @@ export const auth = new BetterAuth({
         return null;
       }
     }`;
-        case 'google':
+        case AuthProvider.GOOGLE:
           return `{
       id: "google",
       type: "oauth",
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }`;
-        case 'github':
+        case AuthProvider.GITHUB:
           return `{
       id: "github",
       type: "oauth",
@@ -79,22 +94,23 @@ export const auth = new BetterAuth({
     signUp: "/auth/signup",
     error: "/auth/error",
   },
-  ${config.enableRateLimiting ? `
+  ${(config.features as any).enableRateLimiting ? `
   rateLimit: {
     max: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
   },` : ''}
-  ${config.enableAuditLogs ? `
+  ${(config.features as any).enableAuditLogs ? `
   auditLogs: {
     enabled: true,
     events: ["login", "logout", "signup", "password_reset"],
   },` : ''}
 });
 `;
+    return { path: 'auth/auth.ts', content };
   }
 
-  static generateAuthUtils(): string {
-    return `import { auth } from "./auth";
+  generateAuthUtils(): GeneratedFile {
+    const content = `import { auth } from "./auth";
 
 export const { handlers, signIn, signOut, getSession } = auth;
 
@@ -127,10 +143,11 @@ export async function hasPermission(permission: string) {
   return true;
 }
 `;
+    return { path: 'auth/auth-utils.ts', content };
   }
 
-  static generateAuthComponents(): string {
-    return `"use client";
+  generateAuthComponents(): GeneratedFile {
+      const content = `"use client";
 
 import { signIn, signOut, getSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -248,10 +265,11 @@ export function UserProfile() {
   );
 }
 `;
+      return { path: 'auth/auth-components.tsx', content };
   }
 
-  static generateUnifiedIndex(): string {
-    return `/**
+  generateUnifiedIndex(): GeneratedFile {
+      const content = `/**
  * Unified Auth Interface - Better Auth Implementation
  * 
  * This file provides a unified interface for authentication
@@ -298,46 +316,11 @@ export default {
   UserProfile
 };
 `;
+      return { path: 'auth/index.ts', content };
   }
 
-  static generateEnvConfig(config: BetterAuthConfig): string {
-    const providers = config.providers || ['credentials', 'google', 'github'];
-    
-    return `# Better Auth Configuration
-BETTER_AUTH_SECRET="${Math.random().toString(36).substring(2, 15)}"
-BETTER_AUTH_URL="http://localhost:3000"
-
-# Database
-DATABASE_URL="${config.databaseUrl}"
-
-# OAuth Providers
-${providers.includes('google') ? `
-# Google OAuth
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"` : ''}
-
-${providers.includes('github') ? `
-# GitHub OAuth
-GITHUB_CLIENT_ID="your-github-client-id"
-GITHUB_CLIENT_SECRET="your-github-client-secret"` : ''}
-
-# Session Configuration
-SESSION_MAX_AGE="${config.sessionDuration}"
-REQUIRE_EMAIL_VERIFICATION="${config.requireEmailVerification ? 'true' : 'false'}"
-
-# Features
-ENABLE_OAUTH="${config.enableOAuth ? 'true' : 'false'}"
-ENABLE_CREDENTIALS="${config.enableCredentials ? 'true' : 'false'}"
-ENABLE_MAGIC_LINKS="${config.enableMagicLinks ? 'true' : 'false'}"
-ENABLE_TWO_FACTOR="${config.enableTwoFactor ? 'true' : 'false'}"
-ENABLE_WEBAUTHN="${config.enableWebAuthn ? 'true' : 'false'}"
-ENABLE_RATE_LIMITING="${config.enableRateLimiting ? 'true' : 'false'}"
-ENABLE_AUDIT_LOGS="${config.enableAuditLogs ? 'true' : 'false'}"
-`;
-  }
-
-  static generateDatabaseSchema(): string {
-    return `-- Better Auth Database Schema
+  generateDatabaseSchema(): GeneratedFile {
+      const content = `-- Better Auth Database Schema
 -- This file contains the database schema for Better Auth
 
 CREATE TABLE IF NOT EXISTS users (
@@ -393,5 +376,29 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(session_token);
 CREATE INDEX IF NOT EXISTS idx_verification_tokens_token ON verification_tokens(token);
 `;
+      return { path: 'auth/schema.sql', content };
+  }
+
+  generateEnvConfig(config: AuthPluginConfig): Record<string, string> {
+    const envVars: Record<string, string> = {};
+    const providers = config.providers || [];
+    
+    envVars['BETTER_AUTH_SECRET'] = Math.random().toString(36).substring(2, 15);
+    envVars['BETTER_AUTH_URL'] = "http://localhost:3000";
+    envVars['DATABASE_URL'] = (config as any).databaseUrl; // Assuming this is passed for now
+
+    if (providers.includes(AuthProvider.GOOGLE)) {
+        envVars['GOOGLE_CLIENT_ID'] = "your-google-client-id";
+        envVars['GOOGLE_CLIENT_SECRET'] = "your-google-client-secret";
+    }
+    if (providers.includes(AuthProvider.GITHUB)) {
+        envVars['GITHUB_CLIENT_ID'] = "your-github-client-id";
+        envVars['GITHUB_CLIENT_SECRET'] = "your-github-client-secret";
+    }
+
+    envVars['SESSION_MAX_AGE'] = String(config.session.duration);
+    envVars['REQUIRE_EMAIL_VERIFICATION'] = String(config.features.emailVerification);
+    
+    return envVars;
   }
 } 

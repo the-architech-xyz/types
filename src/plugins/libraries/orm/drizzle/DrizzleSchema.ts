@@ -5,7 +5,7 @@
  * Separated from the main plugin for better organization.
  */
 
-import { ParameterSchema, DatabaseProvider, ORMOption, DatabaseFeature } from '../../../../types/plugin-interfaces.js';
+import { ParameterSchema, DatabaseProvider, ORMOption, DatabaseFeature, ParameterGroup, ParameterValidationRule, ParameterDependency } from '../../../../types/plugin-interfaces.js';
 import { PluginCategory } from '../../../../types/plugin.js';
 
 export class DrizzleSchema {
@@ -15,10 +15,33 @@ export class DrizzleSchema {
   static getParameterSchema(): ParameterSchema {
     return {
       category: PluginCategory.DATABASE,
+      groups: [
+        { 
+          id: 'connection', 
+          name: 'Connection Details', 
+          description: 'Configure how to connect to your database.', 
+          order: 1,
+          parameters: ['provider', 'connectionString', 'region']
+        },
+        { 
+          id: 'features', 
+          name: 'Optional Features', 
+          description: 'Enable optional database features.', 
+          order: 2,
+          parameters: ['features']
+        },
+        {
+          id: 'orm',
+          name: 'ORM Configuration',
+          description: 'Choose your ORM.',
+          order: 3,
+          parameters: ['ormType']
+        }
+      ],
       parameters: [
         {
           id: 'provider',
-          name: 'provider',
+          name: 'Database Provider',
           type: 'select',
           description: 'Select database provider',
           required: true,
@@ -35,7 +58,7 @@ export class DrizzleSchema {
         },
         {
           id: 'connectionString',
-          name: 'connectionString',
+          name: 'Connection String',
           type: 'string',
           description: 'Database connection string',
           required: true,
@@ -43,15 +66,15 @@ export class DrizzleSchema {
             { parameter: 'provider', operator: 'not_equals', value: DatabaseProvider.LOCAL, action: 'show' }
           ],
           validation: [
-            { type: 'required', message: 'Connection string is required' },
-            { type: 'pattern', value: /^[a-zA-Z0-9+.-]+:\/\/.+/, message: 'Invalid connection string format' }
+            { type: 'required', message: 'Connection string is required.' },
+            { type: 'pattern', value: /^[a-zA-Z0-9+.-]+:\/\/.+/, message: 'Invalid connection string format. It should be a valid URL.' }
           ],
           group: 'connection',
           order: 2
         },
         {
           id: 'region',
-          name: 'region',
+          name: 'Database Region',
           type: 'select',
           description: 'Database region (for Neon)',
           required: false,
@@ -69,7 +92,7 @@ export class DrizzleSchema {
         },
         {
           id: 'features',
-          name: 'features',
+          name: 'Features',
           type: 'multiselect',
           description: 'Select database features',
           required: false,
@@ -79,14 +102,14 @@ export class DrizzleSchema {
             { value: DatabaseFeature.SEEDING, label: 'Seeding', description: 'Database seeding' },
             { value: DatabaseFeature.BACKUP, label: 'Backup', description: 'Automatic backups' },
             { value: DatabaseFeature.CONNECTION_POOLING, label: 'Connection Pooling', description: 'Connection pooling' },
-            { value: DatabaseFeature.SSL, label: 'SSL', description: 'SSL encryption' }
+            { value: DatabaseFeature.SSL, label: 'SSL Connection', description: 'Enable SSL for secure database connections.' }
           ],
           group: 'features',
           order: 4
         },
         {
           id: 'ormType',
-          name: 'ormType',
+          name: 'ORM',
           type: 'select',
           description: 'Select ORM type',
           required: true,
@@ -100,52 +123,8 @@ export class DrizzleSchema {
           order: 5
         }
       ],
-      dependencies: [
-        {
-          parameter: 'connectionString',
-          dependsOn: 'provider',
-          condition: { parameter: 'provider', operator: 'not_equals', value: DatabaseProvider.LOCAL, action: 'require' },
-          message: 'Connection string is required for remote databases'
-        }
-      ],
-      validations: [
-        {
-          parameter: 'provider',
-          rules: [
-            { type: 'required', message: 'Database provider is required' }
-          ]
-        },
-        {
-          parameter: 'connectionString',
-          rules: [
-            { type: 'required', message: 'Connection string is required for remote databases' },
-            { type: 'pattern', value: /^[a-zA-Z0-9+.-]+:\/\/.+/, message: 'Invalid connection string format' }
-          ]
-        }
-      ],
-      groups: [
-        {
-          id: 'connection',
-          name: 'Database Connection',
-          description: 'Configure your database connection',
-          order: 1,
-          parameters: ['provider', 'connectionString', 'region']
-        },
-        {
-          id: 'features',
-          name: 'Database Features',
-          description: 'Select additional database features',
-          order: 2,
-          parameters: ['features']
-        },
-        {
-          id: 'orm',
-          name: 'ORM Configuration',
-          description: 'Configure your ORM settings',
-          order: 3,
-          parameters: ['ormType']
-        }
-      ]
+      dependencies: [],
+      validations: []
     };
   }
 

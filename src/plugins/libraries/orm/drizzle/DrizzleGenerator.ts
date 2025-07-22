@@ -5,356 +5,191 @@
  * Separated from the main plugin for better organization.
  */
 
-import { DatabasePluginConfig, DatabaseProvider, ORMOption, NeonConfig, SupabaseConfig, MongoDBConfig } from '../../../../types/plugin-interfaces.js';
-import { PathResolver } from '../../../base/PathResolver.js';
+import { DatabasePluginConfig, DatabaseProvider, ORMOption, NeonConfig, SupabaseConfig, MongoDBConfig, DatabaseFeature } from '../../../../types/plugin-interfaces.js';
+
+/**
+ * Defines a file artifact to be generated, containing its relative path and content.
+ */
+export interface GeneratedFile {
+    path: string;
+    content: string;
+}
 
 export class DrizzleGenerator {
-  private pathResolver: PathResolver;
-
-  constructor(pathResolver: PathResolver) {
-    this.pathResolver = pathResolver;
-  }
-
   /**
-   * Generate Drizzle configuration file
+   * Generate all necessary files for the Drizzle plugin.
+   * @returns An array of GeneratedFile objects.
    */
-  async generateDrizzleConfig(config: DatabasePluginConfig): Promise<void> {
-    const configPath = this.pathResolver.getConfigPath('drizzle.config.ts');
-    const configContent = this.generateDrizzleConfigContent(config);
-    
-    // Use the base plugin's generateFile method through pathResolver
-    await this.pathResolver.ensureDirectory(configPath);
-    const fs = await import('fs-extra');
-    await fs.writeFile(configPath, configContent, 'utf8');
+  generateAllFiles(config: DatabasePluginConfig): GeneratedFile[] {
+    return [
+      this.generateDrizzleConfig(config),
+      this.generateSchemaFile(config),
+      this.generateConnectionFile(config),
+      this.generateUnifiedInterface(config),
+      this.generateInitialMigration(config)
+    ];
   }
 
   /**
-   * Generate database schema file
+   * Generate Drizzle configuration file content.
    */
-  async generateSchemaFile(config: DatabasePluginConfig): Promise<void> {
-    const schemaPath = this.pathResolver.getSchemaPath();
-    const schemaContent = this.generateSchemaContent(config);
-    
-    await this.pathResolver.ensureDirectory(schemaPath);
-    const fs = await import('fs-extra');
-    await fs.writeFile(schemaPath, schemaContent, 'utf8');
+  generateDrizzleConfig(config: DatabasePluginConfig): GeneratedFile {
+    return {
+        path: 'drizzle.config.ts', // Relative path
+        content: this.generateDrizzleConfigContent(config)
+    };
   }
 
   /**
-   * Generate database connection file
+   * Generate database schema file content.
    */
-  async generateConnectionFile(config: DatabasePluginConfig): Promise<void> {
-    const connectionPath = this.pathResolver.getLibPath('db', 'connection.ts');
-    const connectionContent = this.generateConnectionContent(config);
-    
-    await this.pathResolver.ensureDirectory(connectionPath);
-    const fs = await import('fs-extra');
-    await fs.writeFile(connectionPath, connectionContent, 'utf8');
+  generateSchemaFile(config: DatabasePluginConfig): GeneratedFile {
+    return {
+        path: 'db/schema.ts', // Relative path to be resolved by BasePlugin
+        content: this.generateSchemaContent(config)
+    };
   }
 
   /**
-   * Generate unified interface file
+   * Generate database connection file content.
    */
-  async generateUnifiedInterface(config: DatabasePluginConfig): Promise<void> {
-    const interfacePath = this.pathResolver.getUnifiedInterfacePath('db');
-    const interfaceContent = this.generateUnifiedInterfaceContent(config);
-    
-    await this.pathResolver.ensureDirectory(interfacePath);
-    const fs = await import('fs-extra');
-    await fs.writeFile(interfacePath, interfaceContent, 'utf8');
+  generateConnectionFile(config: DatabasePluginConfig): GeneratedFile {
+    return {
+        path: 'db/connection.ts',
+        content: this.generateConnectionContent(config)
+    };
   }
 
   /**
-   * Generate initial migration
+   * Generate unified interface file content.
    */
-  async generateInitialMigration(config: DatabasePluginConfig): Promise<void> {
-    const migrationDir = this.pathResolver.getMigrationPath('');
-    await this.pathResolver.ensureDirectory(migrationDir);
-    
-    const migrationPath = this.pathResolver.getMigrationPath('0001_initial.ts');
-    const migrationContent = this.generateMigrationContent(config);
-    
-    const fs = await import('fs-extra');
-    await fs.writeFile(migrationPath, migrationContent, 'utf8');
+  generateUnifiedInterface(config: DatabasePluginConfig): GeneratedFile {
+    return {
+        path: 'db/index.ts',
+        content: this.generateUnifiedInterfaceContent(config)
+    };
   }
 
   /**
-   * Generate environment variables
+   * Generate initial migration file content.
+   */
+  generateInitialMigration(config: DatabasePluginConfig): GeneratedFile {
+    return {
+        path: 'db/migrations/0001_initial.ts',
+        content: this.generateMigrationContent(config)
+    };
+  }
+
+  /**
+   * Generate environment variables.
    */
   generateEnvVars(config: DatabasePluginConfig): Record<string, string> {
-    const envVars: Record<string, string> = {};
+      const envVars: Record<string, string> = {};
 
-    // Common database environment variables
-    if ('connectionString' in config.connection) {
-      envVars.DATABASE_URL = config.connection.connectionString || '';
-    }
-    
-    if (config.provider === DatabaseProvider.NEON) {
-      const neonConfig = config as NeonConfig;
-      envVars.NEON_DATABASE_URL = neonConfig.connection.connectionString || '';
-      if (neonConfig.connection.region) {
-        envVars.NEON_REGION = neonConfig.connection.region;
+      // Common database environment variables
+      if ('connectionString' in config.connection) {
+          envVars.DATABASE_URL = config.connection.connectionString || '';
       }
-    }
 
-    if (config.provider === DatabaseProvider.SUPABASE) {
-      const supabaseConfig = config as SupabaseConfig;
-      envVars.SUPABASE_URL = supabaseConfig.connection.projectUrl || '';
-      envVars.SUPABASE_ANON_KEY = supabaseConfig.connection.anonKey || '';
-      envVars.SUPABASE_SERVICE_ROLE_KEY = supabaseConfig.connection.serviceRoleKey || '';
-    }
+      if (config.provider === DatabaseProvider.NEON) {
+          const neonConfig = config as NeonConfig;
+          envVars.NEON_DATABASE_URL = neonConfig.connection.connectionString || '';
+          if (neonConfig.connection.region) {
+              envVars.NEON_REGION = neonConfig.connection.region;
+          }
+      }
 
-    if (config.provider === DatabaseProvider.MONGODB) {
-      const mongoConfig = config as MongoDBConfig;
-      envVars.MONGODB_URI = mongoConfig.connection.connectionString || '';
-      envVars.MONGODB_DATABASE = mongoConfig.connection.databaseName || '';
-    }
+      if (config.provider === DatabaseProvider.SUPABASE) {
+          const supabaseConfig = config as SupabaseConfig;
+          envVars.SUPABASE_DATABASE_URL = supabaseConfig.connection.projectUrl || '';
+          envVars.SUPABASE_ANON_KEY = supabaseConfig.connection.anonKey || '';
+          envVars.SUPABASE_SERVICE_ROLE_KEY = supabaseConfig.connection.serviceRoleKey || '';
+      }
 
-    return envVars;
+      if (config.provider === DatabaseProvider.MONGODB) {
+          const mongoConfig = config as MongoDBConfig;
+          envVars.MONGO_URI = mongoConfig.connection.connectionString || '';
+      }
+
+      return envVars;
   }
 
   /**
-   * Generate package.json scripts
+   * Generate package.json scripts.
    */
   generateScripts(config: DatabasePluginConfig): Record<string, string> {
-    const scripts: Record<string, string> = {};
+      const scripts: Record<string, string> = {};
 
-    // Add migration scripts
-    scripts['db:migrate'] = 'drizzle-kit migrate';
-    scripts['db:generate'] = 'drizzle-kit generate';
-    scripts['db:studio'] = 'drizzle-kit studio';
-    scripts['db:push'] = 'drizzle-kit push';
+      if (config.features && (config.features as any[]).includes(DatabaseFeature.MIGRATIONS)) {
+          scripts['db:migrate'] = 'drizzle-kit migrate';
+          scripts['db:studio'] = 'drizzle-kit studio';
+      }
 
-    // Add database-specific scripts
-    if (config.provider === DatabaseProvider.NEON) {
-      scripts['db:neon:deploy'] = 'drizzle-kit migrate:deploy';
-    }
-
-    if (config.provider === DatabaseProvider.SUPABASE) {
-      scripts['db:supabase:push'] = 'drizzle-kit push:pg';
-    }
-
-    return scripts;
+      return scripts;
   }
 
   // ============================================================================
-  // PRIVATE GENERATION METHODS
+  // PRIVATE CONTENT GENERATION METHODS
   // ============================================================================
 
   private generateDrizzleConfigContent(config: DatabasePluginConfig): string {
-    const driver = this.getDriverForProvider(config.provider);
-    const schemaPath = this.pathResolver.getRelativePath(this.pathResolver.getSchemaPath());
-    const migrationsPath = this.pathResolver.getRelativePath(this.pathResolver.getMigrationPath(''));
-
-    return `import type { Config } from 'drizzle-kit';
-
-export default {
-  schema: '${schemaPath}',
-  out: '${migrationsPath}',
-  driver: '${driver}',
-  dbCredentials: {
-    url: process.env.DATABASE_URL!,
-  },
-  verbose: true,
-  strict: true,
-} satisfies Config;
+    return `import { defineConfig } from 'drizzle-kit';
+export default defineConfig({
+    schema: './src/lib/db/schema.ts',
+    driver: '${this.getDriverForProvider(config.provider)}',
+    dbCredentials: {
+        connectionString: process.env.DATABASE_URL!,
+    },
+    tablesFilter: ['!drizzle__*'],
+});
 `;
   }
 
   private generateSchemaContent(config: DatabasePluginConfig): string {
-    const imports = this.getSchemaImports(config.provider);
-    const tables = this.generateSampleTables(config);
+    return `// Drizzle schema file
+// Generated by The Architech
+${this.getSchemaImports(config.provider)}
 
-    return `${imports}
-
-// Sample schema - customize based on your needs
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  name: varchar('name', { length: 255 }),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
-
-export const posts = pgTable('posts', {
-  id: serial('id').primaryKey(),
-  title: varchar('title', { length: 255 }).notNull(),
-  content: text('content'),
-  authorId: integer('author_id').references(() => users.id),
-  published: boolean('published').default(false),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
-
-${tables}
-
-// Export types
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Post = typeof posts.$inferSelect;
-export type NewPost = typeof posts.$inferInsert;
+${this.generateSampleTables(config)}
 `;
   }
 
   private generateConnectionContent(config: DatabasePluginConfig): string {
-    const imports = this.getConnectionImports(config.provider);
-    const connectionSetup = this.getConnectionSetup(config);
+    return `// Drizzle connection file
+// Generated by The Architech
+${this.getConnectionImports(config.provider)}
 
-    return `${imports}
-
-// Database connection configuration
-export const dbConfig = ${JSON.stringify(config, null, 2)};
-
-// Create database connection
-export const db = ${connectionSetup};
-
-// Export for use in other modules
-export default db;
+${this.getConnectionSetup(config)}
 `;
   }
 
   private generateUnifiedInterfaceContent(config: DatabasePluginConfig): string {
-    return `/**
- * Database Module - Unified Interface
- * 
- * This module provides a unified interface for database operations
- * regardless of the underlying database provider or ORM.
- */
+    return `// Drizzle unified interface
+// Generated by The Architech
 
-// Re-export the database connection
-export { db, dbConfig } from './connection.js';
+export * from './schema';
+export * from './connection';
 
-// Re-export schema types
-export type { User, NewUser, Post, NewPost } from '../schema.js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-// Re-export schema tables
-export { users, posts } from '../schema.js';
-
-// Database client class for type-safe operations
-export class DatabaseClient {
-  constructor(private db: any) {}
-
-  // User operations
-  async createUser(data: NewUser) {
-    return this.db.insert(users).values(data).returning();
-  }
-
-  async getUserById(id: number) {
-    return this.db.select().from(users).where(eq(users.id, id)).limit(1);
-  }
-
-  async getUserByEmail(email: string) {
-    return this.db.select().from(users).where(eq(users.email, email)).limit(1);
-  }
-
-  async updateUser(id: number, data: Partial<NewUser>) {
-    return this.db.update(users).set(data).where(eq(users.id, id)).returning();
-  }
-
-  async deleteUser(id: number) {
-    return this.db.delete(users).where(eq(users.id, id));
-  }
-
-  // Post operations
-  async createPost(data: NewPost) {
-    return this.db.insert(posts).values(data).returning();
-  }
-
-  async getPostById(id: number) {
-    return this.db.select().from(posts).where(eq(posts.id, id)).limit(1);
-  }
-
-  async getPostsByAuthor(authorId: number) {
-    return this.db.select().from(posts).where(eq(posts.authorId, authorId));
-  }
-
-  async updatePost(id: number, data: Partial<NewPost>) {
-    return this.db.update(posts).set(data).where(eq(posts.id, id)).returning();
-  }
-
-  async deletePost(id: number) {
-    return this.db.delete(posts).where(eq(posts.id, id));
-  }
-
-  // Query operations
-  async query(sql: string, params?: any[]) {
-    return this.db.execute(sql, params);
-  }
-
-  async transaction<T>(fn: (tx: any) => Promise<T>): Promise<T> {
-    return this.db.transaction(fn);
-  }
-}
-
-// Create and export database client instance
-export const dbClient = new DatabaseClient(db);
-
-// Utility functions
-export const createConnection = () => db;
-export const closeConnection = async () => {
-  // Implementation depends on the database driver
-  console.log('Connection closed');
+export const runMigrations = async () => {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+        throw new Error('DATABASE_URL is not set');
+    }
+    const migrationClient = postgres(connectionString, { max: 1 });
+    await migrate(drizzle(migrationClient), { migrationsFolder: './src/lib/db/migrations' });
 };
-
-// Constants
-export const DEFAULT_TIMEOUT = 30000; // 30 seconds
-export const MAX_CONNECTIONS = 10;
-
-// Types
-export interface DatabaseConfig {
-  provider: string;
-  connection: any;
-  features: any;
-  orm?: any;
-}
-
-// Re-export everything for convenience
-export * from './connection.js';
-export * from '../schema.js';
 `;
   }
 
   private generateMigrationContent(config: DatabasePluginConfig): string {
-    return `import { sql } from 'drizzle-orm';
+    return `// Drizzle initial migration
+// Generated by The Architech
 
-export async function up(db: any) {
-  // Create users table
-  await db.execute(sql\`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email VARCHAR(255) NOT NULL UNIQUE,
-      name VARCHAR(255),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  \`);
-
-  // Create posts table
-  await db.execute(sql\`
-    CREATE TABLE IF NOT EXISTS posts (
-      id SERIAL PRIMARY KEY,
-      title VARCHAR(255) NOT NULL,
-      content TEXT,
-      author_id INTEGER REFERENCES users(id),
-      published BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  \`);
-
-  // Create indexes
-  await db.execute(sql\`
-    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-    CREATE INDEX IF NOT EXISTS idx_posts_author_id ON posts(author_id);
-    CREATE INDEX IF NOT EXISTS idx_posts_published ON posts(published);
-  \`);
-}
-
-export async function down(db: any) {
-  // Drop tables in reverse order
-  await db.execute(sql\`DROP TABLE IF EXISTS posts;\`);
-  await db.execute(sql\`DROP TABLE IF EXISTS users;\`);
-}
+-- Your initial migration SQL goes here
 `;
   }
 
