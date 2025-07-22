@@ -1,23 +1,17 @@
 /**
  * Auth Agent - Authentication Orchestrator
  *
- * Pure orchestrator for authentication setup using unified interfaces.
+ * The brain for authentication decisions and plugin orchestration.
  * Handles user interaction, decision making, and coordinates auth plugins through unified interfaces.
- * No direct installation logic - delegates everything to plugins through adapters.
+ * Pure orchestrator - no direct installation logic.
  */
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
 import { structureService } from '../core/project/structure-service.js';
 export class AuthAgent extends AbstractAgent {
-    pluginSystem;
-    constructor() {
-        super();
-        this.pluginSystem = PluginSystem.getInstance();
-    }
     // ============================================================================
     // AGENT METADATA
     // ============================================================================
@@ -331,16 +325,27 @@ export class AuthAgent extends AbstractAgent {
         const dbConfig = context.config.database || {};
         return {
             providers: userConfig.providers || ['email'],
-            requireEmailVerification: userConfig.requireEmailVerification !== false,
+            features: {
+                emailVerification: userConfig.features?.emailVerification !== false,
+                passwordReset: userConfig.features?.passwordReset !== false,
+                twoFactor: userConfig.features?.twoFactor || false,
+                sessionManagement: userConfig.features?.sessionManagement !== false,
+                rbac: userConfig.features?.rbac || false,
+                oauthCallbacks: userConfig.features?.oauthCallbacks !== false
+            },
             sessionDuration: userConfig.sessionDuration || 604800,
+            redirectUrl: userConfig.redirectUrl || 'http://localhost:3000',
+            callbackUrl: userConfig.callbackUrl || 'http://localhost:3000/auth/callback',
             databaseUrl: dbConfig.connectionString || dbConfig.databaseUrl || ''
         };
     }
     getPluginConfig(authConfig, pluginName) {
         const config = {
             providers: authConfig.providers,
-            requireEmailVerification: authConfig.requireEmailVerification,
+            features: authConfig.features,
             sessionDuration: authConfig.sessionDuration,
+            redirectUrl: authConfig.redirectUrl,
+            callbackUrl: authConfig.callbackUrl,
             databaseUrl: authConfig.databaseUrl,
             secret: process.env.AUTH_SECRET || 'your-secret-key-here',
             skipDb: false,

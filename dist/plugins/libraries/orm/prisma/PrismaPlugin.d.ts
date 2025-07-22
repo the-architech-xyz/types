@@ -1,0 +1,35 @@
+/**
+ * Prisma ORM Plugin - Updated with Latest Best Practices
+ *
+ * Provides Prisma ORM integration with multiple database providers.
+ * Follows latest Prisma documentation and TypeScript best practices.
+ *
+ * References:
+ * - https://www.prisma.io/docs/getting-started
+ * - https://www.prisma.io/docs/concepts/components/prisma-schema
+ * - https://www.prisma.io/docs/concepts/components/prisma-client
+ * - https://www.prisma.io/docs/guides/performance-and-optimization
+ */
+import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
+export declare class PrismaPlugin implements IPlugin {
+    private templateService;
+    private runner;
+    constructor();
+    getMetadata(): PluginMetadata;
+    install(context: PluginContext): Promise<PluginResult>;
+    uninstall(context: PluginContext): Promise<PluginResult>;
+    update(context: PluginContext): Promise<PluginResult>;
+    validate(context: PluginContext): Promise<ValidationResult>;
+    getCompatibility(): CompatibilityMatrix;
+    getDependencies(): string[];
+    getConflicts(): string[];
+    getRequirements(): PluginRequirement[];
+    getDefaultConfig(): Record<string, any>;
+    getConfigSchema(): ConfigSchema;
+    private installDependencies;
+    private initializePrismaConfig;
+    private createDatabaseFiles;
+    private generateUnifiedInterfaceFiles;
+    private setupPrismaStudio;
+    private createErrorResult;
+}

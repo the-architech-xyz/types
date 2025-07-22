@@ -8,19 +8,14 @@
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
 export declare class UIAgent extends AbstractAgent {
-    private pluginSystem;
-    constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     validate(context: AgentContext): Promise<ValidationResult>;
-    private getPackagePath;
-    private ensurePackageDirectory;
     private selectUIPlugin;
-    private getAvailableUIPlugins;
+    private selectUIPluginExpertMode;
     private getUIConfig;
-    private executeUIPluginUnified;
-    private validateUISetupUnified;
+    private getUIConfigExpertMode;
     private getPluginConfig;
     rollback(context: AgentContext): Promise<void>;
 }

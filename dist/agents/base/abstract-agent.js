@@ -7,11 +7,19 @@
  * - Performance monitoring
  * - State management
  * - Logging
+ * - Expert mode support
+ * - Standardized plugin execution
  */
 import chalk from 'chalk';
 import { performance } from 'perf_hooks';
 import * as crypto from 'crypto';
 import { AGENT_ERROR_CODES, AGENT_INTERFACE_VERSION } from '../../types/agent.js';
+import { ExpertModeService } from '../../core/expert/expert-mode-service.js';
+import { PluginSystem } from '../../core/plugin/plugin-system.js';
+import { ProjectType, TargetPlatform } from '../../types/plugin.js';
+import { structureService } from '../../core/project/structure-service.js';
+import * as fsExtra from 'fs-extra';
+import * as path from 'path';
 // Dynamic import for ora
 let oraModule = null;
 async function getOra() {
@@ -24,6 +32,12 @@ export class AbstractAgent {
     spinner = null;
     startTime = 0;
     currentState = undefined;
+    expertModeService;
+    pluginSystem;
+    constructor() {
+        this.expertModeService = new ExpertModeService();
+        this.pluginSystem = PluginSystem.getInstance();
+    }
     // ============================================================================
     // CORE EXECUTION
     // ============================================================================
@@ -72,7 +86,130 @@ export class AbstractAgent {
         }
     }
     // ============================================================================
-    // LIFECYCLE HOOKS (optional, can be overridden)
+    // EXPERT MODE SUPPORT
+    // ============================================================================
+    /**
+     * Check if expert mode is enabled for this agent
+     */
+    isExpertMode(context) {
+        return this.expertModeService.isExpertMode(context);
+    }
+    /**
+     * Get expert mode options for this agent
+     */
+    getExpertModeOptions(context) {
+        return this.expertModeService.getExpertModeOptions(context);
+    }
+    /**
+     * Get expert questions for a specific category
+     */
+    getExpertQuestions(category) {
+        return this.expertModeService.getExpertQuestions(category);
+    }
+    /**
+     * Validate expert mode choices
+     */
+    validateExpertChoices(choices, category) {
+        return this.expertModeService.validateExpertChoices(choices, category);
+    }
+    /**
+     * Get dynamic questions from a specific plugin
+     */
+    async getPluginDynamicQuestions(pluginId, context) {
+        return this.expertModeService.getDynamicQuestions(pluginId, context);
+    }
+    /**
+     * Get dynamic questions for a category when no specific plugin is selected
+     */
+    getCategoryDynamicQuestions(category) {
+        return this.expertModeService.getCategoryDynamicQuestions(category);
+    }
+    // ============================================================================
+    // STANDARDIZED PLUGIN EXECUTION
+    // ============================================================================
+    /**
+     * Execute a plugin with standardized error handling and validation
+     */
+    async executePlugin(pluginId, context, pluginConfig, installPath) {
+        const plugin = this.pluginSystem.getRegistry().get(pluginId);
+        if (!plugin) {
+            throw new Error(`Plugin not found: ${pluginId}`);
+        }
+        const pluginContext = {
+            ...context,
+            projectPath: installPath || context.projectPath,
+            pluginId,
+            pluginConfig,
+            installedPlugins: [],
+            projectType: ProjectType.NEXTJS,
+            targetPlatform: [TargetPlatform.WEB, TargetPlatform.SERVER]
+        };
+        // Validate plugin
+        context.logger.info(`Validating ${pluginId} plugin...`);
+        const validation = await plugin.validate(pluginContext);
+        if (!validation.valid) {
+            throw new Error(`Plugin validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+        }
+        context.logger.info(`${pluginId} plugin validation passed`);
+        // Execute plugin
+        context.logger.info(`Executing ${pluginId} plugin...`);
+        const result = await plugin.install(pluginContext);
+        if (!result.success) {
+            throw new Error(`${pluginId} plugin execution failed: ${result.errors.map((e) => e.message).join(', ')}`);
+        }
+        context.logger.info(`${pluginId} plugin execution completed successfully`);
+        return result;
+    }
+    /**
+     * Validate unified interface files for a module
+     */
+    async validateUnifiedInterface(moduleName, context, pluginName) {
+        const structure = context.projectStructure;
+        const unifiedPath = structureService.getUnifiedInterfacePath(context.projectPath, structure, moduleName);
+        // Check for unified interface files
+        const requiredFiles = [
+            'index.ts',
+            'utils.ts'
+        ];
+        for (const file of requiredFiles) {
+            const filePath = path.join(unifiedPath, file);
+            if (!await fsExtra.pathExists(filePath)) {
+                throw new Error(`Missing unified interface file: ${filePath}`);
+            }
+        }
+        context.logger.success(`✅ ${pluginName} unified interface validation passed`);
+    }
+    /**
+     * Get selected plugin based on context and user preferences
+     */
+    getSelectedPlugin(context, category) {
+        // Check for template-based selection
+        const pluginSelection = context.state.get('pluginSelection');
+        if (pluginSelection?.[category]?.library || pluginSelection?.[category]?.provider) {
+            return pluginSelection[category].library || pluginSelection[category].provider;
+        }
+        // Check for user preference
+        const userPreference = context.state.get(`${category}Technology`);
+        if (userPreference) {
+            context.logger.info(`Using user preference for ${category}: ${userPreference}`);
+            return userPreference;
+        }
+        // Return default based on category
+        const defaults = {
+            ui: 'shadcn-ui',
+            database: 'drizzle',
+            auth: 'better-auth',
+            deployment: 'vercel',
+            testing: 'vitest',
+            email: 'resend',
+            monitoring: 'sentry',
+            payment: 'stripe',
+            blockchain: 'ethereum'
+        };
+        return defaults[category] || 'default';
+    }
+    // ============================================================================
+    // LIFECYCLE METHODS
     // ============================================================================
     async validate(context) {
         const errors = [];

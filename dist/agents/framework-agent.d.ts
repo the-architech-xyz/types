@@ -7,10 +7,6 @@
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability } from '../types/agent.js';
 export declare class FrameworkAgent extends AbstractAgent {
-    private pluginSystem;
-    private runner;
-    private templateService;
-    constructor();
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;

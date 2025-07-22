@@ -6,19 +6,16 @@
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
-import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
 import { templateService } from '../core/templates/template-service.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { structureService } from '../core/project/structure-service.js';
 export class BaseProjectAgent extends AbstractAgent {
-    pluginSystem;
     runner;
     templateService;
     constructor() {
         super();
-        this.pluginSystem = PluginSystem.getInstance();
         this.runner = new CommandRunner();
         this.templateService = templateService;
     }

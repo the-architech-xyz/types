@@ -6,35 +6,34 @@
  */
 import { PluginRegistryImpl } from './plugin-registry.js';
 import { PluginManagerImpl } from './plugin-manager.js';
-import { ShadcnUIPlugin } from '../../plugins/ui/shadcn-ui.js';
-import { ChakraUIPlugin } from '../../plugins/ui/chakra-ui.js';
-import { MuiPlugin } from '../../plugins/ui/mui.js';
-import { TamaguiPlugin } from '../../plugins/ui/tamagui-plugin.js';
-import { DrizzlePlugin } from '../../plugins/orm/drizzle/drizzle.plugin.js';
-import { PrismaPlugin } from '../../plugins/db/prisma-plugin.js';
-import { TypeORMPlugin } from '../../plugins/db/typeorm-plugin.js';
-import { SupabasePlugin } from '../../plugins/db/supabase-plugin.js';
-import { BetterAuthPlugin } from '../../plugins/auth/better-auth-plugin.js';
-import { NextAuthPlugin } from '../../plugins/auth/nextauth-plugin.js';
-import { NextJSPlugin } from '../../plugins/framework/nextjs-plugin.js';
-import { VercelPlugin } from '../../plugins/deployment/vercel/vercel.plugin.js';
-import { RailwayPlugin } from '../../plugins/deployment/railway/railway.plugin.js';
-import { DockerPlugin } from '../../plugins/deployment/docker/docker.plugin.js';
-import { VitestPlugin } from '../../plugins/testing/vitest/vitest.plugin.js';
-import { ResendPlugin } from '../../plugins/email/resend-plugin.js';
-import { SendGridPlugin } from '../../plugins/email/sendgrid-plugin.js';
-import { NeonPlugin } from '../../plugins/database/neon/neon.plugin.js';
-import { MongoDBPlugin } from '../../plugins/database/mongodb/mongodb.plugin.js';
-import { MongoosePlugin } from '../../plugins/orm/mongoose/mongoose.plugin.js';
+import { ShadcnUIPlugin } from '../../plugins/libraries/ui/shadcn-ui/ShadcnUIPlugin.js';
+import { ChakraUIPlugin } from '../../plugins/libraries/ui/chakra-ui.js';
+import { MuiPlugin } from '../../plugins/libraries/ui/mui.js';
+import { TamaguiPlugin } from '../../plugins/libraries/ui/tamagui-plugin.js';
+import DrizzlePlugin from '../../plugins/libraries/orm/drizzle/index.js';
+import { PrismaPlugin } from '../../plugins/libraries/orm/prisma/PrismaPlugin.js';
+import { SupabasePlugin } from '../../plugins/infrastructure/database/supabase-plugin.js';
+import { BetterAuthPlugin } from '../../plugins/libraries/auth/better-auth-plugin.js';
+import { NextAuthPlugin } from '../../plugins/libraries/auth/nextauth-plugin.js';
+import { NextJSPlugin } from '../../plugins/libraries/framework/nextjs-plugin.js';
+import { VercelPlugin } from '../../plugins/infrastructure/hosting/vercel/vercel.plugin.js';
+import { RailwayPlugin } from '../../plugins/infrastructure/hosting/railway/railway.plugin.js';
+import { DockerPlugin } from '../../plugins/infrastructure/hosting/docker/docker.plugin.js';
+import { VitestPlugin } from '../../plugins/libraries/testing/vitest/vitest.plugin.js';
+import { ResendPlugin } from '../../plugins/services/email/resend-plugin.js';
+import { SendGridPlugin } from '../../plugins/services/email/sendgrid-plugin.js';
+import { NeonPlugin } from '../../plugins/infrastructure/database/neon/neon.plugin.js';
+import { MongoDBPlugin } from '../../plugins/infrastructure/database/mongodb/mongodb.plugin.js';
+import { MongoosePlugin } from '../../plugins/libraries/orm/mongoose/mongoose.plugin.js';
 // Monitoring Plugins
-import { SentryPlugin } from '../../plugins/monitoring/sentry/sentry.plugin.js';
-import { VercelAnalyticsPlugin } from '../../plugins/monitoring/vercel-analytics/vercel-analytics.plugin.js';
-import { GoogleAnalyticsPlugin } from '../../plugins/monitoring/google-analytics/google-analytics.plugin.js';
+import { SentryPlugin } from '../../plugins/infrastructure/monitoring/sentry/sentry.plugin.js';
+import { VercelAnalyticsPlugin } from '../../plugins/infrastructure/monitoring/vercel-analytics/vercel-analytics.plugin.js';
+import { GoogleAnalyticsPlugin } from '../../plugins/infrastructure/monitoring/google-analytics/google-analytics.plugin.js';
 // Payment Plugins
-import { StripePlugin } from '../../plugins/payment/stripe/stripe.plugin.js';
-import { PayPalPlugin } from '../../plugins/payment/paypal/paypal.plugin.js';
+import { StripePlugin } from '../../plugins/services/payment/stripe/stripe.plugin.js';
+import { PayPalPlugin } from '../../plugins/services/payment/paypal/paypal.plugin.js';
 // Blockchain Plugins
-import { EthereumPlugin } from '../../plugins/blockchain/ethereum/ethereum.plugin.js';
+import { EthereumPlugin } from '../../plugins/services/blockchain/ethereum/ethereum.plugin.js';
 // Simple logger implementation for the plugin system
 class SimpleLogger {
     info(message, data) {
@@ -95,11 +94,10 @@ export class PluginSystem {
         this.registry.register(new SupabasePlugin());
         // TODO: Add more database providers
         // this.registry.register(new TursoPlugin());
-        // ORM Library Plugins (Data Access Layer)
+        // ORM Libraries
         this.registry.register(new DrizzlePlugin());
-        this.registry.register(new PrismaPlugin());
-        this.registry.register(new TypeORMPlugin());
         this.registry.register(new MongoosePlugin());
+        this.registry.register(new PrismaPlugin());
         // TODO: Add more ORM libraries
         // Auth Plugins
         this.registry.register(new BetterAuthPlugin());

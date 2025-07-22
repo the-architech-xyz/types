@@ -7,7 +7,6 @@
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentContext, AgentResult, AgentMetadata, AgentCapability } from '../types/agent.js';
 export declare class BaseProjectAgent extends AbstractAgent {
-    private pluginSystem;
     private runner;
     private templateService;
     constructor();

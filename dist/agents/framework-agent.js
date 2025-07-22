@@ -6,20 +6,8 @@
  */
 import { AbstractAgent } from './base/abstract-agent.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
-import { PluginSystem } from '../core/plugin/plugin-system.js';
-import { CommandRunner } from '../core/cli/command-runner.js';
-import { templateService } from '../core/templates/template-service.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
 export class FrameworkAgent extends AbstractAgent {
-    pluginSystem;
-    runner;
-    templateService;
-    constructor() {
-        super();
-        this.pluginSystem = PluginSystem.getInstance();
-        this.runner = new CommandRunner();
-        this.templateService = templateService;
-    }
     // ============================================================================
     // AGENT METADATA
     // ============================================================================

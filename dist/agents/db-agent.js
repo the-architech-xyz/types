@@ -8,16 +8,10 @@
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { ProjectType, TargetPlatform } from '../types/plugin.js';
 import { AgentCategory, CapabilityCategory } from '../types/agent.js';
 import { structureService } from '../core/project/structure-service.js';
 export class DBAgent extends AbstractAgent {
-    pluginSystem;
-    constructor() {
-        super();
-        this.pluginSystem = PluginSystem.getInstance();
-    }
     // ============================================================================
     // AGENT METADATA
     // ============================================================================
