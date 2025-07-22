@@ -21,6 +21,24 @@ export class BasePlugin {
         this.templateService = templateService;
     }
     // ============================================================================
+    // PATH RESOLVER INITIALIZATION
+    // ============================================================================
+    /**
+     * Initialize the path resolver with the given context
+     * This must be called before any file operations
+     */
+    initializePathResolver(context) {
+        this.pathResolver = new PathResolver(context);
+    }
+    /**
+     * Ensure path resolver is initialized
+     */
+    ensurePathResolverInitialized() {
+        if (!this.pathResolver) {
+            throw new Error('PathResolver not initialized. Call initializePathResolver() first.');
+        }
+    }
+    // ============================================================================
     // COMMON ERROR HANDLING
     // ============================================================================
     createErrorResult(message, errors = [], startTime = Date.now()) {
@@ -65,10 +83,8 @@ export class BasePlugin {
     // ============================================================================
     async generateFile(filePath, content) {
         try {
-            // Initialize path resolver if not already done
-            if (!this.pathResolver) {
-                throw new Error('PathResolver not initialized. Call initializePathResolver() first.');
-            }
+            // Ensure path resolver is initialized
+            this.ensurePathResolverInitialized();
             // Ensure directory exists
             await this.pathResolver.ensureDirectory(filePath);
             // Write file
@@ -89,6 +105,7 @@ export class BasePlugin {
     }
     async copyFile(sourcePath, targetPath) {
         try {
+            this.ensurePathResolverInitialized();
             await this.pathResolver.ensureDirectory(targetPath);
             await fsExtra.copy(sourcePath, targetPath);
         }
@@ -117,6 +134,7 @@ export class BasePlugin {
     // ============================================================================
     async installDependencies(dependencies, devDependencies = []) {
         try {
+            this.ensurePathResolverInitialized();
             if (dependencies.length > 0) {
                 await this.runner.install(dependencies, false, this.pathResolver['context'].projectPath);
             }
@@ -130,6 +148,7 @@ export class BasePlugin {
     }
     async addScripts(scripts) {
         try {
+            this.ensurePathResolverInitialized();
             const packageJsonPath = this.pathResolver.getPackageJsonPath();
             const packageJson = await fsExtra.readJson(packageJsonPath);
             packageJson.scripts = {
@@ -221,7 +240,7 @@ export class BasePlugin {
         const startTime = Date.now();
         try {
             // Initialize path resolver
-            this.pathResolver = new PathResolver(context);
+            this.initializePathResolver(context);
             // Validate context
             const validation = await this.validate(context);
             if (!validation.valid) {
@@ -247,9 +266,7 @@ export class BasePlugin {
     // COMMON UTILITIES
     // ============================================================================
     getModuleName() {
-        if (!this.pathResolver) {
-            throw new Error('PathResolver not initialized');
-        }
+        this.ensurePathResolverInitialized();
         // Extract module name from plugin ID
         const pluginId = this.pathResolver['context'].pluginId;
         if (pluginId.includes('drizzle') || pluginId.includes('prisma'))

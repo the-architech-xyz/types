@@ -8,12 +8,12 @@
 import { PluginRegistryImpl } from './plugin-registry.js';
 import { PluginManagerImpl } from './plugin-manager.js';
 import { Logger, LogLevel, LogContext } from '../../types/agent.js';
-import { PluginRegistry, PluginManager } from '../../types/plugin.js';
+import { PluginRegistry, PluginManager, PluginCategory } from '../../types/plugin.js';
 import { ShadcnUIPlugin } from '../../plugins/libraries/ui/shadcn-ui/ShadcnUIPlugin.js';
 import { ChakraUIPlugin } from '../../plugins/libraries/ui/chakra-ui/ChakraUIPlugin.js';
 import { MuiPlugin } from '../../plugins/libraries/ui/mui/MuiPlugin.js';
 import { TamaguiPlugin } from '../../plugins/libraries/ui/tamagui/TamaguiPlugin.js';
-import DrizzlePlugin from '../../plugins/libraries/orm/drizzle/index.js';
+import { DrizzlePlugin } from '../../plugins/libraries/orm/drizzle/DrizzlePlugin.js';
 import { PrismaPlugin } from '../../plugins/libraries/orm/prisma/PrismaPlugin.js';
 import { SupabasePlugin } from '../../plugins/infrastructure/database/supabase/SupabasePlugin.js';
 import { BetterAuthPlugin } from '../../plugins/libraries/auth/better-auth/BetterAuthPlugin.js';
@@ -103,21 +103,21 @@ export class PluginSystem {
 
     // UI Plugins
     this.registry.register(new ShadcnUIPlugin());
-    // this.registry.register(new ChakraUIPlugin()); // TODO: Fix fs-extra import
+    this.registry.register(new ChakraUIPlugin()); // Uncommented to test
     this.registry.register(new MuiPlugin());
     this.registry.register(new TamaguiPlugin());
 
     // Database Provider Plugins (Infrastructure)
-    // this.registry.register(new NeonPlugin()); // TODO: Fix fs-extra import
-    // this.registry.register(new MongoDBPlugin()); // TODO: Fix fs-extra import
-    // this.registry.register(new SupabasePlugin()); // TODO: Fix fs-extra import
+    this.registry.register(new NeonPlugin());
+    this.registry.register(new MongoDBPlugin());
+    this.registry.register(new SupabasePlugin());
     // TODO: Add more database providers
     // this.registry.register(new TursoPlugin());
 
-    // ORM Libraries
+    // ORM Library Plugins (Data Access Layer)
     this.registry.register(new DrizzlePlugin());
-    this.registry.register(new MongoosePlugin());
     this.registry.register(new PrismaPlugin());
+    this.registry.register(new MongoosePlugin());
     // TODO: Add more ORM libraries
 
     // Auth Plugins
@@ -125,26 +125,26 @@ export class PluginSystem {
     this.registry.register(new NextAuthPlugin());
 
     // Deployment Plugins
-    // this.registry.register(new RailwayPlugin()); // TODO: Fix fs-extra import
-    // this.registry.register(new DockerPlugin()); // TODO: Fix fs-extra import
+    this.registry.register(new RailwayPlugin());
+    this.registry.register(new DockerPlugin());
 
     // Email Plugins
-    // this.registry.register(new ResendPlugin()); // TODO: Fix fs-extra import
-    // this.registry.register(new SendGridPlugin()); // TODO: Fix fs-extra import
+    this.registry.register(new ResendPlugin());
+    this.registry.register(new SendGridPlugin());
 
     // Testing Plugins
     this.registry.register(new VitestPlugin());
 
     // Monitoring Plugins
-    // this.registry.register(new SentryPlugin()); // TODO: Fix fs-extra import
-    // this.registry.register(new GoogleAnalyticsPlugin()); // TODO: Fix fs-extra import
+    this.registry.register(new SentryPlugin());
+    this.registry.register(new GoogleAnalyticsPlugin());
 
     // Payment Plugins
-    // this.registry.register(new StripePlugin()); // TODO: Fix fs-extra import
-    // this.registry.register(new PayPalPlugin()); // TODO: Fix fs-extra import
+    this.registry.register(new StripePlugin());
+    this.registry.register(new PayPalPlugin());
 
     // Blockchain Plugins
-    // this.registry.register(new EthereumPlugin()); // TODO: Fix fs-extra import
+    this.registry.register(new EthereumPlugin());
 
     this.logger.info(`Registered ${(this.registry as any).getPluginCount()} plugins`);
   }
@@ -178,9 +178,9 @@ export class PluginSystem {
   }
 
   getPluginsByCategory(category: string): any[] {
-    // Convert string to enum if needed
-    const categoryEnum = category.toUpperCase().replace('-', '_') as any;
-    return this.registry.getByCategory(categoryEnum);
+    // Convert string to enum value (not key)
+    // The enum values are lowercase strings, so we can use them directly
+    return this.registry.getByCategory(category as PluginCategory);
   }
 
   searchPlugins(query: string): any[] {

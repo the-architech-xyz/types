@@ -22,6 +22,15 @@ export declare abstract class BasePlugin implements IPlugin {
     abstract install(context: PluginContext): Promise<PluginResult>;
     abstract getParameterSchema(): any;
     abstract generateUnifiedInterface(config: Record<string, any>): any;
+    /**
+     * Initialize the path resolver with the given context
+     * This must be called before any file operations
+     */
+    protected initializePathResolver(context: PluginContext): void;
+    /**
+     * Ensure path resolver is initialized
+     */
+    protected ensurePathResolverInitialized(): void;
     protected createErrorResult(message: string, errors?: any[], startTime?: number): PluginResult;
     protected createSuccessResult(artifacts?: any[], dependencies?: any[], scripts?: any[], configs?: any[], warnings?: string[], startTime?: number): PluginResult;
     protected handleError(error: any, context: string): ValidationError;

@@ -37,6 +37,27 @@ export abstract class BasePlugin implements IPlugin {
   abstract generateUnifiedInterface(config: Record<string, any>): any;
 
   // ============================================================================
+  // PATH RESOLVER INITIALIZATION
+  // ============================================================================
+
+  /**
+   * Initialize the path resolver with the given context
+   * This must be called before any file operations
+   */
+  protected initializePathResolver(context: PluginContext): void {
+    this.pathResolver = new PathResolver(context);
+  }
+
+  /**
+   * Ensure path resolver is initialized
+   */
+  protected ensurePathResolverInitialized(): void {
+    if (!this.pathResolver) {
+      throw new Error('PathResolver not initialized. Call initializePathResolver() first.');
+    }
+  }
+
+  // ============================================================================
   // COMMON ERROR HANDLING
   // ============================================================================
 
@@ -97,10 +118,8 @@ export abstract class BasePlugin implements IPlugin {
 
   protected async generateFile(filePath: string, content: string): Promise<void> {
     try {
-      // Initialize path resolver if not already done
-      if (!this.pathResolver) {
-        throw new Error('PathResolver not initialized. Call initializePathResolver() first.');
-      }
+      // Ensure path resolver is initialized
+      this.ensurePathResolverInitialized();
 
       // Ensure directory exists
       await this.pathResolver.ensureDirectory(filePath);
@@ -127,6 +146,7 @@ export abstract class BasePlugin implements IPlugin {
 
   protected async copyFile(sourcePath: string, targetPath: string): Promise<void> {
     try {
+      this.ensurePathResolverInitialized();
       await this.pathResolver.ensureDirectory(targetPath);
       await fsExtra.copy(sourcePath, targetPath);
     } catch (error) {
@@ -156,6 +176,7 @@ export abstract class BasePlugin implements IPlugin {
 
   protected async installDependencies(dependencies: string[], devDependencies: string[] = []): Promise<void> {
     try {
+      this.ensurePathResolverInitialized();
       if (dependencies.length > 0) {
         await this.runner.install(dependencies, false, this.pathResolver['context'].projectPath);
       }
@@ -170,6 +191,7 @@ export abstract class BasePlugin implements IPlugin {
 
   protected async addScripts(scripts: Record<string, string>): Promise<void> {
     try {
+      this.ensurePathResolverInitialized();
       const packageJsonPath = this.pathResolver.getPackageJsonPath();
       const packageJson = await fsExtra.readJson(packageJsonPath);
       
@@ -285,7 +307,7 @@ export abstract class BasePlugin implements IPlugin {
     
     try {
       // Initialize path resolver
-      this.pathResolver = new PathResolver(context);
+      this.initializePathResolver(context);
       
       // Validate context
       const validation = await this.validate(context);
@@ -317,9 +339,7 @@ export abstract class BasePlugin implements IPlugin {
   // ============================================================================
 
   protected getModuleName(): string {
-    if (!this.pathResolver) {
-      throw new Error('PathResolver not initialized');
-    }
+    this.ensurePathResolverInitialized();
     
     // Extract module name from plugin ID
     const pluginId = this.pathResolver['context'].pluginId;

@@ -66,6 +66,8 @@ export class ShadcnUIPlugin extends BaseUIPlugin {
         const startTime = Date.now();
         const config = context.pluginConfig;
         try {
+            // Initialize path resolver first
+            this.initializePathResolver(context);
             // 1. Generate all file contents from the "dumb" generator
             const allFiles = this.generator.generateAllFiles(config);
             // 2. Use BasePlugin methods to write files
