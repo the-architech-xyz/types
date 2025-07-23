@@ -4,25 +4,6 @@
 
 The Structure Service is the central nervous system of The Architech CLI, providing a single source of truth for all project structure decisions. It works in conjunction with the Unified Interface System to ensure consistent, technology-agnostic APIs across all project types.
 
-## 🏗️ Architecture Integration
-
-### Core Principles
-
-1. **Centralized Path Resolution**
-   - Consistent paths for single-app and monorepo structures
-   - Integration with new question generation system
-   - Support for plugin file generation
-
-2. **Technology Agnostic Design**
-   - Unified interface files provide consistent APIs
-   - No vendor lock-in through generated contracts
-   - Easy technology switching without code changes
-
-3. **Progressive Structure Management**
-   - Automatic structure detection
-   - Seamless transformation between structures
-   - Context-aware path resolution
-
 ## Structure Service
 
 ### Purpose
@@ -32,7 +13,6 @@ The Structure Service provides:
 - **Structure Detection**: Automatic detection of existing project structures
 - **Structure Transformation**: Converting between single-app and monorepo structures
 - **Unified Interface Paths**: Standardized locations for generated unified interface files
-- **Plugin Integration**: Seamless integration with new plugin architecture
 
 ### Core Concepts
 
@@ -119,9 +99,9 @@ getPaths(projectPath: string, structure: StructureInfo): PathInfo {
     paths.app = path.join(paths.src, 'app');
     paths.components = path.join(paths.src, 'components');
     paths.lib = path.join(paths.src, 'lib');
-    paths.types = path.join(paths.src, 'types');
+    paths.types = path.join(projectPath, 'packages', 'types');
     paths.public = path.join(projectPath, 'apps', 'web', 'public');
-    paths.config = path.join(projectPath, 'apps', 'web');
+    paths.config = path.join(projectPath, 'packages', 'config');
     
     // Package paths
     paths.packages = {
@@ -145,79 +125,14 @@ getPaths(projectPath: string, structure: StructureInfo): PathInfo {
     paths.lib = path.join(paths.src, 'lib');
     paths.types = path.join(paths.src, 'types');
     paths.public = path.join(projectPath, 'public');
-    paths.config = projectPath;
+    paths.config = path.join(projectPath, 'config');
   }
 
   return paths;
 }
 ```
 
-## 🔄 Integration with New Architecture
-
-### Question System Integration
-
-The Structure Service integrates with the new question generation system:
-
-```typescript
-export class ProgressiveFlow {
-  private structureService: StructureService;
-
-  async execute(userInput: string, strategy: BaseQuestionStrategy): Promise<FlowResult> {
-    // 1. Analyze project context
-    const context = strategy.analyzeContext(userInput);
-    
-    // 2. Determine project structure based on context
-    const structureInfo = await this.structureService.detectStructure(context.projectPath);
-    
-    // 3. Get recommendations based on structure
-    const recommendations = this.getRecommendations(context, structureInfo);
-    
-    // 4. Generate questions with structure context
-    const questions = strategy.generateQuestions(context, structureInfo);
-    
-    // 5. Build configuration with structure paths
-    const config = await this.buildConfiguration(answers, structureInfo);
-    
-    return { context, recommendations, questions, config };
-  }
-}
-```
-
-### Plugin Integration
-
-Plugins use the Structure Service for consistent file generation:
-
-```typescript
-export class BasePlugin {
-  protected pathResolver!: PathResolver;
-
-  protected initializePathResolver(context: PluginContext): void {
-    this.pathResolver = new PathResolver(context);
-  }
-
-  protected async generateFile(filePath: string, content: string): Promise<void> {
-    await this.pathResolver.generateFile(filePath, content);
-  }
-
-  protected async generateUnifiedInterface(
-    category: string, 
-    template: UnifiedInterfaceTemplate,
-    context: PluginContext
-  ): Promise<void> {
-    const paths = context.pathResolver.getPaths();
-    const libPath = paths.lib;
-    const categoryPath = path.join(libPath, category);
-    
-    // Generate unified interface file
-    await this.generateFile(
-      path.join(categoryPath, 'index.ts'),
-      this.renderUnifiedInterface(template)
-    );
-  }
-}
-```
-
-## 🏗️ Unified Interface System
+## Unified Interface System
 
 ### Overview
 
@@ -311,85 +226,134 @@ export class BetterAuthPlugin extends BasePlugin {
 }
 ```
 
-## 📁 Project Structures
+## Integration with New Architecture
+
+### Agent Integration
+
+The structure service integrates with the new question generation system:
+
+```typescript
+export class OrchestratorAgent {
+  private structureService: StructureService;
+
+  async execute(context: AgentContext): Promise<AgentResult> {
+    // 1. Analyze project context
+    const projectContext = this.analyzeProjectContext(context.userInput);
+    
+    // 2. Determine project structure
+    const structureInfo = await this.structureService.detectStructure(context.projectPath);
+    
+    // 3. Get question strategy
+    const strategy = this.getQuestionStrategy(projectContext.type);
+    
+    // 4. Execute question flow
+    const flowResult = await this.progressiveFlow.execute(context.userInput, strategy);
+    
+    // 5. Generate project with unified interfaces
+    await this.generateProject(flowResult.config, structureInfo);
+  }
+
+  private async generateProject(config: Record<string, any>, structure: StructureInfo): Promise<void> {
+    const paths = this.structureService.getPaths(this.projectPath, structure);
+    
+    // Generate unified interface files
+    for (const plugin of this.selectedPlugins) {
+      const unifiedInterface = plugin.generateUnifiedInterface(config);
+      await this.generateUnifiedInterfaceFile(unifiedInterface, paths);
+    }
+  }
+}
+```
+
+### Plugin Integration
+
+Plugins use the structure service for path resolution:
+
+```typescript
+export class BasePlugin {
+  protected pathResolver!: PathResolver;
+
+  protected initializePathResolver(context: PluginContext): void {
+    this.pathResolver = new PathResolver(context);
+  }
+
+  protected async generateUnifiedInterfaceFile(
+    template: UnifiedInterfaceTemplate, 
+    paths: PathInfo
+  ): Promise<void> {
+    const libPath = paths.lib;
+    const categoryPath = path.join(libPath, template.category.toLowerCase());
+    
+    await this.pathResolver.generateFile(
+      path.join(categoryPath, 'index.ts'),
+      this.generateInterfaceCode(template)
+    );
+  }
+}
+```
+
+## Project Structures
 
 ### Single App Structure
+
+For rapid prototyping and simple applications:
 
 ```
 my-app/
 ├── src/
-│   ├── app/                 # Next.js App Router
-│   │   ├── globals.css      # Global styles
-│   │   ├── layout.tsx       # Root layout
-│   │   └── page.tsx         # Home page
-│   ├── components/
-│   │   └── ui/             # UI components
-│   ├── lib/
-│   │   ├── auth/           # Unified auth interface
-│   │   │   └── index.ts    # Generated auth API
-│   │   ├── ui/             # Unified UI interface
-│   │   │   └── index.ts    # Generated UI API
-│   │   ├── db/             # Unified database interface
-│   │   │   └── index.ts    # Generated database API
-│   │   └── utils.ts        # Utility functions
-│   └── types/              # TypeScript definitions
-├── public/                 # Static assets
-├── .env.example           # Environment template
-├── next.config.js         # Next.js configuration
-├── tailwind.config.js     # Tailwind CSS configuration
-├── tsconfig.json          # TypeScript configuration
-└── package.json           # Dependencies & scripts
+│   ├── app/              # Next.js App Router
+│   ├── components/       # React components
+│   ├── lib/             # Unified interfaces
+│   │   ├── auth/
+│   │   │   └── index.ts # Auth interface
+│   │   ├── db/
+│   │   │   └── index.ts # Database interface
+│   │   └── ui/
+│   │       └── index.ts # UI interface
+│   └── types/           # TypeScript types
+├── public/              # Static assets
+├── package.json
+├── next.config.js
+└── tsconfig.json
 ```
 
 ### Monorepo Structure
 
+For enterprise applications and teams:
+
 ```
 my-enterprise/
 ├── apps/
-│   ├── web/              # Main web application
+│   ├── web/             # Main web application
 │   │   ├── src/
 │   │   │   ├── app/
 │   │   │   ├── components/
-│   │   │   └── lib/
-│   │   │       ├── auth/  # Unified auth interface
-│   │   │       ├── ui/    # Unified UI interface
-│   │   │       └── db/    # Unified database interface
-│   │   ├── package.json
-│   │   └── next.config.js
-│   ├── admin/            # Admin dashboard
-│   │   ├── src/
-│   │   ├── package.json
-│   │   └── next.config.js
-│   └── api/              # Backend API
-│       ├── src/
-│       ├── package.json
-│       └── next.config.js
+│   │   │   └── lib/     # App-specific interfaces
+│   │   └── package.json
+│   ├── admin/           # Admin dashboard
+│   └── api/             # Backend API
 ├── packages/
-│   ├── ui/               # Shared UI components
+│   ├── ui/              # Shared UI components
 │   │   ├── src/
-│   │   ├── package.json
-│   │   └── index.ts      # Package exports
-│   ├── database/         # Database schemas and utilities
+│   │   └── package.json
+│   ├── db/              # Database schemas
 │   │   ├── src/
-│   │   ├── package.json
-│   │   └── index.ts      # Package exports
-│   ├── auth/             # Authentication utilities
+│   │   └── package.json
+│   ├── auth/            # Auth utilities
 │   │   ├── src/
-│   │   ├── package.json
-│   │   └── index.ts      # Package exports
-│   └── config/           # Shared configuration
+│   │   └── package.json
+│   └── config/          # Shared configuration
 │       ├── src/
-│       ├── package.json
-│       └── index.ts      # Package exports
-├── turbo.json            # Turborepo configuration
-└── package.json          # Root package.json
+│       └── package.json
+├── turbo.json           # Turborepo configuration
+└── package.json         # Root package.json
 ```
 
-## 🔧 Path Resolver
+## Path Resolution
 
-### Core Functionality
+### PathResolver Class
 
-The Path Resolver provides consistent file path management:
+The PathResolver handles file generation with proper path resolution:
 
 ```typescript
 export class PathResolver {
@@ -398,7 +362,7 @@ export class PathResolver {
 
   constructor(context: PluginContext) {
     this.context = context;
-    this.paths = this.getPaths();
+    this.paths = context.structureService.getPaths(context.projectPath, context.structureInfo);
   }
 
   async generateFile(filePath: string, content: string): Promise<void> {
@@ -408,7 +372,7 @@ export class PathResolver {
     // Ensure directory exists
     await fsExtra.ensureDir(dir);
     
-    // Write file
+    // Generate file
     await fsExtra.writeFile(fullPath, content, 'utf8');
   }
 
@@ -417,208 +381,111 @@ export class PathResolver {
     await fsExtra.ensureDir(fullPath);
   }
 
-  getPaths(): PathInfo {
-    return this.context.structureService.getPaths(
-      this.context.projectPath,
-      this.context.structureInfo
-    );
+  getUnifiedInterfacePath(category: string): string {
+    return path.join(this.paths.lib, category.toLowerCase());
   }
 
-  resolvePath(relativePath: string): string {
-    return path.join(this.context.projectPath, relativePath);
+  getComponentPath(): string {
+    return this.paths.components;
+  }
+
+  getAppPath(): string {
+    return this.paths.app;
   }
 }
 ```
 
-### Usage Examples
+## Configuration Management
+
+### Environment Variables
+
+The structure service manages environment variable templates:
 
 ```typescript
-// Generate unified interface file
-await this.pathResolver.generateFile(
-  'src/lib/auth/index.ts',
-  this.generateAuthInterface()
-);
+export class EnvironmentManager {
+  generateEnvTemplate(config: Record<string, any>): string {
+    const template = `
+# Database Configuration
+DATABASE_URL="${config.database?.connectionString || 'your-database-url'}"
 
-// Generate component file
-await this.pathResolver.generateFile(
-  'src/components/ui/button.tsx',
-  this.generateButtonComponent()
-);
+# Authentication
+AUTH_SECRET="${config.auth?.secret || 'your-auth-secret'}"
 
-// Generate configuration file
-await this.pathResolver.generateFile(
-  'drizzle.config.ts',
-  this.generateDrizzleConfig()
-);
-```
+# Payment Processing
+STRIPE_SECRET_KEY="${config.payments?.stripeSecret || 'your-stripe-secret-key'}"
+STRIPE_PUBLISHABLE_KEY="${config.payments?.stripePublishable || 'your-stripe-publishable-key'}"
 
-## 🚀 Structure Transformation
+# Email Service
+RESEND_API_KEY="${config.email?.resendApiKey || 'your-resend-api-key'}"
 
-### Single App to Monorepo
+# Application
+NEXT_PUBLIC_APP_URL="${config.app?.url || 'http://localhost:3000'}"
+`;
 
-Transform a single app project to a monorepo structure:
-
-```typescript
-async transformToMonorepo(projectPath: string): Promise<void> {
-  const structureInfo = await this.detectStructure(projectPath);
-  
-  if (structureInfo.isMonorepo) {
-    throw new Error('Project is already a monorepo');
+    return template.trim();
   }
-
-  // Create monorepo structure
-  await this.createMonorepoStructure(projectPath);
-  
-  // Move existing code to apps/web
-  await this.moveToAppsWeb(projectPath);
-  
-  // Extract shared packages
-  await this.extractSharedPackages(projectPath);
-  
-  // Update configuration files
-  await this.updateMonorepoConfig(projectPath);
 }
 ```
 
-### Monorepo to Single App
+### Package.json Management
 
-Transform a monorepo back to a single app:
-
-```typescript
-async transformToSingleApp(projectPath: string): Promise<void> {
-  const structureInfo = await this.detectStructure(projectPath);
-  
-  if (structureInfo.isSingleApp) {
-    throw new Error('Project is already a single app');
-  }
-
-  // Merge apps/web back to root
-  await this.mergeFromAppsWeb(projectPath);
-  
-  // Merge shared packages
-  await this.mergeSharedPackages(projectPath);
-  
-  // Update configuration files
-  await this.updateSingleAppConfig(projectPath);
-}
-```
-
-## 🔄 Integration with Question System
-
-### Structure-Aware Questions
-
-The question system uses structure information to provide context-aware questions:
+The service manages package.json files for different structures:
 
 ```typescript
-export class EcommerceStrategy extends BaseQuestionStrategy {
-  protected getProjectQuestions(context: ProjectContext): Question[] {
-    const questions: Question[] = [];
-    
-    // Add structure-specific questions
-    if (context.structureInfo.isMonorepo) {
-      questions.push({
-        id: 'monorepoApps',
-        type: 'multiselect',
-        name: 'monorepoApps',
-        message: 'Which applications do you need in your monorepo?',
-        choices: [
-          { name: 'Web Application', value: 'web' },
-          { name: 'Admin Dashboard', value: 'admin' },
-          { name: 'API Service', value: 'api' },
-          { name: 'Mobile App', value: 'mobile' }
-        ],
-        default: ['web']
-      });
+export class PackageManager {
+  generateRootPackageJson(projectName: string, structure: StructureInfo): any {
+    if (structure.isMonorepo) {
+      return {
+        name: projectName,
+        version: '0.1.0',
+        private: true,
+        workspaces: ['apps/*', 'packages/*'],
+        scripts: {
+          build: 'turbo run build',
+          dev: 'turbo run dev',
+          lint: 'turbo run lint',
+          test: 'turbo run test'
+        },
+        devDependencies: {
+          turbo: '^1.10.0'
+        }
+      };
+    } else {
+      return {
+        name: projectName,
+        version: '0.1.0',
+        private: true,
+        scripts: {
+          dev: 'next dev',
+          build: 'next build',
+          start: 'next start',
+          lint: 'next lint'
+        }
+      };
     }
-    
-    return questions;
   }
 }
 ```
 
-### Structure-Based Recommendations
+## Best Practices
 
-Recommendations adapt based on project structure:
+### Structure Selection
 
-```typescript
-export class RecommendationEngine {
-  getRecommendations(context: ProjectContext): RecommendationSet {
-    const recommendations: RecommendationSet = {
-      database: this.getDatabaseRecommendation(context),
-      auth: this.getAuthRecommendation(context),
-      ui: this.getUIRecommendation(context),
-      payment: this.getPaymentRecommendation(context),
-      email: this.getEmailRecommendation(context)
-    };
+1. **Single App**: Use for rapid prototyping, MVPs, and simple applications
+2. **Monorepo**: Use for enterprise applications, teams, and complex projects
 
-    // Adjust recommendations based on structure
-    if (context.structureInfo.isMonorepo) {
-      recommendations.database.confidence += 0.1; // Prefer shared database
-      recommendations.auth.confidence += 0.1; // Prefer shared auth
-    }
+### Path Management
 
-    return recommendations;
-  }
-}
-```
+1. **Use PathResolver**: Always use the PathResolver for file generation
+2. **Respect Structure**: Follow the established structure patterns
+3. **Unified Interfaces**: Place all unified interfaces in `src/lib/`
 
-## 📊 Benefits
+### Configuration
 
-### ✅ Advantages
-
-1. **Consistent Paths**
-   - Same API regardless of structure
-   - Predictable file locations
-   - Easy to understand and maintain
-
-2. **Technology Agnostic**
-   - No vendor lock-in
-   - Easy technology switching
-   - Consistent APIs across technologies
-
-3. **Scalable Architecture**
-   - Seamless structure transformation
-   - Progressive enhancement
-   - Enterprise-ready patterns
-
-4. **Developer Experience**
-   - Clear project organization
-   - Intuitive file structure
-   - Easy navigation and understanding
-
-### 📈 Complexity Management
-
-| Aspect | Old System | New System | Improvement |
-|--------|------------|------------|-------------|
-| **Path Management** | Manual | Automated | 90% |
-| **Structure Detection** | None | Automatic | 100% |
-| **Technology Lock-in** | High | None | 100% |
-| **Consistency** | Low | High | 95% |
-
-## 🚀 Future Enhancements
-
-### Planned Improvements
-
-1. **Advanced Structure Detection**
-   - Machine learning for structure analysis
-   - Automatic optimization suggestions
-   - Performance-based recommendations
-
-2. **Enhanced Transformations**
-   - Incremental structure changes
-   - Conflict resolution
-   - Rollback capabilities
-
-3. **Intelligent Path Management**
-   - Context-aware path suggestions
-   - Automatic path optimization
-   - Performance monitoring
-
-4. **Advanced Unified Interfaces**
-   - Type-safe API generation
-   - Runtime validation
-   - Performance optimization
+1. **Environment Variables**: Use templates for consistent configuration
+2. **Package Management**: Let the service handle package.json generation
+3. **TypeScript**: Ensure proper TypeScript configuration for each structure
 
 ---
 
-*This documentation covers the Structure Service and Unified Interface System. For question generation, see [Question Generation System](./question-generation-system.md).* 
+*This documentation covers the Structure Service and Unified Interface System. For plugin development, see [Plugin Development Guide](./plugin-development.md).* 

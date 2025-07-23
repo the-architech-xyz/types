@@ -99,354 +99,224 @@ Questions are asked progressively based on:
 - User expertise level
 - Technology dependencies
 
-### 📋 Example Question Flow
+### Example Question Flow
 
-#### E-commerce Project
 ```
-1. "I want to build an e-commerce store for electronics"
-   ↓
-2. Approach: Guided (recommended)
-   ↓
-3. Recommendations:
+User Input: "I want to build an e-commerce store for electronics"
+
+1. Context Analysis:
+   - Project Type: ecommerce
+   - Expertise: intermediate
+   - Features: payments, inventory, shipping
+
+2. Approach Selection:
+   - Guided (recommended) vs Selective
+
+3. Technology Recommendations:
    - Database: Drizzle + Neon (TypeScript-first, excellent performance)
    - Auth: Better Auth (modern, secure)
    - UI: Shadcn UI (beautiful, accessible)
    - Payments: Stripe (industry standard)
-   ↓
-4. Customize recommendations:
-   - Change database to Supabase? [No]
-   - Change auth to NextAuth? [No]
-   - Change UI to MUI? [No]
-   - Change payments to PayPal? [Yes]
-   ↓
-5. E-commerce specific questions:
-   - Business type: B2C
-   - Payment methods: Stripe, PayPal
-   - Inventory management: Yes
-   - Order processing: Automated
-   ↓
-6. Configuration details:
-   - Database connection string
-   - Stripe API keys
-   - Email service setup
-```
 
-#### Blog Project
-```
-1. "I want to build a blog platform"
-   ↓
-2. Approach: Guided
-   ↓
-3. Recommendations:
-   - Database: Drizzle + Neon
-   - Auth: Better Auth
-   - UI: Shadcn UI
-   - Email: Resend (modern email API)
-   ↓
-4. Blog specific questions:
-   - Content management: Markdown
-   - Comments system: Yes
-   - Newsletter integration: Yes
-   - SEO requirements: Advanced
-   ↓
-5. Configuration details:
-   - Database setup
-   - Email service configuration
-   - SEO optimization settings
+4. Progressive Questions:
+   - Business type (B2B, B2C, marketplace)
+   - Payment methods (Stripe, PayPal, etc.)
+   - Inventory management
+   - Order processing
+   - Shipping options
 ```
 
 ## Project Types
 
-### Quick Prototype (Default)
+### E-commerce Projects
 
-Single application structure for rapid development:
-
-```bash
-architech create my-app --project-type quick-prototype
-```
-
-**Features:**
-- Single application structure
-- Next.js 14 with App Router
-- TypeScript support
-- Tailwind CSS integration
-- ESLint configuration
-- Optimized build setup
-
-### E-commerce
-
-Complete e-commerce solution with all necessary features:
-
-```bash
-architech create my-store --project-type ecommerce
-```
+**Best for:** Online stores, marketplaces, retail applications
 
 **Features:**
 - Product catalog management
 - Shopping cart functionality
-- Payment processing (Stripe, PayPal)
+- Payment processing
 - Order management
 - Inventory tracking
-- User authentication
-- Admin dashboard
+- Shipping integration
 
-### Blog Platform
+**Recommended Stack:**
+- Database: Drizzle + Neon
+- Auth: Better Auth
+- UI: Shadcn UI
+- Payments: Stripe
+- Email: Resend
 
-Content management system for publishing:
+### Blog Projects
 
-```bash
-architech create my-blog --project-type blog
-```
+**Best for:** Content management, publishing, media sites
 
 **Features:**
-- Markdown content management
-- Comment system
+- Content management system
+- Comments and discussions
 - Newsletter integration
 - SEO optimization
 - Social sharing
-- Analytics integration
-- Author management
+- Analytics
 
-### Dashboard Application
+**Recommended Stack:**
+- Database: Drizzle + Neon
+- Auth: Better Auth
+- UI: Shadcn UI
+- Email: Resend
+- CMS: Custom or headless
 
-Data visualization and analytics platform:
+### Dashboard Projects
 
-```bash
-architech create my-dashboard --project-type dashboard
-```
+**Best for:** Admin panels, analytics, business intelligence
 
 **Features:**
-- Data visualization components
-- Chart libraries integration
-- Real-time data updates
-- User role management
+- Data visualization
+- User management
+- Role-based access
+- Real-time updates
 - Export capabilities
-- Custom widgets
-- Performance monitoring
+- Advanced filtering
 
-### API Service
+**Recommended Stack:**
+- Database: Prisma + Supabase
+- Auth: Clerk
+- UI: MUI
+- Email: Resend
+- Charts: Recharts or Chart.js
 
-Backend API development:
+### API Projects
 
-```bash
-architech create my-api --project-type api
-```
+**Best for:** Backend services, microservices, APIs
 
 **Features:**
-- RESTful API structure
-- Database integration
+- RESTful API endpoints
 - Authentication middleware
 - Rate limiting
 - API documentation
-- Testing setup
+- Testing framework
 - Deployment configuration
 
-### Fullstack Application
+**Recommended Stack:**
+- Database: Drizzle + Neon
+- Auth: Better Auth
+- Framework: Next.js API routes
+- Testing: Vitest
+- Documentation: Swagger/OpenAPI
 
-Complete application with frontend and backend:
+### Fullstack Projects
 
-```bash
-architech create my-app --project-type fullstack
-```
+**Best for:** Complete applications, MVPs, prototypes
 
 **Features:**
-- Frontend and backend in one project
-- Shared types and utilities
+- Full frontend and backend
 - Database integration
 - Authentication system
-- API routes
-- Real-time features
+- UI components
 - Deployment ready
+- Testing setup
 
-### Custom Configuration
-
-For specialized requirements:
-
-```bash
-architech create my-app --project-type custom
-```
-
-**Features:**
-- Full customization control
-- Technology selection
-- Feature configuration
-- Custom integrations
-- Specialized setup
-
-## Enterprise Monorepo
-
-For large-scale projects and teams:
-
-```bash
-architech my-enterprise
-```
-
-**Features:**
-- Monorepo structure with Turborepo
-- Shared packages for UI, database, and auth
-- Multiple applications
-- TypeScript end-to-end
-- Consistent code quality tools
-- Shared configuration
-- Optimized builds
-
-### Monorepo Structure
-
-```
-my-enterprise/
-├── apps/
-│   ├── web/              # Main web application
-│   ├── admin/            # Admin dashboard
-│   └── api/              # Backend API
-├── packages/
-│   ├── ui/               # Shared UI components
-│   ├── database/         # Database schemas and utilities
-│   ├── auth/             # Authentication utilities
-│   └── config/           # Shared configuration
-├── turbo.json            # Turborepo configuration
-└── package.json          # Root package.json
-```
+**Recommended Stack:**
+- Database: Drizzle + Neon
+- Auth: Better Auth
+- UI: Shadcn UI
+- Framework: Next.js 14
+- Testing: Vitest + Playwright
 
 ## Technology Stack
 
 ### Database Options
 
-| Technology | Description | Best For |
-|------------|-------------|----------|
-| **Drizzle ORM** | TypeScript-first ORM | TypeScript projects, performance |
-| **Prisma** | Database toolkit | Full-stack applications |
-| **Mongoose** | MongoDB ODM | NoSQL databases |
+#### Drizzle ORM
+- **Best for:** TypeScript-first development
+- **Features:** Type-safe queries, excellent performance
+- **Providers:** Neon, Supabase, PlanetScale, local SQLite
+
+#### Prisma
+- **Best for:** Rich ecosystem and tooling
+- **Features:** Auto-generated client, migrations
+- **Providers:** PostgreSQL, MySQL, SQLite, MongoDB
+
+#### Mongoose
+- **Best for:** MongoDB applications
+- **Features:** Schema validation, middleware
+- **Providers:** MongoDB Atlas, local MongoDB
 
 ### Authentication Options
 
-| Technology | Description | Best For |
-|------------|-------------|----------|
-| **Better Auth** | Modern auth library | Next.js applications |
-| **NextAuth.js** | Complete auth solution | Full authentication needs |
-| **Clerk** | User management platform | Enterprise applications |
+#### Better Auth
+- **Best for:** Modern, secure authentication
+- **Features:** OAuth, email/password, session management
+- **Providers:** GitHub, Google, Discord, custom
+
+#### NextAuth.js
+- **Best for:** Complete authentication solution
+- **Features:** Extensive provider support, callbacks
+- **Providers:** 50+ providers including social logins
+
+#### Clerk
+- **Best for:** User management platform
+- **Features:** Dashboard, user profiles, multi-tenancy
+- **Providers:** Social logins, email/password, magic links
 
 ### UI Libraries
 
-| Technology | Description | Best For |
-|------------|-------------|----------|
-| **Shadcn UI** | Beautiful components | Modern, accessible UIs |
-| **Material-UI** | Comprehensive library | Enterprise applications |
-| **Tamagui** | Universal UI kit | Cross-platform development |
+#### Shadcn UI
+- **Best for:** Beautiful, accessible components
+- **Features:** Copy-paste components, Tailwind CSS
+- **Customization:** Full control over styling
 
-### Payment Processing
+#### Material-UI (MUI)
+- **Best for:** Comprehensive component library
+- **Features:** 100+ components, theming system
+- **Customization:** Theme-based customization
 
-| Technology | Description | Best For |
-|------------|-------------|----------|
-| **Stripe** | Industry standard | Most e-commerce |
-| **PayPal** | Global reach | International sales |
-| **Square** | Point of sale | Physical + online |
+#### Tamagui
+- **Best for:** Cross-platform development
+- **Features:** Universal UI kit, performance optimized
+- **Customization:** Design token system
 
-### Email Services
+## Advanced Usage
 
-| Technology | Description | Best For |
-|------------|-------------|----------|
-| **Resend** | Modern email API | Transactional emails |
-| **SendGrid** | Enterprise email | High volume |
-| **Mailgun** | Developer friendly | Custom email needs |
+### Enterprise Monorepo
 
-## Configuration Options
-
-### Command Line Options
+Create a scalable monorepo structure:
 
 ```bash
-architech create <project-name> [options]
+architech my-enterprise
+```
 
-Options:
-  --project-type <type>     Project type (ecommerce, blog, dashboard, api, fullstack, custom)
-  --package-manager <pm>    Package manager (npm, yarn, pnpm, bun)
-  --yes                     Accept all defaults
-  --no-git                  Skip Git initialization
-  --no-install              Skip dependency installation
-  --template <template>     Use specific template
-  --output <path>           Output directory
-  --verbose                 Verbose output
-  --help                    Show help
+This generates:
+- Turborepo configuration
+- Multiple applications
+- Shared packages
+- TypeScript end-to-end
+- Consistent tooling
+
+### Custom Configuration
+
+Override default settings:
+
+```bash
+architech create my-app \
+  --database drizzle \
+  --auth better-auth \
+  --ui shadcn \
+  --package-manager pnpm \
+  --no-git \
+  --no-install
 ```
 
 ### Environment Variables
 
-```bash
-# Database configuration
-DATABASE_URL=your-database-url
-
-# Authentication
-AUTH_SECRET=your-auth-secret
-NEXTAUTH_URL=your-app-url
-
-# Payment processing
-STRIPE_SECRET_KEY=your-stripe-secret
-STRIPE_PUBLISHABLE_KEY=your-stripe-publishable
-
-# Email service
-RESEND_API_KEY=your-resend-api-key
-```
-
-## Advanced Usage
-
-### Custom Templates
-
-Create custom project templates:
+The generated project includes environment variable templates:
 
 ```bash
-# Create template directory
-mkdir -p ~/.architech/templates/my-template
-
-# Add template files
-cp -r my-project/* ~/.architech/templates/my-template/
-
-# Use custom template
-architech create my-app --template my-template
-```
-
-### Plugin Development
-
-Create custom plugins for specific technologies:
-
-```bash
-# Create plugin directory
-mkdir -p src/plugins/libraries/custom/my-plugin
-
-# Implement plugin interface
-# See Plugin Development Guide for details
-
-# Register plugin
-# Add to plugin registry
-```
-
-### Configuration Files
-
-The Architech generates configuration files for your project:
-
-```json
-// architech.config.json
-{
-  "project": {
-    "name": "my-app",
-    "type": "ecommerce",
-    "template": "nextjs-14"
-  },
-  "plugins": {
-    "database": "drizzle",
-    "auth": "better-auth",
-    "ui": "shadcn-ui",
-    "payment": "stripe"
-  },
-  "config": {
-    "database": {
-      "provider": "neon",
-      "connectionString": "postgresql://..."
-    },
-    "auth": {
-      "provider": "better-auth",
-      "secret": "your-secret"
-    }
-  }
-}
+# .env.local
+DATABASE_URL="your-database-url"
+AUTH_SECRET="your-auth-secret"
+STRIPE_SECRET_KEY="your-stripe-key"
+RESEND_API_KEY="your-resend-key"
 ```
 
 ## Troubleshooting
@@ -458,118 +328,54 @@ The Architech generates configuration files for your project:
 # Ensure you're using the latest version
 npm update -g the-architech
 
-# Check TypeScript version compatibility
-npx tsc --version
+# Check Node.js version
+node --version  # Should be >= 16.0.0
 ```
 
 #### Plugin Issues
 ```bash
-# Check plugin compatibility
-architech plugins list
-
-# Update plugins
-architech plugins update
-
-# Clear cache
-architech cache clear
+# Clear cache and reinstall
+npm cache clean --force
+npm install -g the-architech
 ```
 
 #### Path Issues
 ```bash
 # Verify project structure
-ls -la my-project/
-
-# Check for existing files
-find . -name "package.json"
-
-# Use different output directory
-architech create my-app --output /path/to/directory
-```
-
-#### Permission Issues
-```bash
-# Fix npm permissions
-sudo chown -R $USER:$GROUP ~/.npm
-sudo chown -R $USER:$GROUP ~/.config
-
-# Use npx instead of global install
-npx the-architech create my-app
+ls -la my-app/
+# Should show: src/, package.json, etc.
 ```
 
 ### Getting Help
 
-1. **Documentation** - Check this guide and other documentation
-2. **Issues** - Search existing issues on GitHub
-3. **Discussions** - Join community discussions
-4. **Examples** - Look at example projects in the repository
-
-### Debug Mode
-
-Enable verbose output for debugging:
-
-```bash
-architech create my-app --verbose
-```
-
-This will show:
-- Detailed question flow
-- Plugin execution steps
-- File generation process
-- Error details
+1. **Check Documentation** - Start with this guide
+2. **GitHub Issues** - Search existing issues
+3. **Community** - Join discussions
+4. **Examples** - Look at generated projects
 
 ## Best Practices
 
-### 🎯 Project Setup
+### Project Setup
 
-1. **Start with Guided Approach**
-   - Use recommendations for faster setup
-   - Customize only what you need
-   - Leverage expert-curated choices
+1. **Use Interactive Mode** - Let the AI guide your choices
+2. **Review Recommendations** - Understand why technologies are suggested
+3. **Customize Gradually** - Start with defaults, then customize
+4. **Version Control** - Initialize git for your project
 
-2. **Choose Appropriate Project Type**
-   - Match project type to your needs
-   - Consider scalability requirements
-   - Plan for future growth
+### Development Workflow
 
-3. **Configure Environment Variables**
-   - Set up database connections
-   - Configure authentication secrets
-   - Add API keys for services
+1. **Understand the Architecture** - Read the generated code
+2. **Use Unified Interfaces** - Leverage the technology-agnostic APIs
+3. **Follow Patterns** - Use the established project structure
+4. **Test Thoroughly** - Use the included testing setup
 
-### 🔧 Development Workflow
+### Deployment
 
-1. **Use TypeScript**
-   - Better type safety
-   - Improved developer experience
-   - Easier refactoring
-
-2. **Follow Project Structure**
-   - Use generated file structure
-   - Maintain consistency
-   - Follow naming conventions
-
-3. **Leverage Generated APIs**
-   - Use unified interface files
-   - Consistent API patterns
-   - Technology-agnostic code
-
-### 🚀 Deployment
-
-1. **Environment Configuration**
-   - Set production environment variables
-   - Configure database connections
-   - Add service API keys
-
-2. **Build Optimization**
-   - Use generated build scripts
-   - Optimize for production
-   - Configure CDN and caching
-
-3. **Monitoring and Analytics**
-   - Set up error tracking
-   - Configure performance monitoring
-   - Add user analytics
+1. **Environment Variables** - Configure all required secrets
+2. **Database Setup** - Initialize your database
+3. **Domain Configuration** - Set up your domain and SSL
+4. **Monitoring** - Add error tracking and analytics
 
 ---
 
-*This guide covers using The Architech CLI. For development and customization, see the [Plugin Development Guide](./plugin-development.md) and [Architecture Overview](./architecture-overview.md).* 
+*For detailed technical information, see the [Architecture Overview](./architecture-overview.md) and [Plugin Development](./plugin-development.md) guides.* 
