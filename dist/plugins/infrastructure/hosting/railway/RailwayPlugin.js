@@ -1,4 +1,4 @@
-import { PluginCategory, TargetPlatform, ProjectType } from '../../../../types/plugin.js';
+import { PluginCategory, TargetPlatform, ProjectType } from '../../../../types/plugins.js';
 import { CommandRunner } from '../../../../core/cli/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';

@@ -1,4 +1,4 @@
-import { PluginCategory, TargetPlatform } from '../../../../types/plugin.js';
+import { PluginCategory, TargetPlatform } from '../../../../types/plugins.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { PayPalConfigSchema, PayPalDefaultConfig } from './PayPalSchema.js';

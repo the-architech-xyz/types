@@ -10,7 +10,7 @@
  * - https://better-auth.com/docs/adapters
  */
 import { BaseAuthPlugin } from '../../../base/index.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 import { BetterAuthSchema } from './BetterAuthSchema.js';
 import { BetterAuthGenerator } from './BetterAuthGenerator.js';
 export class BetterAuthPlugin extends BaseAuthPlugin {

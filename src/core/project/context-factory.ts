@@ -7,7 +7,7 @@
 
 import * as path from 'path';
 import * as os from 'os';
-import { AgentContext, ExecutionOptions, Logger, EnvironmentInfo } from '../../types/agent.js';
+import { AgentContext, ExecutionOptions, Logger, EnvironmentInfo } from '../../types/agents.js';
 import { CommandRunner, PackageManager } from '../cli/command-runner.js';
 import { structureService, StructureInfo } from './structure-service.js';
 

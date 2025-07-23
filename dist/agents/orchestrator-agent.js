@@ -2,26 +2,27 @@
  * Orchestrator Agent - Main Project Generation Coordinator
  *
  * Coordinates the entire project generation process by:
- * - Analyzing user requirements
- * - Selecting appropriate plugins
+ * - Analyzing user requirements using intelligent question flow
+ * - Selecting appropriate plugins based on recommendations
  * - Orchestrating agent execution
  * - Managing dependencies and conflicts
  */
-import { AgentCategory } from '../types/agent.js';
+import { AgentCategory } from '../types/agents.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
-import { PluginSelectionService } from '../core/plugin/plugin-selection-service.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
-import { DATABASE_PROVIDERS, ORM_LIBRARIES, AUTH_PROVIDERS, AUTH_FEATURES, UI_LIBRARIES, DEPLOYMENT_PLATFORMS, EMAIL_SERVICES, TESTING_FRAMEWORKS } from '../types/shared-config.js';
+import { DATABASE_PROVIDERS, ORM_LIBRARIES, AUTH_PROVIDERS, UI_LIBRARIES, DEPLOYMENT_PLATFORMS, TESTING_FRAMEWORKS } from '../types/core.js';
+// New question generation system imports
+import { ProgressiveFlow, EcommerceStrategy, BlogStrategy, DashboardStrategy } from '../core/questions/index.js';
 export class OrchestratorAgent {
     pluginSystem;
-    pluginSelectionService;
     logger;
     runner;
+    progressiveFlow;
     constructor() {
         this.pluginSystem = PluginSystem.getInstance();
         this.logger = this.pluginSystem.getLogger();
-        this.pluginSelectionService = new PluginSelectionService(this.pluginSystem);
         this.runner = new CommandRunner();
+        this.progressiveFlow = new ProgressiveFlow();
     }
     // ============================================================================
     // AGENT METADATA
@@ -48,238 +49,93 @@ export class OrchestratorAgent {
         const startTime = Date.now();
         try {
             this.logger.info('Starting project orchestration...');
-            // Step 1: Analyze project requirements
-            const requirements = await this.analyzeRequirements(context);
-            // Step 2: Generate orchestration plan
+            // Step 1: Execute question flow to get user input and configuration
+            const userInput = context.state.get('userInput');
+            if (!userInput) {
+                throw new Error('User input is required for project generation');
+            }
+            const flowResult = await this.executeQuestionFlow(userInput);
+            if (!flowResult.success) {
+                throw new Error(`Question flow failed: ${flowResult.errors.join(', ')}`);
+            }
+            // Step 2: Convert flow result to project requirements
+            const requirements = this.convertFlowResultToRequirements(flowResult, userInput);
+            // Step 3: Generate orchestration plan
             const plan = await this.generateOrchestrationPlan(requirements, context);
-            // Step 3: Validate plan feasibility
+            // Step 4: Validate plan
             const validation = await this.validatePlan(plan, context);
             if (!validation.valid) {
-                return this.createErrorResult('Orchestration plan validation failed', startTime, validation.errors);
+                return this.createErrorResult('Plan validation failed', startTime, validation.errors);
             }
-            // Step 4: Execute orchestration plan
-            const executionResult = await this.executePlan(plan, context);
-            const duration = Date.now() - startTime;
+            // Step 5: Execute plan
+            const result = await this.executePlan(plan, context);
             return {
                 success: true,
                 data: {
-                    plan,
                     requirements,
-                    phases: executionResult.phases
+                    plan,
+                    artifacts: result.artifacts,
+                    warnings: result.warnings
                 },
-                artifacts: executionResult.artifacts,
-                warnings: executionResult.warnings,
-                duration
+                duration: Date.now() - startTime,
+                metrics: {
+                    executionTime: Date.now() - startTime,
+                    memoryUsage: 0,
+                    cpuUsage: 0,
+                    networkRequests: 0,
+                    artifactsGenerated: result.artifacts.length,
+                    filesCreated: 0,
+                    dependenciesInstalled: 0
+                }
             };
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            return this.createErrorResult(`Orchestration failed: ${errorMessage}`, startTime, [], error);
+            return this.createErrorResult(error instanceof Error ? error.message : 'Unknown error', startTime, [], error);
         }
     }
-    // ============================================================================
-    // REQUIREMENTS ANALYSIS
-    // ============================================================================
-    async analyzeRequirements(context) {
-        this.logger.info('Analyzing project requirements...');
-        // Extract requirements from context
-        const projectName = context.projectName;
-        const projectPath = context.projectPath;
-        const userInput = context.config.userInput || '';
-        const projectType = context.config.projectType || 'scalable-monorepo';
-        // Check if we're using a template-based workflow
-        const selectedTemplate = context.state.get('selectedTemplate');
-        const isTemplateBased = context.state.get('isTemplateBased') || false;
-        this.logger.info(`DEBUG: useDefaults = ${context.options.useDefaults}`);
-        this.logger.info(`DEBUG: projectType = ${projectType}`);
-        this.logger.info(`DEBUG: userInput = ${userInput}`);
-        this.logger.info(`DEBUG: isTemplateBased = ${isTemplateBased}`);
-        // Get plugin selection based on workflow type
-        let pluginSelection;
-        if (isTemplateBased && selectedTemplate) {
-            // Use template-based plugin selection
-            this.logger.info(`Using template-based plugin selection: ${selectedTemplate.name}`);
-            pluginSelection = selectedTemplate.pluginSelection;
-        }
-        else if (context.options.useDefaults) {
-            // Use default plugin selection
-            this.logger.info('Using default plugin selection');
-            pluginSelection = this.getDefaultPluginSelection(projectType);
-        }
-        else {
-            // Use interactive plugin selection (legacy)
-            this.logger.info('Using interactive plugin selection');
-            pluginSelection = await this.pluginSelectionService.selectPlugins(userInput);
-        }
-        // Convert plugin selection to project requirements
-        const requirements = this.convertPluginSelectionToRequirements(pluginSelection, projectName, userInput);
-        // Store plugin selection in context for later use
-        context.state.set('pluginSelection', pluginSelection);
-        this.logger.success('Requirements analysis completed');
-        return requirements;
+    /**
+     * Execute the question flow to gather user input and generate configuration
+     */
+    async executeQuestionFlow(userInput) {
+        // Get the appropriate question strategy based on project type
+        const strategy = this.getQuestionStrategy(userInput);
+        // Execute the progressive flow
+        return await this.progressiveFlow.execute(userInput, strategy);
     }
-    getDefaultPluginSelection(projectType) {
+    /**
+     * Convert flow result to project requirements
+     */
+    convertFlowResultToRequirements(flowResult, userInput) {
+        const config = flowResult.configuration;
+        const general = config.general || {};
         return {
-            database: {
-                enabled: true,
-                provider: DATABASE_PROVIDERS.NEON,
-                orm: ORM_LIBRARIES.DRIZZLE,
-                features: { migrations: true, seeding: false, studio: true }
-            },
-            authentication: {
-                enabled: true,
-                providers: [AUTH_PROVIDERS.EMAIL],
-                features: {
-                    [AUTH_FEATURES.EMAIL_VERIFICATION]: true,
-                    [AUTH_FEATURES.PASSWORD_RESET]: true,
-                    [AUTH_FEATURES.SOCIAL_LOGIN]: false,
-                    [AUTH_FEATURES.SESSION_MANAGEMENT]: true
-                }
-            },
-            ui: {
-                enabled: true,
-                library: UI_LIBRARIES.SHADCN_UI,
-                features: { components: true, theming: true, responsive: true }
-            },
-            deployment: {
-                enabled: false,
-                platform: DEPLOYMENT_PLATFORMS.VERCEL,
-                features: { autoDeploy: true, preview: true, analytics: false }
-            },
-            testing: {
-                enabled: true,
-                framework: TESTING_FRAMEWORKS.VITEST,
-                features: { unit: true, integration: false, e2e: false, coverage: true }
-            },
-            email: {
-                enabled: false,
-                service: EMAIL_SERVICES.RESEND,
-                features: { templates: true, tracking: false, analytics: false }
-            },
-            monitoring: {
-                enabled: false,
-                services: [],
-                features: { errorTracking: false, performanceMonitoring: false, analytics: false }
-            },
-            payment: {
-                enabled: false,
-                providers: [],
-                features: { subscriptions: false, oneTimePayments: false, invoices: false }
-            },
-            blockchain: {
-                enabled: false,
-                networks: [],
-                features: { smartContracts: false, nftSupport: false, defiIntegration: false }
-            }
-        };
-    }
-    convertPluginSelectionToRequirements(selection, projectName, userInput) {
-        const config = {
-            database: {
-                provider: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.NEON,
-                orm: selection.database.enabled ? selection.database.orm : ORM_LIBRARIES.DRIZZLE,
-                features: selection.database.enabled ? selection.database.features : {}
-            },
-            authentication: {
-                providers: selection.authentication.enabled ? selection.authentication.providers : [AUTH_PROVIDERS.EMAIL],
-                features: selection.authentication.enabled ? {
-                    [AUTH_FEATURES.EMAIL_VERIFICATION]: true,
-                    [AUTH_FEATURES.PASSWORD_RESET]: true,
-                    [AUTH_FEATURES.SOCIAL_LOGIN]: false,
-                    [AUTH_FEATURES.SESSION_MANAGEMENT]: true
-                } : {}
-            },
-            ui: {
-                library: selection.ui.enabled ? selection.ui.library : UI_LIBRARIES.SHADCN_UI,
-                features: selection.ui.enabled ? selection.ui.features : {}
-            },
-            deployment: {
-                platform: selection.deployment.enabled ? selection.deployment.platform : DEPLOYMENT_PLATFORMS.VERCEL,
-                features: selection.deployment.enabled ? selection.deployment.features : {}
-            },
-            testing: {
-                framework: selection.testing.enabled ? selection.testing.framework : TESTING_FRAMEWORKS.VITEST,
-                features: selection.testing.enabled ? selection.testing.features : {}
-            },
-            email: {
-                service: selection.email.enabled ? selection.email.service : EMAIL_SERVICES.RESEND,
-                features: selection.email.enabled ? selection.email.features : {}
-            },
-            monitoring: {
-                services: selection.monitoring.enabled ? selection.monitoring.services : [],
-                features: selection.monitoring.enabled ? selection.monitoring.features : {}
-            },
-            payment: {
-                providers: selection.payment.enabled ? selection.payment.providers : [],
-                features: selection.payment.enabled ? selection.payment.features : {}
-            },
-            blockchain: {
-                networks: selection.blockchain.enabled ? selection.blockchain.networks : [],
-                features: selection.blockchain.enabled ? selection.blockchain.features : {}
-            }
-        };
-        return {
-            name: projectName,
-            description: userInput || 'Generated by The Architech',
+            name: general.projectName || 'my-project',
+            description: general.description || userInput,
             type: 'web-app',
-            features: this.extractFeaturesFromSelection(selection),
+            features: general.features || [],
             ui: {
                 framework: 'nextjs',
-                designSystem: selection.ui.enabled ? this.mapUIPluginToSystem(selection.ui.library) : 'none',
+                designSystem: config.ui?.plugin || 'shadcn-ui',
                 styling: 'tailwind'
             },
             database: {
-                type: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.NEON,
-                orm: selection.database.enabled ? selection.database.orm : ORM_LIBRARIES.DRIZZLE,
-                provider: selection.database.enabled ? selection.database.provider : DATABASE_PROVIDERS.NEON
+                type: DATABASE_PROVIDERS.NEON,
+                orm: ORM_LIBRARIES.DRIZZLE,
+                provider: DATABASE_PROVIDERS.NEON
             },
             authentication: {
-                providers: selection.authentication.enabled ? selection.authentication.providers : [AUTH_PROVIDERS.EMAIL],
-                requireEmailVerification: selection.authentication.enabled &&
-                    (selection.authentication.features[AUTH_FEATURES.EMAIL_VERIFICATION] ?? false)
+                providers: [AUTH_PROVIDERS.EMAIL],
+                requireEmailVerification: true
             },
             deployment: {
-                platform: selection.deployment.enabled ? selection.deployment.platform : DEPLOYMENT_PLATFORMS.VERCEL,
+                platform: DEPLOYMENT_PLATFORMS.VERCEL,
                 environment: 'development'
             },
             testing: {
-                framework: selection.testing.enabled ? selection.testing.framework : TESTING_FRAMEWORKS.VITEST,
-                coverage: selection.testing.enabled && (selection.testing.features.coverage ?? false)
+                framework: TESTING_FRAMEWORKS.VITEST,
+                coverage: true
             }
         };
-    }
-    extractFeaturesFromSelection(selection) {
-        const features = [];
-        if (selection.database.enabled) {
-            features.push(`database-${selection.database.provider}`);
-            features.push(`orm-${selection.database.orm}`);
-        }
-        if (selection.authentication.enabled) {
-            features.push(`auth-${selection.authentication.providers.join('-')}`);
-        }
-        if (selection.ui.enabled) {
-            features.push(`ui-${selection.ui.library}`);
-        }
-        if (selection.deployment.enabled) {
-            features.push(`deploy-${selection.deployment.platform}`);
-        }
-        if (selection.testing.enabled) {
-            features.push(`testing-${selection.testing.framework}`);
-        }
-        if (selection.email.enabled) {
-            features.push(`email-${selection.email.service}`);
-        }
-        // New categories
-        if (selection.monitoring.enabled && selection.monitoring.services.length > 0) {
-            features.push(`monitoring-${selection.monitoring.services.join('-')}`);
-        }
-        if (selection.payment.enabled && selection.payment.providers.length > 0) {
-            features.push(`payment-${selection.payment.providers.join('-')}`);
-        }
-        if (selection.blockchain.enabled && selection.blockchain.networks.length > 0) {
-            features.push(`blockchain-${selection.blockchain.networks.join('-')}`);
-        }
-        return features;
     }
     // ============================================================================
     // ORCHESTRATION PLAN GENERATION
@@ -397,43 +253,64 @@ export class OrchestratorAgent {
         };
     }
     mapUIPluginToSystem(uiLibrary) {
-        const mapping = {
-            [UI_LIBRARIES.SHADCN_UI]: 'shadcn-ui',
-            [UI_LIBRARIES.CHAKRA_UI]: 'chakra-ui',
-            [UI_LIBRARIES.MATERIAL_UI]: 'mui',
-            [UI_LIBRARIES.ANT_DESIGN]: 'antd',
-            [UI_LIBRARIES.RADIX_UI]: 'radix',
-            [UI_LIBRARIES.MANTINE]: 'mantine',
-            [UI_LIBRARIES.HEADLESS_UI]: 'headless-ui',
-            [UI_LIBRARIES.ARIANE]: 'ariane',
-            [UI_LIBRARIES.NEXT_UI]: 'next-ui',
-            [UI_LIBRARIES.DAISY_UI]: 'daisy-ui'
-        };
-        return mapping[uiLibrary] || 'none';
+        switch (uiLibrary) {
+            case 'shadcn-ui':
+                return 'shadcn-ui';
+            case 'chakra-ui':
+                return 'chakra-ui';
+            case 'mui':
+                return 'mui';
+            default:
+                return 'shadcn-ui';
+        }
+    }
+    /**
+     * Get the appropriate question strategy based on project type
+     */
+    getQuestionStrategy(userInput) {
+        const context = this.analyzeProjectContext(userInput);
+        switch (context.type) {
+            case 'ecommerce':
+                return new EcommerceStrategy();
+            case 'blog':
+                return new BlogStrategy();
+            case 'dashboard':
+                return new DashboardStrategy();
+            default:
+                // Default to ecommerce for now, can be enhanced later
+                return new EcommerceStrategy();
+        }
+    }
+    /**
+     * Analyze user input to determine project context
+     */
+    analyzeProjectContext(userInput) {
+        const lower = userInput.toLowerCase();
+        if (lower.includes('ecommerce') || lower.includes('shop') || lower.includes('store')) {
+            return { type: 'ecommerce' };
+        }
+        if (lower.includes('blog') || lower.includes('content')) {
+            return { type: 'blog' };
+        }
+        if (lower.includes('dashboard') || lower.includes('admin')) {
+            return { type: 'dashboard' };
+        }
+        if (lower.includes('api') || lower.includes('backend')) {
+            return { type: 'api' };
+        }
+        if (lower.includes('full') || lower.includes('complete')) {
+            return { type: 'fullstack' };
+        }
+        return { type: 'custom' };
     }
     // ============================================================================
     // PLAN VALIDATION
     // ============================================================================
     async validatePlan(plan, context) {
-        this.logger.info('Validating orchestration plan...');
         const errors = [];
         const warnings = [];
-        // Validate plugin compatibility
-        const allPlugins = plan.phases.flatMap(phase => phase.plugins);
-        const uniquePlugins = [...new Set(allPlugins)];
-        for (const pluginId of uniquePlugins) {
-            const plugin = this.pluginSystem.getRegistry().get(pluginId);
-            if (!plugin) {
-                errors.push({
-                    field: 'plugins',
-                    message: `Plugin not found: ${pluginId}`,
-                    code: 'PLUGIN_NOT_FOUND',
-                    severity: 'error'
-                });
-            }
-        }
         // Check for plugin conflicts
-        const conflicts = await this.pluginSystem.checkConflicts(uniquePlugins);
+        const conflicts = this.detectPluginConflicts(plan);
         if (conflicts.length > 0) {
             for (const conflict of conflicts) {
                 warnings.push(`Plugin conflict: ${conflict.plugin1} vs ${conflict.plugin2} - ${conflict.reason}`);
@@ -458,6 +335,24 @@ export class OrchestratorAgent {
             errors,
             warnings
         };
+    }
+    detectPluginConflicts(plan) {
+        // Simple conflict detection - can be enhanced
+        const conflicts = [];
+        const plugins = new Set();
+        for (const phase of plan.phases) {
+            for (const plugin of phase.plugins) {
+                if (plugins.has(plugin)) {
+                    conflicts.push({
+                        plugin1: plugin,
+                        plugin2: plugin,
+                        reason: 'Duplicate plugin in different phases'
+                    });
+                }
+                plugins.add(plugin);
+            }
+        }
+        return conflicts;
     }
     // ============================================================================
     // PLAN EXECUTION

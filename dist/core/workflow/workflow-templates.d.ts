@@ -4,7 +4,63 @@
  * Pre-configured plugin selections for common use cases.
  * Dramatically reduces questions from 20+ to 2-5 while maintaining customization.
  */
-import { PluginSelection } from '../../types/plugin-selection.js';
+interface PluginSelection {
+    database: DatabaseSelection;
+    authentication: AuthSelection;
+    ui: UISelection;
+    deployment: DeploymentSelection;
+    testing: TestingSelection;
+    email: EmailSelection;
+    monitoring: MonitoringSelection;
+    payment: PaymentSelection;
+    blockchain: BlockchainSelection;
+}
+interface DatabaseSelection {
+    enabled: boolean;
+    provider: string;
+    orm: string;
+    features: Record<string, boolean>;
+}
+interface AuthSelection {
+    enabled: boolean;
+    providers: string[];
+    features: Record<string, boolean>;
+}
+interface UISelection {
+    enabled: boolean;
+    library: string;
+    features: Record<string, boolean>;
+}
+interface DeploymentSelection {
+    enabled: boolean;
+    platform: string;
+    features: Record<string, boolean>;
+}
+interface TestingSelection {
+    enabled: boolean;
+    framework: string;
+    features: Record<string, boolean>;
+}
+interface EmailSelection {
+    enabled: boolean;
+    service: string;
+    features: Record<string, boolean>;
+}
+interface MonitoringSelection {
+    enabled: boolean;
+    services: string[];
+    features: Record<string, boolean>;
+}
+interface PaymentSelection {
+    enabled: boolean;
+    providers: string[];
+    features: Record<string, boolean>;
+}
+interface BlockchainSelection {
+    enabled: boolean;
+    networks: string[];
+    features: Record<string, boolean>;
+}
 export interface WorkflowTemplate {
     id: string;
     name: string;
@@ -55,3 +111,4 @@ export declare class WorkflowTemplateService {
      */
     static getCustomTemplate(): WorkflowTemplate;
 }
+export {};

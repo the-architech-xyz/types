@@ -4,7 +4,6 @@
  * Handles all code generation for Better Auth authentication integration.
  * Based on: https://better-auth.com/docs
  */
-import { AuthProvider } from '../../../../types/plugin-interfaces.js';
 export class BetterAuthGenerator {
     generateAllFiles(config) {
         return [

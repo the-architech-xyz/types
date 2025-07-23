@@ -7,9 +7,9 @@
  * - DrizzlePlugin: Main plugin class (this file)
  */
 import { BaseDatabasePlugin } from '../../../base/BaseDatabasePlugin.js';
-import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugin.js';
+import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugins.js';
 import { DatabaseProvider, ORMOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugin-interfaces.js';
-import { ValidationResult } from '../../../../types/agent.js';
+import { ValidationResult } from '../../../../types/agents.js';
 export declare class DrizzlePlugin extends BaseDatabasePlugin {
     private generator;
     constructor();

@@ -4,7 +4,7 @@
  * Single source of truth for all project structure decisions.
  * Provides clean, consistent APIs for agents and plugins to get paths and structure info.
  */
-import { Logger } from '../../types/agent.js';
+import { Logger } from '../../types/agents.js';
 export type ProjectStructure = 'single-app' | 'monorepo';
 export type UserPreference = 'quick-prototype' | 'scalable-monorepo';
 export interface StructureInfo {

@@ -11,8 +11,8 @@
  * - https://mongoosejs.com/docs/middleware.html
  */
 import { BaseDatabasePlugin } from '../../../base/index.js';
-import { PluginCategory } from '../../../../types/plugin.js';
-import { DatabaseProvider, ORMOption } from '../../../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { ORMOption } from '../../../../types/plugins.js';
 import { MongooseSchema } from './MongooseSchema.js';
 import { MongooseGenerator } from './MongooseGenerator.js';
 export class MongoosePlugin extends BaseDatabasePlugin {

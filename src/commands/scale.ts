@@ -9,7 +9,7 @@ import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { structureService } from '../core/project/structure-service.js';
 import { ContextFactory } from '../core/project/context-factory.js';
-import { Logger } from '../types/agent.js';
+import { Logger } from '../types/agents.js';
 
 interface ScaleOptions {
   packageManager?: string;

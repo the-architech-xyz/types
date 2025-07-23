@@ -5,7 +5,7 @@
  * and context-aware formatting.
  */
 import chalk from 'chalk';
-import { LogLevel } from '../../types/agent.js';
+import { LogLevel } from '../../types/agents.js';
 export class AgentLogger {
     verbose;
     agentName;

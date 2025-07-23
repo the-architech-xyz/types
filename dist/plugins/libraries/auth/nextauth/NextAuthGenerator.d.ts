@@ -4,7 +4,7 @@
  * Handles all code generation for NextAuth authentication integration.
  * Based on: https://next-auth.js.org/configuration
  */
-import { AuthPluginConfig } from '../../../../types/plugin-interfaces.js';
+import { AuthPluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
     path: string;
     content: string;

@@ -4,8 +4,8 @@
  * Central orchestrator that manages the plugin registry and manager.
  * Registers built-in plugins and provides a unified interface for the CLI.
  */
-import { Logger } from '../../types/agent.js';
-import { PluginRegistry, PluginManager } from '../../types/plugin.js';
+import { Logger } from '../../types/agents.js';
+import { PluginRegistry, PluginManager } from '../../types/plugins.js';
 export declare class PluginSystem {
     private registry;
     private manager;

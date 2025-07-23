@@ -1,5 +1,4 @@
-import { DatabaseProvider } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 export class MongooseSchema {
     static getParameterSchema() {
         return {

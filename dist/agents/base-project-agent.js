@@ -5,7 +5,7 @@
  * This is the first agent that runs in the orchestration process.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
-import { AgentCategory, CapabilityCategory } from '../types/agent.js';
+import { AgentCategory, CapabilityCategory } from '../types/agents.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
 import { templateService } from '../core/templates/template-service.js';
 import * as path from 'path';

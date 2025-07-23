@@ -4,8 +4,8 @@
  * Contains all configuration schemas and parameter definitions for the Shadcn/ui plugin.
  * Based on: https://ui.shadcn.com/docs/installation
  */
-import { UILibrary, ComponentOption, ThemeOption } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { ComponentOption, ThemeOption } from '../../../../types/plugins.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 export class ShadcnUISchema {
     static getParameterSchema() {
         return {
@@ -55,11 +55,11 @@ export class ShadcnUISchema {
                     type: 'select',
                     description: 'Configure light/dark mode support.',
                     required: true,
-                    default: ThemeOption.AUTO,
+                    default: ThemeOption.SYSTEM,
                     options: [
                         { value: ThemeOption.LIGHT, label: 'Light Only' },
                         { value: ThemeOption.DARK, label: 'Dark Only' },
-                        { value: ThemeOption.AUTO, label: 'Light & Dark (System)' }
+                        { value: ThemeOption.SYSTEM, label: 'Light & Dark (System)' }
                     ],
                     group: 'styling'
                 },

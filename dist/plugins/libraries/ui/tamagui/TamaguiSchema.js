@@ -1,5 +1,5 @@
-import { UILibrary, ComponentOption, ThemeOption, StylingOption } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { ComponentOption, ThemeOption, StylingOption } from '../../../../types/plugins.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 export class TamaguiSchema {
     static getParameterSchema() {
         return {

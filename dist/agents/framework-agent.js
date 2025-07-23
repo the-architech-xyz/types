@@ -5,8 +5,8 @@
  * This agent is responsible for setting up the core application framework.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
-import { AgentCategory, CapabilityCategory } from '../types/agent.js';
-import { ProjectType, TargetPlatform } from '../types/plugin.js';
+import { AgentCategory, CapabilityCategory } from '../types/agents.js';
+import { ProjectType, TargetPlatform } from '../types/plugins.js';
 export class FrameworkAgent extends AbstractAgent {
     // ============================================================================
     // AGENT METADATA

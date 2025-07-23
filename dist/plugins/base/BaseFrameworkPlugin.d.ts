@@ -1,6 +1,6 @@
 import { BasePlugin } from './BasePlugin.js';
-import { PluginContext } from '../../types/plugin.js';
-import { FrameworkPluginConfig, FrameworkOption, BuildOption, DeploymentOption, ParameterSchema } from '../../types/plugin-interfaces.js';
+import { PluginContext } from '../../types/plugins.js';
+import { FrameworkPluginConfig, FrameworkOption, BuildOption, DeploymentOption, ParameterSchema } from '../../types/plugins.js';
 export declare abstract class BaseFrameworkPlugin extends BasePlugin {
     abstract getFrameworkOptions(): FrameworkOption[];
     abstract getBuildOptions(): BuildOption[];

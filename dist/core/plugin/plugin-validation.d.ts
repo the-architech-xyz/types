@@ -4,8 +4,8 @@
  * Provides standardized validation logic for plugins to ensure
  * consistent behavior and better error handling.
  */
-import { ValidationResult, ValidationError } from '../../types/agent.js';
-import { PluginContext } from '../../types/plugin.js';
+import { ValidationResult, ValidationError } from '../../types/agents.js';
+import { PluginContext } from '../../types/plugins.js';
 export declare class PluginValidationUtils {
     /**
      * Standard validation for plugin installation context

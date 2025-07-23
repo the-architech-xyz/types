@@ -10,7 +10,7 @@
  * - https://docs.mongodb.com/atlas/
  * - https://docs.mongodb.com/manual/replication/
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
+import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
 export declare class MongoDBPlugin implements IPlugin {
     private templateService;
     private runner;

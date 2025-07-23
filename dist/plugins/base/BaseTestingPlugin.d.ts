@@ -4,9 +4,9 @@
  * Provides common functionality for all testing framework plugins.
  */
 import { BasePlugin } from './BasePlugin.js';
-import { IUITestingPlugin, TestingFramework, TestType, CoverageOption } from '../../types/plugin-interfaces.js';
-import { ValidationResult } from '../../types/agent.js';
-import { PluginContext } from '../../types/plugin.js';
+import { IUITestingPlugin, TestingFramework, TestType, CoverageOption } from '../../types/plugins.js';
+import { ValidationResult } from '../../types/agents.js';
+import { PluginContext } from '../../types/plugins.js';
 export declare abstract class BaseTestingPlugin extends BasePlugin implements IUITestingPlugin {
     private questionGenerator;
     constructor();

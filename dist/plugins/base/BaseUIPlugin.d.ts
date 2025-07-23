@@ -1,23 +1,22 @@
-/**
- * Base UI Plugin Class
- *
- * Provides common functionality for all UI library plugins.
- */
 import { BasePlugin } from './BasePlugin.js';
-import { UIPluginConfig, IUIPlugin, UILibrary, ComponentOption, ThemeOption, StylingOption, ParameterSchema } from '../../types/plugin-interfaces.js';
-import { PluginContext } from '../../types/plugin.js';
-import { ValidationResult } from '../../types/agent.js';
+import { IUIPlugin, ParameterSchema, PluginContext } from '../../types/plugins.js';
+import { ValidationResult } from '../../types/agents.js';
 export declare abstract class BaseUIPlugin extends BasePlugin implements IUIPlugin {
     private questionGenerator;
     constructor();
-    abstract getUILibraries(): UILibrary[];
-    abstract getComponentOptions(): ComponentOption[];
-    abstract getThemeOptions(): ThemeOption[];
-    abstract getStylingOptions(): StylingOption[];
+    abstract getUILibraries(): string[];
+    abstract getComponentOptions(): string[];
+    abstract getThemeOptions(): string[];
+    abstract getStylingOptions(): string[];
+    abstract getLibraryLabel(library: string): string;
+    abstract getComponentLabel(component: string): string;
+    abstract getThemeLabel(theme: string): string;
+    abstract getStylingLabel(styling: string): string;
     protected getBaseUISchema(): ParameterSchema;
-    protected setupThemeProvider(context: PluginContext, providerImport: string, providerWrapperStart: string, providerWrapperEnd: string): Promise<void>;
-    protected configureStyling(config: UIPluginConfig): Promise<void>;
+    protected setupUIComponents(context: PluginContext, components: string[]): Promise<void>;
+    protected generateComponentFile(componentName: string): string;
     getDynamicQuestions(context: PluginContext): any[];
     validateConfiguration(config: Record<string, any>): ValidationResult;
-    protected abstract getLibraryLabel(library: UILibrary): string;
+    getParameterSchema(): ParameterSchema;
+    generateUnifiedInterface(): any;
 }

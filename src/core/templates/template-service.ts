@@ -14,7 +14,7 @@ import * as ejs from 'ejs';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { Logger } from '../../types/agent.js';
+import { Logger } from '../../types/agents.js';
 
 export interface TemplateData {
   [key: string]: any;

@@ -12,5 +12,4 @@ export { PluginRegistryImpl } from './plugin-registry.js';
 export { PluginManagerImpl } from './plugin-manager.js';
 export { PluginSelectionService } from './plugin-selection-service.js';
 export { PluginAdapter } from './plugin-adapter.js';
-export type { IPlugin, PluginRegistry, PluginManager, PluginCategory, PluginContext, PluginResult, ValidationResult } from '../../types/plugin.js';
-export type { PluginSelection, PluginRecommendation, PluginCompatibility } from '../../types/plugin-selection.js';
+export type { IPlugin, PluginRegistry, PluginManager, PluginCategory, PluginContext, PluginResult, ValidationResult } from '../../types/plugins.js';

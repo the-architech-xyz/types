@@ -1,13 +1,6 @@
-/**
- * Base UI Plugin Class
- *
- * Provides common functionality for all UI library plugins.
- */
 import { BasePlugin } from './BasePlugin.js';
-import { StylingOption } from '../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../types/plugins.js';
 import { DynamicQuestionGenerator } from '../../core/expert/dynamic-question-generator.js';
-import { PluginCategory } from '../../types/plugin.js';
-import * as fs from 'fs-extra';
 export class BaseUIPlugin extends BasePlugin {
     questionGenerator;
     constructor() {
@@ -18,47 +11,75 @@ export class BaseUIPlugin extends BasePlugin {
     getBaseUISchema() {
         return {
             category: PluginCategory.UI_LIBRARY,
-            parameters: [{
+            parameters: [
+                {
                     id: 'library',
                     name: 'library',
                     type: 'select',
-                    description: 'Select UI Library',
+                    description: 'Select UI library',
                     required: true,
-                    options: this.getUILibraries().map(l => ({ value: l, label: this.getLibraryLabel(l) }))
-                }],
-            groups: [],
+                    options: this.getUILibraries().map(l => ({ value: l, label: this.getLibraryLabel(l) })),
+                    group: 'library'
+                },
+                {
+                    id: 'components',
+                    name: 'components',
+                    type: 'multiselect',
+                    description: 'Select components to include',
+                    required: false,
+                    options: this.getComponentOptions().map(c => ({ value: c, label: this.getComponentLabel(c) })),
+                    group: 'components'
+                }
+            ],
+            groups: [
+                { id: 'library', name: 'UI Library', description: 'Choose your UI library', order: 1, parameters: ['library'] },
+                { id: 'components', name: 'Components', description: 'Choose components to include', order: 2, parameters: ['components'] }
+            ],
             dependencies: [],
             validations: []
         };
     }
-    async setupThemeProvider(context, providerImport, providerWrapperStart, providerWrapperEnd) {
-        const layoutPath = this.pathResolver.getRootLayoutPath();
-        if (!await this.fileExists(layoutPath)) {
-            context.logger.warn(`Could not find root layout file at ${layoutPath}. Skipping ThemeProvider injection.`);
-            return;
+    async setupUIComponents(context, components) {
+        const componentsPath = this.pathResolver.getLibPath('ui', 'components');
+        await this.ensureDirectory(componentsPath);
+        for (const component of components) {
+            const componentPath = this.pathResolver.getLibPath('ui', `components/${component}.tsx`);
+            const componentContent = this.generateComponentFile(component);
+            await this.generateFile(componentPath, componentContent);
         }
-        let content = await fs.readFile(layoutPath, 'utf8');
-        // Add import statement if it doesn't exist
-        if (!content.includes(providerImport)) {
-            content = `${providerImport}\n${content}`;
-        }
-        // Wrap children in provider
-        content = content.replace(/(<body.*?>)([\s\S]*?)(<\/body>)/, `$1\n  ${providerWrapperStart}\n$2\n  ${providerWrapperEnd}\n$3`);
-        await this.generateFile(layoutPath, content);
     }
-    async configureStyling(config) {
-        // Example for TailwindCSS, can be extended
-        if (config.styling.approach === StylingOption.TAILWIND) {
-            const tailwindConfigPath = this.pathResolver.getConfigPath('tailwind.config.js');
-            // Logic to modify tailwind config
-        }
+    generateComponentFile(componentName) {
+        return `import React from 'react';
+
+export interface ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props {
+  // Component props
+}
+
+export const ${componentName.charAt(0).toUpperCase() + componentName.slice(1)}: React.FC<${componentName.charAt(0).toUpperCase() + componentName.slice(1)}Props> = (props) => {
+  return (
+    <div>
+      {/* ${componentName} component implementation */}
+    </div>
+  );
+};
+`;
     }
     getDynamicQuestions(context) {
         return this.questionGenerator.generateQuestions(this, context);
     }
     validateConfiguration(config) {
-        // Basic validation, can be extended by child classes
         return this.validateRequiredConfig(config, ['library']);
+    }
+    getParameterSchema() {
+        return this.getBaseUISchema();
+    }
+    generateUnifiedInterface() {
+        return {
+            functions: ['createComponent', 'applyTheme', 'getStyles'],
+            classes: ['UIProvider', 'ThemeProvider', 'ComponentLibrary'],
+            types: ['UIProps', 'ThemeConfig', 'ComponentConfig'],
+            constants: ['DEFAULT_THEME', 'COMPONENT_VARIANTS']
+        };
     }
 }
 //# sourceMappingURL=BaseUIPlugin.js.map

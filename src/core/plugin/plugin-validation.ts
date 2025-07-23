@@ -7,8 +7,8 @@
 
 import fsExtra from 'fs-extra';
 import path from 'path';
-import { ValidationResult, ValidationError } from '../../types/agent.js';
-import { PluginContext } from '../../types/plugin.js';
+import { ValidationResult, ValidationError } from '../../types/agents.js';
+import { PluginContext } from '../../types/plugins.js';
 
 export class PluginValidationUtils {
   

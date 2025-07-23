@@ -1,4 +1,4 @@
-import { DatabasePluginConfig } from '../../../../types/plugin-interfaces.js';
+import { DatabasePluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
     path: string;
     content: string;

@@ -6,8 +6,7 @@
  * No user interaction or business logic - that's handled by agents.
  */
 import { BaseUIPlugin } from '../../../base/index.js';
-import { PluginCategory } from '../../../../types/plugin.js';
-import { UILibrary } from '../../../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 import { TamaguiSchema } from './TamaguiSchema.js';
 import { TamaguiGenerator } from './TamaguiGenerator.js';
 export class TamaguiPlugin extends BaseUIPlugin {

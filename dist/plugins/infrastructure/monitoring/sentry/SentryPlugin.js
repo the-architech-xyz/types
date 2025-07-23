@@ -5,7 +5,7 @@
  * Focuses only on monitoring technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
-import { PluginCategory, TargetPlatform } from '../../../../types/plugin.js';
+import { PluginCategory, TargetPlatform } from '../../../../types/plugins.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { SentryConfigSchema, SentryDefaultConfig } from './SentrySchema.js';

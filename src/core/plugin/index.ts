@@ -23,10 +23,4 @@ export type {
   PluginContext,
   PluginResult,
   ValidationResult
-} from '../../types/plugin.js';
-
-export type {
-  PluginSelection,
-  PluginRecommendation,
-  PluginCompatibility
-} from '../../types/plugin-selection.js'; 
+} from '../../types/plugins.js'; 

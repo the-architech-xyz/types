@@ -1,5 +1,4 @@
-import { TestingFramework } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 export class VitestSchema {
     static getParameterSchema() {
         return {

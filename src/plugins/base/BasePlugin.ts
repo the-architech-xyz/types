@@ -1,5 +1,5 @@
 /**
- * Base Plugin Class
+ * Base Plugin Class - Single Base Class for All Plugins
  * 
  * Provides common functionality for all plugins:
  * - Error handling
@@ -7,10 +7,12 @@
  * - Lifecycle management
  * - Path resolution
  * - Logging
+ * - Parameter schema management
+ * - Configuration validation
  */
 
-import { IPlugin, PluginContext, PluginResult, ValidationResult, PluginMetadata } from '../../types/plugin.js';
-import { ValidationError } from '../../types/agent.js';
+import { IPlugin, PluginContext, PluginResult, ValidationResult, PluginMetadata, ParameterSchema } from '../../types/plugins.js';
+import { ValidationError } from '../../types/agents.js';
 import { PathResolver } from './PathResolver.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
 import { TemplateService, templateService } from '../../core/templates/template-service.js';
@@ -33,8 +35,33 @@ export abstract class BasePlugin implements IPlugin {
 
   abstract getMetadata(): PluginMetadata;
   abstract install(context: PluginContext): Promise<PluginResult>;
-  abstract getParameterSchema(): any;
+  abstract getParameterSchema(): ParameterSchema;
   abstract generateUnifiedInterface(config: Record<string, any>): any;
+
+  // ============================================================================
+  // PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  /**
+   * Get dynamic questions - Plugins NEVER generate questions
+   * Agents handle all question generation based on parameter schemas
+   */
+  getDynamicQuestions(context: PluginContext): any[] {
+    // Plugins provide data, agents handle questions
+    return [];
+  }
+
+  /**
+   * Validate configuration based on parameter schema
+   */
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const schema = this.getParameterSchema();
+    const required = schema.parameters
+      .filter(param => param.required)
+      .map(param => param.id);
+    
+    return this.validateRequiredConfig(config, required);
+  }
 
   // ============================================================================
   // PATH RESOLVER INITIALIZATION
@@ -113,18 +140,41 @@ export abstract class BasePlugin implements IPlugin {
   }
 
   // ============================================================================
+  // COMMON VALIDATION
+  // ============================================================================
+
+  protected validateRequiredConfig(
+    config: Record<string, any>, 
+    required: string[]
+  ): ValidationResult {
+    const errors: ValidationError[] = [];
+    
+    for (const field of required) {
+      if (!config[field]) {
+        errors.push({
+          field,
+          message: `${field} is required`,
+          code: 'MISSING_FIELD',
+          severity: 'error'
+        });
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
+  }
+
+  // ============================================================================
   // COMMON FILE OPERATIONS
   // ============================================================================
 
   protected async generateFile(filePath: string, content: string): Promise<void> {
     try {
-      // Ensure path resolver is initialized
       this.ensurePathResolverInitialized();
-
-      // Ensure directory exists
       await this.pathResolver.ensureDirectory(filePath);
-      
-      // Write file
       await fsExtra.writeFile(filePath, content, 'utf8');
     } catch (error) {
       throw new Error(`Failed to generate file ${filePath}: ${error}`);
@@ -207,155 +257,8 @@ export abstract class BasePlugin implements IPlugin {
   }
 
   // ============================================================================
-  // COMMON VALIDATION
+  // IPlugin INTERFACE IMPLEMENTATIONS
   // ============================================================================
-
-  protected validateRequiredConfig(
-    config: Record<string, any>, 
-    required: string[]
-  ): ValidationResult {
-    const errors: ValidationError[] = [];
-    
-    for (const field of required) {
-      if (!config[field]) {
-        errors.push({
-          field,
-          message: `${field} is required`,
-          code: 'MISSING_FIELD',
-          severity: 'error'
-        });
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
-  }
-
-  protected validateStringField(
-    config: Record<string, any>,
-    field: string,
-    pattern?: RegExp,
-    minLength?: number,
-    maxLength?: number
-  ): ValidationResult {
-    const errors: ValidationError[] = [];
-    const value = config[field];
-
-    if (!value) {
-      errors.push({
-        field,
-        message: `${field} is required`,
-        code: 'MISSING_FIELD',
-        severity: 'error'
-      });
-      return { valid: false, errors, warnings: [] };
-    }
-
-    if (typeof value !== 'string') {
-      errors.push({
-        field,
-        message: `${field} must be a string`,
-        code: 'INVALID_TYPE',
-        severity: 'error'
-      });
-      return { valid: false, errors, warnings: [] };
-    }
-
-    if (minLength && value.length < minLength) {
-      errors.push({
-        field,
-        message: `${field} must be at least ${minLength} characters`,
-        code: 'MIN_LENGTH',
-        severity: 'error'
-      });
-    }
-
-    if (maxLength && value.length > maxLength) {
-      errors.push({
-        field,
-        message: `${field} must be at most ${maxLength} characters`,
-        code: 'MAX_LENGTH',
-        severity: 'error'
-      });
-    }
-
-    if (pattern && !pattern.test(value)) {
-      errors.push({
-        field,
-        message: `${field} format is invalid`,
-        code: 'INVALID_FORMAT',
-        severity: 'error'
-      });
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
-  }
-
-  // ============================================================================
-  // COMMON LIFECYCLE MANAGEMENT
-  // ============================================================================
-
-  protected async executeLifecycle(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      // Initialize path resolver
-      this.initializePathResolver(context);
-      
-      // Validate context
-      const validation = await this.validate(context);
-      if (!validation.valid) {
-        return this.createErrorResult('Plugin validation failed', validation.errors, startTime);
-      }
-
-      // Execute plugin-specific installation
-      const result = await this.install(context);
-      
-      // Validate installation
-      if (result.success) {
-        await this.validateInstallation(context);
-      }
-
-      return result;
-    } catch (error) {
-      return this.createErrorResult('Plugin lifecycle failed', [error], startTime);
-    }
-  }
-
-  protected async validateInstallation(context: PluginContext): Promise<void> {
-    // Override in subclasses if needed
-    // Default implementation does nothing
-  }
-
-  // ============================================================================
-  // COMMON UTILITIES
-  // ============================================================================
-
-  protected getModuleName(): string {
-    this.ensurePathResolverInitialized();
-    
-    // Extract module name from plugin ID
-    const pluginId = this.pathResolver['context'].pluginId;
-    
-    if (pluginId.includes('drizzle') || pluginId.includes('prisma')) return 'db';
-    if (pluginId.includes('auth') || pluginId.includes('nextauth')) return 'auth';
-    if (pluginId.includes('ui') || pluginId.includes('shadcn')) return 'ui';
-    if (pluginId.includes('deploy') || pluginId.includes('vercel')) return 'deployment';
-    if (pluginId.includes('test') || pluginId.includes('vitest')) return 'testing';
-    if (pluginId.includes('email') || pluginId.includes('resend')) return 'email';
-    if (pluginId.includes('monitor') || pluginId.includes('sentry')) return 'monitoring';
-    if (pluginId.includes('payment') || pluginId.includes('stripe')) return 'payment';
-    if (pluginId.includes('blockchain') || pluginId.includes('ethereum')) return 'blockchain';
-    
-    return 'custom';
-  }
 
   public async validate(context: PluginContext): Promise<ValidationResult> {
     // Default validation - override in subclasses if needed

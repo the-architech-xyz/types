@@ -4,7 +4,7 @@
  * Centralizes all project configuration handling, making the CLI
  * framework-agnostic and structure-agnostic.
  */
-import { Logger } from '../../types/agent.js';
+import { Logger } from '../../types/agents.js';
 import { ProjectStructure, StructureInfo } from './structure-service.js';
 export interface ProjectConfiguration {
     name: string;

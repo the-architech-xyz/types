@@ -12,8 +12,8 @@ import {
   PluginCategory,
   ValidationResult,
   CompatibilityMatrix
-} from '../../types/plugin.js';
-import { Logger } from '../../types/agent.js';
+} from '../../types/plugins.js';
+import { Logger } from '../../types/agents.js';
 
 export class PluginRegistryImpl implements PluginRegistry {
   private plugins: Map<string, IPlugin> = new Map();

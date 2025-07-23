@@ -2,9 +2,9 @@
  * Base Monitoring Plugin Class
  */
 import { BasePlugin } from './BasePlugin.js';
-import { IUIMonitoringPlugin, MonitoringService, AnalyticsOption, AlertOption, ParameterSchema } from '../../types/plugin-interfaces.js';
-import { ValidationResult } from '../../types/agent.js';
-import { PluginContext } from '../../types/plugin.js';
+import { IUIMonitoringPlugin, MonitoringService, AnalyticsOption, AlertOption, ParameterSchema } from '../../types/plugins.js';
+import { ValidationResult } from '../../types/agents.js';
+import { PluginContext } from '../../types/plugins.js';
 export declare abstract class BaseMonitoringPlugin extends BasePlugin implements IUIMonitoringPlugin {
     private questionGenerator;
     constructor();

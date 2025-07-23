@@ -1,4 +1,4 @@
-import { IPlugin, PluginContext, PluginResult, PluginMetadata, ValidationResult, CompatibilityMatrix, PluginRequirement, ConfigSchema } from '../../../../types/plugin.js';
+import { IPlugin, PluginContext, PluginResult, PluginMetadata, ValidationResult, CompatibilityMatrix, PluginRequirement, ConfigSchema } from '../../../../types/plugins.js';
 export declare class RailwayPlugin implements IPlugin {
     private commandRunner;
     constructor();

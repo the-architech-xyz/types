@@ -4,8 +4,8 @@
  * Central registry for managing all available plugins.
  * Provides discovery, compatibility checking, and plugin lifecycle management.
  */
-import { IPlugin, PluginRegistry, PluginCategory, ValidationResult } from '../../types/plugin.js';
-import { Logger } from '../../types/agent.js';
+import { IPlugin, PluginRegistry, PluginCategory, ValidationResult } from '../../types/plugins.js';
+import { Logger } from '../../types/agents.js';
 export declare class PluginRegistryImpl implements PluginRegistry {
     private plugins;
     private logger;

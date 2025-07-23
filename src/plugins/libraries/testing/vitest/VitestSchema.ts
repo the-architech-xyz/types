@@ -1,95 +1,82 @@
-import { ParameterSchema, TestingFramework, TestType, CoverageOption, ParameterGroup } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+/**
+ * Vitest Schema Definitions
+ * 
+ * Contains all configuration schemas and parameter definitions for the Vitest plugin.
+ * Based on: https://vitest.dev/
+ */
+
+import { ParameterSchema, ParameterGroup, ParameterDependency, ParameterCondition } from '../../../../types/plugins.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { TESTING_FRAMEWORKS, TestingFramework } from '../../../../types/core.js';
 
 export class VitestSchema {
   static getParameterSchema(): ParameterSchema {
     return {
       category: PluginCategory.TESTING,
       groups: [
-        { id: 'environment', name: 'Test Environment', description: 'Configure the environment for running tests.', order: 1, parameters: ['environment', 'globals'] },
-        { id: 'features', name: 'Features', description: 'Enable additional testing features.', order: 2, parameters: ['coverage', 'ui'] },
-        { id: 'advanced', name: 'Advanced Configuration', description: 'Fine-tune the test runner behavior.', order: 3, parameters: ['reporters', 'testTimeout'] },
+        { id: 'framework', name: 'Framework Configuration', description: 'Configure the testing framework.', order: 1, parameters: ['framework'] },
+        { id: 'features', name: 'Testing Features', description: 'Enable additional testing features.', order: 2, parameters: ['coverage', 'ui', 'parallel'] },
+        { id: 'environment', name: 'Test Environment', description: 'Configure the test environment.', order: 3, parameters: ['environment'] },
       ],
       parameters: [
         {
           id: 'framework',
           name: 'Testing Framework',
           type: 'select',
-          description: 'The testing framework to use.',
+          description: 'Select the testing framework to use.',
           required: true,
-          default: TestingFramework.VITEST,
-          options: [{ value: TestingFramework.VITEST, label: 'Vitest', recommended: true }],
-          group: 'environment'
-        },
-        {
-          id: 'environment',
-          name: 'Test Environment',
-          type: 'select',
-          description: 'The environment where your tests will be run.',
-          required: true,
-          default: 'jsdom',
-          options: [
-            { value: 'jsdom', label: 'JSDOM', description: 'A browser-like environment for testing web applications.' },
-            { value: 'node', label: 'Node.js', description: 'For testing server-side code.' },
-            { value: 'happy-dom', label: 'Happy DOM', description: 'A faster alternative to JSDOM.' }
-          ],
-          group: 'environment'
-        },
-        {
-          id: 'globals',
-          name: 'Enable Globals',
-          type: 'boolean',
-          description: 'Automatically import test functions like `describe` and `it` in all test files.',
-          required: true,
-          default: true,
-          group: 'environment'
+          default: TESTING_FRAMEWORKS.VITEST,
+          options: [{ value: TESTING_FRAMEWORKS.VITEST, label: 'Vitest', recommended: true }],
+          group: 'framework'
         },
         {
           id: 'coverage',
-          name: 'Enable Code Coverage',
+          name: 'Code Coverage',
           type: 'boolean',
-          description: 'Generate a report showing how much of your code is covered by tests.',
+          description: 'Enable code coverage reporting.',
           required: true,
           default: true,
           group: 'features'
         },
         {
           id: 'ui',
-          name: 'Enable Vitest UI',
+          name: 'UI Testing',
           type: 'boolean',
-          description: 'Use the interactive UI for running and debugging tests.',
+          description: 'Enable Vitest UI for visual testing.',
+          required: true,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'parallel',
+          name: 'Parallel Execution',
+          type: 'boolean',
+          description: 'Run tests in parallel for faster execution.',
           required: true,
           default: true,
           group: 'features'
         },
         {
-          id: 'reporters',
-          name: 'Test Reporters',
-          type: 'multiselect',
-          description: 'The format for test run reports.',
-          required: false,
-          default: ['default', 'html'],
-          options: [
-            { value: 'default', label: 'Default' },
-            { value: 'verbose', label: 'Verbose' },
-            { value: 'dot', label: 'Dot' },
-            { value: 'json', label: 'JSON' },
-            { value: 'html', label: 'HTML Report' },
-          ],
-          group: 'advanced'
-        },
-        {
-          id: 'testTimeout',
-          name: 'Test Timeout (ms)',
-          type: 'number',
-          description: 'The maximum time a single test can run before timing out.',
+          id: 'environment',
+          name: 'Test Environment',
+          type: 'select',
+          description: 'Select the test environment.',
           required: true,
-          default: 5000,
-          group: 'advanced'
+          default: 'jsdom',
+          options: [
+            { value: 'jsdom', label: 'jsdom', description: 'Browser-like environment' },
+            { value: 'happy-dom', label: 'happy-dom', description: 'Lightweight DOM implementation' },
+            { value: 'node', label: 'Node.js', description: 'Node.js environment' }
+          ],
+          group: 'environment'
         }
       ],
       dependencies: [],
       validations: []
     };
+  }
+
+  static getTestingFrameworks(): TestingFramework[] {
+    return [TESTING_FRAMEWORKS.VITEST];
   }
 } 

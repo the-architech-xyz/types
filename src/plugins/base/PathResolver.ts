@@ -6,7 +6,7 @@
  */
 
 import * as path from 'path';
-import { PluginContext } from '../../types/plugin.js';
+import { PluginContext } from '../../types/plugins.js';
 import { StructureInfo } from '../../core/project/structure-service.js';
 
 export class PathResolver {

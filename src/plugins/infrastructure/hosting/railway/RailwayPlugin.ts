@@ -1,10 +1,10 @@
-import { IPlugin, PluginContext, PluginResult, PluginMetadata, PluginCategory, ValidationResult, CompatibilityMatrix, PluginRequirement, ConfigSchema, TargetPlatform, ProjectType } from '../../../../types/plugin.js';
+import { IPlugin, PluginContext, PluginResult, PluginMetadata, PluginCategory, ValidationResult, CompatibilityMatrix, PluginRequirement, ConfigSchema, TargetPlatform, ProjectType } from '../../../../types/plugins.js';
 import { CommandRunner } from '../../../../core/cli/command-runner.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { RailwayConfig, RailwayConfigSchema, RailwayDefaultConfig } from './RailwaySchema.js';
 import { RailwayGenerator } from './RailwayGenerator.js';
-import { ValidationError } from '../../../../types/agent.js';
+import { ValidationError } from '../../../../types/agents.js';
 
 export class RailwayPlugin implements IPlugin {
   private commandRunner: CommandRunner;

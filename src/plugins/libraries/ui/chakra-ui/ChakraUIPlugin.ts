@@ -10,23 +10,17 @@
  * - https://chakra-ui.com/docs/theming
  */
 
-import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
-import { TemplateService, templateService } from '../../../../core/templates/template-service.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
-import { ValidationError } from '../../../../types/agent.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIPlugin, UnifiedInterfaceTemplate, ValidationResult, ValidationError } from '../../../../types/plugins.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { structureService, StructureInfo } from '../../../../core/project/structure-service.js';
-import { ChakraUIConfig, ChakraUIConfigSchema, ChakraUIDefaultConfig } from './ChakraUISchema.js';
+import { ChakraUIConfigSchema, ChakraUIDefaultConfig } from './ChakraUISchema.js';
 import { ChakraUIGenerator } from './ChakraUIGenerator.js';
 
-export class ChakraUIPlugin implements IPlugin {
-  private templateService: TemplateService;
-  private runner: CommandRunner;
-
+export class ChakraUIPlugin extends BasePlugin implements IUIPlugin {
   constructor() {
-    this.templateService = templateService;
-    this.runner = new CommandRunner();
+    super();
   }
 
   // ============================================================================
@@ -62,7 +56,7 @@ export class ChakraUIPlugin implements IPlugin {
       context.logger.info('Installing Chakra UI...');
 
       // Step 1: Install dependencies
-      await this.installDependencies(context);
+      await this.installChakraDependencies(context);
 
       // Step 2: Create theme configuration
       await this.createThemeConfiguration(context);
@@ -98,7 +92,7 @@ export class ChakraUIPlugin implements IPlugin {
           },
           {
             type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'ui', 'components.tsx')
+            path: path.join(projectPath, 'src', 'lib', 'ui', 'components', 'index.ts')
           }
         ],
         dependencies: [
@@ -110,19 +104,19 @@ export class ChakraUIPlugin implements IPlugin {
           },
           {
             name: '@emotion/react',
-            version: '^11.0.0',
+            version: '^11.11.0',
             type: 'production',
             category: PluginCategory.UI_LIBRARY
           },
           {
             name: '@emotion/styled',
-            version: '^11.0.0',
+            version: '^11.11.0',
             type: 'production',
             category: PluginCategory.UI_LIBRARY
           },
           {
             name: 'framer-motion',
-            version: '^10.0.0',
+            version: '^10.16.0',
             type: 'production',
             category: PluginCategory.UI_LIBRARY
           }
@@ -130,21 +124,15 @@ export class ChakraUIPlugin implements IPlugin {
         scripts: [
           {
             name: 'ui:storybook',
-            command: 'npx storybook dev -p 6006',
+            command: 'npm run storybook',
             description: 'Start Storybook for UI components',
-            category: 'dev'
-          },
-          {
-            name: 'ui:build-storybook',
-            command: 'npx storybook build',
-            description: 'Build Storybook for UI components',
             category: 'dev'
           }
         ],
         configs: [
           {
             file: '.env',
-            content: ChakraUIGenerator.generateEnvConfig(pluginConfig as ChakraUIConfig),
+            content: ChakraUIGenerator.generateEnvConfig(pluginConfig as any),
             mergeStrategy: 'append'
           }
         ],
@@ -156,9 +144,8 @@ export class ChakraUIPlugin implements IPlugin {
     } catch (error) {
       return this.createErrorResult(
         'Failed to install Chakra UI',
-        startTime,
-        [],
-        error
+        [error],
+        startTime
       );
     }
   }
@@ -171,17 +158,10 @@ export class ChakraUIPlugin implements IPlugin {
       
       context.logger.info('Uninstalling Chakra UI...');
 
-      // Remove Chakra UI files
-      const filesToRemove = [
-        path.join(projectPath, 'src', 'lib', 'ui'),
-        path.join(projectPath, 'src', 'components', 'ui'),
-        path.join(projectPath, '.storybook')
-      ];
-
-      for (const file of filesToRemove) {
-        if (await fsExtra.pathExists(file)) {
-          await fsExtra.remove(file);
-        }
+      // Remove UI files
+      const uiDir = path.join(projectPath, 'src', 'lib', 'ui');
+      if (await fsExtra.pathExists(uiDir)) {
+        await fsExtra.remove(uiDir);
       }
 
       const duration = Date.now() - startTime;
@@ -193,16 +173,15 @@ export class ChakraUIPlugin implements IPlugin {
         scripts: [],
         configs: [],
         errors: [],
-        warnings: ['Chakra UI files removed. You may need to manually remove dependencies from package.json'],
+        warnings: [],
         duration
       };
 
     } catch (error) {
       return this.createErrorResult(
         'Failed to uninstall Chakra UI',
-        startTime,
-        [],
-        error
+        [error],
+        startTime
       );
     }
   }
@@ -211,10 +190,12 @@ export class ChakraUIPlugin implements IPlugin {
     const startTime = Date.now();
     
     try {
+      const { projectPath } = context;
+      
       context.logger.info('Updating Chakra UI...');
 
       // Update dependencies
-      await this.runner.execCommand(['npm', 'update', '@chakra-ui/react', '@emotion/react', '@emotion/styled', 'framer-motion']);
+      await this.runner.execCommand(['npm', 'update', '@chakra-ui/react', '@emotion/react', '@emotion/styled', 'framer-motion'], { cwd: projectPath });
 
       const duration = Date.now() - startTime;
 
@@ -232,74 +213,55 @@ export class ChakraUIPlugin implements IPlugin {
     } catch (error) {
       return this.createErrorResult(
         'Failed to update Chakra UI',
-        startTime,
-        [],
-        error
+        [error],
+        startTime
       );
     }
   }
 
   async validate(context: PluginContext): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
-    const warnings: string[] = [];
-
+    
     try {
-      // Check if theme configuration exists
-      const themePath = path.join(context.projectPath, 'src', 'lib', 'ui', 'theme.ts');
-      if (!await fsExtra.pathExists(themePath)) {
-        errors.push({
-          field: 'chakra-ui.theme',
-          message: 'Chakra UI theme configuration not found',
-          code: 'MISSING_THEME',
-          severity: 'error'
-        });
+      const { projectPath } = context;
+      
+      // Check if Chakra UI is installed
+      const packageJsonPath = path.join(projectPath, 'package.json');
+      if (await fsExtra.pathExists(packageJsonPath)) {
+        const packageJson = await fsExtra.readJson(packageJsonPath);
+        if (!packageJson.dependencies?.['@chakra-ui/react']) {
+          errors.push({
+            field: 'chakra-ui.dependencies',
+            message: 'Chakra UI dependencies not found in package.json',
+            code: 'MISSING_DEPENDENCIES',
+            severity: 'error'
+          });
+        }
       }
-
-      // Check if provider setup exists
-      const providerPath = path.join(context.projectPath, 'src', 'lib', 'ui', 'provider.tsx');
-      if (!await fsExtra.pathExists(providerPath)) {
-        errors.push({
-          field: 'chakra-ui.provider',
-          message: 'Chakra UI provider setup not found',
-          code: 'MISSING_PROVIDER',
-          severity: 'error'
-        });
-      }
-
-      // Check if components exist
-      const componentsPath = path.join(context.projectPath, 'src', 'lib', 'ui', 'components.tsx');
-      if (!await fsExtra.pathExists(componentsPath)) {
-        warnings.push('Chakra UI component examples not found');
-      }
-
-      return {
-        valid: errors.length === 0,
-        errors,
-        warnings
-      };
-
+      
     } catch (error) {
-      return {
-        valid: false,
-        errors: [{
-          field: 'validation',
-          message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          code: 'VALIDATION_ERROR',
-          severity: 'error'
-        }],
-        warnings: []
-      };
+      errors.push({
+        field: 'validation',
+        message: `Validation failed: ${error}`,
+        code: 'VALIDATION_ERROR',
+        severity: 'error'
+      });
     }
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
   }
 
-  getCompatibility(): CompatibilityMatrix {
+  getCompatibility(): any {
     return {
-      frameworks: ['react', 'nextjs', 'vite', 'webpack'],
-      platforms: [TargetPlatform.WEB],
+      frameworks: ['nextjs', 'react', 'vite', 'cra'],
+      platforms: ['web'],
       nodeVersions: ['>=16.0.0'],
-      packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
-      databases: [],
-      conflicts: ['mui', 'antd', 'shadcn-ui']
+      packageManagers: ['npm', 'yarn', 'pnpm'],
+      conflicts: []
     };
   }
 
@@ -308,34 +270,17 @@ export class ChakraUIPlugin implements IPlugin {
   }
 
   getConflicts(): string[] {
-    return ['mui', 'antd', 'shadcn-ui'];
+    return ['@mui/material', 'antd', 'shadcn-ui'];
   }
 
-  getRequirements(): PluginRequirement[] {
+  getRequirements(): any[] {
     return [
       {
         type: 'package',
         name: '@chakra-ui/react',
-        description: 'Chakra UI core library',
-        version: '^2.8.0'
-      },
-      {
-        type: 'package',
-        name: '@emotion/react',
-        description: 'Emotion CSS-in-JS library',
-        version: '^11.0.0'
-      },
-      {
-        type: 'package',
-        name: '@emotion/styled',
-        description: 'Emotion styled components',
-        version: '^11.0.0'
-      },
-      {
-        type: 'package',
-        name: 'framer-motion',
-        description: 'Animation library for Chakra UI',
-        version: '^10.0.0'
+        description: 'Chakra UI React components',
+        version: '^2.8.0',
+        optional: false
       }
     ];
   }
@@ -344,36 +289,161 @@ export class ChakraUIPlugin implements IPlugin {
     return ChakraUIDefaultConfig;
   }
 
-  getConfigSchema(): ConfigSchema {
+  getConfigSchema(): any {
     return ChakraUIConfigSchema;
   }
 
   // ============================================================================
-  // PRIVATE IMPLEMENTATION METHODS
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
   // ============================================================================
 
-  private async installDependencies(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
+  getParameterSchema(): any {
+    return ChakraUIConfigSchema;
+  }
+
+  getDynamicQuestions(context: PluginContext): any[] {
+    return []; // Plugins NEVER generate questions
+  }
+
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const errors: ValidationError[] = [];
+    
+    // Validate required fields
+    if (!config.theme) {
+      errors.push({
+        field: 'theme',
+        message: 'Theme configuration is required',
+        code: 'MISSING_THEME',
+        severity: 'error'
+      });
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
+  }
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    return {
+      category: PluginCategory.UI_LIBRARY,
+      exports: [
+        {
+          name: 'ChakraProvider',
+          type: 'function',
+          implementation: 'ChakraProvider',
+          documentation: 'Chakra UI provider component',
+          parameters: [],
+          returnType: 'JSX.Element',
+          examples: []
+        },
+        {
+          name: 'useTheme',
+          type: 'function',
+          implementation: 'useTheme',
+          documentation: 'Access Chakra UI theme',
+          parameters: [],
+          returnType: 'Theme',
+          examples: []
+        }
+      ],
+      types: [
+        {
+          name: 'ChakraConfig',
+          type: 'interface',
+          definition: 'interface ChakraConfig { theme: Theme; colorMode: ColorMode; }',
+          documentation: 'Configuration for Chakra UI',
+          properties: []
+        },
+        {
+          name: 'Theme',
+          type: 'interface',
+          definition: 'interface Theme { colors: ColorPalette; fonts: FontPalette; }',
+          documentation: 'Chakra UI theme configuration',
+          properties: []
+        }
+      ],
+      utilities: [],
+      constants: [
+        {
+          name: 'CHAKRA_VERSION',
+          value: '2.8.0',
+          documentation: 'Current Chakra UI version',
+          type: 'string'
+        },
+        {
+          name: 'DEFAULT_THEME',
+          value: 'light',
+          documentation: 'Default theme mode',
+          type: 'string'
+        }
+      ],
+      documentation: 'Chakra UI unified interface for React components'
+    };
+  }
+
+  // ============================================================================
+  // IUIPlugin INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getUILibraries(): string[] {
+    return [
+      'chakra-ui',
+      'chakra-ui-next',
+      'chakra-ui-vue'
+    ];
+  }
+
+  getComponentOptions(): string[] {
+    return [
+      'button',
+      'input',
+      'card',
+      'modal',
+      'navigation',
+      'form',
+      'table',
+      'chart',
+      'calendar',
+      'dropdown',
+      'tooltip',
+      'badge',
+      'avatar',
+      'progress',
+      'alert'
+    ];
+  }
+
+  getThemeOptions(): string[] {
+    return [
+      'light',
+      'dark',
+      'system',
+      'custom'
+    ];
+  }
+
+  getStylingOptions(): string[] {
+    return [
+      'emotion',
+      'styled-components',
+      'css-modules',
+      'tailwind'
+    ];
+  }
+
+  // ============================================================================
+  // PRIVATE METHODS
+  // ============================================================================
+
+  private async installChakraDependencies(context: PluginContext): Promise<void> {
+    const { projectPath } = context;
     
     context.logger.info('Installing Chakra UI dependencies...');
 
-    const dependencies = [
-      '@chakra-ui/react@^2.8.0',
-      '@emotion/react@^11.0.0',
-      '@emotion/styled@^11.0.0',
-      'framer-motion@^10.0.0'
-    ];
-
-    // Add optional dependencies based on config
-    if (pluginConfig.enableIcons !== false) {
-      dependencies.push('@chakra-ui/icons@^2.1.0');
-    }
-
-    if (pluginConfig.enableNextJS) {
-      dependencies.push('@chakra-ui/next-js@^2.2.0');
-    }
-
-    await this.runner.execCommand(['npm', 'install', ...dependencies], { cwd: projectPath });
+    // Install Chakra UI and dependencies
+    await this.runner.execCommand(['npm', 'install', '@chakra-ui/react', '@emotion/react', '@emotion/styled', 'framer-motion'], { cwd: projectPath });
   }
 
   private async createThemeConfiguration(context: PluginContext): Promise<void> {
@@ -381,15 +451,15 @@ export class ChakraUIPlugin implements IPlugin {
     
     context.logger.info('Creating theme configuration...');
 
-    // Create UI lib directory
+    // Create UI library directory
     const uiLibDir = path.join(projectPath, 'src', 'lib', 'ui');
     await fsExtra.ensureDir(uiLibDir);
 
     // Generate theme configuration
-    const themeConfig = ChakraUIGenerator.generateThemeConfig(pluginConfig as ChakraUIConfig);
+    const themeContent = ChakraUIGenerator.generateThemeConfig(pluginConfig as any);
     await fsExtra.writeFile(
       path.join(uiLibDir, 'theme.ts'),
-      themeConfig
+      themeContent
     );
   }
 
@@ -398,15 +468,15 @@ export class ChakraUIPlugin implements IPlugin {
     
     context.logger.info('Creating provider setup...');
 
-    // Create UI lib directory
+    // Create UI library directory
     const uiLibDir = path.join(projectPath, 'src', 'lib', 'ui');
     await fsExtra.ensureDir(uiLibDir);
 
-    // Generate provider setup
-    const providerSetup = ChakraUIGenerator.generateProviderSetup(pluginConfig as ChakraUIConfig);
+    // Generate provider component
+    const providerContent = ChakraUIGenerator.generateProviderSetup(pluginConfig as any);
     await fsExtra.writeFile(
       path.join(uiLibDir, 'provider.tsx'),
-      providerSetup
+      providerContent
     );
   }
 
@@ -415,15 +485,15 @@ export class ChakraUIPlugin implements IPlugin {
     
     context.logger.info('Creating component examples...');
 
-    // Create UI lib directory
-    const uiLibDir = path.join(projectPath, 'src', 'lib', 'ui');
-    await fsExtra.ensureDir(uiLibDir);
+    // Create components directory
+    const componentsDir = path.join(projectPath, 'src', 'lib', 'ui', 'components');
+    await fsExtra.ensureDir(componentsDir);
 
     // Generate component examples
-    const componentExamples = ChakraUIGenerator.generateComponentExamples(pluginConfig as ChakraUIConfig);
+    const componentsContent = ChakraUIGenerator.generateComponentExamples(pluginConfig as any);
     await fsExtra.writeFile(
-      path.join(uiLibDir, 'components.tsx'),
-      componentExamples
+      path.join(componentsDir, 'index.ts'),
+      componentsContent
     );
   }
 
@@ -433,15 +503,15 @@ export class ChakraUIPlugin implements IPlugin {
     context.logger.info('Adding environment configuration...');
 
     // Generate environment configuration
-    const envConfig = ChakraUIGenerator.generateEnvConfig(pluginConfig as ChakraUIConfig);
-    
+    const envContent = ChakraUIGenerator.generateEnvConfig(pluginConfig as any);
+
     // Append to .env file
     const envPath = path.join(projectPath, '.env');
     if (await fsExtra.pathExists(envPath)) {
-      const existingEnv = await fsExtra.readFile(envPath, 'utf-8');
-      await fsExtra.writeFile(envPath, existingEnv + '\n' + envConfig);
+      const existingContent = await fsExtra.readFile(envPath, 'utf8');
+      await fsExtra.writeFile(envPath, `${existingContent}\n${envContent}`);
     } else {
-      await fsExtra.writeFile(envPath, envConfig);
+      await fsExtra.writeFile(envPath, envContent);
     }
   }
 
@@ -450,7 +520,7 @@ export class ChakraUIPlugin implements IPlugin {
     
     context.logger.info('Generating unified interface files...');
 
-    // Create UI lib directory
+    // Create UI library directory
     const uiLibDir = path.join(projectPath, 'src', 'lib', 'ui');
     await fsExtra.ensureDir(uiLibDir);
 
@@ -460,33 +530,5 @@ export class ChakraUIPlugin implements IPlugin {
       path.join(uiLibDir, 'index.ts'),
       unifiedContent
     );
-  }
-
-  private createErrorResult(
-    message: string,
-    startTime: number,
-    errors: any[] = [],
-    originalError?: any
-  ): PluginResult {
-    const duration = Date.now() - startTime;
-
-    return {
-      success: false,
-      artifacts: [],
-      dependencies: [],
-      scripts: [],
-      configs: [],
-      errors: [
-        {
-          code: 'CHAKRA_UI_INSTALL_ERROR',
-          message,
-          details: originalError,
-          severity: 'error'
-        },
-        ...errors
-      ],
-      warnings: [],
-      duration
-    };
   }
 } 

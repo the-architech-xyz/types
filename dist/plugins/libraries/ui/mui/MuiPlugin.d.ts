@@ -6,8 +6,8 @@
  * No user interaction or business logic - that's handled by agents.
  */
 import { BaseUIPlugin } from '../../../base/index.js';
-import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugin.js';
-import { UILibrary, ComponentOption, ThemeOption, StylingOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugin-interfaces.js';
+import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugins.js';
+import { UILibrary, ComponentOption, ThemeOption, StylingOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
 export declare class MuiPlugin extends BaseUIPlugin {
     private generator;
     constructor();

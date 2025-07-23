@@ -1,6 +1,5 @@
 import { BaseTestingPlugin } from '../../../base/index.js';
-import { PluginCategory } from '../../../../types/plugin.js';
-import { TestingFramework } from '../../../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 import { VitestSchema } from './VitestSchema.js';
 import { VitestGenerator } from './VitestGenerator.js';
 export class VitestPlugin extends BaseTestingPlugin {

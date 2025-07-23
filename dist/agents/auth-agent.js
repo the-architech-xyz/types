@@ -8,8 +8,8 @@
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { ProjectType, TargetPlatform } from '../types/plugin.js';
-import { AgentCategory, CapabilityCategory } from '../types/agent.js';
+import { ProjectType, TargetPlatform } from '../types/plugins.js';
+import { AgentCategory, CapabilityCategory } from '../types/agents.js';
 import { structureService } from '../core/project/structure-service.js';
 export class AuthAgent extends AbstractAgent {
     // ============================================================================

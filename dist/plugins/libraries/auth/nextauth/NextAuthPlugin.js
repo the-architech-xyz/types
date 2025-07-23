@@ -10,7 +10,7 @@
  * - https://next-auth.js.org/adapters
  */
 import { BaseAuthPlugin } from '../../../base/index.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 import { NextAuthSchema } from './NextAuthSchema.js';
 import { NextAuthGenerator } from './NextAuthGenerator.js';
 export class NextAuthPlugin extends BaseAuthPlugin {

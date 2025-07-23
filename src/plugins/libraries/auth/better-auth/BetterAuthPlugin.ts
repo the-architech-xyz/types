@@ -10,13 +10,13 @@
  * - https://better-auth.com/docs/adapters
  */
 
-import { BaseAuthPlugin } from '../../../base/index.js';
-import { PluginContext, PluginResult, PluginMetadata, PluginCategory } from '../../../../types/plugin.js';
-import { AuthPluginConfig, AuthProvider, AuthFeature, SessionOption, SecurityOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugin-interfaces.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIAuthPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
 import { BetterAuthSchema } from './BetterAuthSchema.js';
 import { BetterAuthGenerator } from './BetterAuthGenerator.js';
+import path from 'path';
 
-export class BetterAuthPlugin extends BaseAuthPlugin {
+export class BetterAuthPlugin extends BasePlugin implements IUIAuthPlugin {
   private generator: BetterAuthGenerator;
 
   constructor() {
@@ -40,89 +40,255 @@ export class BetterAuthPlugin extends BaseAuthPlugin {
       license: 'MIT',
     };
   }
-  
+
   // ============================================================================
-  // ABSTRACT METHOD IMPLEMENTATIONS
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATION
   // ============================================================================
 
-  getParameterSchema(): ParameterSchema {
+  getParameterSchema() {
     return BetterAuthSchema.getParameterSchema();
   }
 
-  getAuthProviders(): AuthProvider[] {
-    return BetterAuthSchema.getAuthProviders();
-  }
-  
-  getAuthFeatures(): AuthFeature[] {
-    return BetterAuthSchema.getAuthFeatures();
+  // Plugins NEVER generate questions - agents handle this
+  getDynamicQuestions(context: PluginContext): any[] {
+    return [];
   }
 
-  getSessionOptions(): SessionOption[] { return []; }
-  getSecurityOptions(): SecurityOption[] { return []; }
+  validateConfiguration(config: Record<string, any>): any {
+    const errors: any[] = [];
+    const warnings: string[] = [];
 
-  protected getProviderLabel(provider: AuthProvider): string {
-    return BetterAuthSchema.getProviderLabel(provider);
-  }
+    // Validate required fields
+    if (!config.providers || config.providers.length === 0) {
+      errors.push({
+        field: 'providers',
+        message: 'At least one auth provider is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
 
-  protected getFeatureLabel(feature: AuthFeature): string {
-    // Assuming a static helper exists or adding one
-    return feature.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-  }
-  
-  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
-    const generated = this.generator.generateUnifiedIndex(); // CORRECTED: Was generateUnifiedInterface
+    // Validate session configuration
+    if (config.session && config.session.duration && config.session.duration < 300) {
+      warnings.push('Session duration should be at least 5 minutes (300 seconds)');
+    }
+
     return {
-        category: PluginCategory.AUTHENTICATION,
-        exports: [],
-        types: [],
-        utilities: [],
-        constants: [],
-        documentation: generated.content,
+      valid: errors.length === 0,
+      errors,
+      warnings
     };
   }
-  
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    const generated = this.generator.generateUnifiedIndex();
+    return {
+      category: PluginCategory.AUTHENTICATION,
+      exports: [
+        {
+          name: 'auth',
+          type: 'constant',
+          implementation: 'Authentication instance',
+          documentation: 'Main authentication object',
+          examples: ['import { auth } from "@/lib/auth"']
+        },
+        {
+          name: 'signIn',
+          type: 'function',
+          implementation: 'Sign in function',
+          documentation: 'Sign in with a provider',
+          examples: ['await signIn("google")']
+        },
+        {
+          name: 'signOut',
+          type: 'function',
+          implementation: 'Sign out function',
+          documentation: 'Sign out the current user',
+          examples: ['await signOut()']
+        }
+      ],
+      types: [
+        {
+          name: 'User',
+          type: 'interface',
+          definition: 'interface User { id: string; email: string; name?: string; }',
+          documentation: 'User interface'
+        },
+        {
+          name: 'Session',
+          type: 'interface',
+          definition: 'interface Session { user: User; expires: Date; }',
+          documentation: 'Session interface'
+        }
+      ],
+      utilities: [
+        {
+          name: 'getSession',
+          type: 'function',
+          implementation: 'Get current session',
+          documentation: 'Get the current user session',
+          parameters: [],
+          returnType: 'Promise<Session | null>',
+          examples: ['const session = await getSession()']
+        }
+      ],
+      constants: [
+        {
+          name: 'AUTH_SECRET',
+          value: 'process.env.AUTH_SECRET',
+          documentation: 'Authentication secret key',
+          type: 'string'
+        }
+      ],
+      documentation: generated.content || 'Better Auth unified interface for authentication'
+    };
+  }
+
   // ============================================================================
-  // MAIN INSTALL METHOD
+  // AUTH PLUGIN INTERFACE IMPLEMENTATION
+  // ============================================================================
+
+  getAuthProviders(): string[] {
+    return ['email', 'google', 'github', 'discord', 'twitter', 'facebook', 'apple'];
+  }
+
+  getAuthFeatures(): string[] {
+    return ['email_verification', 'password_reset', 'two_factor', 'social_login', 'session_management'];
+  }
+
+  getSessionOptions(): string[] {
+    return ['jwt', 'database', 'redis'];
+  }
+
+  getSecurityOptions(): string[] {
+    return ['csrf_protection', 'rate_limiting', 'password_hashing', 'session_encryption'];
+  }
+
+  // ============================================================================
+  // PLUGIN INSTALLATION
   // ============================================================================
 
   async install(context: PluginContext): Promise<PluginResult> {
     const startTime = Date.now();
-    const config = context.pluginConfig as AuthPluginConfig;
 
     try {
-      // Initialize path resolver first
+      // Initialize path resolver
       this.initializePathResolver(context);
 
-      // 1. Generate all file contents from the "dumb" generator
-      const allFiles = this.generator.generateAllFiles(config);
-      
-      // 2. Use BasePlugin methods to write files to appropriate locations
+      // Get configuration from context
+      const config = context.pluginConfig;
+
+      // Validate configuration
+      const validation = this.validateConfiguration(config);
+      if (!validation.valid) {
+        return this.createErrorResult('Configuration validation failed', validation.errors, startTime);
+      }
+
+      // Install dependencies
+      const dependencies = this.getDependencies();
+      const devDependencies = this.getDevDependencies();
+      await this.installDependencies(dependencies, devDependencies);
+
+      // Generate files
+      const allFiles = this.generator.generateAllFiles(config as any);
       for (const file of allFiles) {
         const filePath = this.pathResolver.getLibPath('auth', file.path.replace('auth/', ''));
         await this.generateFile(filePath, file.content);
       }
 
-      // Handle the API route specifically for Next.js
-      const routeContent = this.generator.generateAuthConfig(config); // CORRECTED: Was generateAuthRoutes
+      // Handle API routes for Next.js
+      const routeContent = this.generator.generateAuthConfig(config as any);
       await this.setupAuthRoutes(context, routeContent.content);
 
-      // 3. Add dependencies
-      await this.installDependencies(
-        ['better-auth', '@better-auth/drizzle-adapter', '@better-auth/utils'],
-        ['@types/node']
+      // Generate environment variables
+      const envVars = this.generator.generateEnvConfig(config as any);
+
+      return this.createSuccessResult(
+        [
+          { type: 'config', path: 'auth.config.ts', description: 'Better Auth configuration' },
+          { type: 'api', path: 'app/api/auth/[...auth]/route.ts', description: 'Auth API routes' },
+          { type: 'interface', path: this.pathResolver.getUnifiedInterfacePath('auth'), description: 'Unified auth interface' }
+        ],
+        dependencies,
+        [],
+        [
+          { type: 'env', content: envVars, description: 'Auth environment variables' }
+        ],
+        validation.warnings,
+        startTime
       );
 
-      // 4. Add scripts (if any)
-      // await this.addScripts({...});
-
-      // 5. Add environment variables
-      const envVars = this.generator.generateEnvConfig(config);
-      // await this.addEnvVariables(envVars);
-
-      return this.createSuccessResult([], [], [], [], [], startTime);
-
-    } catch (error: any) {
-      return this.createErrorResult('Better Auth installation failed', [error], startTime);
+    } catch (error) {
+      return this.createErrorResult('Better Auth plugin installation failed', [error], startTime);
     }
+  }
+
+  // ============================================================================
+  // DEPENDENCIES AND CONFIGURATION
+  // ============================================================================
+
+  getDependencies(): string[] {
+    return [
+      'better-auth',
+      '@better-auth/drizzle-adapter',
+      '@better-auth/utils'
+    ];
+  }
+
+  getDevDependencies(): string[] {
+    return ['@types/node'];
+  }
+
+  getCompatibility(): any {
+    return {
+      frameworks: ['nextjs', 'react', 'vue', 'svelte'],
+      platforms: ['node', 'browser'],
+      nodeVersions: ['>=16.0.0'],
+      packageManagers: ['npm', 'yarn', 'pnpm'],
+      conflicts: ['nextauth', 'clerk']
+    };
+  }
+
+  getConflicts(): string[] {
+    return ['nextauth', 'clerk'];
+  }
+
+  getRequirements(): any[] {
+    return [
+      { type: 'database', name: 'Database for user storage' },
+      { type: 'node', version: '>=16.0.0' }
+    ];
+  }
+
+  getDefaultConfig(): Record<string, any> {
+    return {
+      providers: ['email'],
+      session: {
+        strategy: 'jwt',
+        duration: 604800 // 7 days
+      },
+      features: ['email_verification']
+    };
+  }
+
+  getConfigSchema(): any {
+    return {
+      type: 'object',
+      properties: {
+        providers: { type: 'array', items: { type: 'string' } },
+        session: { type: 'object' },
+        features: { type: 'array', items: { type: 'string' } }
+      },
+      required: ['providers']
+    };
+  }
+
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
+
+  private async setupAuthRoutes(context: PluginContext, content: string): Promise<void> {
+    const routePath = path.join(this.pathResolver['context'].projectPath, 'app', 'api', 'auth', '[...auth]', 'route.ts');
+    await this.generateFile(routePath, content);
   }
 } 

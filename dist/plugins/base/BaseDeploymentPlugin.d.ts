@@ -5,8 +5,8 @@
  */
 import { BasePlugin } from './BasePlugin.js';
 import { IUIDeploymentPlugin, DeploymentPlatform, EnvironmentOption, InfrastructureOption } from '../../types/plugin-interfaces.js';
-import { ValidationResult } from '../../types/agent.js';
-import { PluginContext } from '../../types/plugin.js';
+import { ValidationResult } from '../../types/agents.js';
+import { PluginContext } from '../../types/plugins.js';
 export declare abstract class BaseDeploymentPlugin extends BasePlugin implements IUIDeploymentPlugin {
     private questionGenerator;
     constructor();

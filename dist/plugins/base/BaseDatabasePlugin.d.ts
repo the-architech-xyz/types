@@ -8,7 +8,7 @@
  * - Database-specific validation
  */
 import { BasePlugin } from './BasePlugin.js';
-import { ValidationResult } from '../../types/plugin.js';
+import { ValidationResult } from '../../types/plugins.js';
 import { DatabasePluginConfig, DatabaseProvider, ORMOption } from '../../types/plugin-interfaces.js';
 export declare abstract class BaseDatabasePlugin extends BasePlugin {
     /**

@@ -5,8 +5,9 @@
  * Based on: https://better-auth.com/docs
  */
 
-import { ParameterSchema, AuthProvider, AuthFeature, ParameterGroup, ParameterDependency, ParameterCondition } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { ParameterSchema, ParameterGroup, ParameterDependency, ParameterCondition } from '../../../../types/plugins.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { AUTH_PROVIDERS, AuthProvider, AuthFeature } from '../../../../types/core.js';
 
 // Temporary local definition until export issue is resolved
 export interface ParameterValidationRule {
@@ -32,8 +33,8 @@ export class BetterAuthSchema {
           type: 'multiselect',
           description: 'Select the login providers to enable.',
           required: true,
-          default: [AuthProvider.CREDENTIALS, AuthProvider.GOOGLE, AuthProvider.GITHUB],
-          options: Object.values(AuthProvider).map(p => ({ value: p, label: this.getProviderLabel(p) })),
+          default: [AUTH_PROVIDERS.EMAIL, AUTH_PROVIDERS.GOOGLE, AUTH_PROVIDERS.GITHUB],
+          options: Object.values(AUTH_PROVIDERS).map(p => ({ value: p, label: this.getProviderLabel(p) })),
           group: 'providers'
         },
         {
@@ -99,22 +100,33 @@ export class BetterAuthSchema {
   }
   
   static getAuthProviders(): AuthProvider[] {
-    return Object.values(AuthProvider);
+    return Object.values(AUTH_PROVIDERS);
   }
 
   static getAuthFeatures(): AuthFeature[] {
-    return [AuthFeature.EMAIL_VERIFICATION, AuthFeature.TWO_FACTOR, AuthFeature.RBAC];
+    return [AuthFeature.EMAIL_VERIFICATION, AuthFeature.TWO_FACTOR, AuthFeature.ROLE_BASED_ACCESS];
   }
 
   static getProviderLabel(provider: AuthProvider): string {
     const labels: Record<AuthProvider, string> = {
-      [AuthProvider.CREDENTIALS]: 'Email & Password',
-      [AuthProvider.GOOGLE]: 'Google',
-      [AuthProvider.GITHUB]: 'GitHub',
-      [AuthProvider.DISCORD]: 'Discord',
-      [AuthProvider.TWITTER]: 'Twitter (X)',
-      [AuthProvider.FACEBOOK]: 'Facebook',
-      [AuthProvider.APPLE]: 'Apple'
+      [AUTH_PROVIDERS.EMAIL]: 'Email & Password',
+      [AUTH_PROVIDERS.GOOGLE]: 'Google',
+      [AUTH_PROVIDERS.GITHUB]: 'GitHub',
+      [AUTH_PROVIDERS.DISCORD]: 'Discord',
+      [AUTH_PROVIDERS.TWITTER]: 'Twitter (X)',
+      [AUTH_PROVIDERS.FACEBOOK]: 'Facebook',
+      [AUTH_PROVIDERS.APPLE]: 'Apple',
+      [AUTH_PROVIDERS.MICROSOFT]: 'Microsoft',
+      [AUTH_PROVIDERS.LINKEDIN]: 'LinkedIn',
+      [AUTH_PROVIDERS.GITLAB]: 'GitLab',
+      [AUTH_PROVIDERS.BITBUCKET]: 'Bitbucket',
+      [AUTH_PROVIDERS.TWITCH]: 'Twitch',
+      [AUTH_PROVIDERS.SPOTIFY]: 'Spotify',
+      [AUTH_PROVIDERS.SLACK]: 'Slack',
+      [AUTH_PROVIDERS.NOTION]: 'Notion',
+      [AUTH_PROVIDERS.LINEAR]: 'Linear',
+      [AUTH_PROVIDERS.FIGMA]: 'Figma',
+      [AUTH_PROVIDERS.CUSTOM]: 'Custom'
     };
     return labels[provider];
   }

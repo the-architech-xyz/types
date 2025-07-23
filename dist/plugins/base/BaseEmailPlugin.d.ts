@@ -2,9 +2,9 @@
  * Base Email Plugin Class
  */
 import { BasePlugin } from './BasePlugin.js';
-import { IUIEmailPlugin, EmailService, EmailFeature, TemplateOption, ParameterSchema } from '../../types/plugin-interfaces.js';
-import { ValidationResult } from '../../types/agent.js';
-import { PluginContext } from '../../types/plugin.js';
+import { IUIEmailPlugin, EmailService, EmailFeature, TemplateOption, ParameterSchema } from '../../types/plugins.js';
+import { ValidationResult } from '../../types/agents.js';
+import { PluginContext } from '../../types/plugins.js';
 export declare abstract class BaseEmailPlugin extends BasePlugin implements IUIEmailPlugin {
     private questionGenerator;
     constructor();

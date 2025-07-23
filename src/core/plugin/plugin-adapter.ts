@@ -7,8 +7,8 @@
 
 import { PluginSystem } from './plugin-system.js';
 import { CommandRunner } from '../cli/command-runner.js';
-import { Logger } from '../../types/agent.js';
-import { PluginContext, PluginResult, PluginError } from '../../types/plugin.js';
+import { Logger } from '../../types/agents.js';
+import { PluginContext, PluginResult, PluginError } from '../../types/plugins.js';
 import { structureService } from '../project/structure-service.js';
 
 export interface AdapterContext {

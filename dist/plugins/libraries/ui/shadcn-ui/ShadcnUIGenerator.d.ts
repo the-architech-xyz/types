@@ -4,7 +4,7 @@
  * Handles all code generation for Shadcn/ui design system integration.
  * Based on: https://ui.shadcn.com/docs/installation
  */
-import { UIPluginConfig } from '../../../../types/plugin-interfaces.js';
+import { UIPluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
     path: string;
     content: string;

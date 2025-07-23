@@ -4,8 +4,22 @@
  * Handles expert mode detection and provides advanced configuration options
  * for power users who want full control over their project setup.
  */
-import { AgentContext } from '../../types/agent.js';
-import { PluginPrompt } from '../../types/plugin-selection.js';
+import { AgentContext } from "../../types/agents.js";
+export interface PluginPrompt {
+    id?: string;
+    type: string;
+    name: string;
+    message: string;
+    choices?: PluginChoice[];
+    default?: any;
+    when?: (answers: any) => boolean;
+    validate?: (input: any) => boolean | string;
+}
+export interface PluginChoice {
+    name: string;
+    value: any;
+    description?: string;
+}
 export interface ExpertModeOptions {
     expertMode: boolean;
     verbose: boolean;

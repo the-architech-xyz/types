@@ -14,8 +14,8 @@ import {
   DependencyResolution,
   ConflictInfo,
   PluginRegistry
-} from '../../types/plugin.js';
-import { Logger } from '../../types/agent.js';
+} from '../../types/plugins.js';
+import { Logger } from '../../types/agents.js';
 import { CommandRunner } from '../cli/command-runner.js';
 
 export class PluginManagerImpl implements PluginManager {

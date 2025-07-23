@@ -6,8 +6,8 @@
  * No user interaction or business logic - that's handled by agents.
  */
 import { BaseFrameworkPlugin } from '../../../base/index.js';
-import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugin.js';
-import { FrameworkOption, BuildOption, DeploymentOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugin-interfaces.js';
+import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugins.js';
+import { FrameworkOption, BuildOption, DeploymentOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
 export declare class NextJSPlugin extends BaseFrameworkPlugin {
     private generator;
     constructor();

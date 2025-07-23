@@ -1,7 +1,7 @@
 /**
  * SendGrid Plugin - Pure Technology Implementation
  */
-import { IPlugin, PluginMetadata, PluginContext, PluginResult, ValidationResult, ConfigSchema, PluginRequirement, CompatibilityMatrix } from '../../../../types/plugin.js';
+import { IPlugin, PluginMetadata, PluginContext, PluginResult, ValidationResult, ConfigSchema, PluginRequirement, CompatibilityMatrix } from '../../../../types/plugins.js';
 export declare class SendGridPlugin implements IPlugin {
     private runner;
     constructor();

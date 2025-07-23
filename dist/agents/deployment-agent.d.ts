@@ -6,7 +6,7 @@
  * No direct installation logic - delegates everything to plugins through adapters.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
-import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
+import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agents.js';
 export declare class DeploymentAgent extends AbstractAgent {
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];

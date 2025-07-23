@@ -6,7 +6,7 @@
  * Authentication functionality is handled by separate auth plugins.
  * No user interaction or business logic - that's handled by agents.
  */
-import { PluginCategory, TargetPlatform } from '../../../../types/plugin.js';
+import { PluginCategory, TargetPlatform } from '../../../../types/plugins.js';
 import { templateService } from '../../../../core/templates/template-service.js';
 import { CommandRunner } from '../../../../core/cli/command-runner.js';
 import * as path from 'path';

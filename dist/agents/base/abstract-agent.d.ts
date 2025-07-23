@@ -7,13 +7,13 @@
  * - Performance monitoring
  * - State management
  * - Logging
- * - Expert mode support
+ * - Question generation support
  * - Standardized plugin execution
  */
-import { IAgent, AgentContext, AgentResult, ValidationResult, AgentMetadata, AgentCapability, AgentState, PerformanceMetrics, Artifact } from '../../types/agent.js';
-import { ExpertModeService } from '../../core/expert/expert-mode-service.js';
+import { IAgent, AgentContext, AgentResult, ValidationResult, AgentMetadata, AgentCapability, AgentState, PerformanceMetrics, Artifact } from '../../types/agents.js';
 import { PluginSystem } from '../../core/plugin/plugin-system.js';
-import { PluginResult } from '../../types/plugin.js';
+import { PluginResult } from '../../types/plugins.js';
+import { ProgressiveFlow, BaseQuestionStrategy, FlowResult, ProjectType as QuestionProjectType } from '../../core/questions/index.js';
 interface Ora {
     start(text?: string): Ora;
     stop(): Ora;
@@ -28,40 +28,27 @@ export declare abstract class AbstractAgent implements IAgent {
     protected spinner: Ora | null;
     protected startTime: number;
     protected currentState: AgentState | undefined;
-    protected expertModeService: ExpertModeService;
     protected pluginSystem: PluginSystem;
+    protected progressiveFlow: ProgressiveFlow;
     constructor();
     execute(context: AgentContext): Promise<AgentResult>;
     protected abstract executeInternal(context: AgentContext): Promise<AgentResult>;
     protected abstract getAgentMetadata(): AgentMetadata;
     protected abstract getAgentCapabilities(): AgentCapability[];
     /**
-     * Check if expert mode is enabled for this agent
+     * Execute the question flow to gather user input and generate configuration
      */
-    protected isExpertMode(context: AgentContext): boolean;
+    protected executeQuestionFlow(userInput: string): Promise<FlowResult>;
     /**
-     * Get expert mode options for this agent
+     * Get the appropriate question strategy based on project type
      */
-    protected getExpertModeOptions(context: AgentContext): import("../../core/expert/expert-mode-service.js").ExpertModeOptions;
+    protected getQuestionStrategy(userInput: string): BaseQuestionStrategy;
     /**
-     * Get expert questions for a specific category
+     * Analyze user input to determine project context
      */
-    protected getExpertQuestions(category: string): import("../../types/plugin-selection.js").PluginPrompt[];
-    /**
-     * Validate expert mode choices
-     */
-    protected validateExpertChoices(choices: any, category: string): {
-        valid: boolean;
-        errors: string[];
+    protected analyzeProjectContext(userInput: string): {
+        type: QuestionProjectType;
     };
-    /**
-     * Get dynamic questions from a specific plugin
-     */
-    protected getPluginDynamicQuestions(pluginId: string, context: AgentContext): Promise<import("../../types/plugin-selection.js").PluginPrompt[]>;
-    /**
-     * Get dynamic questions for a category when no specific plugin is selected
-     */
-    protected getCategoryDynamicQuestions(category: string): import("../../types/plugin-selection.js").PluginPrompt[];
     /**
      * Execute a plugin with standardized error handling and validation
      */

@@ -7,8 +7,8 @@
 
 import { PluginRegistryImpl } from './plugin-registry.js';
 import { PluginManagerImpl } from './plugin-manager.js';
-import { Logger, LogLevel, LogContext } from '../../types/agent.js';
-import { PluginRegistry, PluginManager, PluginCategory } from '../../types/plugin.js';
+import { Logger, LogLevel, LogContext } from '../../types/agents.js';
+import { PluginRegistry, PluginManager, PluginCategory } from '../../types/plugins.js';
 import { ShadcnUIPlugin } from '../../plugins/libraries/ui/shadcn-ui/ShadcnUIPlugin.js';
 import { ChakraUIPlugin } from '../../plugins/libraries/ui/chakra-ui/ChakraUIPlugin.js';
 import { MuiPlugin } from '../../plugins/libraries/ui/mui/MuiPlugin.js';

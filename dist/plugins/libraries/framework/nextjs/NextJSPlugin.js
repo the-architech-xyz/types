@@ -6,7 +6,7 @@
  * No user interaction or business logic - that's handled by agents.
  */
 import { BaseFrameworkPlugin } from '../../../base/index.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 import { NextJSSchema } from './NextJSSchema.js';
 import { NextJSGenerator } from './NextJSGenerator.js';
 export class NextJSPlugin extends BaseFrameworkPlugin {

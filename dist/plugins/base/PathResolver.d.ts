@@ -4,7 +4,7 @@
  * Automatically resolves file paths for both single-app and monorepo structures.
  * Handles common patterns like lib files, config files, components, etc.
  */
-import { PluginContext } from '../../types/plugin.js';
+import { PluginContext } from '../../types/plugins.js';
 export declare class PathResolver {
     private context;
     private structure;

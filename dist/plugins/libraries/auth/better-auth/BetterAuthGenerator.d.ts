@@ -4,7 +4,7 @@
  * Handles all code generation for Better Auth authentication integration.
  * Based on: https://better-auth.com/docs
  */
-import { AuthPluginConfig } from '../../../../types/plugin-interfaces.js';
+import { AuthPluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
     path: string;
     content: string;

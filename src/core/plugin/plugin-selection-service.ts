@@ -9,22 +9,15 @@
 import { PluginSystem } from './plugin-system.js';
 import { 
   DATABASE_PROVIDERS, 
-  ORM_LIBRARIES,
+  ORM_LIBRARIES, 
   AUTH_PROVIDERS, 
-  AUTH_FEATURES,
-  UI_LIBRARIES,
+  UI_LIBRARIES, 
+  TESTING_FRAMEWORKS,
   DEPLOYMENT_PLATFORMS,
   EMAIL_SERVICES,
-  TESTING_FRAMEWORKS,
-  DatabaseProvider,
-  ORMLibrary,
-  AuthProvider, 
   AuthFeature,
-  UILibrary,
-  DeploymentPlatform,
-  EmailService,
-  TestingFramework
-} from '../../types/shared-config.js';
+  DatabaseProvider
+} from '../../types/core.js';
 import { 
   PluginSelection, 
   DatabaseSelection, 
@@ -36,7 +29,7 @@ import {
   MonitoringSelection,
   PaymentSelection,
   BlockchainSelection
-} from '../../types/plugin-selection.js';
+} from '../workflow/workflow-templates.js';
 import inquirer from 'inquirer';
 
 export class PluginSelectionService {
@@ -128,7 +121,7 @@ export class PluginSelectionService {
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<string, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
     availableFeatures.forEach(feature => {
       featuresObject[feature.value] = features.includes(feature.value);
     });
@@ -180,19 +173,24 @@ export class PluginSelectionService {
         name: 'features',
         message: 'Which authentication features would you like to enable?',
         choices: [
-          { name: 'Email Verification', value: AUTH_FEATURES.EMAIL_VERIFICATION, checked: true },
-          { name: 'Password Reset', value: AUTH_FEATURES.PASSWORD_RESET, checked: true },
-          { name: 'Social Login', value: AUTH_FEATURES.SOCIAL_LOGIN },
-          { name: 'Session Management', value: AUTH_FEATURES.SESSION_MANAGEMENT, checked: true }
+          { name: 'Email Verification', value: AuthFeature.EMAIL_VERIFICATION, checked: true },
+          { name: 'Password Reset', value: AuthFeature.PASSWORD_RESET, checked: true },
+          { name: 'Social Login', value: AuthFeature.SOCIAL_LOGIN },
+          { name: 'Session Management', value: AuthFeature.SESSION_MANAGEMENT, checked: true }
         ],
-        default: [AUTH_FEATURES.EMAIL_VERIFICATION, AUTH_FEATURES.PASSWORD_RESET, AUTH_FEATURES.SESSION_MANAGEMENT]
+        default: [AuthFeature.EMAIL_VERIFICATION, AuthFeature.PASSWORD_RESET, AuthFeature.SESSION_MANAGEMENT]
       }
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<AuthFeature, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
+    // Initialize all possible features to false
+    Object.values(AuthFeature).forEach(feature => {
+      featuresObject[feature] = false;
+    });
+    // Set selected features to true
     features.forEach((feature: string) => {
-      featuresObject[feature as AuthFeature] = true;
+      featuresObject[feature] = true;
     });
 
     return {
@@ -250,7 +248,7 @@ export class PluginSelectionService {
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<string, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
     features.forEach((feature: string) => {
       featuresObject[feature] = true;
     });
@@ -310,7 +308,7 @@ export class PluginSelectionService {
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<string, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
     features.forEach((feature: string) => {
       featuresObject[feature] = true;
     });
@@ -370,7 +368,7 @@ export class PluginSelectionService {
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<string, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
     features.forEach((feature: string) => {
       featuresObject[feature] = true;
     });
@@ -429,7 +427,7 @@ export class PluginSelectionService {
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<string, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
     features.forEach((feature: string) => {
       featuresObject[feature] = true;
     });
@@ -489,7 +487,7 @@ export class PluginSelectionService {
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<string, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
     features.forEach((feature: string) => {
       featuresObject[feature] = true;
     });
@@ -548,7 +546,7 @@ export class PluginSelectionService {
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<string, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
     features.forEach((feature: string) => {
       featuresObject[feature] = true;
     });
@@ -608,7 +606,7 @@ export class PluginSelectionService {
     ]);
 
     // Convert features array to object
-    const featuresObject: Partial<Record<string, boolean>> = {};
+    const featuresObject: Record<string, boolean> = {};
     features.forEach((feature: string) => {
       featuresObject[feature] = true;
     });

@@ -7,8 +7,8 @@
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
-import { ProjectType, TargetPlatform } from '../types/plugin.js';
-import { AgentCategory, CapabilityCategory } from '../types/agent.js';
+import { ProjectType, TargetPlatform } from '../types/plugins.js';
+import { AgentCategory, CapabilityCategory } from '../types/agents.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
 export class EmailAgent {
     pluginSystem;

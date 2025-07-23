@@ -1,83 +1,78 @@
-import { ParameterSchema, DatabaseProvider, ORMOption, DatabaseFeature, ParameterGroup } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+/**
+ * Mongoose Schema Definitions
+ * 
+ * Contains all configuration schemas and parameter definitions for the Mongoose plugin.
+ * Based on: https://mongoosejs.com/
+ */
+
+import { ParameterSchema, ParameterGroup, ParameterDependency, ParameterCondition } from '../../../../types/plugins.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { DATABASE_PROVIDERS, DatabaseProvider, ORM_LIBRARIES, ORMLibrary, DatabaseFeature } from '../../../../types/core.js';
 
 export class MongooseSchema {
   static getParameterSchema(): ParameterSchema {
     return {
       category: PluginCategory.ORM,
       groups: [
-        { id: 'connection', name: 'Database Connection', description: 'Configure the MongoDB connection.', order: 1, parameters: ['databaseUrl', 'connectionPoolSize', 'enableCompression'] },
-        { id: 'features', name: 'Mongoose Features', description: 'Enable or disable Mongoose features.', order: 2, parameters: ['enableTimestamps', 'enablePlugins', 'enableDebug'] },
+        { id: 'provider', name: 'Database Provider', description: 'Choose your database provider.', order: 1, parameters: ['provider'] },
+        { id: 'connection', name: 'Connection Settings', description: 'Configure database connection.', order: 2, parameters: ['connection'] },
+        { id: 'features', name: 'Features', description: 'Enable additional features.', order: 3, parameters: ['features'] },
       ],
       parameters: [
         {
           id: 'provider',
           name: 'Database Provider',
           type: 'select',
-          description: 'The underlying database provider.',
+          description: 'Select the database provider to use.',
           required: true,
-          default: DatabaseProvider.MONGODB,
-          options: [{ value: DatabaseProvider.MONGODB, label: 'MongoDB', recommended: true }],
-          group: 'connection'
+          default: DATABASE_PROVIDERS.MONGODB,
+          options: [{ value: DATABASE_PROVIDERS.MONGODB, label: 'MongoDB', recommended: true }],
+          group: 'provider'
         },
         {
-          id: 'databaseUrl',
-          name: 'MongoDB Connection URI',
+          id: 'connection',
+          name: 'Connection String',
           type: 'string',
-          description: 'The full connection URI for your MongoDB database.',
+          description: 'MongoDB connection string (e.g., mongodb://localhost:27017/myapp)',
           required: true,
           default: 'mongodb://localhost:27017/myapp',
           group: 'connection'
         },
         {
-          id: 'connectionPoolSize',
-          name: 'Connection Pool Size',
-          type: 'number',
-          description: 'The maximum number of concurrent connections.',
-          required: true,
-          default: 10,
-          validation: [{ type: 'min', value: 1, message: 'Pool size must be at least 1.' }],
-          group: 'connection'
-        },
-        {
-          id: 'enableCompression',
-          name: 'Enable Compression',
-          type: 'boolean',
-          description: 'Enable network compression for MongoDB connections.',
-          required: true,
-          default: true,
-          group: 'connection'
-        },
-        {
-          id: 'enableTimestamps',
-          name: 'Enable Timestamps',
-          type: 'boolean',
-          description: 'Automatically add `createdAt` and `updatedAt` fields to schemas.',
-          required: true,
-          default: true,
+          id: 'features',
+          name: 'Features',
+          type: 'multiselect',
+          description: 'Select additional features to enable.',
+          required: false,
+          default: [DatabaseFeature.MIGRATIONS, DatabaseFeature.SEEDING],
+          options: [
+            { value: DatabaseFeature.MIGRATIONS, label: 'Migrations', description: 'Database migration support' },
+            { value: DatabaseFeature.SEEDING, label: 'Seeding', description: 'Database seeding support' },
+            { value: DatabaseFeature.BACKUP, label: 'Backup', description: 'Database backup support' },
+            { value: DatabaseFeature.MONITORING, label: 'Monitoring', description: 'Database monitoring support' }
+          ],
           group: 'features'
-        },
-        {
-          id: 'enablePlugins',
-          name: 'Enable Plugins',
-          type: 'boolean',
-          description: 'Enable support for Mongoose plugins (e.g., soft delete).',
-          required: true,
-          default: true,
-          group: 'features'
-        },
-        {
-          id: 'enableDebug',
-          name: 'Enable Debug Mode',
-          type: 'boolean',
-          description: 'Log Mongoose operations to the console.',
-          required: true,
-          default: false,
-          group: 'features'
-        },
+        }
       ],
       dependencies: [],
       validations: []
     };
+  }
+
+  static getDatabaseProviders(): DatabaseProvider[] {
+    return [DATABASE_PROVIDERS.MONGODB];
+  }
+
+  static getORMOptions(): ORMLibrary[] {
+    return [ORM_LIBRARIES.MONGOOSE];
+  }
+
+  static getDatabaseFeatures(): DatabaseFeature[] {
+    return [
+      DatabaseFeature.MIGRATIONS,
+      DatabaseFeature.SEEDING,
+      DatabaseFeature.BACKUP,
+      DatabaseFeature.MONITORING
+    ];
   }
 } 

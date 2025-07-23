@@ -11,8 +11,8 @@
  * - https://www.prisma.io/docs/guides/performance-and-optimization
  */
 import { BaseDatabasePlugin } from '../../../base/index.js';
-import { PluginCategory } from '../../../../types/plugin.js';
-import { DatabaseProvider, ORMOption, DatabaseFeature } from '../../../../types/plugin-interfaces.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { ORMOption, DatabaseFeature } from '../../../../types/plugins.js';
 import { PrismaSchema } from './PrismaSchema.js';
 import { PrismaGenerator } from './PrismaGenerator.js';
 export class PrismaPlugin extends BaseDatabasePlugin {

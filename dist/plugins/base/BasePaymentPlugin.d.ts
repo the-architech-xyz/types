@@ -2,9 +2,9 @@
  * Base Payment Plugin Class
  */
 import { BasePlugin } from './BasePlugin.js';
-import { IUIPaymentPlugin, PaymentProvider, PaymentFeature, BillingOption, ParameterSchema } from '../../types/plugin-interfaces.js';
-import { ValidationResult } from '../../types/agent.js';
-import { PluginContext } from '../../types/plugin.js';
+import { IUIPaymentPlugin, PaymentProvider, PaymentFeature, BillingOption, ParameterSchema } from '../../types/plugins.js';
+import { ValidationResult } from '../../types/agents.js';
+import { PluginContext } from '../../types/plugins.js';
 export declare abstract class BasePaymentPlugin extends BasePlugin implements IUIPaymentPlugin {
     private questionGenerator;
     constructor();

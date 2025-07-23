@@ -5,7 +5,7 @@
  * Focuses only on payment technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
+import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
 export declare class StripePlugin implements IPlugin {
     private templateService;
     private runner;

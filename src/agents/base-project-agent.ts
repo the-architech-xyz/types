@@ -6,7 +6,7 @@
  */
 
 import { AbstractAgent } from './base/abstract-agent.js';
-import { AgentContext, AgentResult, AgentMetadata, AgentCapability, AgentCategory, CapabilityCategory, ValidationResult } from '../types/agent.js';
+import { AgentContext, AgentResult, AgentMetadata, AgentCapability, AgentCategory, CapabilityCategory, ValidationResult } from '../types/agents.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
 import { TemplateService, templateService } from '../core/templates/template-service.js';

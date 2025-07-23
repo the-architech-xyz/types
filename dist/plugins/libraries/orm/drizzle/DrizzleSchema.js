@@ -4,8 +4,8 @@
  * Contains the parameter schema and static helper methods for the Drizzle plugin.
  * Separated from the main plugin for better organization.
  */
-import { DatabaseProvider, ORMOption, DatabaseFeature } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { ORMOption, DatabaseFeature } from '../../../../types/plugins.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 export class DrizzleSchema {
     /**
      * Get the parameter schema for Drizzle plugin

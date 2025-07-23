@@ -2,9 +2,9 @@
  * Base Blockchain Plugin Class
  */
 import { BasePlugin } from './BasePlugin.js';
-import { IUIBlockchainPlugin, BlockchainNetwork, SmartContractOption, WalletOption, ParameterSchema } from '../../types/plugin-interfaces.js';
-import { ValidationResult } from '../../types/agent.js';
-import { PluginContext } from '../../types/plugin.js';
+import { IUIBlockchainPlugin, BlockchainNetwork, SmartContractOption, WalletOption, ParameterSchema } from '../../types/plugins.js';
+import { ValidationResult } from '../../types/agents.js';
+import { PluginContext } from '../../types/plugins.js';
 export declare abstract class BaseBlockchainPlugin extends BasePlugin implements IUIBlockchainPlugin {
     private questionGenerator;
     constructor();

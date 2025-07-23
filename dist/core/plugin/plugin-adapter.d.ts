@@ -6,8 +6,8 @@
  */
 import { PluginSystem } from './plugin-system.js';
 import { CommandRunner } from '../cli/command-runner.js';
-import { Logger } from '../../types/agent.js';
-import { PluginError } from '../../types/plugin.js';
+import { Logger } from '../../types/agents.js';
+import { PluginError } from '../../types/plugins.js';
 export interface AdapterContext {
     projectName: string;
     projectPath: string;

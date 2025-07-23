@@ -4,8 +4,7 @@
  * Contains all configuration schemas and parameter definitions for the Prisma plugin.
  * Based on: https://www.prisma.io/docs/getting-started
  */
-import { DatabaseProvider } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 export class PrismaSchema {
     static getParameterSchema() {
         return {

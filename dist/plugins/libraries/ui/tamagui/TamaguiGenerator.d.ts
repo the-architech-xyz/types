@@ -1,4 +1,4 @@
-import { UIPluginConfig } from '../../../../types/plugin-interfaces.js';
+import { UIPluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
     path: string;
     content: string;

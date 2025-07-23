@@ -8,8 +8,8 @@
  * - Path resolution
  * - Logging
  */
-import { IPlugin, PluginContext, PluginResult, ValidationResult, PluginMetadata } from '../../types/plugin.js';
-import { ValidationError } from '../../types/agent.js';
+import { IPlugin, PluginContext, PluginResult, ValidationResult, PluginMetadata } from '../../types/plugins.js';
+import { ValidationError } from '../../types/agents.js';
 import { PathResolver } from './PathResolver.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
 import { TemplateService } from '../../core/templates/template-service.js';

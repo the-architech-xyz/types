@@ -11,7 +11,7 @@ import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
-import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
+import { PluginContext, ProjectType, TargetPlatform } from '../types/plugins.js';
 import { TemplateService, templateService } from '../core/templates/template-service.js';
 import {
   AgentContext,
@@ -23,7 +23,7 @@ import {
   ValidationResult,
   Artifact,
   ValidationError
-} from '../types/agent.js';
+} from '../types/agents.js';
 import { structureService, StructureInfo } from '../core/project/structure-service.js';
 
 interface DatabaseConfig {

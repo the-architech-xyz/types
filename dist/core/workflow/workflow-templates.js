@@ -4,8 +4,7 @@
  * Pre-configured plugin selections for common use cases.
  * Dramatically reduces questions from 20+ to 2-5 while maintaining customization.
  */
-import { DEFAULT_PLUGIN_SELECTION } from '../../types/plugin-selection.js';
-import { DATABASE_PROVIDERS, ORM_LIBRARIES, AUTH_PROVIDERS, AUTH_FEATURES, UI_LIBRARIES, DEPLOYMENT_PLATFORMS, EMAIL_SERVICES, TESTING_FRAMEWORKS } from '../../types/shared-config.js';
+import { DATABASE_PROVIDERS, ORM_LIBRARIES, AUTH_PROVIDERS, UI_LIBRARIES, DEPLOYMENT_PLATFORMS, EMAIL_SERVICES, TESTING_FRAMEWORKS } from '../../types/core.js';
 // ============================================================================
 // WORKFLOW TEMPLATES
 // ============================================================================
@@ -105,10 +104,10 @@ export const WORKFLOW_TEMPLATES = [
                 enabled: true,
                 providers: [AUTH_PROVIDERS.EMAIL],
                 features: {
-                    [AUTH_FEATURES.EMAIL_VERIFICATION]: true,
-                    [AUTH_FEATURES.PASSWORD_RESET]: true,
-                    [AUTH_FEATURES.SOCIAL_LOGIN]: false,
-                    [AUTH_FEATURES.SESSION_MANAGEMENT]: true
+                    'email-verification': true,
+                    'password-reset': true,
+                    'social-login': false,
+                    'session-management': true
                 }
             },
             ui: {
@@ -192,10 +191,10 @@ export const WORKFLOW_TEMPLATES = [
                 enabled: true,
                 providers: [AUTH_PROVIDERS.EMAIL],
                 features: {
-                    [AUTH_FEATURES.EMAIL_VERIFICATION]: true,
-                    [AUTH_FEATURES.PASSWORD_RESET]: true,
-                    [AUTH_FEATURES.SOCIAL_LOGIN]: true,
-                    [AUTH_FEATURES.SESSION_MANAGEMENT]: true
+                    'email-verification': true,
+                    'password-reset': true,
+                    'social-login': true,
+                    'session-management': true
                 }
             },
             ui: {
@@ -287,10 +286,10 @@ export const WORKFLOW_TEMPLATES = [
                 enabled: true,
                 providers: [AUTH_PROVIDERS.EMAIL],
                 features: {
-                    [AUTH_FEATURES.EMAIL_VERIFICATION]: true,
-                    [AUTH_FEATURES.PASSWORD_RESET]: true,
-                    [AUTH_FEATURES.SOCIAL_LOGIN]: true,
-                    [AUTH_FEATURES.SESSION_MANAGEMENT]: true
+                    'email-verification': true,
+                    'password-reset': true,
+                    'social-login': true,
+                    'session-management': true
                 }
             },
             ui: {
@@ -389,10 +388,10 @@ export const WORKFLOW_TEMPLATES = [
                 enabled: true,
                 providers: [AUTH_PROVIDERS.EMAIL],
                 features: {
-                    [AUTH_FEATURES.EMAIL_VERIFICATION]: true,
-                    [AUTH_FEATURES.PASSWORD_RESET]: true,
-                    [AUTH_FEATURES.SOCIAL_LOGIN]: true,
-                    [AUTH_FEATURES.SESSION_MANAGEMENT]: true
+                    'email-verification': true,
+                    'password-reset': true,
+                    'social-login': true,
+                    'session-management': true
                 }
             },
             ui: {
@@ -514,15 +513,62 @@ export class WorkflowTemplateService {
     static getCustomTemplate() {
         return {
             id: 'custom',
-            name: 'Custom Setup',
-            description: 'Full customization - choose every plugin and configuration',
-            questions: 20,
-            estimatedTime: '10 minutes',
-            targetAudience: ['experts', 'developers', 'power users'],
+            name: 'Custom Template',
+            description: 'Build your own custom template with full control',
+            questions: 15,
+            estimatedTime: '5-10 minutes',
+            targetAudience: ['experts', 'custom', 'enterprise'],
             complexity: 'expert',
-            keywords: ['custom', 'advanced', 'expert', 'full control'],
-            pluginSelection: DEFAULT_PLUGIN_SELECTION,
-            customizations: []
+            pluginSelection: {
+                database: {
+                    enabled: false,
+                    provider: DATABASE_PROVIDERS.NEON,
+                    orm: ORM_LIBRARIES.DRIZZLE,
+                    features: {}
+                },
+                authentication: {
+                    enabled: false,
+                    providers: [],
+                    features: {}
+                },
+                ui: {
+                    enabled: false,
+                    library: UI_LIBRARIES.SHADCN_UI,
+                    features: {}
+                },
+                deployment: {
+                    enabled: false,
+                    platform: DEPLOYMENT_PLATFORMS.VERCEL,
+                    features: {}
+                },
+                testing: {
+                    enabled: false,
+                    framework: TESTING_FRAMEWORKS.VITEST,
+                    features: {}
+                },
+                email: {
+                    enabled: false,
+                    service: EMAIL_SERVICES.RESEND,
+                    features: {}
+                },
+                monitoring: {
+                    enabled: false,
+                    services: [],
+                    features: {}
+                },
+                payment: {
+                    enabled: false,
+                    providers: [],
+                    features: {}
+                },
+                blockchain: {
+                    enabled: false,
+                    networks: [],
+                    features: {}
+                }
+            },
+            customizations: [],
+            keywords: ['custom', 'enterprise', 'expert', 'full-control']
         };
     }
 }

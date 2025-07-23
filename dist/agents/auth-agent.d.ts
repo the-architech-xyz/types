@@ -6,7 +6,7 @@
  * Pure orchestrator - no direct installation logic.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
-import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agent.js';
+import { AgentContext, AgentResult, AgentMetadata, AgentCapability, ValidationResult } from '../types/agents.js';
 export declare class AuthAgent extends AbstractAgent {
     protected getAgentMetadata(): AgentMetadata;
     protected getAgentCapabilities(): AgentCapability[];

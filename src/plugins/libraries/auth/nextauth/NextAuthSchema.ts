@@ -2,11 +2,12 @@
  * NextAuth Schema Definitions
  * 
  * Contains all configuration schemas and parameter definitions for the NextAuth plugin.
- * Based on: https://next-auth.js.org/configuration
+ * Based on: https://next-auth.js.org/
  */
 
-import { ParameterSchema, AuthProvider, AuthFeature, ParameterGroup, ParameterDependency, ParameterCondition } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { ParameterSchema, ParameterGroup, ParameterDependency, ParameterCondition } from '../../../../types/plugins.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { AUTH_PROVIDERS, AuthProvider, AuthFeature } from '../../../../types/core.js';
 
 // Temporary local definition until export issue is resolved
 export interface ParameterValidationRule {
@@ -22,8 +23,8 @@ export class NextAuthSchema {
       category: PluginCategory.AUTHENTICATION,
       groups: [
         { id: 'providers', name: 'Login Providers', description: 'Configure third-party and credential-based login methods.', order: 1, parameters: ['providers'] },
-        { id: 'session', name: 'Session Strategy', description: 'Configure how user sessions are stored and managed.', order: 2, parameters: ['sessionStrategy', 'sessionDuration'] },
-        { id: 'features', name: 'Security Features', description: 'Enable additional security features.', order: 3, parameters: ['requireEmailVerification'] },
+        { id: 'features', name: 'Security Features', description: 'Enable additional security and user management features.', order: 2, parameters: ['requireEmailVerification', 'enableTwoFactor', 'enableRateLimiting', 'enableAuditLogs'] },
+        { id: 'session', name: 'Session Management', description: 'Control how user sessions are handled.', order: 3, parameters: ['sessionDuration'] },
       ],
       parameters: [
         {
@@ -32,34 +33,9 @@ export class NextAuthSchema {
           type: 'multiselect',
           description: 'Select the login providers to enable.',
           required: true,
-          default: [AuthProvider.CREDENTIALS, AuthProvider.GOOGLE, AuthProvider.GITHUB],
-          options: Object.values(AuthProvider).map(p => ({ value: p, label: this.getProviderLabel(p) })),
+          default: [AUTH_PROVIDERS.EMAIL, AUTH_PROVIDERS.GOOGLE, AUTH_PROVIDERS.GITHUB],
+          options: Object.values(AUTH_PROVIDERS).map(p => ({ value: p, label: this.getProviderLabel(p) })),
           group: 'providers'
-        },
-        {
-            id: 'sessionStrategy',
-            name: 'Session Strategy',
-            type: 'select',
-            description: 'Choose between JWT and database-backed sessions.',
-            required: true,
-            default: 'jwt',
-            options: [
-                { value: 'jwt', label: 'JWT', description: 'Stateless sessions stored in a JSON Web Token.'},
-                { value: 'database', label: 'Database', description: 'Stateful sessions stored in the database.'}
-            ],
-            group: 'session'
-        },
-        {
-          id: 'sessionDuration',
-          name: 'Session Duration (seconds)',
-          type: 'number',
-          description: 'The duration for which a user session is valid.',
-          required: true,
-          default: 30 * 24 * 60 * 60, // 30 days
-          validation: [
-            { type: 'min', value: 60, message: 'Session duration must be at least 60 seconds.' },
-          ],
-          group: 'session'
         },
         {
           id: 'requireEmailVerification',
@@ -70,29 +46,87 @@ export class NextAuthSchema {
           default: true,
           group: 'features'
         },
+        {
+          id: 'enableTwoFactor',
+          name: 'Enable Two-Factor Authentication',
+          type: 'boolean',
+          description: 'Add an extra layer of security with 2FA.',
+          required: true,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'enableRateLimiting',
+          name: 'Enable Rate Limiting',
+          type: 'boolean',
+          description: 'Protect against brute-force attacks.',
+          required: true,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enableAuditLogs',
+          name: 'Enable Audit Logs',
+          type: 'boolean',
+          description: 'Log important security events like logins and password changes.',
+          required: true,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'sessionDuration',
+          name: 'Session Duration (seconds)',
+          type: 'number',
+          description: 'The duration for which a user session is valid.',
+          required: true,
+          default: 30 * 24 * 60 * 60, // 30 days
+          validation: [
+            { type: 'min', value: 60, message: 'Session duration must be at least 60 seconds.' },
+            { type: 'max', value: 365 * 24 * 60 * 60, message: 'Session duration cannot exceed one year.' }
+          ],
+          group: 'session'
+        }
       ],
-      dependencies: [],
+      dependencies: [
+          {
+              parameter: 'enableTwoFactor',
+              dependsOn: 'requireEmailVerification',
+              condition: { parameter: 'enableTwoFactor', operator: 'equals', value: true, action: 'require' },
+              message: 'Two-Factor Authentication requires Email Verification to be enabled.'
+          }
+      ],
       validations: []
     };
   }
   
   static getAuthProviders(): AuthProvider[] {
-    return Object.values(AuthProvider);
+    return Object.values(AUTH_PROVIDERS);
   }
 
   static getAuthFeatures(): AuthFeature[] {
-    return [AuthFeature.EMAIL_VERIFICATION, AuthFeature.RBAC];
+    return [AuthFeature.EMAIL_VERIFICATION, AuthFeature.ROLE_BASED_ACCESS];
   }
 
   static getProviderLabel(provider: AuthProvider): string {
     const labels: Record<AuthProvider, string> = {
-      [AuthProvider.CREDENTIALS]: 'Email & Password',
-      [AuthProvider.GOOGLE]: 'Google',
-      [AuthProvider.GITHUB]: 'GitHub',
-      [AuthProvider.DISCORD]: 'Discord',
-      [AuthProvider.TWITTER]: 'Twitter (X)',
-      [AuthProvider.FACEBOOK]: 'Facebook',
-      [AuthProvider.APPLE]: 'Apple'
+      [AUTH_PROVIDERS.EMAIL]: 'Email & Password',
+      [AUTH_PROVIDERS.GOOGLE]: 'Google',
+      [AUTH_PROVIDERS.GITHUB]: 'GitHub',
+      [AUTH_PROVIDERS.DISCORD]: 'Discord',
+      [AUTH_PROVIDERS.TWITTER]: 'Twitter (X)',
+      [AUTH_PROVIDERS.FACEBOOK]: 'Facebook',
+      [AUTH_PROVIDERS.APPLE]: 'Apple',
+      [AUTH_PROVIDERS.MICROSOFT]: 'Microsoft',
+      [AUTH_PROVIDERS.LINKEDIN]: 'LinkedIn',
+      [AUTH_PROVIDERS.GITLAB]: 'GitLab',
+      [AUTH_PROVIDERS.BITBUCKET]: 'Bitbucket',
+      [AUTH_PROVIDERS.TWITCH]: 'Twitch',
+      [AUTH_PROVIDERS.SPOTIFY]: 'Spotify',
+      [AUTH_PROVIDERS.SLACK]: 'Slack',
+      [AUTH_PROVIDERS.NOTION]: 'Notion',
+      [AUTH_PROVIDERS.LINEAR]: 'Linear',
+      [AUTH_PROVIDERS.FIGMA]: 'Figma',
+      [AUTH_PROVIDERS.CUSTOM]: 'Custom'
     };
     return labels[provider];
   }

@@ -5,7 +5,7 @@
  * Focuses only on database connection and configuration.
  * ORM functionality is handled by separate ORM plugins.
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
+import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
 export declare class NeonPlugin implements IPlugin {
     private templateService;
     private runner;

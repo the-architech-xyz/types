@@ -7,7 +7,7 @@
 
 import * as path from 'path';
 import fsExtra from 'fs-extra';
-import { Logger } from '../../types/agent.js';
+import { Logger } from '../../types/agents.js';
 import { ProjectStructure, StructureInfo } from './structure-service.js';
 
 export interface ProjectConfiguration {

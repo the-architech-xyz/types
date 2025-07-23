@@ -5,7 +5,7 @@
  * This is the first agent that runs in the orchestration process.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
-import { AgentContext, AgentResult, AgentMetadata, AgentCapability } from '../types/agent.js';
+import { AgentContext, AgentResult, AgentMetadata, AgentCapability } from '../types/agents.js';
 export declare class BaseProjectAgent extends AbstractAgent {
     private runner;
     private templateService;

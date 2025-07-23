@@ -6,8 +6,8 @@
  * No direct installation logic - delegates everything to plugins through adapters.
  */
 import { AbstractAgent } from './base/abstract-agent.js';
-import { ProjectType, TargetPlatform } from '../types/plugin.js';
-import { AgentCategory, CapabilityCategory } from '../types/agent.js';
+import { ProjectType, TargetPlatform } from '../types/plugins.js';
+import { AgentCategory, CapabilityCategory } from '../types/agents.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 export class TestingAgent extends AbstractAgent {

@@ -1,4 +1,4 @@
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 export class NextJSSchema {
     static getParameterSchema() {
         return {

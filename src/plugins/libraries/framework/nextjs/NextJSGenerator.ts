@@ -1,4 +1,4 @@
-import { FrameworkPluginConfig } from '../../../../types/plugin-interfaces.js';
+import { FrameworkPluginConfig } from '../../../../types/plugins.js';
 
 export interface GeneratedFile {
     path: string;

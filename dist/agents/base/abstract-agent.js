@@ -7,19 +7,20 @@
  * - Performance monitoring
  * - State management
  * - Logging
- * - Expert mode support
+ * - Question generation support
  * - Standardized plugin execution
  */
 import chalk from 'chalk';
 import { performance } from 'perf_hooks';
 import * as crypto from 'crypto';
-import { AGENT_ERROR_CODES, AGENT_INTERFACE_VERSION } from '../../types/agent.js';
-import { ExpertModeService } from '../../core/expert/expert-mode-service.js';
+import { AGENT_ERROR_CODES, AGENT_INTERFACE_VERSION } from '../../types/agents.js';
 import { PluginSystem } from '../../core/plugin/plugin-system.js';
-import { ProjectType, TargetPlatform } from '../../types/plugin.js';
+import { ProjectType, TargetPlatform } from '../../types/plugins.js';
 import { structureService } from '../../core/project/structure-service.js';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
+// New question generation system imports
+import { ProgressiveFlow, EcommerceStrategy, BlogStrategy, DashboardStrategy } from '../../core/questions/index.js';
 // Dynamic import for ora
 let oraModule = null;
 async function getOra() {
@@ -32,11 +33,11 @@ export class AbstractAgent {
     spinner = null;
     startTime = 0;
     currentState = undefined;
-    expertModeService;
     pluginSystem;
+    progressiveFlow;
     constructor() {
-        this.expertModeService = new ExpertModeService();
         this.pluginSystem = PluginSystem.getInstance();
+        this.progressiveFlow = new ProgressiveFlow();
     }
     // ============================================================================
     // CORE EXECUTION
@@ -86,43 +87,53 @@ export class AbstractAgent {
         }
     }
     // ============================================================================
-    // EXPERT MODE SUPPORT
+    // QUESTION GENERATION SYSTEM
     // ============================================================================
     /**
-     * Check if expert mode is enabled for this agent
+     * Execute the question flow to gather user input and generate configuration
      */
-    isExpertMode(context) {
-        return this.expertModeService.isExpertMode(context);
+    async executeQuestionFlow(userInput) {
+        const strategy = this.getQuestionStrategy(userInput);
+        return await this.progressiveFlow.execute(userInput, strategy);
     }
     /**
-     * Get expert mode options for this agent
+     * Get the appropriate question strategy based on project type
      */
-    getExpertModeOptions(context) {
-        return this.expertModeService.getExpertModeOptions(context);
+    getQuestionStrategy(userInput) {
+        const context = this.analyzeProjectContext(userInput);
+        switch (context.type) {
+            case 'ecommerce':
+                return new EcommerceStrategy();
+            case 'blog':
+                return new BlogStrategy();
+            case 'dashboard':
+                return new DashboardStrategy();
+            default:
+                // Default to ecommerce for now, can be enhanced later
+                return new EcommerceStrategy();
+        }
     }
     /**
-     * Get expert questions for a specific category
+     * Analyze user input to determine project context
      */
-    getExpertQuestions(category) {
-        return this.expertModeService.getExpertQuestions(category);
-    }
-    /**
-     * Validate expert mode choices
-     */
-    validateExpertChoices(choices, category) {
-        return this.expertModeService.validateExpertChoices(choices, category);
-    }
-    /**
-     * Get dynamic questions from a specific plugin
-     */
-    async getPluginDynamicQuestions(pluginId, context) {
-        return this.expertModeService.getDynamicQuestions(pluginId, context);
-    }
-    /**
-     * Get dynamic questions for a category when no specific plugin is selected
-     */
-    getCategoryDynamicQuestions(category) {
-        return this.expertModeService.getCategoryDynamicQuestions(category);
+    analyzeProjectContext(userInput) {
+        const lower = userInput.toLowerCase();
+        if (lower.includes('ecommerce') || lower.includes('shop') || lower.includes('store')) {
+            return { type: 'ecommerce' };
+        }
+        if (lower.includes('blog') || lower.includes('content')) {
+            return { type: 'blog' };
+        }
+        if (lower.includes('dashboard') || lower.includes('admin')) {
+            return { type: 'dashboard' };
+        }
+        if (lower.includes('api') || lower.includes('backend')) {
+            return { type: 'api' };
+        }
+        if (lower.includes('full') || lower.includes('complete')) {
+            return { type: 'fullstack' };
+        }
+        return { type: 'custom' };
     }
     // ============================================================================
     // STANDARDIZED PLUGIN EXECUTION

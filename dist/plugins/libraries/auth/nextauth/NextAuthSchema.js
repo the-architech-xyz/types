@@ -4,8 +4,8 @@
  * Contains all configuration schemas and parameter definitions for the NextAuth plugin.
  * Based on: https://next-auth.js.org/configuration
  */
-import { AuthProvider, AuthFeature } from '../../../../types/plugin-interfaces.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { AuthFeature } from '../../../../types/plugins.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 export class NextAuthSchema {
     static getParameterSchema() {
         return {

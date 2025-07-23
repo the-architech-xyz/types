@@ -10,7 +10,7 @@ import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
-import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
+import { PluginContext, ProjectType, TargetPlatform } from '../types/plugins.js';
 import {
   IAgent,
   AgentContext,
@@ -23,7 +23,7 @@ import {
   Artifact,
   ValidationError,
   Logger
-} from '../types/agent.js';
+} from '../types/agents.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
 
 interface MonitoringSetupConfig {

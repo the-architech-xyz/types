@@ -132,7 +132,8 @@ export class DynamicQuestionGenerator {
     /**
      * Evaluate parameter conditions
      */
-    evaluateConditions(conditions, answers) {
+    evaluateConditions(conditions, // Changed type to any[] to match original
+    answers) {
         if (conditions.length === 0) {
             return true;
         }
@@ -169,7 +170,8 @@ export class DynamicQuestionGenerator {
     /**
      * Validate parameter input
      */
-    validateParameter(param, input, answers) {
+    validateParameter(param, // Changed type to any to match original
+    input, answers) {
         // Check required validation
         if (param.required && (input === undefined || input === null || input === '')) {
             return `${param.name} is required`;
@@ -244,7 +246,7 @@ export class DynamicQuestionGenerator {
      * Sort parameters by group and order
      */
     sortParametersByGroup(schema) {
-        const sorted = [];
+        const sorted = []; // Changed type to any[] to match original
         // Sort groups by order
         const sortedGroups = schema.groups.sort((a, b) => a.order - b.order);
         // Add parameters from each group

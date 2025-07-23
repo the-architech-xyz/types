@@ -5,7 +5,7 @@
  * Based on: https://www.prisma.io/docs/getting-started
  */
 
-import { DatabasePluginConfig } from '../../../../types/plugin-interfaces.js';
+import { DatabasePluginConfig } from '../../../../types/plugins.js';
 
 export interface GeneratedFile {
     path: string;
@@ -13,7 +13,7 @@ export interface GeneratedFile {
 }
 
 export class PrismaGenerator {
-
+  
   generateAllFiles(config: DatabasePluginConfig): GeneratedFile[] {
     const files: GeneratedFile[] = [
       this.generatePrismaSchema(config),
@@ -22,7 +22,7 @@ export class PrismaGenerator {
       this.generateUnifiedIndex(),
     ];
 
-    if ((config as any).features.seeding) {
+    if ((config.features as any).seeding) {
         files.push(this.generateSeedFile());
     }
     
@@ -479,13 +479,23 @@ export type { PrismaClient } from '@prisma/client';
 
   generateEnvConfig(config: DatabasePluginConfig): Record<string, string> {
     const envVars: Record<string, string> = {};
-    if ('connectionString' in config.connection) {
-        envVars['DATABASE_URL'] = config.connection.connectionString;
-    } else if ('projectUrl' in config.connection) {
+    
+    // Check if connection exists and has connectionString
+    if (config.connection && 'connectionString' in config.connection) {
+        const connectionString = config.connection.connectionString as string;
+        envVars['DATABASE_URL'] = connectionString;
+    } else if (config.connection && 'projectUrl' in config.connection) {
         // For providers like Supabase, we might construct a postgresql URL
         // This is a simplification; a real implementation might need more logic
-        envVars['DATABASE_URL'] = config.connection.projectUrl;
+        const projectUrl = config.connection.projectUrl as string;
+        envVars['DATABASE_URL'] = projectUrl;
     }
+    
+    // Fallback to direct connectionString if available
+    if (config.connectionString) {
+        envVars['DATABASE_URL'] = config.connectionString;
+    }
+    
     return envVars;
   }
 
@@ -495,14 +505,14 @@ export type { PrismaClient } from '@prisma/client';
       'db:format': 'npx prisma format',
       'db:validate': 'npx prisma validate',
     };
-    if ((config as any).features.migrations) {
+    if ((config.features as any).migrations) {
       scripts['db:migrate'] = 'npx prisma migrate dev';
       scripts['db:push'] = 'npx prisma db push';
     }
-    if ((config as any).features.seeding) {
+    if ((config.features as any).seeding) {
       scripts['db:seed'] = 'npx tsx prisma/seed.ts';
     }
-    if ((config as any).features.prismaStudio) {
+    if ((config.features as any).prismaStudio) {
       scripts['db:studio'] = 'npx prisma studio';
     }
     return scripts;

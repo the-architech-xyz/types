@@ -1,4 +1,4 @@
-import { ParameterSchema, FrameworkOption, BuildOption, DeploymentOption } from '../../../../types/plugin-interfaces.js';
+import { ParameterSchema, FrameworkOption, BuildOption, DeploymentOption } from '../../../../types/plugins.js';
 export declare class NextJSSchema {
     static getParameterSchema(): ParameterSchema;
     static getFrameworkOptions(): FrameworkOption[];

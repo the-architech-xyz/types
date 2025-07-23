@@ -10,7 +10,7 @@ import { existsSync } from 'fs';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { AbstractAgent } from './base/abstract-agent.js';
-import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
+import { PluginContext, ProjectType, TargetPlatform } from '../types/plugins.js';
 import { TemplateService, templateService } from '../core/templates/template-service.js';
 import {
   AgentContext,
@@ -22,7 +22,7 @@ import {
   ValidationResult,
   Artifact,
   ValidationError
-} from '../types/agent.js';
+} from '../types/agents.js';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { structureService, StructureInfo } from '../core/project/structure-service.js';
@@ -294,6 +294,14 @@ export class UIAgent extends AbstractAgent {
       errors,
       warnings
     };
+  }
+
+  // ============================================================================
+  // UTILITY METHODS
+  // ============================================================================
+
+  private isExpertMode(context: AgentContext): boolean {
+    return context.state.get('expertMode') === true || context.config.expertMode === true;
   }
 
   // ============================================================================

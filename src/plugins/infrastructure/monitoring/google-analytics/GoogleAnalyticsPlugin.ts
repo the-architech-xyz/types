@@ -1,5 +1,5 @@
-import { IPlugin, PluginMetadata, PluginCategory, PluginContext, PluginResult, ValidationResult, ConfigSchema, CompatibilityMatrix, PluginRequirement, TargetPlatform } from '../../../../types/plugin.js';
-import { ValidationError } from '../../../../types/agent.js';
+import { IPlugin, PluginMetadata, PluginCategory, PluginContext, PluginResult, ValidationResult, ConfigSchema, CompatibilityMatrix, PluginRequirement, TargetPlatform } from '../../../../types/plugins.js';
+import { ValidationError } from '../../../../types/agents.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { GoogleAnalyticsConfig, GoogleAnalyticsConfigSchema, GoogleAnalyticsDefaultConfig } from './GoogleAnalyticsSchema.js';

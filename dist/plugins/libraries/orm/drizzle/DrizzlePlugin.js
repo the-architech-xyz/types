@@ -7,7 +7,7 @@
  * - DrizzlePlugin: Main plugin class (this file)
  */
 import { BaseDatabasePlugin } from '../../../base/BaseDatabasePlugin.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 import { DatabaseProvider, ORMOption, DatabaseFeature } from '../../../../types/plugin-interfaces.js';
 import { DrizzleSchema } from './DrizzleSchema.js';
 export class DrizzlePlugin extends BaseDatabasePlugin {

@@ -9,7 +9,7 @@
  * - Logging
  * - Framework-aware rendering
  */
-import { Logger } from '../../types/agent.js';
+import { Logger } from '../../types/agents.js';
 export interface TemplateData {
     [key: string]: any;
 }

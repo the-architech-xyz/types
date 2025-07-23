@@ -4,8 +4,7 @@
  * Converts plugin parameter schemas into interactive questions for expert mode.
  * Enables plugins to drive their own configuration questions dynamically.
  */
-import { PluginQuestion, IEnhancedPlugin } from '../../types/plugin-interfaces.js';
-import { PluginContext } from '../../types/plugin.js';
+import { PluginContext, IEnhancedPlugin, PluginQuestion } from '../../types/plugins.js';
 export declare class DynamicQuestionGenerator {
     /**
      * Generate questions from a plugin's parameter schema

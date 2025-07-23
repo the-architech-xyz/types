@@ -4,7 +4,7 @@
  * Handles all code generation for Prisma ORM integration.
  * Based on: https://www.prisma.io/docs/getting-started
  */
-import { DatabasePluginConfig } from '../../../../types/plugin-interfaces.js';
+import { DatabasePluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
     path: string;
     content: string;

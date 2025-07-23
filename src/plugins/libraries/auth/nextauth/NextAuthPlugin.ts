@@ -10,13 +10,12 @@
  * - https://next-auth.js.org/adapters
  */
 
-import { BaseAuthPlugin } from '../../../base/index.js';
-import { PluginContext, PluginResult, PluginMetadata, PluginCategory } from '../../../../types/plugin.js';
-import { AuthPluginConfig, AuthProvider, AuthFeature, SessionOption, SecurityOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugin-interfaces.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIAuthPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
 import { NextAuthSchema } from './NextAuthSchema.js';
 import { NextAuthGenerator } from './NextAuthGenerator.js';
 
-export class NextAuthPlugin extends BaseAuthPlugin {
+export class NextAuthPlugin extends BasePlugin implements IUIAuthPlugin {
   private generator: NextAuthGenerator;
 
   constructor() {
@@ -40,62 +39,164 @@ export class NextAuthPlugin extends BaseAuthPlugin {
       license: 'ISC',
     };
   }
-  
+
   // ============================================================================
-  // ABSTRACT METHOD IMPLEMENTATIONS
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATION
   // ============================================================================
 
-  getParameterSchema(): ParameterSchema {
+  getParameterSchema() {
     return NextAuthSchema.getParameterSchema();
   }
 
-  getAuthProviders(): AuthProvider[] {
-    return NextAuthSchema.getAuthProviders();
-  }
-  
-  getAuthFeatures(): AuthFeature[] {
-    return NextAuthSchema.getAuthFeatures();
+  // Plugins NEVER generate questions - agents handle this
+  getDynamicQuestions(context: PluginContext): any[] {
+    return [];
   }
 
-  getSessionOptions(): SessionOption[] { return []; }
-  getSecurityOptions(): SecurityOption[] { return []; }
+  validateConfiguration(config: Record<string, any>): any {
+    const errors: any[] = [];
+    const warnings: string[] = [];
 
-  protected getProviderLabel(provider: AuthProvider): string {
-    return NextAuthSchema.getProviderLabel(provider);
+    // Validate required fields
+    if (!config.providers || config.providers.length === 0) {
+      errors.push({
+        field: 'providers',
+        message: 'At least one auth provider is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    // Validate session configuration
+    if (config.session && config.session.duration && config.session.duration < 300) {
+      warnings.push('Session duration should be at least 5 minutes (300 seconds)');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
   }
 
-  protected getFeatureLabel(feature: AuthFeature): string {
-    return feature.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-  }
-  
   generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
     const generated = this.generator.generateUnifiedIndex();
     return {
-        category: PluginCategory.AUTHENTICATION,
-        exports: [], types: [], utilities: [], constants: [],
-        documentation: generated.content,
+      category: PluginCategory.AUTHENTICATION,
+      exports: [
+        {
+          name: 'getServerSession',
+          type: 'function',
+          implementation: 'Get server session',
+          documentation: 'Get session on the server side',
+          examples: ['const session = await getServerSession(req, res, authOptions)']
+        },
+        {
+          name: 'useSession',
+          type: 'function',
+          implementation: 'Use session hook',
+          documentation: 'React hook for client-side session',
+          examples: ['const { data: session } = useSession()']
+        }
+      ],
+      types: [
+        {
+          name: 'Session',
+          type: 'interface',
+          definition: 'interface Session { user: User; expires: string; }',
+          documentation: 'NextAuth session interface'
+        },
+        {
+          name: 'User',
+          type: 'interface',
+          definition: 'interface User { id: string; email: string; name?: string; image?: string; }',
+          documentation: 'NextAuth user interface'
+        }
+      ],
+      utilities: [
+        {
+          name: 'signIn',
+          type: 'function',
+          implementation: 'Sign in function',
+          documentation: 'Sign in with a provider',
+          parameters: [],
+          returnType: 'Promise<void>',
+          examples: ['await signIn("google")']
+        },
+        {
+          name: 'signOut',
+          type: 'function',
+          implementation: 'Sign out function',
+          documentation: 'Sign out the current user',
+          parameters: [],
+          returnType: 'Promise<void>',
+          examples: ['await signOut()']
+        }
+      ],
+      constants: [
+        {
+          name: 'NEXTAUTH_SECRET',
+          value: 'process.env.NEXTAUTH_SECRET',
+          documentation: 'NextAuth secret key',
+          type: 'string'
+        }
+      ],
+      documentation: generated.content || 'NextAuth.js unified interface for authentication'
     };
   }
-  
+
   // ============================================================================
-  // MAIN INSTALL METHOD
+  // AUTH PLUGIN INTERFACE IMPLEMENTATION
+  // ============================================================================
+
+  getAuthProviders(): string[] {
+    return ['email', 'google', 'github', 'discord', 'twitter', 'facebook', 'apple'];
+  }
+
+  getAuthFeatures(): string[] {
+    return ['email_verification', 'password_reset', 'two_factor', 'social_login', 'session_management'];
+  }
+
+  getSessionOptions(): string[] {
+    return ['jwt', 'database'];
+  }
+
+  getSecurityOptions(): string[] {
+    return ['csrf_protection', 'rate_limiting', 'password_hashing'];
+  }
+
+  // ============================================================================
+  // PLUGIN INSTALLATION
   // ============================================================================
 
   async install(context: PluginContext): Promise<PluginResult> {
     const startTime = Date.now();
-    const config = context.pluginConfig as AuthPluginConfig;
 
     try {
-      // 1. Generate all file contents
-      const allFiles = this.generator.generateAllFiles(config);
-      
-      // 2. Use BasePlugin methods to write files
+      // Initialize path resolver
+      this.initializePathResolver(context);
+
+      // Get configuration from context
+      const config = context.pluginConfig;
+
+      // Validate configuration
+      const validation = this.validateConfiguration(config);
+      if (!validation.valid) {
+        return this.createErrorResult('Configuration validation failed', validation.errors, startTime);
+      }
+
+      // Install dependencies
+      const dependencies = this.getDependencies();
+      const devDependencies = this.getDevDependencies();
+      await this.installDependencies(dependencies, devDependencies);
+
+      // Generate files
+      const allFiles = this.generator.generateAllFiles(config as any);
       for (const file of allFiles) {
         let filePath: string;
         if (file.path.startsWith('auth/')) {
           filePath = this.pathResolver.getLibPath('auth', file.path.replace('auth/', ''));
         } else if (file.path.startsWith('prisma/')) {
-          // Special handling for prisma schema
           filePath = this.pathResolver.getConfigPath('prisma/schema.prisma');
         } else {
           filePath = this.pathResolver.getConfigPath(file.path);
@@ -103,21 +204,82 @@ export class NextAuthPlugin extends BaseAuthPlugin {
         await this.generateFile(filePath, file.content);
       }
 
-      // 3. Add dependencies
-      await this.installDependencies(
-        ['next-auth', '@auth/prisma-adapter', '@prisma/client', 'bcryptjs'],
-        ['prisma']
-      );
-
-      // 4. Add scripts
+      // Add scripts
       await this.addScripts({
-          "prisma:generate": "prisma generate"
+        "prisma:generate": "prisma generate"
       });
 
-      return this.createSuccessResult([], [], [], [], [], startTime);
+      return this.createSuccessResult(
+        [
+          { type: 'config', path: 'auth.config.ts', description: 'NextAuth configuration' },
+          { type: 'api', path: 'app/api/auth/[...nextauth]/route.ts', description: 'NextAuth API routes' },
+          { type: 'interface', path: this.pathResolver.getUnifiedInterfacePath('auth'), description: 'Unified auth interface' }
+        ],
+        dependencies,
+        ['prisma:generate'],
+        [],
+        validation.warnings,
+        startTime
+      );
 
-    } catch (error: any) {
-      return this.createErrorResult('NextAuth.js installation failed', [error], startTime);
+    } catch (error) {
+      return this.createErrorResult('NextAuth plugin installation failed', [error], startTime);
     }
+  }
+
+  // ============================================================================
+  // DEPENDENCIES AND CONFIGURATION
+  // ============================================================================
+
+  getDependencies(): string[] {
+    return ['next-auth', '@auth/prisma-adapter', '@prisma/client', 'bcryptjs'];
+  }
+
+  getDevDependencies(): string[] {
+    return ['prisma'];
+  }
+
+  getCompatibility(): any {
+    return {
+      frameworks: ['nextjs', 'react'],
+      platforms: ['node', 'browser'],
+      nodeVersions: ['>=16.0.0'],
+      packageManagers: ['npm', 'yarn', 'pnpm'],
+      conflicts: ['better-auth', 'clerk']
+    };
+  }
+
+  getConflicts(): string[] {
+    return ['better-auth', 'clerk'];
+  }
+
+  getRequirements(): any[] {
+    return [
+      { type: 'database', name: 'Database for user storage' },
+      { type: 'node', version: '>=16.0.0' }
+    ];
+  }
+
+  getDefaultConfig(): Record<string, any> {
+    return {
+      providers: ['email'],
+      session: {
+        strategy: 'jwt',
+        maxAge: 604800 // 7 days
+      },
+      features: ['email_verification']
+    };
+  }
+
+  getConfigSchema(): any {
+    return {
+      type: 'object',
+      properties: {
+        providers: { type: 'array', items: { type: 'string' } },
+        session: { type: 'object' },
+        features: { type: 'array', items: { type: 'string' } }
+      },
+      required: ['providers']
+    };
   }
 } 

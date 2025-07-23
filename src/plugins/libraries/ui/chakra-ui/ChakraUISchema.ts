@@ -5,7 +5,7 @@
  * Based on: https://chakra-ui.com/getting-started
  */
 
-import { ConfigSchema } from '../../../../types/plugin.js';
+import { ConfigSchema } from '../../../../types/plugins.js';
 
 export interface ChakraUIConfig {
   theme: 'default' | 'custom';

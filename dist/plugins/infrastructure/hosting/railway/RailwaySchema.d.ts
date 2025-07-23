@@ -1,4 +1,4 @@
-import { ConfigSchema } from '../../../../types/plugin.js';
+import { ConfigSchema } from '../../../../types/plugins.js';
 export interface RailwayConfig {
     projectId?: string;
     serviceId?: string;

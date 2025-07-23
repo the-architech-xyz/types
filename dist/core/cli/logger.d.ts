@@ -4,7 +4,7 @@
  * Provides structured logging for agents with different verbosity levels
  * and context-aware formatting.
  */
-import { Logger, LogLevel, LogContext } from '../../types/agent.js';
+import { Logger, LogLevel, LogContext } from '../../types/agents.js';
 export declare class AgentLogger implements Logger {
     private verbose;
     private agentName?;

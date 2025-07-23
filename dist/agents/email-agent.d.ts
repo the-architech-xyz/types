@@ -4,7 +4,7 @@
  * Orchestrates email service setup and configuration through unified interfaces.
  * Supports multiple email providers (Resend, SendGrid, Mailgun) with consistent APIs.
  */
-import { IAgent, AgentContext, AgentResult, AgentMetadata, AgentCapability } from '../types/agent.js';
+import { IAgent, AgentContext, AgentResult, AgentMetadata, AgentCapability } from '../types/agents.js';
 export declare class EmailAgent implements IAgent {
     private pluginSystem;
     private logger;

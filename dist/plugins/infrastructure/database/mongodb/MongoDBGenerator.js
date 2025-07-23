@@ -19,7 +19,7 @@ export class MongoDBGenerator {
         const compressors = config.compressors || ['zlib'];
         const zlibCompressionLevel = config.zlibCompressionLevel || 6;
         return `import { MongoClient, Db, Collection, Document, ObjectId, Filter, UpdateFilter, InsertOneResult, InsertManyResult, UpdateResult, DeleteResult, FindCursor, AggregationCursor } from 'mongodb';
-import { Logger } from '../../../../types/agent.js';
+import { Logger } from '../../../../types/agents.js';
 
 // MongoDB configuration
 export const mongoConfig = {

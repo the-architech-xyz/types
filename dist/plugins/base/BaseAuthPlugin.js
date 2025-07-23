@@ -4,9 +4,8 @@
  * Provides common functionality for all authentication plugins.
  */
 import { BasePlugin } from './BasePlugin.js';
-import { AuthProvider } from '../../types/plugin-interfaces.js';
 import { DynamicQuestionGenerator } from '../../core/expert/dynamic-question-generator.js';
-import { PluginCategory } from '../../types/plugin.js';
+import { PluginCategory } from '../../types/plugins.js';
 export class BaseAuthPlugin extends BasePlugin {
     questionGenerator;
     constructor() {
@@ -56,11 +55,11 @@ export class BaseAuthPlugin extends BasePlugin {
     }
     generateProviderEnvVars(providers) {
         const envVars = {};
-        if (providers.includes(AuthProvider.GITHUB)) {
+        if (providers.includes('github')) {
             envVars['AUTH_GITHUB_ID'] = 'your_github_id';
             envVars['AUTH_GITHUB_SECRET'] = 'your_github_secret';
         }
-        if (providers.includes(AuthProvider.GOOGLE)) {
+        if (providers.includes('google')) {
             envVars['AUTH_GOOGLE_ID'] = 'your_google_id';
             envVars['AUTH_GOOGLE_SECRET'] = 'your_google_secret';
         }

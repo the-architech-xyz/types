@@ -10,7 +10,7 @@
  * - https://ui.shadcn.com/docs/themes
  */
 import { BaseUIPlugin } from '../../../base/index.js';
-import { PluginCategory } from '../../../../types/plugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
 import { ShadcnUISchema } from './ShadcnUISchema.js';
 import { ShadcnUIGenerator } from './ShadcnUIGenerator.js';
 export class ShadcnUIPlugin extends BaseUIPlugin {

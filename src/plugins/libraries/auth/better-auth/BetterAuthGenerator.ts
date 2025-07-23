@@ -5,7 +5,8 @@
  * Based on: https://better-auth.com/docs
  */
 
-import { AuthPluginConfig, AuthProvider } from '../../../../types/plugin-interfaces.js';
+import { AuthPluginConfig } from '../../../../types/plugins.js';
+import { AUTH_PROVIDERS, AuthProvider, AuthFeature } from '../../../../types/core.js';
 
 export interface GeneratedFile {
     path: string;
@@ -25,8 +26,8 @@ export class BetterAuthGenerator {
   }
 
   generateAuthConfig(config: AuthPluginConfig): GeneratedFile {
-    const providers = config.providers || [AuthProvider.CREDENTIALS, AuthProvider.GOOGLE, AuthProvider.GITHUB];
-    const sessionDuration = config.session.duration || 30 * 24 * 60 * 60;
+    const providers = config.providers || [AUTH_PROVIDERS.EMAIL, AUTH_PROVIDERS.GOOGLE, AUTH_PROVIDERS.GITHUB];
+    const sessionDuration = config.session === 'jwt' ? 30 * 24 * 60 * 60 : 30 * 24 * 60 * 60;
     
     const content = `import { BetterAuth } from "better-auth";
 import { DrizzleAdapter } from "@better-auth/drizzle-adapter";
@@ -41,7 +42,7 @@ export const auth = new BetterAuth({
   providers: [
     ${providers.map(provider => {
       switch (provider) {
-        case AuthProvider.CREDENTIALS:
+        case AUTH_PROVIDERS.EMAIL:
           return `{
       id: "credentials",
       type: "credentials",
@@ -54,14 +55,14 @@ export const auth = new BetterAuth({
         return null;
       }
     }`;
-        case AuthProvider.GOOGLE:
+        case AUTH_PROVIDERS.GOOGLE:
           return `{
       id: "google",
       type: "oauth",
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }`;
-        case AuthProvider.GITHUB:
+        case AUTH_PROVIDERS.GITHUB:
           return `{
       id: "github",
       type: "oauth",
@@ -94,7 +95,7 @@ export const auth = new BetterAuth({
     signUp: "/auth/signup",
     error: "/auth/error",
   },
-  ${(config.features as any).enableRateLimiting ? `
+  ${config.features.includes(AuthFeature.SESSION_MANAGEMENT) ? `
   rateLimit: {
     max: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -387,17 +388,17 @@ CREATE INDEX IF NOT EXISTS idx_verification_tokens_token ON verification_tokens(
     envVars['BETTER_AUTH_URL'] = "http://localhost:3000";
     envVars['DATABASE_URL'] = (config as any).databaseUrl; // Assuming this is passed for now
 
-    if (providers.includes(AuthProvider.GOOGLE)) {
+    if (providers.includes(AUTH_PROVIDERS.GOOGLE)) {
         envVars['GOOGLE_CLIENT_ID'] = "your-google-client-id";
         envVars['GOOGLE_CLIENT_SECRET'] = "your-google-client-secret";
     }
-    if (providers.includes(AuthProvider.GITHUB)) {
+    if (providers.includes(AUTH_PROVIDERS.GITHUB)) {
         envVars['GITHUB_CLIENT_ID'] = "your-github-client-id";
         envVars['GITHUB_CLIENT_SECRET'] = "your-github-client-secret";
     }
 
-    envVars['SESSION_MAX_AGE'] = String(config.session.duration);
-    envVars['REQUIRE_EMAIL_VERIFICATION'] = String(config.features.emailVerification);
+    envVars['SESSION_MAX_AGE'] = String(30 * 24 * 60 * 60); // 30 days default
+    envVars['REQUIRE_EMAIL_VERIFICATION'] = String(config.features.includes(AuthFeature.EMAIL_VERIFICATION));
     
     return envVars;
   }

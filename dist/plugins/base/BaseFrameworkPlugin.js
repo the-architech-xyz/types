@@ -1,17 +1,25 @@
 import { BasePlugin } from './BasePlugin.js';
-import { PluginCategory } from '../../types/plugin.js';
+import { PluginCategory } from '../../types/plugins.js';
+import { FrameworkOption, BuildOption, DeploymentOption } from '../../types/plugins.js';
 export class BaseFrameworkPlugin extends BasePlugin {
     // ============================================================================
     // SHARED LOGIC - Common framework functionality
     // ============================================================================
+    getFrameworkOptions() {
+        return Object.values(FrameworkOption);
+    }
+    getBuildOptions() {
+        return Object.values(BuildOption);
+    }
+    getDeploymentOptions() {
+        return Object.values(DeploymentOption);
+    }
+    // ============================================================================
+    // PARAMETER SCHEMA
+    // ============================================================================
     getBaseFrameworkSchema() {
         return {
             category: PluginCategory.FRAMEWORK,
-            groups: [
-                { id: 'core', name: 'Core Framework', description: 'Configure the main framework settings.', order: 1, parameters: ['framework', 'typescript', 'eslint'] },
-                { id: 'build', name: 'Build Configuration', description: 'Configure build and bundling options.', order: 2, parameters: ['buildTool', 'optimization'] },
-                { id: 'deployment', name: 'Deployment', description: 'Configure deployment and hosting options.', order: 3, parameters: ['deploymentPlatform'] },
-            ],
             parameters: [
                 {
                     id: 'framework',
@@ -19,8 +27,8 @@ export class BaseFrameworkPlugin extends BasePlugin {
                     type: 'select',
                     description: 'The main framework to use.',
                     required: true,
-                    default: 'nextjs',
-                    options: this.getFrameworkOptions().map(opt => ({ value: opt.value, label: opt.label })),
+                    default: FrameworkOption.NEXTJS,
+                    options: this.getFrameworkOptions().map(opt => ({ value: opt, label: opt })),
                     group: 'core'
                 },
                 {
@@ -47,8 +55,8 @@ export class BaseFrameworkPlugin extends BasePlugin {
                     type: 'select',
                     description: 'The build tool to use.',
                     required: true,
-                    default: 'vite',
-                    options: this.getBuildOptions().map(opt => ({ value: opt.value, label: opt.label })),
+                    default: BuildOption.VITE,
+                    options: this.getBuildOptions().map(opt => ({ value: opt, label: opt })),
                     group: 'build'
                 },
                 {
@@ -66,8 +74,8 @@ export class BaseFrameworkPlugin extends BasePlugin {
                     type: 'select',
                     description: 'The platform to deploy to.',
                     required: false,
-                    default: 'vercel',
-                    options: this.getDeploymentOptions().map(opt => ({ value: opt.value, label: opt.label })),
+                    default: DeploymentOption.STATIC,
+                    options: this.getDeploymentOptions().map(opt => ({ value: opt, label: opt })),
                     group: 'deployment'
                 }
             ],
@@ -78,11 +86,13 @@ export class BaseFrameworkPlugin extends BasePlugin {
     generateFrameworkConfig(config) {
         return {
             framework: config.framework,
-            typescript: config.typescript,
-            eslint: config.eslint,
             buildTool: config.buildTool,
-            optimization: config.optimization,
-            deploymentPlatform: config.deploymentPlatform
+            deploymentTarget: config.deploymentTarget,
+            bundler: config.bundler,
+            transpiler: config.transpiler,
+            minifier: config.minifier,
+            sourceMaps: config.sourceMaps,
+            optimization: config.optimization
         };
     }
     addFrameworkScripts(config) {

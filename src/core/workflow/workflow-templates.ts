@@ -6,28 +6,82 @@
  */
 
 import { 
-  PluginSelection, 
-  DEFAULT_PLUGIN_SELECTION,
-  DatabaseSelection,
-  AuthSelection,
-  UISelection,
-  DeploymentSelection,
-  EmailSelection,
-  TestingSelection,
-  MonitoringSelection,
-  PaymentSelection,
-  BlockchainSelection
-} from '../../types/plugin-selection.js';
-import { 
   DATABASE_PROVIDERS, 
   ORM_LIBRARIES,
   AUTH_PROVIDERS, 
-  AUTH_FEATURES,
   UI_LIBRARIES,
   DEPLOYMENT_PLATFORMS,
   EMAIL_SERVICES,
   TESTING_FRAMEWORKS
-} from '../../types/shared-config.js';
+} from '../../types/core.js';
+
+// Define missing selection types
+export interface PluginSelection {
+  database: DatabaseSelection;
+  authentication: AuthSelection;
+  ui: UISelection;
+  deployment: DeploymentSelection;
+  testing: TestingSelection;
+  email: EmailSelection;
+  monitoring: MonitoringSelection;
+  payment: PaymentSelection;
+  blockchain: BlockchainSelection;
+}
+
+export interface DatabaseSelection {
+  enabled: boolean;
+  provider: string;
+  orm: string;
+  features: Record<string, boolean>;
+}
+
+export interface AuthSelection {
+  enabled: boolean;
+  providers: string[];
+  features: Record<string, boolean>;
+}
+
+export interface UISelection {
+  enabled: boolean;
+  library: string;
+  features: Record<string, boolean>;
+}
+
+export interface DeploymentSelection {
+  enabled: boolean;
+  platform: string;
+  features: Record<string, boolean>;
+}
+
+export interface TestingSelection {
+  enabled: boolean;
+  framework: string;
+  features: Record<string, boolean>;
+}
+
+export interface EmailSelection {
+  enabled: boolean;
+  service: string;
+  features: Record<string, boolean>;
+}
+
+export interface MonitoringSelection {
+  enabled: boolean;
+  services: string[];
+  features: Record<string, boolean>;
+}
+
+export interface PaymentSelection {
+  enabled: boolean;
+  providers: string[];
+  features: Record<string, boolean>;
+}
+
+export interface BlockchainSelection {
+  enabled: boolean;
+  networks: string[];
+  features: Record<string, boolean>;
+}
 
 // ============================================================================
 // TEMPLATE INTERFACES
@@ -163,10 +217,10 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         enabled: true,
         providers: [AUTH_PROVIDERS.EMAIL],
         features: { 
-          [AUTH_FEATURES.EMAIL_VERIFICATION]: true, 
-          [AUTH_FEATURES.PASSWORD_RESET]: true, 
-          [AUTH_FEATURES.SOCIAL_LOGIN]: false, 
-          [AUTH_FEATURES.SESSION_MANAGEMENT]: true 
+          'email-verification': true, 
+          'password-reset': true, 
+          'social-login': false, 
+          'session-management': true 
         }
       },
       ui: {
@@ -250,10 +304,10 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         enabled: true,
         providers: [AUTH_PROVIDERS.EMAIL],
         features: { 
-          [AUTH_FEATURES.EMAIL_VERIFICATION]: true, 
-          [AUTH_FEATURES.PASSWORD_RESET]: true, 
-          [AUTH_FEATURES.SOCIAL_LOGIN]: true, 
-          [AUTH_FEATURES.SESSION_MANAGEMENT]: true 
+          'email-verification': true, 
+          'password-reset': true, 
+          'social-login': true, 
+          'session-management': true 
         }
       },
       ui: {
@@ -345,10 +399,10 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         enabled: true,
         providers: [AUTH_PROVIDERS.EMAIL],
         features: { 
-          [AUTH_FEATURES.EMAIL_VERIFICATION]: true, 
-          [AUTH_FEATURES.PASSWORD_RESET]: true, 
-          [AUTH_FEATURES.SOCIAL_LOGIN]: true, 
-          [AUTH_FEATURES.SESSION_MANAGEMENT]: true 
+          'email-verification': true, 
+          'password-reset': true, 
+          'social-login': true, 
+          'session-management': true 
         }
       },
       ui: {
@@ -447,10 +501,10 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
         enabled: true,
         providers: [AUTH_PROVIDERS.EMAIL],
         features: { 
-          [AUTH_FEATURES.EMAIL_VERIFICATION]: true, 
-          [AUTH_FEATURES.PASSWORD_RESET]: true, 
-          [AUTH_FEATURES.SOCIAL_LOGIN]: true, 
-          [AUTH_FEATURES.SESSION_MANAGEMENT]: true 
+          'email-verification': true, 
+          'password-reset': true, 
+          'social-login': true, 
+          'session-management': true 
         }
       },
       ui: {
@@ -581,15 +635,62 @@ export class WorkflowTemplateService {
   static getCustomTemplate(): WorkflowTemplate {
     return {
       id: 'custom',
-      name: 'Custom Setup',
-      description: 'Full customization - choose every plugin and configuration',
-      questions: 20,
-      estimatedTime: '10 minutes',
-      targetAudience: ['experts', 'developers', 'power users'],
+      name: 'Custom Template',
+      description: 'Build your own custom template with full control',
+      questions: 15,
+      estimatedTime: '5-10 minutes',
+      targetAudience: ['experts', 'custom', 'enterprise'],
       complexity: 'expert',
-      keywords: ['custom', 'advanced', 'expert', 'full control'],
-      pluginSelection: DEFAULT_PLUGIN_SELECTION,
-      customizations: []
+      pluginSelection: {
+        database: {
+          enabled: false,
+          provider: DATABASE_PROVIDERS.NEON,
+          orm: ORM_LIBRARIES.DRIZZLE,
+          features: {}
+        },
+        authentication: {
+          enabled: false,
+          providers: [],
+          features: {}
+        },
+        ui: {
+          enabled: false,
+          library: UI_LIBRARIES.SHADCN_UI,
+          features: {}
+        },
+        deployment: {
+          enabled: false,
+          platform: DEPLOYMENT_PLATFORMS.VERCEL,
+          features: {}
+        },
+        testing: {
+          enabled: false,
+          framework: TESTING_FRAMEWORKS.VITEST,
+          features: {}
+        },
+        email: {
+          enabled: false,
+          service: EMAIL_SERVICES.RESEND,
+          features: {}
+        },
+        monitoring: {
+          enabled: false,
+          services: [],
+          features: {}
+        },
+        payment: {
+          enabled: false,
+          providers: [],
+          features: {}
+        },
+        blockchain: {
+          enabled: false,
+          networks: [],
+          features: {}
+        }
+      },
+      customizations: [],
+      keywords: ['custom', 'enterprise', 'expert', 'full-control']
     };
   }
 } 

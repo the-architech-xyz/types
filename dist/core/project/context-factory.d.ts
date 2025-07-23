@@ -4,7 +4,7 @@
  * Creates and manages execution contexts for agents and plugins.
  * Provides a consistent interface for context creation across the system.
  */
-import { AgentContext, ExecutionOptions } from '../../types/agent.js';
+import { AgentContext, ExecutionOptions } from '../../types/agents.js';
 import { PackageManager } from '../cli/command-runner.js';
 import { StructureInfo } from './structure-service.js';
 export declare class ContextFactory {

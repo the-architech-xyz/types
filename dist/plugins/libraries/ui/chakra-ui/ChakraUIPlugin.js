@@ -9,7 +9,7 @@
  * - https://chakra-ui.com/docs/components
  * - https://chakra-ui.com/docs/theming
  */
-import { PluginCategory, TargetPlatform } from '../../../../types/plugin.js';
+import { PluginCategory, TargetPlatform } from '../../../../types/plugins.js';
 import { templateService } from '../../../../core/templates/template-service.js';
 import { CommandRunner } from '../../../../core/cli/command-runner.js';
 import * as path from 'path';

@@ -1,4 +1,12 @@
-import { UIPluginConfig, ComponentOption, ThemeOption } from '../../../../types/plugin-interfaces.js';
+/**
+ * MUI Code Generator
+ * 
+ * Handles all code generation for MUI UI library integration.
+ * Based on: https://mui.com/
+ */
+
+import { UIPluginConfig } from '../../../../types/plugins.js';
+import { ThemeOption, ComponentOption } from '../../../../types/core.js';
 
 export interface GeneratedFile {
     path: string;
@@ -18,9 +26,6 @@ export class MuiGenerator {
       this.generateModalComponent(config),
       this.generateTableComponent(config),
       this.generateNavigationComponent(config),
-      this.generateSelectComponent(config),
-      this.generateCheckboxComponent(config),
-      this.generateSwitchComponent(config),
       this.generateBadgeComponent(config),
       this.generateAvatarComponent(config),
       this.generateAlertComponent(config)
@@ -32,7 +37,7 @@ export class MuiGenerator {
 
 export const theme = createTheme({
   palette: {
-    mode: '${config.theme?.mode || ThemeOption.LIGHT}',
+    mode: '${config.theme || ThemeOption.LIGHT}',
     primary: {
       main: '#1976d2',
     },
@@ -83,10 +88,10 @@ export { useTheme, useMediaQuery } from '@mui/material/styles';
   }
 
   private generateComponentExports(config: UIPluginConfig): string {
-    const components = config.components?.list || [];
+    const components = config.components || [];
     const exports: string[] = [];
 
-    components.forEach(component => {
+    components.forEach((component: ComponentOption) => {
       const componentName = this.getComponentName(component);
       exports.push(`export { ${componentName} } from './${componentName.toLowerCase()}.js';`);
     });
@@ -95,7 +100,7 @@ export { useTheme, useMediaQuery } from '@mui/material/styles';
   }
 
   private getComponentName(component: ComponentOption): string {
-    const names: Record<ComponentOption, string> = {
+    const names: Partial<Record<ComponentOption, string>> = {
       [ComponentOption.BUTTON]: 'Button',
       [ComponentOption.CARD]: 'Card',
       [ComponentOption.INPUT]: 'Input',
@@ -103,9 +108,6 @@ export { useTheme, useMediaQuery } from '@mui/material/styles';
       [ComponentOption.MODAL]: 'Modal',
       [ComponentOption.TABLE]: 'Table',
       [ComponentOption.NAVIGATION]: 'Navigation',
-      [ComponentOption.SELECT]: 'Select',
-      [ComponentOption.CHECKBOX]: 'Checkbox',
-      [ComponentOption.SWITCH]: 'Switch',
       [ComponentOption.BADGE]: 'Badge',
       [ComponentOption.AVATAR]: 'Avatar',
       [ComponentOption.ALERT]: 'Alert'
@@ -512,7 +514,7 @@ Alert.displayName = 'Alert';
 
   generateEnvConfig(config: UIPluginConfig): Record<string, string> {
     return {
-      'MUI_THEME_MODE': config.theme?.mode || ThemeOption.LIGHT,
+      'MUI_THEME_MODE': config.theme || ThemeOption.LIGHT,
       'MUI_ENABLE_EMOTION': 'true'
     };
   }

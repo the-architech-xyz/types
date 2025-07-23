@@ -1,4 +1,4 @@
-import { ComponentOption, ThemeOption } from '../../../../types/plugin-interfaces.js';
+import { ComponentOption, ThemeOption } from '../../../../types/plugins.js';
 export class TamaguiGenerator {
     generateAllFiles(config) {
         return [

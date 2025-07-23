@@ -7,7 +7,7 @@
  * - Performance monitoring
  * - State management
  * - Logging
- * - Expert mode support
+ * - Question generation support
  * - Standardized plugin execution
  */
 
@@ -32,13 +32,23 @@ import {
   AGENT_INTERFACE_VERSION,
   DEFAULT_TIMEOUT,
   Artifact
-} from '../../types/agent.js';
-import { ExpertModeService } from '../../core/expert/expert-mode-service.js';
+} from '../../types/agents.js';
 import { PluginSystem } from '../../core/plugin/plugin-system.js';
-import { PluginContext, PluginResult, ProjectType, TargetPlatform } from '../../types/plugin.js';
+import { PluginContext, PluginResult, ProjectType, TargetPlatform } from '../../types/plugins.js';
 import { structureService } from '../../core/project/structure-service.js';
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
+
+// New question generation system imports
+import { 
+  ProgressiveFlow, 
+  BaseQuestionStrategy, 
+  EcommerceStrategy, 
+  BlogStrategy, 
+  DashboardStrategy,
+  FlowResult,
+  ProjectType as QuestionProjectType
+} from '../../core/questions/index.js';
 
 // Type definition for ora
 interface Ora {
@@ -65,12 +75,12 @@ export abstract class AbstractAgent implements IAgent {
   protected spinner: Ora | null = null;
   protected startTime: number = 0;
   protected currentState: AgentState | undefined = undefined;
-  protected expertModeService: ExpertModeService;
   protected pluginSystem: PluginSystem;
+  protected progressiveFlow: ProgressiveFlow;
 
   constructor() {
-    this.expertModeService = new ExpertModeService();
     this.pluginSystem = PluginSystem.getInstance();
+    this.progressiveFlow = new ProgressiveFlow();
   }
 
   // ============================================================================
@@ -152,49 +162,59 @@ export abstract class AbstractAgent implements IAgent {
   protected abstract getAgentCapabilities(): AgentCapability[];
 
   // ============================================================================
-  // EXPERT MODE SUPPORT
+  // QUESTION GENERATION SYSTEM
   // ============================================================================
 
   /**
-   * Check if expert mode is enabled for this agent
+   * Execute the question flow to gather user input and generate configuration
    */
-  protected isExpertMode(context: AgentContext): boolean {
-    return this.expertModeService.isExpertMode(context);
+  protected async executeQuestionFlow(userInput: string): Promise<FlowResult> {
+    const strategy = this.getQuestionStrategy(userInput);
+    return await this.progressiveFlow.execute(userInput, strategy);
   }
 
   /**
-   * Get expert mode options for this agent
+   * Get the appropriate question strategy based on project type
    */
-  protected getExpertModeOptions(context: AgentContext) {
-    return this.expertModeService.getExpertModeOptions(context);
+  protected getQuestionStrategy(userInput: string): BaseQuestionStrategy {
+    const context = this.analyzeProjectContext(userInput);
+    
+    switch (context.type) {
+      case 'ecommerce':
+        return new EcommerceStrategy();
+      case 'blog':
+        return new BlogStrategy();
+      case 'dashboard':
+        return new DashboardStrategy();
+      default:
+        // Default to ecommerce for now, can be enhanced later
+        return new EcommerceStrategy();
+    }
   }
 
   /**
-   * Get expert questions for a specific category
+   * Analyze user input to determine project context
    */
-  protected getExpertQuestions(category: string) {
-    return this.expertModeService.getExpertQuestions(category);
-  }
-
-  /**
-   * Validate expert mode choices
-   */
-  protected validateExpertChoices(choices: any, category: string) {
-    return this.expertModeService.validateExpertChoices(choices, category);
-  }
-
-  /**
-   * Get dynamic questions from a specific plugin
-   */
-  protected async getPluginDynamicQuestions(pluginId: string, context: AgentContext) {
-    return this.expertModeService.getDynamicQuestions(pluginId, context);
-  }
-
-  /**
-   * Get dynamic questions for a category when no specific plugin is selected
-   */
-  protected getCategoryDynamicQuestions(category: string) {
-    return this.expertModeService.getCategoryDynamicQuestions(category);
+  protected analyzeProjectContext(userInput: string): { type: QuestionProjectType } {
+    const lower = userInput.toLowerCase();
+    
+    if (lower.includes('ecommerce') || lower.includes('shop') || lower.includes('store')) {
+      return { type: 'ecommerce' };
+    }
+    if (lower.includes('blog') || lower.includes('content')) {
+      return { type: 'blog' };
+    }
+    if (lower.includes('dashboard') || lower.includes('admin')) {
+      return { type: 'dashboard' };
+    }
+    if (lower.includes('api') || lower.includes('backend')) {
+      return { type: 'api' };
+    }
+    if (lower.includes('full') || lower.includes('complete')) {
+      return { type: 'fullstack' };
+    }
+    
+    return { type: 'custom' };
   }
 
   // ============================================================================

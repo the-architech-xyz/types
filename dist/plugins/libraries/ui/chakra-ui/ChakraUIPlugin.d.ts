@@ -9,7 +9,7 @@
  * - https://chakra-ui.com/docs/components
  * - https://chakra-ui.com/docs/theming
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
+import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
 export declare class ChakraUIPlugin implements IPlugin {
     private templateService;
     private runner;

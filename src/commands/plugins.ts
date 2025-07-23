@@ -11,7 +11,7 @@ import { PluginSystem } from '../core/plugin/plugin-system.js';
 import { PluginAdapter } from '../core/plugin/plugin-adapter.js';
 import { CommandRunner } from '../core/cli/command-runner.js';
 import { displaySuccess, displayError, displayInfo } from '../core/cli/banner.js';
-import { ConfigProperty } from '../types/plugin.js';
+import { ConfigProperty } from '../types/plugins.js';
 
 export function pluginsCommand(): Command {
   const command = new Command('plugins')

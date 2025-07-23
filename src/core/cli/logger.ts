@@ -6,7 +6,7 @@
  */
 
 import chalk from 'chalk';
-import { Logger, LogLevel, LogContext } from '../../types/agent.js';
+import { Logger, LogLevel, LogContext } from '../../types/agents.js';
 
 export class AgentLogger implements Logger {
   private verbose: boolean;

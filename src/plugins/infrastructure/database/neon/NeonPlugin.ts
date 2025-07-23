@@ -6,11 +6,11 @@
  * ORM functionality is handled by separate ORM plugins.
  */
 
-import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugin.js';
+import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
 import { TemplateService, templateService } from '../../../../core/templates/template-service.js';
 import { CommandRunner } from '../../../../core/cli/command-runner.js';
-import { ValidationError } from '../../../../types/agent.js';
-import { DATABASE_PROVIDERS, ORM_LIBRARIES } from '../../../../types/shared-config.js';
+import { ValidationError } from '../../../../types/agents.js';
+import { DATABASE_PROVIDERS, ORM_LIBRARIES } from '../../../../types/core.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 import { structureService, StructureInfo } from '../../../../core/project/structure-service.js';

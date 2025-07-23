@@ -7,7 +7,7 @@
 
 import * as path from 'path';
 import fsExtra from 'fs-extra';
-import { Logger } from '../../types/agent.js';
+import { Logger } from '../../types/agents.js';
 
 export type ProjectStructure = 'single-app' | 'monorepo';
 export type UserPreference = 'quick-prototype' | 'scalable-monorepo';

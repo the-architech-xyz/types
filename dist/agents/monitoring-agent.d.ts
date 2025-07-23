@@ -4,7 +4,7 @@
  * Orchestrates monitoring service setup and configuration through unified interfaces.
  * Supports multiple monitoring providers (Sentry, LogRocket, DataDog) with consistent APIs.
  */
-import { IAgent, AgentContext, AgentResult, AgentMetadata, AgentCapability } from '../types/agent.js';
+import { IAgent, AgentContext, AgentResult, AgentMetadata, AgentCapability } from '../types/agents.js';
 export declare class MonitoringAgent implements IAgent {
     private pluginSystem;
     private logger;

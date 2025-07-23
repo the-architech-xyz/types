@@ -8,7 +8,7 @@
 
 import { AbstractAgent } from './base/abstract-agent.js';
 import { PluginSystem } from '../core/plugin/plugin-system.js';
-import { PluginContext, ProjectType, TargetPlatform } from '../types/plugin.js';
+import { PluginContext, ProjectType, TargetPlatform } from '../types/plugins.js';
 import {
   AgentContext,
   AgentResult,
@@ -19,7 +19,7 @@ import {
   ValidationResult,
   Artifact,
   ValidationError
-} from '../types/agent.js';
+} from '../types/agents.js';
 import * as path from 'path';
 import fsExtra from 'fs-extra';
 

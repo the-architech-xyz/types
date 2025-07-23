@@ -5,7 +5,7 @@
  * Focuses only on monitoring technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
-import { IPlugin, PluginMetadata, PluginContext, PluginResult, ValidationResult, ConfigSchema, CompatibilityMatrix, PluginRequirement } from '../../../../types/plugin.js';
+import { IPlugin, PluginMetadata, PluginContext, PluginResult, ValidationResult, ConfigSchema, CompatibilityMatrix, PluginRequirement } from '../../../../types/plugins.js';
 export declare class SentryPlugin implements IPlugin {
     private runner;
     constructor();

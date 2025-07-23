@@ -4,8 +4,8 @@
  * Handles plugin lifecycle operations, dependency resolution, and batch operations.
  * Orchestrates the installation, configuration, and management of plugins.
  */
-import { IPlugin, PluginManager, PluginContext, PluginResult, ValidationResult, DependencyResolution, ConflictInfo, PluginRegistry } from '../../types/plugin.js';
-import { Logger } from '../../types/agent.js';
+import { IPlugin, PluginManager, PluginContext, PluginResult, ValidationResult, DependencyResolution, ConflictInfo, PluginRegistry } from '../../types/plugins.js';
+import { Logger } from '../../types/agents.js';
 export declare class PluginManagerImpl implements PluginManager {
     private registry;
     private logger;
