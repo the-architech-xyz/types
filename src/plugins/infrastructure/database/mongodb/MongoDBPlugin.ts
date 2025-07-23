@@ -11,24 +11,18 @@
  * - https://docs.mongodb.com/manual/replication/
  */
 
-import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
-import { TemplateService, templateService } from '../../../../core/templates/template-service.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
-import { ValidationError } from '../../../../types/agents.js';
-
-import * as path from 'path';
-import fsExtra from 'fs-extra';
-import { structureService, StructureInfo } from '../../../../core/project/structure-service.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIDatabasePlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+import { ValidationResult, ValidationError } from '../../../../types/agents.js';
 import { MongoDBConfig, MongoDBConfigSchema, MongoDBDefaultConfig } from './MongoDBSchema.js';
 import { MongoDBGenerator } from './MongoDBGenerator.js';
 
-export class MongoDBPlugin implements IPlugin {
-  private templateService: TemplateService;
-  private runner: CommandRunner;
+export class MongoDBPlugin extends BasePlugin implements IUIDatabasePlugin {
+  private generator!: MongoDBGenerator;
 
   constructor() {
-    this.templateService = templateService;
-    this.runner = new CommandRunner();
+    super();
+    // Generator will be initialized in install method when pathResolver is available
   }
 
   // ============================================================================
@@ -52,6 +46,237 @@ export class MongoDBPlugin implements IPlugin {
   }
 
   // ============================================================================
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getParameterSchema() {
+    return {
+      category: PluginCategory.DATABASE,
+      groups: [
+        { id: 'connection', name: 'Connection Settings', description: 'Configure MongoDB connection.', order: 1, parameters: ['connectionString', 'host', 'port', 'username', 'password', 'database'] },
+        { id: 'features', name: 'Features', description: 'Enable MongoDB features.', order: 2, parameters: ['enableReplicaSet', 'enableSharding', 'enableAggregation'] },
+        { id: 'performance', name: 'Performance', description: 'Configure performance settings.', order: 3, parameters: ['connectionPoolSize', 'connectionTimeout', 'queryTimeout'] }
+      ],
+      parameters: [
+        {
+          id: 'connectionString',
+          name: 'Connection String',
+          type: 'string' as const,
+          description: 'MongoDB connection string',
+          required: true,
+          group: 'connection'
+        },
+        {
+          id: 'host',
+          name: 'Host',
+          type: 'string' as const,
+          description: 'MongoDB host',
+          required: false,
+          group: 'connection'
+        },
+        {
+          id: 'port',
+          name: 'Port',
+          type: 'number' as const,
+          description: 'Database port',
+          required: false,
+          default: 27017,
+          group: 'connection'
+        },
+        {
+          id: 'username',
+          name: 'Username',
+          type: 'string' as const,
+          description: 'Database username',
+          required: false,
+          group: 'connection'
+        },
+        {
+          id: 'password',
+          name: 'Password',
+          type: 'string' as const,
+          description: 'Database password',
+          required: false,
+          group: 'connection'
+        },
+        {
+          id: 'database',
+          name: 'Database Name',
+          type: 'string' as const,
+          description: 'Database name',
+          required: false,
+          group: 'connection'
+        },
+        {
+          id: 'enableReplicaSet',
+          name: 'Enable Replica Set',
+          type: 'boolean' as const,
+          description: 'Enable replica set support',
+          required: false,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'enableSharding',
+          name: 'Enable Sharding',
+          type: 'boolean' as const,
+          description: 'Enable sharding support',
+          required: false,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'enableAggregation',
+          name: 'Enable Aggregation',
+          type: 'boolean' as const,
+          description: 'Enable aggregation pipeline support',
+          required: false,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'connectionPoolSize',
+          name: 'Connection Pool Size',
+          type: 'number' as const,
+          description: 'Connection pool size',
+          required: false,
+          default: 10,
+          group: 'performance'
+        },
+        {
+          id: 'connectionTimeout',
+          name: 'Connection Timeout',
+          type: 'number' as const,
+          description: 'Connection timeout in milliseconds',
+          required: false,
+          default: 10000,
+          group: 'performance'
+        },
+        {
+          id: 'queryTimeout',
+          name: 'Query Timeout',
+          type: 'number' as const,
+          description: 'Query timeout in milliseconds',
+          required: false,
+          default: 30000,
+          group: 'performance'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
+  }
+
+  // Plugins NEVER generate questions - agents handle this
+  getDynamicQuestions(context: PluginContext): any[] {
+    return [];
+  }
+
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: string[] = [];
+
+    // Validate required fields
+    if (!config.connectionString && !config.host) {
+      errors.push({
+        field: 'connectionString',
+        message: 'Either connection string or host is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    // URL validation
+    if (config.connectionString && !config.connectionString.includes('mongodb')) {
+      warnings.push('Connection string should be a MongoDB connection string');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    return {
+      category: PluginCategory.DATABASE,
+      exports: [
+        {
+          name: 'mongodb',
+          type: 'class',
+          implementation: 'MongoDB client instance',
+          documentation: 'Main MongoDB client for database operations'
+        },
+        {
+          name: 'db',
+          type: 'constant',
+          implementation: 'Database connection utilities',
+          documentation: 'Database connection and utility functions'
+        },
+        {
+          name: 'types',
+          type: 'constant',
+          implementation: 'Database type definitions',
+          documentation: 'TypeScript type definitions for database schema'
+        }
+      ],
+      types: [],
+      utilities: [],
+      constants: [],
+      documentation: 'MongoDB NoSQL database integration with document support'
+    };
+  }
+
+  // ============================================================================
+  // IUIDatabasePlugin INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getDatabaseProviders(): string[] {
+    return ['mongodb'];
+  }
+
+  getORMOptions(): string[] {
+    return ['mongoose', 'prisma', 'typegoose'];
+  }
+
+  getDatabaseFeatures(): string[] {
+    return ['document-storage', 'aggregation', 'replica-set', 'sharding'];
+  }
+
+  getConnectionOptions(): string[] {
+    return ['direct', 'pooled', 'replica-set'];
+  }
+
+  getProviderLabel(provider: string): string {
+    return 'MongoDB';
+  }
+
+  getProviderDescription(provider: string): string {
+    return 'Document-oriented NoSQL database with flexible schema and high performance';
+  }
+
+  getFeatureLabel(feature: string): string {
+    const labels: Record<string, string> = {
+      'document-storage': 'Document Storage',
+      'aggregation': 'Aggregation Pipeline',
+      'replica-set': 'Replica Set',
+      'sharding': 'Sharding'
+    };
+    return labels[feature] || feature;
+  }
+
+  getFeatureDescription(feature: string): string {
+    const descriptions: Record<string, string> = {
+      'document-storage': 'Store and query JSON-like documents',
+      'aggregation': 'Powerful data processing pipeline',
+      'replica-set': 'High availability with automatic failover',
+      'sharding': 'Horizontal scaling across multiple servers'
+    };
+    return descriptions[feature] || feature;
+  }
+
+  // ============================================================================
   // PLUGIN LIFECYCLE - Pure Technology Implementation
   // ============================================================================
 
@@ -61,253 +286,92 @@ export class MongoDBPlugin implements IPlugin {
     try {
       const { projectName, projectPath, pluginConfig } = context;
       
-      context.logger.info('Installing MongoDB database infrastructure with latest features...');
+      context.logger.info('Installing MongoDB database infrastructure...');
+
+      // Initialize path resolver
+      this.initializePathResolver(context);
+      
+      // Initialize generator
+      this.generator = new MongoDBGenerator();
+
+      // Validate configuration
+      const validation = this.validateConfiguration(pluginConfig);
+      if (!validation.valid) {
+        return this.createErrorResult('Invalid MongoDB configuration', validation.errors, startTime);
+      }
 
       // Step 1: Install dependencies
-      await this.installDependencies(context);
+      await this.installDependencies(['mongodb']);
 
-      // Step 2: Initialize MongoDB configuration
-      await this.initializeMongoDBConfig(context);
-
-      // Step 3: Create database connection and utilities
-      await this.createDatabaseFiles(context);
-
-      // Step 4: Generate unified interface files
-      await this.generateUnifiedInterfaceFiles(context);
-
-      // Step 5: Setup monitoring and logging
-      if (pluginConfig.enableMonitoring) {
-        await this.setupMonitoring(context);
-      }
+      // Step 2: Generate files using the generator
+      const mongodbClient = MongoDBGenerator.generateMongoDBClient(pluginConfig as any);
+      const types = MongoDBGenerator.generateTypes();
+      const unifiedIndex = MongoDBGenerator.generateUnifiedIndex();
+      
+      // Step 3: Write files to project
+      await this.generateFile('src/lib/db/mongodb.ts', mongodbClient);
+      await this.generateFile('src/lib/db/types.ts', types);
+      await this.generateFile('src/lib/db/index.ts', unifiedIndex);
 
       const duration = Date.now() - startTime;
 
-      return {
-        success: true,
-        artifacts: [
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'db', 'mongodb.ts')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'db', 'types.ts')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'db', 'index.ts')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'db', 'utils.ts')
-          }
+      return this.createSuccessResult(
+        [
+          { type: 'file' as const, path: 'src/lib/db/mongodb.ts' },
+          { type: 'file' as const, path: 'src/lib/db/types.ts' },
+          { type: 'file' as const, path: 'src/lib/db/index.ts' }
         ],
-        dependencies: [
+        [
           {
             name: 'mongodb',
             version: '^6.3.0',
             type: 'production',
             category: PluginCategory.DATABASE
-          },
-          {
-            name: '@types/mongodb',
-            version: '^6.0.0',
-            type: 'development',
-            category: PluginCategory.DATABASE
           }
         ],
-        scripts: [
-          {
-            name: 'db:generate-types',
-            command: 'npx mongodb-schema-generator --uri $DATABASE_URL --output src/lib/db/types.ts',
-            description: 'Generate MongoDB TypeScript types',
-            category: 'dev'
-          },
-          {
-            name: 'db:validate-schema',
-            command: 'npx tsx src/lib/db/validate-schema.ts',
-            description: 'Validate MongoDB schema',
-            category: 'dev'
-          },
-          {
-            name: 'db:backup',
-            command: 'mongodump --uri $MONGODB_URI --db $MONGODB_DATABASE --out ./backups',
-            description: 'Create MongoDB backup',
-            category: 'dev'
-          },
-          {
-            name: 'db:restore',
-            command: 'mongorestore --uri $MONGODB_URI --db $MONGODB_DATABASE ./backups/$MONGODB_DATABASE',
-            description: 'Restore MongoDB backup',
-            category: 'dev'
-          }
-        ],
-        configs: [
-          {
-            file: '.env',
-            content: MongoDBGenerator.generateEnvConfig(pluginConfig as MongoDBConfig),
-            mergeStrategy: 'append'
-          }
-        ],
-        errors: [],
-        warnings: [],
-        duration
-      };
+        [],
+        [],
+        validation.warnings,
+        startTime
+      );
 
     } catch (error) {
       return this.createErrorResult(
-        'Failed to install MongoDB database',
-        startTime,
+        'Failed to install MongoDB database infrastructure',
         [],
-        error
+        startTime
       );
     }
   }
 
-  async uninstall(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      const { projectPath } = context;
-      
-      context.logger.info('Uninstalling MongoDB database...');
+  // ============================================================================
+  // PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
 
-      // Remove MongoDB database files
-      const filesToRemove = [
-        path.join(projectPath, 'src', 'lib', 'db', 'mongodb.ts'),
-        path.join(projectPath, 'src', 'lib', 'db', 'types.ts'),
-        path.join(projectPath, 'src', 'lib', 'db', 'utils.ts')
-      ];
-
-      for (const file of filesToRemove) {
-        if (await fsExtra.pathExists(file)) {
-          await fsExtra.remove(file);
-        }
-      }
-
-      const duration = Date.now() - startTime;
-
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: ['MongoDB database files removed. You may need to manually remove dependencies from package.json'],
-        duration
-      };
-
-    } catch (error) {
-      return this.createErrorResult(
-        'Failed to uninstall MongoDB database',
-        startTime,
-        [],
-        error
-      );
-    }
+  getDependencies(): string[] {
+    return ['mongodb'];
   }
 
-  async update(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      context.logger.info('Updating MongoDB database...');
-
-      // Update dependencies
-      await this.runner.execCommand(['npm', 'update', 'mongodb', '@types/mongodb']);
-
-      const duration = Date.now() - startTime;
-
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: [],
-        duration
-      };
-
-    } catch (error) {
-      return this.createErrorResult(
-        'Failed to update MongoDB database',
-        startTime,
-        [],
-        error
-      );
-    }
+  getDevDependencies(): string[] {
+    return ['@types/mongodb'];
   }
 
-  async validate(context: PluginContext): Promise<ValidationResult> {
-    const errors: ValidationError[] = [];
-    const warnings: string[] = [];
-
-    try {
-      // Check if MongoDB client is properly configured
-      const mongodbPath = path.join(context.projectPath, 'src', 'lib', 'db', 'mongodb.ts');
-      if (!await fsExtra.pathExists(mongodbPath)) {
-        errors.push({
-          field: 'mongodb.client',
-          message: 'MongoDB client configuration file not found',
-          code: 'MISSING_CLIENT',
-          severity: 'error'
-        });
-      }
-
-      // Validate environment variables
-      const envPath = path.join(context.projectPath, '.env');
-      if (await fsExtra.pathExists(envPath)) {
-        const envContent = await fsExtra.readFile(envPath, 'utf-8');
-        if (!envContent.includes('MONGODB_URI')) {
-          warnings.push('MONGODB_URI not found in .env file');
-        }
-        if (!envContent.includes('MONGODB_DATABASE')) {
-          warnings.push('MONGODB_DATABASE not found in .env file');
-        }
-      }
-
-      return {
-        valid: errors.length === 0,
-        errors,
-        warnings
-      };
-
-    } catch (error) {
-      return {
-        valid: false,
-        errors: [{
-          field: 'validation',
-          message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          code: 'VALIDATION_ERROR',
-          severity: 'error'
-        }],
-        warnings: []
-      };
-    }
-  }
-
-  getCompatibility(): CompatibilityMatrix {
+  getCompatibility(): any {
     return {
-      frameworks: ['nextjs', 'react', 'vue', 'angular', 'express', 'fastify', 'nest'],
-      platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
+      frameworks: ['nextjs', 'react', 'vue', 'svelte'],
+      platforms: ['web', 'mobile'],
       nodeVersions: ['>=16.0.0'],
-      packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
+      packageManagers: ['npm', 'yarn', 'pnpm'],
       databases: ['mongodb'],
       conflicts: []
     };
-  }
-
-  getDependencies(): string[] {
-    return ['mongodb', '@types/mongodb'];
   }
 
   getConflicts(): string[] {
     return [];
   }
 
-  getRequirements(): PluginRequirement[] {
+  getRequirements(): any[] {
     return [
       {
         type: 'package',
@@ -316,156 +380,31 @@ export class MongoDBPlugin implements IPlugin {
         version: '^6.3.0'
       },
       {
-        type: 'package',
-        name: '@types/mongodb',
-        description: 'TypeScript types for MongoDB',
-        version: '^6.0.0'
-      },
-      {
-        type: 'config',
-        name: 'MONGODB_URI',
-        description: 'MongoDB connection URI',
-        optional: false
-      },
-      {
-        type: 'config',
-        name: 'MONGODB_DATABASE',
-        description: 'MongoDB database name',
-        optional: false
+        type: 'service',
+        name: 'mongodb-instance',
+        description: 'MongoDB database instance'
       }
     ];
   }
 
   getDefaultConfig(): Record<string, any> {
-    return MongoDBDefaultConfig;
-  }
-
-  getConfigSchema(): ConfigSchema {
-    return MongoDBConfigSchema;
-  }
-
-  // ============================================================================
-  // PRIVATE IMPLEMENTATION METHODS
-  // ============================================================================
-
-  private async installDependencies(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Installing MongoDB dependencies...');
-
-    const dependencies = [
-      'mongodb@^6.3.0',
-      '@types/mongodb@^6.0.0'
-    ];
-
-    await this.runner.execCommand(['npm', 'install', ...dependencies], { cwd: projectPath });
-  }
-
-  private async initializeMongoDBConfig(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    
-    context.logger.info('Initializing MongoDB configuration...');
-
-    // Create database lib directory
-    const dbLibDir = path.join(projectPath, 'src', 'lib', 'db');
-    await fsExtra.ensureDir(dbLibDir);
-
-    // Generate MongoDB client configuration
-    const clientContent = MongoDBGenerator.generateMongoDBClient(pluginConfig as MongoDBConfig);
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'mongodb.ts'),
-      clientContent
-    );
-
-    // Generate database types
-    const typesContent = MongoDBGenerator.generateTypes();
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'types.ts'),
-      typesContent
-    );
-  }
-
-  private async createDatabaseFiles(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Creating database connection files...');
-
-    const dbLibDir = path.join(projectPath, 'src', 'lib', 'db');
-    await fsExtra.ensureDir(dbLibDir);
-
-    // Generate database client
-    const clientContent = MongoDBGenerator.generateDatabaseClient();
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'client.ts'),
-      clientContent
-    );
-
-    // Generate database utilities
-    const utilsContent = MongoDBGenerator.generateDatabaseUtils();
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'utils.ts'),
-      utilsContent
-    );
-  }
-
-  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Generating unified interface files...');
-
-    const dbLibDir = path.join(projectPath, 'src', 'lib', 'db');
-    await fsExtra.ensureDir(dbLibDir);
-
-    // Generate unified database interface
-    const unifiedContent = MongoDBGenerator.generateUnifiedIndex();
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'index.ts'),
-      unifiedContent
-    );
-  }
-
-  private async setupMonitoring(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Setting up MongoDB monitoring...');
-
-    // Create monitoring directory
-    const monitoringDir = path.join(projectPath, 'src', 'lib', 'db', 'monitoring');
-    await fsExtra.ensureDir(monitoringDir);
-
-    // Generate monitoring utilities
-    const monitoringContent = MongoDBGenerator.generateMonitoringUtils();
-    await fsExtra.writeFile(
-      path.join(monitoringDir, 'index.ts'),
-      monitoringContent
-    );
-  }
-
-  private createErrorResult(
-    message: string,
-    startTime: number,
-    errors: any[] = [],
-    originalError?: any
-  ): PluginResult {
-    const duration = Date.now() - startTime;
-    
     return {
-      success: false,
-      artifacts: [],
-      dependencies: [],
-      scripts: [],
-      configs: [],
-      errors: [
-        {
-          code: 'MONGODB_INSTALL_ERROR',
-          message,
-          details: originalError,
-          severity: 'error'
-        },
-        ...errors
-      ],
-      warnings: [],
-      duration
+      connectionString: '',
+      host: '',
+      port: 27017,
+      username: '',
+      password: '',
+      database: '',
+      enableReplicaSet: false,
+      enableSharding: false,
+      enableAggregation: true,
+      connectionPoolSize: 10,
+      connectionTimeout: 10000,
+      queryTimeout: 30000
     };
+  }
+
+  getConfigSchema(): any {
+    return MongoDBConfigSchema;
   }
 } 

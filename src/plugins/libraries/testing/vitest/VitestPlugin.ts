@@ -68,7 +68,7 @@ export class VitestPlugin extends BasePlugin implements IUITestingPlugin {
   }
 
   generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
-    return {
+      return {
       category: PluginCategory.TESTING,
       exports: [
         {
@@ -253,4 +253,4 @@ export class VitestPlugin extends BasePlugin implements IUITestingPlugin {
       required: ['testTypes']
     };
   }
-} 
+}

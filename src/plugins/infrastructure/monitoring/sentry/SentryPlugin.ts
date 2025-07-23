@@ -6,20 +6,23 @@
  * No user interaction or business logic - that's handled by agents.
  */
 
-import { IPlugin, PluginMetadata, PluginCategory, PluginContext, PluginResult, ValidationResult, ConfigSchema, CompatibilityMatrix, PluginRequirement, TargetPlatform } from '../../../../types/plugins.js';
-import { ValidationError } from '../../../../types/agents.js';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIMonitoringPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+import { ValidationResult, ValidationError } from '../../../../types/agents.js';
 import { SentryConfig, SentryConfigSchema, SentryDefaultConfig } from './SentrySchema.js';
 import { SentryGenerator } from './SentryGenerator.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
 
-export class SentryPlugin implements IPlugin {
-  private runner: CommandRunner;
+export class SentryPlugin extends BasePlugin implements IUIMonitoringPlugin {
+  private generator!: SentryGenerator;
 
   constructor() {
-    this.runner = new CommandRunner();
+    super();
+    // Generator will be initialized in install method when pathResolver is available
   }
+
+  // ============================================================================
+  // PLUGIN METADATA
+  // ============================================================================
 
   getMetadata(): PluginMetadata {
     return {
@@ -29,7 +32,7 @@ export class SentryPlugin implements IPlugin {
       description: 'Error tracking and performance monitoring with Sentry',
       author: 'The Architech Team',
       category: PluginCategory.MONITORING,
-      tags: ['monitoring', 'error-tracking', 'performance', 'sentry', 'analytics'],
+      tags: ['monitoring', 'error-tracking', 'performance', 'sentry', 'analytics', 'crash-reporting'],
       license: 'MIT',
       repository: 'https://github.com/getsentry/sentry-javascript',
       homepage: 'https://sentry.io',
@@ -37,141 +40,347 @@ export class SentryPlugin implements IPlugin {
     };
   }
 
-  async validate(context: PluginContext): Promise<ValidationResult> {
-    const errors: ValidationError[] = [];
-    const config = context.pluginConfig as SentryConfig;
+  // ============================================================================
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
 
-    if (!config.dsn) {
-      errors.push({ field: 'dsn', message: 'Sentry DSN is required.', code: 'MISSING_DSN', severity: 'error' });
-    }
-    if (config.enableSourceMaps && (!config.authToken || !config.org || !config.project)) {
-      errors.push({ field: 'sourceMaps', message: 'Auth token, organization, and project are required for source map uploading.', code: 'MISSING_SOURCEMAP_CONFIG', severity: 'error' });
-    }
-
-    return { valid: errors.length === 0, errors, warnings: [] };
+  getParameterSchema() {
+    return {
+      category: PluginCategory.MONITORING,
+      groups: [
+        { id: 'connection', name: 'Connection Settings', description: 'Configure Sentry connection.', order: 1, parameters: ['dsn', 'environment', 'release'] },
+        { id: 'sampling', name: 'Sampling Settings', description: 'Configure sampling rates.', order: 2, parameters: ['tracesSampleRate', 'replaysSessionSampleRate', 'replaysOnErrorSampleRate'] },
+        { id: 'sourcemaps', name: 'Source Maps', description: 'Configure source map uploading.', order: 3, parameters: ['enableSourceMaps', 'authToken', 'org', 'project'] }
+      ],
+      parameters: [
+        {
+          id: 'dsn',
+          name: 'DSN',
+          type: 'string' as const,
+          description: 'Your Sentry Data Source Name (DSN).',
+          required: true,
+          group: 'connection'
+        },
+        {
+          id: 'environment',
+          name: 'Environment',
+          type: 'string' as const,
+          description: 'The environment of your application (e.g., development, staging, production).',
+          required: true,
+          default: 'development',
+          group: 'connection'
+        },
+        {
+          id: 'release',
+          name: 'Release',
+          type: 'string' as const,
+          description: 'The release version of your application.',
+          required: false,
+          group: 'connection'
+        },
+        {
+          id: 'tracesSampleRate',
+          name: 'Traces Sample Rate',
+          type: 'number' as const,
+          description: 'The percentage of transactions to send to Sentry (0.0 to 1.0).',
+          required: false,
+          default: 1.0,
+          group: 'sampling'
+        },
+        {
+          id: 'replaysSessionSampleRate',
+          name: 'Session Replay Rate',
+          type: 'number' as const,
+          description: 'The percentage of sessions to record for session replay (0.0 to 1.0).',
+          required: false,
+          default: 0.1,
+          group: 'sampling'
+        },
+        {
+          id: 'replaysOnErrorSampleRate',
+          name: 'Error Replay Rate',
+          type: 'number' as const,
+          description: 'The percentage of sessions with errors to record for session replay (0.0 to 1.0).',
+          required: false,
+          default: 1.0,
+          group: 'sampling'
+        },
+        {
+          id: 'enableSourceMaps',
+          name: 'Enable Source Maps',
+          type: 'boolean' as const,
+          description: 'Enable source map generation and uploading.',
+          required: false,
+          default: true,
+          group: 'sourcemaps'
+        },
+        {
+          id: 'authToken',
+          name: 'Auth Token',
+          type: 'string' as const,
+          description: 'Your Sentry authentication token for uploading source maps.',
+          required: false,
+          group: 'sourcemaps'
+        },
+        {
+          id: 'org',
+          name: 'Organization',
+          type: 'string' as const,
+          description: 'Your Sentry organization slug.',
+          required: false,
+          group: 'sourcemaps'
+        },
+        {
+          id: 'project',
+          name: 'Project',
+          type: 'string' as const,
+          description: 'Your Sentry project slug.',
+          required: false,
+          group: 'sourcemaps'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
   }
+
+  // Plugins NEVER generate questions - agents handle this
+  getDynamicQuestions(context: PluginContext): any[] {
+    return [];
+  }
+
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: string[] = [];
+
+    // Validate required fields
+    if (!config.dsn) {
+      errors.push({
+        field: 'dsn',
+        message: 'Sentry DSN is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    if (!config.environment) {
+      errors.push({
+        field: 'environment',
+        message: 'Environment is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    // Validate source map configuration
+    if (config.enableSourceMaps && (!config.authToken || !config.org || !config.project)) {
+      errors.push({
+        field: 'sourceMaps',
+        message: 'Auth token, organization, and project are required for source map uploading',
+        code: 'MISSING_SOURCEMAP_CONFIG',
+        severity: 'error'
+      });
+    }
+
+    // Validate sampling rates
+    if (config.tracesSampleRate && (config.tracesSampleRate < 0 || config.tracesSampleRate > 1)) {
+      warnings.push('Traces sample rate should be between 0.0 and 1.0');
+    }
+
+    if (config.replaysSessionSampleRate && (config.replaysSessionSampleRate < 0 || config.replaysSessionSampleRate > 1)) {
+      warnings.push('Session replay sample rate should be between 0.0 and 1.0');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    return {
+      category: PluginCategory.MONITORING,
+      exports: [
+        {
+          name: 'sentry',
+          type: 'constant',
+          implementation: 'Sentry configuration',
+          documentation: 'Sentry error tracking and performance monitoring configuration'
+        },
+        {
+          name: 'SentryClient',
+          type: 'class' as const,
+          implementation: 'Sentry client configuration',
+          documentation: 'Sentry client-side configuration for browser'
+        },
+        {
+          name: 'SentryServer',
+          type: 'class' as const,
+          implementation: 'Sentry server configuration',
+          documentation: 'Sentry server-side configuration for Node.js'
+        }
+      ],
+      types: [],
+      utilities: [],
+      constants: [],
+      documentation: 'Sentry error tracking and performance monitoring integration'
+    };
+  }
+
+  // ============================================================================
+  // IUIMonitoringPlugin INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getMonitoringServices(): string[] {
+    return ['sentry', 'error-tracking', 'performance-monitoring'];
+  }
+
+  getAnalyticsOptions(): string[] {
+    return ['error-tracking', 'performance-monitoring', 'session-replay', 'crash-reporting'];
+  }
+
+  getAlertOptions(): string[] {
+    return ['error-alerts', 'performance-alerts', 'crash-alerts', 'custom-alerts'];
+  }
+
+  // ============================================================================
+  // PLUGIN LIFECYCLE - Pure Technology Implementation
+  // ============================================================================
 
   async install(context: PluginContext): Promise<PluginResult> {
     const startTime = Date.now();
+    
     try {
-      await this.installDependencies(context);
-      await this.createProjectFiles(context);
+      const { projectName, projectPath, pluginConfig } = context;
       
-      const duration = Date.now() - startTime;
-      return {
-        success: true,
-        artifacts: [
-          { type: 'file', path: 'sentry.client.config.ts' },
-          { type: 'file', path: 'sentry.server.config.ts' },
-          { type: 'file', path: 'next.config.sentry.js' },
-        ],
-        dependencies: [{ name: '@sentry/nextjs', version: '^7.0.0', type: 'production', category: PluginCategory.MONITORING }],
-        scripts: [],
-        configs: [{
-          file: '.env',
-          content: SentryGenerator.generateEnvConfig(context.pluginConfig as SentryConfig),
-          mergeStrategy: 'append'
-        }],
-        errors: [],
-        warnings: ['Sentry integration requires manual wrapping of your Next.js config. A `next.config.sentry.js` file has been created as a reference.'],
-        duration
-      };
-    } catch (error) {
-      return this.createErrorResult('Failed to install Sentry plugin', startTime, error);
-    }
-  }
+      context.logger.info('Installing Sentry monitoring...');
 
-  async uninstall(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    try {
-      await this.runner.execCommand(['npm', 'uninstall', '@sentry/nextjs'], { cwd: context.projectPath });
+      // Initialize path resolver
+      this.initializePathResolver(context);
       
-      const filesToRemove = ['sentry.client.config.ts', 'sentry.server.config.ts', 'next.config.sentry.js'];
-      for (const file of filesToRemove) {
-        const filePath = path.join(context.projectPath, file);
-        if (await fsExtra.pathExists(filePath)) {
-          await fsExtra.remove(filePath);
-        }
+      // Initialize generator
+      this.generator = new SentryGenerator();
+
+      // Validate configuration
+      const validation = this.validateConfiguration(pluginConfig);
+      if (!validation.valid) {
+        return this.createErrorResult('Invalid Sentry configuration', validation.errors, startTime);
       }
+
+      // Step 1: Install dependencies
+      await this.installDependencies(['@sentry/nextjs']);
+
+      // Step 2: Generate files using the generator
+      const sentryClientConfig = SentryGenerator.generateSentryClientConfig(pluginConfig as any);
+      const sentryServerConfig = SentryGenerator.generateSentryServerConfig(pluginConfig as any);
+      const envConfig = SentryGenerator.generateEnvConfig(pluginConfig as any);
       
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: ['Sentry files and dependencies have been removed.'],
-        duration: Date.now() - startTime
-      };
+      // Step 3: Write files to project
+      await this.generateFile('sentry.client.config.ts', sentryClientConfig);
+      await this.generateFile('sentry.server.config.ts', sentryServerConfig);
+      await this.generateFile('.env.local', envConfig);
+
+      // Step 4: Generate Next.js config if source maps are enabled
+      if (pluginConfig.enableSourceMaps) {
+        const nextConfig = SentryGenerator.generateNextConfig(pluginConfig as any);
+        await this.generateFile('next.config.sentry.js', nextConfig);
+      }
+
+      const duration = Date.now() - startTime;
+
+      return this.createSuccessResult(
+        [
+          { type: 'file' as const, path: 'sentry.client.config.ts' },
+          { type: 'file' as const, path: 'sentry.server.config.ts' },
+          { type: 'file' as const, path: '.env.local' },
+          ...(pluginConfig.enableSourceMaps ? [{ type: 'file' as const, path: 'next.config.sentry.js' }] : [])
+        ],
+        [
+          {
+            name: '@sentry/nextjs',
+            version: '^7.0.0',
+            type: 'production',
+            category: PluginCategory.MONITORING
+          }
+        ],
+        [],
+        [],
+        [
+          'Sentry integration requires manual wrapping of your Next.js config. A `next.config.sentry.js` file has been created as a reference.',
+          ...validation.warnings
+        ],
+        startTime
+      );
+
     } catch (error) {
-      return this.createErrorResult('Failed to uninstall Sentry plugin', startTime, error);
+      return this.createErrorResult(
+        'Failed to install Sentry monitoring',
+        [],
+        startTime
+      );
     }
   }
 
-  async update(context: PluginContext): Promise<PluginResult> {
-    return this.install(context);
+  // ============================================================================
+  // PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getDependencies(): string[] {
+    return ['@sentry/nextjs'];
   }
 
-  getCompatibility(): CompatibilityMatrix {
+  getDevDependencies(): string[] {
+    return [];
+  }
+
+  getCompatibility(): any {
     return {
-      frameworks: ['nextjs'],
-      platforms: [TargetPlatform.WEB],
+      frameworks: ['nextjs', 'react', 'vue', 'svelte'],
+      platforms: ['web', 'server'],
       nodeVersions: ['>=16.0.0'],
       packageManagers: ['npm', 'yarn', 'pnpm'],
       conflicts: []
     };
   }
 
-  getDependencies(): string[] {
-    return ['@sentry/nextjs'];
-  }
-
   getConflicts(): string[] {
     return [];
   }
 
-  getRequirements(): PluginRequirement[] {
+  getRequirements(): any[] {
     return [
-      { type: 'package', name: '@sentry/nextjs', description: 'The Sentry SDK for Next.js.', version: '^7.0.0' },
-      { type: 'config', name: 'SENTRY_DSN', description: 'Your Sentry Data Source Name.', optional: false },
+      {
+        type: 'package',
+        name: '@sentry/nextjs',
+        description: 'The Sentry SDK for Next.js.',
+        version: '^7.0.0'
+      },
+      {
+        type: 'config',
+        name: 'SENTRY_DSN',
+        description: 'Your Sentry Data Source Name.',
+        optional: false
+      }
     ];
   }
 
   getDefaultConfig(): Record<string, any> {
-    return SentryDefaultConfig;
-  }
-
-  getConfigSchema(): ConfigSchema {
-    return SentryConfigSchema;
-  }
-
-  private async installDependencies(context: PluginContext): Promise<void> {
-    await this.runner.execCommand(['npm', 'install', '@sentry/nextjs'], { cwd: context.projectPath });
-  }
-
-  private async createProjectFiles(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    const config = pluginConfig as SentryConfig;
-
-    await fsExtra.writeFile(path.join(projectPath, 'sentry.client.config.ts'), SentryGenerator.generateSentryClientConfig(config));
-    await fsExtra.writeFile(path.join(projectPath, 'sentry.server.config.ts'), SentryGenerator.generateSentryServerConfig(config));
-    
-    if(config.enableSourceMaps) {
-      await fsExtra.writeFile(path.join(projectPath, 'next.config.sentry.js'), SentryGenerator.generateNextConfig(config));
-    }
-  }
-
-  private createErrorResult(message: string, startTime: number, error: any): PluginResult {
     return {
-      success: false,
-      artifacts: [],
-      dependencies: [],
-      scripts: [],
-      configs: [],
-      errors: [{ code: 'SENTRY_PLUGIN_ERROR', message, details: error, severity: 'error' }],
-      warnings: [],
-      duration: Date.now() - startTime
+      dsn: '',
+      environment: 'development',
+      release: '',
+      tracesSampleRate: 1.0,
+      replaysSessionSampleRate: 0.1,
+      replaysOnErrorSampleRate: 1.0,
+      enableSourceMaps: true,
+      authToken: '',
+      org: '',
+      project: ''
     };
+  }
+
+  getConfigSchema(): any {
+    return SentryConfigSchema;
   }
 } 

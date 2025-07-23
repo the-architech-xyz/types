@@ -35,7 +35,7 @@ export class TamaguiPlugin extends BasePlugin implements IUIPlugin {
       license: 'MIT',
     };
   }
-  
+
   // ============================================================================
   // ENHANCED PLUGIN INTERFACE IMPLEMENTATION
   // ============================================================================
@@ -55,13 +55,13 @@ export class TamaguiPlugin extends BasePlugin implements IUIPlugin {
 
     // Validate required fields
     if (!config.components || config.components.length === 0) {
-      errors.push({
+        errors.push({
         field: 'components',
         message: 'At least one component is required',
         code: 'MISSING_FIELD',
-        severity: 'error'
-      });
-    }
+          severity: 'error'
+        });
+      }
 
     // Validate platform configuration
     if (config.platforms && !Array.isArray(config.platforms)) {

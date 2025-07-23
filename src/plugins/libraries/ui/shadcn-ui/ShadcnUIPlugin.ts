@@ -234,7 +234,7 @@ export class ShadcnUIPlugin extends BasePlugin implements IUIPlugin {
   }
 
   getCompatibility(): any {
-    return {
+  return {
       frameworks: ['nextjs', 'react', 'vue', 'svelte'],
       platforms: ['node', 'browser'],
       nodeVersions: ['>=16.0.0'],

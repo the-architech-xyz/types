@@ -6,23 +6,18 @@
  * No user interaction or business logic - that's handled by agents.
  */
 
-import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
-import { TemplateService, templateService } from '../../../../core/templates/template-service.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
-import { ValidationError } from '../../../../types/agents.js';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
-import { structureService, StructureInfo } from '../../../../core/project/structure-service.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIPaymentPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+import { ValidationResult, ValidationError } from '../../../../types/agents.js';
 import { StripeConfig, StripeConfigSchema, StripeDefaultConfig } from './StripeSchema.js';
 import { StripeGenerator } from './StripeGenerator.js';
 
-export class StripePlugin implements IPlugin {
-  private templateService: TemplateService;
-  private runner: CommandRunner;
+export class StripePlugin extends BasePlugin implements IUIPaymentPlugin {
+  private generator!: StripeGenerator;
 
   constructor() {
-    this.templateService = templateService;
-    this.runner = new CommandRunner();
+    super();
+    // Generator will be initialized in install method when pathResolver is available
   }
 
   // ============================================================================
@@ -37,12 +32,321 @@ export class StripePlugin implements IPlugin {
       description: 'Payment processing and subscription management with Stripe',
       author: 'The Architech Team',
       category: PluginCategory.PAYMENT,
-      tags: ['payment', 'stripe', 'subscriptions', 'invoices', 'marketplace'],
+      tags: ['payment', 'stripe', 'subscriptions', 'invoices', 'marketplace', 'checkout'],
       license: 'MIT',
       repository: 'https://github.com/stripe/stripe-node',
       homepage: 'https://stripe.com',
       documentation: 'https://stripe.com/docs'
     };
+  }
+
+  // ============================================================================
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getParameterSchema() {
+    return {
+      category: PluginCategory.PAYMENT,
+      groups: [
+        { id: 'credentials', name: 'Credentials', description: 'Configure Stripe API credentials.', order: 1, parameters: ['publishableKey', 'secretKey', 'webhookSecret'] },
+        { id: 'features', name: 'Features', description: 'Configure payment features.', order: 2, parameters: ['enableSubscriptions', 'enableInvoices', 'enableTaxes', 'enableConnect'] },
+        { id: 'paymentMethods', name: 'Payment Methods', description: 'Configure accepted payment methods.', order: 3, parameters: ['enableCards', 'enableBankTransfers', 'enableDigitalWallets', 'enableCrypto'] },
+        { id: 'security', name: 'Security', description: 'Configure security settings.', order: 4, parameters: ['enable3DSecure', 'enableSCA', 'enableFraudDetection'] },
+        { id: 'webhooks', name: 'Webhooks', description: 'Configure webhook events.', order: 5, parameters: ['enablePaymentSuccess', 'enableSubscriptionEvents', 'enableInvoiceEvents'] },
+        { id: 'currency', name: 'Currency & Locale', description: 'Configure currency and locale settings.', order: 6, parameters: ['currency', 'locale'] }
+      ],
+      parameters: [
+        {
+          id: 'publishableKey',
+          name: 'Publishable Key',
+          type: 'string' as const,
+          description: 'Stripe publishable key for client-side operations.',
+          required: true,
+          group: 'credentials'
+        },
+        {
+          id: 'secretKey',
+          name: 'Secret Key',
+          type: 'string' as const,
+          description: 'Stripe secret key for server-side operations.',
+          required: true,
+          group: 'credentials'
+        },
+        {
+          id: 'webhookSecret',
+          name: 'Webhook Secret',
+          type: 'string' as const,
+          description: 'Stripe webhook endpoint secret.',
+          required: true,
+          group: 'credentials'
+        },
+        {
+          id: 'enableSubscriptions',
+          name: 'Enable Subscriptions',
+          type: 'boolean' as const,
+          description: 'Enable subscription management.',
+          required: false,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enableInvoices',
+          name: 'Enable Invoices',
+          type: 'boolean' as const,
+          description: 'Enable invoice generation.',
+          required: false,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enableTaxes',
+          name: 'Enable Taxes',
+          type: 'boolean' as const,
+          description: 'Enable tax calculation.',
+          required: false,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'enableConnect',
+          name: 'Enable Connect',
+          type: 'boolean' as const,
+          description: 'Enable Stripe Connect for marketplaces.',
+          required: false,
+          default: false,
+          group: 'features'
+        },
+        {
+          id: 'enableCards',
+          name: 'Enable Cards',
+          type: 'boolean' as const,
+          description: 'Enable credit/debit card payments.',
+          required: false,
+          default: true,
+          group: 'paymentMethods'
+        },
+        {
+          id: 'enableBankTransfers',
+          name: 'Enable Bank Transfers',
+          type: 'boolean' as const,
+          description: 'Enable bank transfer payments.',
+          required: false,
+          default: false,
+          group: 'paymentMethods'
+        },
+        {
+          id: 'enableDigitalWallets',
+          name: 'Enable Digital Wallets',
+          type: 'boolean' as const,
+          description: 'Enable digital wallet payments (Apple Pay, Google Pay).',
+          required: false,
+          default: true,
+          group: 'paymentMethods'
+        },
+        {
+          id: 'enableCrypto',
+          name: 'Enable Crypto',
+          type: 'boolean' as const,
+          description: 'Enable cryptocurrency payments.',
+          required: false,
+          default: false,
+          group: 'paymentMethods'
+        },
+        {
+          id: 'enable3DSecure',
+          name: 'Enable 3D Secure',
+          type: 'boolean' as const,
+          description: 'Enable 3D Secure authentication.',
+          required: false,
+          default: true,
+          group: 'security'
+        },
+        {
+          id: 'enableSCA',
+          name: 'Enable SCA',
+          type: 'boolean' as const,
+          description: 'Enable Strong Customer Authentication.',
+          required: false,
+          default: true,
+          group: 'security'
+        },
+        {
+          id: 'enableFraudDetection',
+          name: 'Enable Fraud Detection',
+          type: 'boolean' as const,
+          description: 'Enable Stripe Radar fraud detection.',
+          required: false,
+          default: true,
+          group: 'security'
+        },
+        {
+          id: 'enablePaymentSuccess',
+          name: 'Payment Success Webhooks',
+          type: 'boolean' as const,
+          description: 'Enable payment success webhook events.',
+          required: false,
+          default: true,
+          group: 'webhooks'
+        },
+        {
+          id: 'enableSubscriptionEvents',
+          name: 'Subscription Webhooks',
+          type: 'boolean' as const,
+          description: 'Enable subscription-related webhook events.',
+          required: false,
+          default: true,
+          group: 'webhooks'
+        },
+        {
+          id: 'enableInvoiceEvents',
+          name: 'Invoice Webhooks',
+          type: 'boolean' as const,
+          description: 'Enable invoice-related webhook events.',
+          required: false,
+          default: true,
+          group: 'webhooks'
+        },
+        {
+          id: 'currency',
+          name: 'Currency',
+          type: 'select' as const,
+          description: 'Default currency for payments.',
+          required: false,
+          default: 'usd',
+          options: [
+            { value: 'usd', label: 'USD - US Dollar' },
+            { value: 'eur', label: 'EUR - Euro' },
+            { value: 'gbp', label: 'GBP - British Pound' },
+            { value: 'cad', label: 'CAD - Canadian Dollar' },
+            { value: 'aud', label: 'AUD - Australian Dollar' },
+            { value: 'jpy', label: 'JPY - Japanese Yen' }
+          ],
+          group: 'currency'
+        },
+        {
+          id: 'locale',
+          name: 'Locale',
+          type: 'select' as const,
+          description: 'Default locale for payment forms.',
+          required: false,
+          default: 'en',
+          options: [
+            { value: 'en', label: 'English' },
+            { value: 'es', label: 'Spanish' },
+            { value: 'fr', label: 'French' },
+            { value: 'de', label: 'German' },
+            { value: 'it', label: 'Italian' },
+            { value: 'ja', label: 'Japanese' }
+          ],
+          group: 'currency'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
+  }
+
+  // Plugins NEVER generate questions - agents handle this
+  getDynamicQuestions(context: PluginContext): any[] {
+    return [];
+  }
+
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: string[] = [];
+
+    // Validate required fields
+    if (!config.publishableKey) {
+      errors.push({
+        field: 'publishableKey',
+        message: 'Stripe publishable key is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    if (!config.secretKey) {
+      errors.push({
+        field: 'secretKey',
+        message: 'Stripe secret key is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    if (!config.webhookSecret) {
+      errors.push({
+        field: 'webhookSecret',
+        message: 'Stripe webhook secret is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    // Validate key formats
+    if (config.publishableKey && !config.publishableKey.startsWith('pk_')) {
+      warnings.push('Publishable key should start with "pk_"');
+    }
+
+    if (config.secretKey && !config.secretKey.startsWith('sk_')) {
+      warnings.push('Secret key should start with "sk_"');
+    }
+
+    if (config.webhookSecret && !config.webhookSecret.startsWith('whsec_')) {
+      warnings.push('Webhook secret should start with "whsec_"');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    return {
+      category: PluginCategory.PAYMENT,
+      exports: [
+        {
+          name: 'stripe',
+          type: 'constant',
+          implementation: 'Stripe client configuration',
+          documentation: 'Stripe API client for payment processing'
+        },
+        {
+          name: 'paymentService',
+          type: 'class' as const,
+          implementation: 'Payment service class',
+          documentation: 'Unified payment service for Stripe operations'
+        },
+        {
+          name: 'payment',
+          type: 'constant',
+          implementation: 'Payment utilities',
+          documentation: 'Stripe payment processing utilities'
+        }
+      ],
+      types: [],
+      utilities: [],
+      constants: [],
+      documentation: 'Stripe payment processing and subscription management integration'
+    };
+  }
+
+  // ============================================================================
+  // IUIPaymentPlugin INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getPaymentProviders(): string[] {
+    return ['stripe', 'stripe-checkout', 'stripe-subscriptions'];
+  }
+
+  getPaymentFeatures(): string[] {
+    return ['one-time-payments', 'subscriptions', 'invoices', 'marketplace', 'refunds', 'disputes'];
+  }
+
+  getCurrencyOptions(): string[] {
+    return ['usd', 'eur', 'gbp', 'cad', 'aud', 'jpy', 'chf', 'sek', 'nok', 'dkk'];
   }
 
   // ============================================================================
@@ -55,43 +359,63 @@ export class StripePlugin implements IPlugin {
     try {
       const { projectName, projectPath, pluginConfig } = context;
       
-      context.logger.info('Installing Stripe payments...');
+      context.logger.info('Installing Stripe payment processing...');
+
+      // Initialize path resolver
+      this.initializePathResolver(context);
+      
+      // Initialize generator
+      this.generator = new StripeGenerator();
+
+      // Validate configuration
+      const validation = this.validateConfiguration(pluginConfig);
+      if (!validation.valid) {
+        return this.createErrorResult('Invalid Stripe configuration', validation.errors, startTime);
+      }
 
       // Step 1: Install dependencies
-      await this.installDependencies(context);
+      await this.installDependencies(['stripe']);
 
-      // Step 2: Initialize Stripe configuration
-      await this.initializeStripeConfig(context);
+      // Step 2: Generate files using the generator
+      const stripeClient = StripeGenerator.generateStripeClient(pluginConfig as any);
+      const paymentService = StripeGenerator.generatePaymentService(pluginConfig as any);
+      const webhookRoute = StripeGenerator.generateWebhookRoute(pluginConfig as any);
+      const envConfig = StripeGenerator.generateEnvConfig(pluginConfig as any);
+      
+      // Step 3: Write files to project
+      await this.generateFile('src/lib/payment/stripe.ts', stripeClient);
+      await this.generateFile('src/lib/payment/service.ts', paymentService);
+      await this.generateFile('src/app/api/stripe/webhook/route.ts', webhookRoute);
+      await this.generateFile('.env.local', envConfig);
 
-      // Step 3: Create payment utilities
-      await this.createPaymentFiles(context);
+      // Step 4: Generate unified interface
+      const unifiedIndex = `/**
+ * Unified Payment Interface - Stripe Implementation
+ * 
+ * This file provides a unified interface for payment operations
+ * that works with Stripe.
+ */
 
-      // Step 4: Generate unified interface files
-      await this.generateUnifiedInterfaceFiles(context);
+export { stripe } from './stripe.js';
+export { paymentService } from './service.js';
+export type * from 'stripe';
+
+// Default export for convenience
+export { paymentService as default } from './service.js';
+`;
+      await this.generateFile('src/lib/payment/index.ts', unifiedIndex);
 
       const duration = Date.now() - startTime;
 
-      return {
-        success: true,
-        artifacts: [
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'payment', 'stripe.ts')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'payment', 'service.ts')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'payment', 'index.ts')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'app', 'api', 'stripe', 'webhook', 'route.ts')
-          }
+      return this.createSuccessResult(
+        [
+          { type: 'file' as const, path: 'src/lib/payment/stripe.ts' },
+          { type: 'file' as const, path: 'src/lib/payment/service.ts' },
+          { type: 'file' as const, path: 'src/lib/payment/index.ts' },
+          { type: 'file' as const, path: 'src/app/api/stripe/webhook/route.ts' },
+          { type: 'file' as const, path: '.env.local' }
         ],
-        dependencies: [
+        [
           {
             name: 'stripe',
             version: '^14.0.0',
@@ -99,199 +423,52 @@ export class StripePlugin implements IPlugin {
             category: PluginCategory.PAYMENT
           }
         ],
-        scripts: [
-          {
-            name: 'stripe:test',
-            command: 'node -e "require(\'./src/lib/payment/service.js\').paymentService.createPaymentIntent(1000, \'usd\')\"',
-            description: 'Test payment intent creation',
-            category: 'dev'
-          },
-          {
-            name: 'stripe:webhook',
-            command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook',
-            description: 'Listen for webhook events',
-            category: 'dev'
-          },
-          {
-            name: 'stripe:test-webhook',
-            command: 'stripe trigger payment_intent.succeeded',
-            description: 'Trigger test webhook events',
-            category: 'dev'
-          }
+        [
+          { name: 'stripe:test', command: 'node -e "require(\'./src/lib/payment/service.js\').paymentService.createPaymentIntent(1000, \'usd\')"', description: 'Test payment intent creation', category: 'dev' as const },
+          { name: 'stripe:webhook', command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook', description: 'Listen for webhook events', category: 'dev' as const },
+          { name: 'stripe:test-webhook', command: 'stripe trigger payment_intent.succeeded', description: 'Trigger test webhook events', category: 'dev' as const }
         ],
-        configs: [
-          {
-            file: '.env',
-            content: StripeGenerator.generateEnvConfig(pluginConfig as StripeConfig),
-            mergeStrategy: 'append'
-          }
-        ],
-        errors: [],
-        warnings: [],
-        duration
-      };
+        [],
+        validation.warnings,
+        startTime
+      );
 
     } catch (error) {
       return this.createErrorResult(
-        'Failed to install Stripe payments',
-        startTime,
+        'Failed to install Stripe payment processing',
         [],
-        error
+        startTime
       );
     }
   }
 
-  async uninstall(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      const { projectPath } = context;
-      
-      context.logger.info('Uninstalling Stripe payments...');
-
-      // Remove Stripe dependencies
-      await this.runner.execCommand(['npm', 'uninstall', 'stripe'], { cwd: projectPath });
-
-      // Remove payment service files
-      const filesToRemove = [
-        path.join(projectPath, 'src', 'lib', 'payment', 'stripe.ts'),
-        path.join(projectPath, 'src', 'lib', 'payment', 'service.ts'),
-        path.join(projectPath, 'src', 'lib', 'payment', 'index.ts'),
-        path.join(projectPath, 'src', 'app', 'api', 'stripe', 'webhook', 'route.ts')
-      ];
-
-      for (const file of filesToRemove) {
-        if (await fsExtra.pathExists(file)) {
-          await fsExtra.remove(file);
-        }
-      }
-
-      const duration = Date.now() - startTime;
-
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: ['Stripe payment files removed. You may need to manually remove dependencies from package.json'],
-        duration
-      };
-
-    } catch (error) {
-      return this.createErrorResult(
-        'Failed to uninstall Stripe payments',
-        startTime,
-        [],
-        error
-      );
-    }
-  }
-
-  async update(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      context.logger.info('Updating Stripe payments...');
-
-      // Update Stripe dependencies
-      await this.runner.execCommand(['npm', 'update', 'stripe']);
-
-      const duration = Date.now() - startTime;
-
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: [],
-        duration
-      };
-
-    } catch (error) {
-      return this.createErrorResult(
-        'Failed to update Stripe payments',
-        startTime,
-        [],
-        error
-      );
-    }
-  }
-
-  async validate(context: PluginContext): Promise<ValidationResult> {
-    const errors: ValidationError[] = [];
-    const warnings: string[] = [];
-
-    try {
-      // Check if Stripe client is properly configured
-      const stripePath = path.join(context.projectPath, 'src', 'lib', 'payment', 'stripe.ts');
-      if (!await fsExtra.pathExists(stripePath)) {
-        errors.push({
-          field: 'stripe.client',
-          message: 'Stripe client configuration file not found',
-          code: 'MISSING_CLIENT',
-          severity: 'error'
-        });
-      }
-
-      // Validate environment variables
-      const envPath = path.join(context.projectPath, '.env');
-      if (await fsExtra.pathExists(envPath)) {
-        const envContent = await fsExtra.readFile(envPath, 'utf-8');
-        if (!envContent.includes('STRIPE_PUBLISHABLE_KEY')) {
-          warnings.push('STRIPE_PUBLISHABLE_KEY not found in .env file');
-        }
-        if (!envContent.includes('STRIPE_SECRET_KEY')) {
-          warnings.push('STRIPE_SECRET_KEY not found in .env file');
-        }
-        if (!envContent.includes('STRIPE_WEBHOOK_SECRET')) {
-          warnings.push('STRIPE_WEBHOOK_SECRET not found in .env file');
-        }
-      }
-
-      return {
-        valid: errors.length === 0,
-        errors,
-        warnings
-      };
-
-    } catch (error) {
-      return {
-        valid: false,
-        errors: [{
-          field: 'validation',
-          message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          code: 'VALIDATION_ERROR',
-          severity: 'error'
-        }],
-        warnings: []
-      };
-    }
-  }
-
-  getCompatibility(): CompatibilityMatrix {
-    return {
-      frameworks: ['nextjs', 'react', 'vue', 'angular', 'express', 'fastify', 'nest'],
-      platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
-      nodeVersions: ['>=16.0.0'],
-      packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
-      databases: [],
-      conflicts: []
-    };
-  }
+  // ============================================================================
+  // PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
 
   getDependencies(): string[] {
     return ['stripe'];
   }
 
-  getConflicts(): string[] {
+  getDevDependencies(): string[] {
     return [];
   }
 
-  getRequirements(): PluginRequirement[] {
+  getCompatibility(): any {
+    return {
+      frameworks: ['nextjs', 'react', 'vue', 'svelte'],
+      platforms: ['web', 'mobile'],
+      nodeVersions: ['>=16.0.0'],
+      packageManagers: ['npm', 'yarn', 'pnpm'],
+      conflicts: ['paypal']
+    };
+  }
+
+  getConflicts(): string[] {
+    return ['paypal'];
+  }
+
+  getRequirements(): any[] {
     return [
       {
         type: 'package',
@@ -321,122 +498,30 @@ export class StripePlugin implements IPlugin {
   }
 
   getDefaultConfig(): Record<string, any> {
-    return StripeDefaultConfig;
-  }
-
-  getConfigSchema(): ConfigSchema {
-    return StripeConfigSchema;
-  }
-
-  // ============================================================================
-  // PRIVATE IMPLEMENTATION METHODS
-  // ============================================================================
-
-  private async installDependencies(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Installing Stripe dependencies...');
-
-    const dependencies = ['stripe@^14.0.0'];
-
-    await this.runner.execCommand(['npm', 'install', ...dependencies], { cwd: projectPath });
-  }
-
-  private async initializeStripeConfig(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    
-    context.logger.info('Initializing Stripe configuration...');
-
-    // Create payment lib directory
-    const paymentLibDir = path.join(projectPath, 'src', 'lib', 'payment');
-    await fsExtra.ensureDir(paymentLibDir);
-
-    // Generate Stripe client
-    const clientContent = StripeGenerator.generateStripeClient(pluginConfig as StripeConfig);
-    await fsExtra.writeFile(
-      path.join(paymentLibDir, 'stripe.ts'),
-      clientContent
-    );
-
-    // Generate payment service
-    const serviceContent = StripeGenerator.generatePaymentService(pluginConfig as StripeConfig);
-    await fsExtra.writeFile(
-      path.join(paymentLibDir, 'service.ts'),
-      serviceContent
-    );
-  }
-
-  private async createPaymentFiles(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    
-    context.logger.info('Creating payment files...');
-
-    // Create API routes directory
-    const apiDir = path.join(projectPath, 'src', 'app', 'api', 'stripe', 'webhook');
-    await fsExtra.ensureDir(apiDir);
-
-    // Generate webhook route
-    const webhookContent = StripeGenerator.generateWebhookRoute(pluginConfig as StripeConfig);
-    await fsExtra.writeFile(
-      path.join(apiDir, 'route.ts'),
-      webhookContent
-    );
-  }
-
-  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Generating unified interface files...');
-
-    const paymentLibDir = path.join(projectPath, 'src', 'lib', 'payment');
-    await fsExtra.ensureDir(paymentLibDir);
-
-    // Generate unified index
-    const indexContent = `/**
- * Unified Payment Interface - Stripe Implementation
- * 
- * This file provides a unified interface for payment operations
- * that works with Stripe.
- */
-
-export { stripe } from './stripe.js';
-export { paymentService } from './service.js';
-export type * from 'stripe';
-
-// Default export for convenience
-export { paymentService as default } from './service.js';
-`;
-    await fsExtra.writeFile(
-      path.join(paymentLibDir, 'index.ts'),
-      indexContent
-    );
-  }
-
-  private createErrorResult(
-    message: string,
-    startTime: number,
-    errors: any[] = [],
-    originalError?: any
-  ): PluginResult {
-    const duration = Date.now() - startTime;
-    
     return {
-      success: false,
-      artifacts: [],
-      dependencies: [],
-      scripts: [],
-      configs: [],
-      errors: [
-        {
-          code: 'STRIPE_INSTALL_ERROR',
-          message,
-          details: originalError,
-          severity: 'error'
-        },
-        ...errors
-      ],
-      warnings: [],
-      duration
+      publishableKey: '',
+      secretKey: '',
+      webhookSecret: '',
+      enableSubscriptions: true,
+      enableInvoices: true,
+      enableTaxes: false,
+      enableConnect: false,
+      enableCards: true,
+      enableBankTransfers: false,
+      enableDigitalWallets: true,
+      enableCrypto: false,
+      enable3DSecure: true,
+      enableSCA: true,
+      enableFraudDetection: true,
+      enablePaymentSuccess: true,
+      enableSubscriptionEvents: true,
+      enableInvoiceEvents: true,
+      currency: 'usd',
+      locale: 'en'
     };
+  }
+
+  getConfigSchema(): any {
+    return StripeConfigSchema;
   }
 } 

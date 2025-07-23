@@ -76,7 +76,7 @@ export class NextJSPlugin extends BasePlugin implements IUIFrameworkPlugin {
   }
 
   generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
-    return {
+          return {
       category: PluginCategory.FRAMEWORK,
       exports: [
         {
@@ -147,7 +147,7 @@ export class NextJSPlugin extends BasePlugin implements IUIFrameworkPlugin {
 
   async install(context: PluginContext): Promise<PluginResult> {
     const startTime = Date.now();
-
+    
     try {
       // Initialize path resolver
       this.initializePathResolver(context);

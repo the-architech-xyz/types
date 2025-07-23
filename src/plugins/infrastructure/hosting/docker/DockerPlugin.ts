@@ -6,23 +6,18 @@
  * No user interaction or business logic - that's handled by agents.
  */
 
-import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
-import { TemplateService, templateService } from '../../../../core/templates/template-service.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
-import { ValidationError } from '../../../../types/agents.js';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
-import { structureService, StructureInfo } from '../../../../core/project/structure-service.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIDeploymentPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+import { ValidationResult, ValidationError } from '../../../../types/agents.js';
 import { DockerConfig, DockerConfigSchema, DockerDefaultConfig } from './DockerSchema.js';
 import { DockerGenerator } from './DockerGenerator.js';
 
-export class DockerPlugin implements IPlugin {
-  private templateService: TemplateService;
-  private runner: CommandRunner;
+export class DockerPlugin extends BasePlugin implements IUIDeploymentPlugin {
+  private generator!: DockerGenerator;
 
   constructor() {
-    this.templateService = templateService;
-    this.runner = new CommandRunner();
+    super();
+    // Generator will be initialized in install method when pathResolver is available
   }
 
   // ============================================================================
@@ -46,6 +41,192 @@ export class DockerPlugin implements IPlugin {
   }
 
   // ============================================================================
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getParameterSchema() {
+    return {
+      category: PluginCategory.DEPLOYMENT,
+      groups: [
+        { id: 'container', name: 'Container Settings', description: 'Configure Docker container settings.', order: 1, parameters: ['baseImage', 'port', 'environment'] },
+        { id: 'deployment', name: 'Deployment Settings', description: 'Configure deployment options.', order: 2, parameters: ['enableKubernetes', 'enableCompose', 'enableRegistry'] },
+        { id: 'performance', name: 'Performance', description: 'Configure performance settings.', order: 3, parameters: ['memoryLimit', 'cpuLimit', 'replicas'] }
+      ],
+      parameters: [
+        {
+          id: 'baseImage',
+          name: 'Base Image',
+          type: 'string' as const,
+          description: 'Docker base image to use',
+          required: true,
+          default: 'node:18-alpine',
+          group: 'container'
+        },
+        {
+          id: 'port',
+          name: 'Port',
+          type: 'number' as const,
+          description: 'Application port',
+          required: true,
+          default: 3000,
+          group: 'container'
+        },
+        {
+          id: 'environment',
+          name: 'Environment',
+          type: 'select' as const,
+          description: 'Deployment environment',
+          required: true,
+          default: 'production',
+          options: [
+            { value: 'development', label: 'Development' },
+            { value: 'staging', label: 'Staging' },
+            { value: 'production', label: 'Production' }
+          ],
+          group: 'container'
+        },
+        {
+          id: 'enableKubernetes',
+          name: 'Enable Kubernetes',
+          type: 'boolean' as const,
+          description: 'Generate Kubernetes manifests',
+          required: false,
+          default: true,
+          group: 'deployment'
+        },
+        {
+          id: 'enableCompose',
+          name: 'Enable Docker Compose',
+          type: 'boolean' as const,
+          description: 'Generate docker-compose.yml',
+          required: false,
+          default: true,
+          group: 'deployment'
+        },
+        {
+          id: 'enableRegistry',
+          name: 'Enable Registry',
+          type: 'boolean' as const,
+          description: 'Configure container registry',
+          required: false,
+          default: false,
+          group: 'deployment'
+        },
+        {
+          id: 'memoryLimit',
+          name: 'Memory Limit',
+          type: 'string' as const,
+          description: 'Container memory limit',
+          required: false,
+          default: '512Mi',
+          group: 'performance'
+        },
+        {
+          id: 'cpuLimit',
+          name: 'CPU Limit',
+          type: 'string' as const,
+          description: 'Container CPU limit',
+          required: false,
+          default: '500m',
+          group: 'performance'
+        },
+        {
+          id: 'replicas',
+          name: 'Replicas',
+          type: 'number' as const,
+          description: 'Number of replicas',
+          required: false,
+          default: 1,
+          group: 'performance'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
+  }
+
+  // Plugins NEVER generate questions - agents handle this
+  getDynamicQuestions(context: PluginContext): any[] {
+    return [];
+  }
+
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: string[] = [];
+
+    // Validate required fields
+    if (!config.baseImage) {
+      errors.push({
+        field: 'baseImage',
+        message: 'Base image is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    if (!config.port || config.port < 1 || config.port > 65535) {
+      errors.push({
+        field: 'port',
+        message: 'Port must be between 1 and 65535',
+        code: 'INVALID_PORT',
+        severity: 'error'
+      });
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    return {
+      category: PluginCategory.DEPLOYMENT,
+      exports: [
+        {
+          name: 'dockerfile',
+          type: 'constant',
+          implementation: 'Dockerfile configuration',
+          documentation: 'Docker container configuration'
+        },
+        {
+          name: 'compose',
+          type: 'constant',
+          implementation: 'Docker Compose configuration',
+          documentation: 'Multi-container deployment configuration'
+        },
+        {
+          name: 'kubernetes',
+          type: 'constant',
+          implementation: 'Kubernetes manifests',
+          documentation: 'Kubernetes deployment configuration'
+        }
+      ],
+      types: [],
+      utilities: [],
+      constants: [],
+      documentation: 'Docker containerization and deployment configuration'
+    };
+  }
+
+  // ============================================================================
+  // IUIDeploymentPlugin INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getDeploymentPlatforms(): string[] {
+    return ['docker', 'kubernetes', 'docker-compose'];
+  }
+
+  getEnvironmentOptions(): string[] {
+    return ['development', 'staging', 'production'];
+  }
+
+  getInfrastructureOptions(): string[] {
+    return ['single-container', 'multi-container', 'orchestrated'];
+  }
+
+  // ============================================================================
   // PLUGIN LIFECYCLE - Pure Technology Implementation
   // ============================================================================
 
@@ -57,386 +238,122 @@ export class DockerPlugin implements IPlugin {
       
       context.logger.info('Installing Docker deployment...');
 
-      // Step 1: Create Docker configuration files
-      await this.createDockerFiles(context);
+      // Initialize path resolver
+      this.initializePathResolver(context);
+      
+      // Initialize generator
+      this.generator = new DockerGenerator();
 
-      // Step 2: Create deployment scripts
-      await this.createDeploymentScripts(context);
+      // Validate configuration
+      const validation = this.validateConfiguration(pluginConfig);
+      if (!validation.valid) {
+        return this.createErrorResult('Invalid Docker configuration', validation.errors, startTime);
+      }
 
-      // Step 3: Create Kubernetes manifests (optional)
-      await this.createKubernetesManifests(context);
+      // Step 1: Generate files using the generator
+      const dockerfile = DockerGenerator.generateDockerfile(pluginConfig as any);
+      const dockerignore = DockerGenerator.generateDockerignore();
+      const compose = DockerGenerator.generateDockerCompose(pluginConfig as any);
+      const buildScript = DockerGenerator.generateBuildScript(pluginConfig as any);
+      const deployScript = DockerGenerator.generateDeployScript(pluginConfig as any);
+      
+      // Step 2: Write files to project
+      await this.generateFile('Dockerfile', dockerfile);
+      await this.generateFile('.dockerignore', dockerignore);
+      await this.generateFile('docker-compose.yml', compose);
+      await this.generateFile('scripts/build.sh', buildScript);
+      await this.generateFile('scripts/deploy.sh', deployScript);
 
-      // Step 4: Generate unified interface files
-      await this.generateUnifiedInterfaceFiles(context);
+      // Step 3: Generate Kubernetes manifests if enabled
+      if (pluginConfig.enableKubernetes) {
+        const k8sDeployment = DockerGenerator.generateK8sDeployment(pluginConfig as any);
+        const k8sService = DockerGenerator.generateK8sService(pluginConfig as any);
+        await this.generateFile('k8s/deployment.yaml', k8sDeployment);
+        await this.generateFile('k8s/service.yaml', k8sService);
+      }
 
       const duration = Date.now() - startTime;
 
-      return {
-        success: true,
-        artifacts: [
-          {
-            type: 'file',
-            path: path.join(projectPath, 'Dockerfile')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, '.dockerignore')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'docker-compose.yml')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'scripts', 'build.sh')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'scripts', 'deploy.sh')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'k8s', 'deployment.yaml')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'k8s', 'service.yaml')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'k8s', 'ingress.yaml')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'deployment', 'index.ts')
-          }
+      return this.createSuccessResult(
+        [
+          { type: 'file' as const, path: 'Dockerfile' },
+          { type: 'file' as const, path: '.dockerignore' },
+          { type: 'file' as const, path: 'docker-compose.yml' },
+          { type: 'file' as const, path: 'scripts/build.sh' },
+          { type: 'file' as const, path: 'scripts/deploy.sh' },
+          ...(pluginConfig.enableKubernetes ? [
+            { type: 'file' as const, path: 'k8s/deployment.yaml' },
+            { type: 'file' as const, path: 'k8s/service.yaml' }
+          ] : [])
         ],
-        dependencies: [],
-        scripts: [
-          {
-            name: 'docker:build',
-            command: 'bash scripts/build.sh',
-            description: 'Build Docker image',
-            category: 'custom'
-          },
-          {
-            name: 'docker:deploy',
-            command: 'bash scripts/deploy.sh',
-            description: 'Deploy with Docker Compose',
-            category: 'custom'
-          },
-          {
-            name: 'docker:compose',
-            command: 'docker-compose up -d',
-            description: 'Start with Docker Compose',
-            category: 'custom'
-          },
-          {
-            name: 'docker:compose:down',
-            command: 'docker-compose down',
-            description: 'Stop Docker Compose',
-            category: 'custom'
-          }
-        ],
-        configs: [
-          {
-            file: '.env',
-            content: DockerGenerator.generateEnvConfig(pluginConfig as DockerConfig),
-            mergeStrategy: 'append'
-          }
-        ],
-        errors: [],
-        warnings: [],
-        duration
-      };
+        [],
+        [],
+        [],
+        validation.warnings,
+        startTime
+      );
+
     } catch (error) {
       return this.createErrorResult(
         'Failed to install Docker deployment',
-        startTime,
         [],
-        error
+        startTime
       );
     }
   }
 
-  async uninstall(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      const { projectPath } = context;
-      
-      context.logger.info('Uninstalling Docker deployment...');
+  // ============================================================================
+  // PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
 
-      // Remove Docker files
-      const filesToRemove = [
-        'Dockerfile',
-        '.dockerignore',
-        'docker-compose.yml',
-        'scripts/build.sh',
-        'scripts/deploy.sh',
-        'k8s/deployment.yaml',
-        'k8s/service.yaml',
-        'k8s/ingress.yaml',
-        'src/deployment/index.ts'
-      ];
-
-      for (const file of filesToRemove) {
-        const filePath = path.join(projectPath, file);
-        if (await fsExtra.pathExists(filePath)) {
-          await fsExtra.remove(filePath);
-        }
-      }
-
-      const duration = Date.now() - startTime;
-
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: [],
-        duration
-      };
-    } catch (error) {
-      return this.createErrorResult(
-        'Failed to uninstall Docker deployment',
-        startTime,
-        [],
-        error
-      );
-    }
+  getDependencies(): string[] {
+    return [];
   }
 
-  async update(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      context.logger.info('Updating Docker deployment...');
-
-      // Reinstall to update all files
-      const result = await this.install(context);
-
-      const duration = Date.now() - startTime;
-      return {
-        ...result,
-        duration
-      };
-    } catch (error) {
-      return this.createErrorResult(
-        'Failed to update Docker deployment',
-        startTime,
-        [],
-        error
-      );
-    }
+  getDevDependencies(): string[] {
+    return [];
   }
 
-  async validate(context: PluginContext): Promise<ValidationResult> {
-    const errors: ValidationError[] = [];
-    const warnings: ValidationError[] = [];
-
-    try {
-      const { projectPath, pluginConfig } = context;
-
-      // Check if Docker is installed
-      try {
-        await this.runner.execCommand(['docker', '--version']);
-      } catch (error) {
-        errors.push({
-          field: 'docker',
-          code: 'DOCKER_NOT_INSTALLED',
-          message: 'Docker is not installed or not accessible',
-          severity: 'error'
-        });
-      }
-
-      // Check if Docker Compose is available
-      try {
-        await this.runner.execCommand(['docker-compose', '--version']);
-      } catch (error) {
-        warnings.push({
-          field: 'docker-compose',
-          code: 'DOCKER_COMPOSE_NOT_AVAILABLE',
-          message: 'Docker Compose is not available',
-          severity: 'warning'
-        });
-      }
-
-      // Validate configuration
-      if (!pluginConfig.imageName) {
-        errors.push({
-          field: 'imageName',
-          code: 'MISSING_IMAGE_NAME',
-          message: 'Docker image name is required',
-          severity: 'error'
-        });
-      }
-
-      if (!pluginConfig.port || pluginConfig.port < 1 || pluginConfig.port > 65535) {
-        errors.push({
-          field: 'port',
-          code: 'INVALID_PORT',
-          message: 'Port must be between 1 and 65535',
-          severity: 'error'
-        });
-      }
-
-      return {
-        valid: errors.length === 0,
-        errors,
-        warnings: warnings.map(w => w.message)
-      };
-    } catch (error) {
-      errors.push({
-        field: 'validation',
-        code: 'VALIDATION_ERROR',
-        message: 'Failed to validate Docker configuration',
-        severity: 'error'
-      });
-
-      return {
-        valid: false,
-        errors,
-        warnings: []
-      };
-    }
-  }
-
-  getCompatibility(): CompatibilityMatrix {
+  getCompatibility(): any {
     return {
-      platforms: [TargetPlatform.SERVER],
-      frameworks: ['nextjs', 'react', 'vue', 'angular', 'express', 'fastify', 'nest'],
-      databases: ['postgresql', 'mysql', 'mongodb', 'sqlite'],
+      frameworks: ['nextjs', 'react', 'vue', 'svelte', 'express', 'fastify'],
+      platforms: ['web', 'mobile', 'server'],
       nodeVersions: ['>=16.0.0'],
       packageManagers: ['npm', 'yarn', 'pnpm'],
       conflicts: []
     };
   }
 
-  getDependencies(): string[] {
-    return [];
-  }
-
   getConflicts(): string[] {
     return [];
   }
 
-  getRequirements(): PluginRequirement[] {
+  getRequirements(): any[] {
     return [
       {
         type: 'binary',
-        name: 'Docker',
-        description: 'Docker must be installed and running',
+        name: 'docker',
+        description: 'Docker runtime',
         version: '>=20.0.0'
       }
     ];
   }
 
   getDefaultConfig(): Record<string, any> {
-    return DockerDefaultConfig;
-  }
-
-  getConfigSchema(): ConfigSchema {
-    return DockerConfigSchema;
-  }
-
-  // ============================================================================
-  // PRIVATE METHODS
-  // ============================================================================
-
-  private async createDockerFiles(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    const config = pluginConfig as DockerConfig;
-
-    // Create Dockerfile
-    const dockerfileContent = DockerGenerator.generateDockerfile(config);
-    await fsExtra.writeFile(path.join(projectPath, 'Dockerfile'), dockerfileContent);
-
-    // Create .dockerignore
-    const dockerignoreContent = DockerGenerator.generateDockerignore();
-    await fsExtra.writeFile(path.join(projectPath, '.dockerignore'), dockerignoreContent);
-
-    // Create docker-compose.yml
-    const dockerComposeContent = DockerGenerator.generateDockerCompose(config);
-    await fsExtra.writeFile(path.join(projectPath, 'docker-compose.yml'), dockerComposeContent);
-  }
-
-  private async createDeploymentScripts(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    const config = pluginConfig as DockerConfig;
-
-    // Ensure scripts directory exists
-    await fsExtra.ensureDir(path.join(projectPath, 'scripts'));
-
-    // Create build script
-    const buildScriptContent = DockerGenerator.generateBuildScript(config);
-    await fsExtra.writeFile(path.join(projectPath, 'scripts', 'build.sh'), buildScriptContent);
-    await fsExtra.chmod(path.join(projectPath, 'scripts', 'build.sh'), 0o755);
-
-    // Create deploy script
-    const deployScriptContent = DockerGenerator.generateDeployScript(config);
-    await fsExtra.writeFile(path.join(projectPath, 'scripts', 'deploy.sh'), deployScriptContent);
-    await fsExtra.chmod(path.join(projectPath, 'scripts', 'deploy.sh'), 0o755);
-  }
-
-  private async createKubernetesManifests(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    const config = pluginConfig as DockerConfig;
-
-    // Ensure k8s directory exists
-    await fsExtra.ensureDir(path.join(projectPath, 'k8s'));
-
-    // Create deployment manifest
-    const deploymentContent = DockerGenerator.generateK8sDeployment(config);
-    await fsExtra.writeFile(path.join(projectPath, 'k8s', 'deployment.yaml'), deploymentContent);
-
-    // Create service manifest
-    const serviceContent = DockerGenerator.generateK8sService(config);
-    await fsExtra.writeFile(path.join(projectPath, 'k8s', 'service.yaml'), serviceContent);
-
-    // Create ingress manifest
-    const ingressContent = DockerGenerator.generateK8sIngress(config);
-    await fsExtra.writeFile(path.join(projectPath, 'k8s', 'ingress.yaml'), ingressContent);
-  }
-
-  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    // Ensure deployment directory exists
-    await fsExtra.ensureDir(path.join(projectPath, 'src', 'deployment'));
-
-    // Create unified deployment interface
-    const unifiedIndexContent = DockerGenerator.generateUnifiedIndex();
-    await fsExtra.writeFile(path.join(projectPath, 'src', 'deployment', 'index.ts'), unifiedIndexContent);
-  }
-
-  private createErrorResult(
-    message: string,
-    startTime: number,
-    errors: any[] = [],
-    originalError?: any
-  ): PluginResult {
-    const duration = Date.now() - startTime;
-    
     return {
-      success: false,
-      artifacts: [],
-      dependencies: [],
-      scripts: [],
-      configs: [],
-      errors: [
-        {
-          code: 'DOCKER_INSTALL_ERROR',
-          message,
-          details: originalError,
-          severity: 'error'
-        },
-        ...errors
-      ],
-      warnings: [],
-      duration
+      baseImage: 'node:18-alpine',
+      port: 3000,
+      environment: 'production',
+      enableKubernetes: true,
+      enableCompose: true,
+      enableRegistry: false,
+      memoryLimit: '512Mi',
+      cpuLimit: '500m',
+      replicas: 1
     };
+  }
+
+  getConfigSchema(): any {
+    return DockerConfigSchema;
   }
 } 

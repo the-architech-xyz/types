@@ -72,7 +72,7 @@ export class NextAuthPlugin extends BasePlugin implements IUIAuthPlugin {
       warnings.push('Session duration should be at least 5 minutes (300 seconds)');
     }
 
-    return {
+      return {
       valid: errors.length === 0,
       errors,
       warnings
@@ -171,7 +171,7 @@ export class NextAuthPlugin extends BasePlugin implements IUIAuthPlugin {
 
   async install(context: PluginContext): Promise<PluginResult> {
     const startTime = Date.now();
-
+    
     try {
       // Initialize path resolver
       this.initializePathResolver(context);

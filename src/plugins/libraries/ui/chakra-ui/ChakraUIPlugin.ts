@@ -221,36 +221,36 @@ export class ChakraUIPlugin extends BasePlugin implements IUIPlugin {
 
   async validate(context: PluginContext): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
-    
+
     try {
       const { projectPath } = context;
-      
+
       // Check if Chakra UI is installed
       const packageJsonPath = path.join(projectPath, 'package.json');
       if (await fsExtra.pathExists(packageJsonPath)) {
         const packageJson = await fsExtra.readJson(packageJsonPath);
         if (!packageJson.dependencies?.['@chakra-ui/react']) {
-          errors.push({
+        errors.push({
             field: 'chakra-ui.dependencies',
             message: 'Chakra UI dependencies not found in package.json',
             code: 'MISSING_DEPENDENCIES',
-            severity: 'error'
-          });
-        }
+          severity: 'error'
+        });
+      }
       }
       
     } catch (error) {
-      errors.push({
+        errors.push({
         field: 'validation',
         message: `Validation failed: ${error}`,
         code: 'VALIDATION_ERROR',
-        severity: 'error'
-      });
-    }
-    
-    return {
-      valid: errors.length === 0,
-      errors,
+          severity: 'error'
+        });
+      }
+
+      return {
+        valid: errors.length === 0,
+        errors,
       warnings: []
     };
   }

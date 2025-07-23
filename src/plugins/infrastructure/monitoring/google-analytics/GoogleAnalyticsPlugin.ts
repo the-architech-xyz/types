@@ -1,17 +1,28 @@
-import { IPlugin, PluginMetadata, PluginCategory, PluginContext, PluginResult, ValidationResult, ConfigSchema, CompatibilityMatrix, PluginRequirement, TargetPlatform } from '../../../../types/plugins.js';
-import { ValidationError } from '../../../../types/agents.js';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
+/**
+ * Google Analytics Monitoring Plugin - Pure Technology Implementation
+ * 
+ * Provides Google Analytics 4 monitoring and tracking setup.
+ * Focuses only on monitoring technology setup and artifact generation.
+ * No user interaction or business logic - that's handled by agents.
+ */
+
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIMonitoringPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+import { ValidationResult, ValidationError } from '../../../../types/agents.js';
 import { GoogleAnalyticsConfig, GoogleAnalyticsConfigSchema, GoogleAnalyticsDefaultConfig } from './GoogleAnalyticsSchema.js';
 import { GoogleAnalyticsGenerator } from './GoogleAnalyticsGenerator.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
 
-export class GoogleAnalyticsPlugin implements IPlugin {
-  private runner: CommandRunner;
+export class GoogleAnalyticsPlugin extends BasePlugin implements IUIMonitoringPlugin {
+  private generator!: GoogleAnalyticsGenerator;
 
   constructor() {
-    this.runner = new CommandRunner();
+    super();
+    // Generator will be initialized in install method when pathResolver is available
   }
+
+  // ============================================================================
+  // PLUGIN METADATA
+  // ============================================================================
 
   getMetadata(): PluginMetadata {
     return {
@@ -21,7 +32,7 @@ export class GoogleAnalyticsPlugin implements IPlugin {
       description: 'Web analytics and tracking with Google Analytics 4',
       author: 'The Architech Team',
       category: PluginCategory.MONITORING,
-      tags: ['monitoring', 'analytics', 'tracking', 'google', 'ga4'],
+      tags: ['monitoring', 'analytics', 'tracking', 'google', 'ga4', 'web-analytics'],
       license: 'MIT',
       repository: 'https://github.com/googleanalytics/ga-dev-tools',
       homepage: 'https://analytics.google.com',
@@ -29,132 +40,285 @@ export class GoogleAnalyticsPlugin implements IPlugin {
     };
   }
 
-  async validate(context: PluginContext): Promise<ValidationResult> {
-    const errors: ValidationError[] = [];
-    const config = context.pluginConfig as GoogleAnalyticsConfig;
+  // ============================================================================
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
 
+  getParameterSchema() {
+    return {
+      category: PluginCategory.MONITORING,
+      groups: [
+        { id: 'tracking', name: 'Tracking Settings', description: 'Configure Google Analytics tracking.', order: 1, parameters: ['measurementId', 'enableEcommerce', 'debugMode'] },
+        { id: 'events', name: 'Event Tracking', description: 'Configure custom event tracking.', order: 2, parameters: ['enableCustomEvents', 'enablePageViews', 'enableUserTiming'] },
+        { id: 'privacy', name: 'Privacy Settings', description: 'Configure privacy and consent settings.', order: 3, parameters: ['enableConsentMode', 'enableAnonymization'] }
+      ],
+      parameters: [
+        {
+          id: 'measurementId',
+          name: 'Measurement ID',
+          type: 'string' as const,
+          description: 'Your Google Analytics 4 Measurement ID (e.g., G-XXXXXXXXXX).',
+          required: true,
+          group: 'tracking'
+        },
+        {
+          id: 'enableEcommerce',
+          name: 'Enable E-commerce',
+          type: 'boolean' as const,
+          description: 'Enable e-commerce tracking features.',
+          required: false,
+          default: false,
+          group: 'tracking'
+        },
+        {
+          id: 'debugMode',
+          name: 'Debug Mode',
+          type: 'boolean' as const,
+          description: 'Enable debug mode to see events in the DebugView.',
+          required: false,
+          default: false,
+          group: 'tracking'
+        },
+        {
+          id: 'enableCustomEvents',
+          name: 'Custom Events',
+          type: 'boolean' as const,
+          description: 'Enable custom event tracking.',
+          required: false,
+          default: true,
+          group: 'events'
+        },
+        {
+          id: 'enablePageViews',
+          name: 'Page Views',
+          type: 'boolean' as const,
+          description: 'Enable automatic page view tracking.',
+          required: false,
+          default: true,
+          group: 'events'
+        },
+        {
+          id: 'enableUserTiming',
+          name: 'User Timing',
+          type: 'boolean' as const,
+          description: 'Enable user timing measurements.',
+          required: false,
+          default: false,
+          group: 'events'
+        },
+        {
+          id: 'enableConsentMode',
+          name: 'Consent Mode',
+          type: 'boolean' as const,
+          description: 'Enable Google Analytics consent mode.',
+          required: false,
+          default: false,
+          group: 'privacy'
+        },
+        {
+          id: 'enableAnonymization',
+          name: 'IP Anonymization',
+          type: 'boolean' as const,
+          description: 'Enable IP address anonymization.',
+          required: false,
+          default: true,
+          group: 'privacy'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
+  }
+
+  // Plugins NEVER generate questions - agents handle this
+  getDynamicQuestions(context: PluginContext): any[] {
+    return [];
+  }
+
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: string[] = [];
+
+    // Validate required fields
     if (!config.measurementId) {
-      errors.push({ field: 'measurementId', message: 'Google Analytics Measurement ID is required.', code: 'MISSING_MEASUREMENT_ID', severity: 'error' });
+      errors.push({
+        field: 'measurementId',
+        message: 'Google Analytics Measurement ID is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
     }
 
-    return { valid: errors.length === 0, errors, warnings: [] };
+    // Validate measurement ID format
+    if (config.measurementId && !config.measurementId.match(/^G-[A-Z0-9]{10}$/)) {
+      warnings.push('Measurement ID should be in format G-XXXXXXXXXX');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
   }
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    return {
+      category: PluginCategory.MONITORING,
+      exports: [
+        {
+          name: 'gtag',
+          type: 'constant',
+          implementation: 'Google Analytics tracking utilities',
+          documentation: 'Google Analytics 4 tracking functions and configuration'
+        },
+        {
+          name: 'GoogleAnalyticsProvider',
+          type: 'class' as const,
+          implementation: 'React component for GA4 integration',
+          documentation: 'Provider component for Google Analytics integration'
+        },
+        {
+          name: 'analytics',
+          type: 'constant',
+          implementation: 'Analytics configuration',
+          documentation: 'Google Analytics configuration and setup'
+        }
+      ],
+      types: [],
+      utilities: [],
+      constants: [],
+      documentation: 'Google Analytics 4 web analytics and tracking integration'
+    };
+  }
+
+  // ============================================================================
+  // IUIMonitoringPlugin INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getMonitoringServices(): string[] {
+    return ['google-analytics', 'google-tag-manager'];
+  }
+
+  getAnalyticsOptions(): string[] {
+    return ['page-views', 'custom-events', 'ecommerce', 'user-timing', 'conversions'];
+  }
+
+  getAlertOptions(): string[] {
+    return ['anomaly-detection', 'goal-completion', 'traffic-spikes', 'error-tracking'];
+  }
+
+  // ============================================================================
+  // PLUGIN LIFECYCLE - Pure Technology Implementation
+  // ============================================================================
 
   async install(context: PluginContext): Promise<PluginResult> {
     const startTime = Date.now();
+    
     try {
-      await this.createProjectFiles(context);
+      const { projectName, projectPath, pluginConfig } = context;
       
-      const duration = Date.now() - startTime;
-      return {
-        success: true,
-        artifacts: [
-          { type: 'file', path: 'src/lib/gtag.ts' },
-          { type: 'file', path: 'src/components/GoogleAnalyticsProvider.tsx' },
-        ],
-        dependencies: [],
-        scripts: [],
-        configs: [{
-          file: '.env',
-          content: GoogleAnalyticsGenerator.generateEnvConfig(context.pluginConfig as GoogleAnalyticsConfig),
-          mergeStrategy: 'append'
-        }],
-        errors: [],
-        warnings: ['Google Analytics integration requires you to wrap your application with the GoogleAnalyticsProvider.'],
-        duration
-      };
-    } catch (error) {
-      return this.createErrorResult('Failed to install Google Analytics plugin', startTime, error);
-    }
-  }
+      context.logger.info('Installing Google Analytics monitoring...');
 
-  async uninstall(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    try {
-      const filesToRemove = [
-        path.join(context.projectPath, 'src', 'lib', 'gtag.ts'),
-        path.join(context.projectPath, 'src', 'components', 'GoogleAnalyticsProvider.tsx'),
-      ];
-      for (const file of filesToRemove) {
-        if (await fsExtra.pathExists(file)) {
-          await fsExtra.remove(file);
-        }
+      // Initialize path resolver
+      this.initializePathResolver(context);
+      
+      // Initialize generator
+      this.generator = new GoogleAnalyticsGenerator();
+
+      // Validate configuration
+      const validation = this.validateConfiguration(pluginConfig);
+      if (!validation.valid) {
+        return this.createErrorResult('Invalid Google Analytics configuration', validation.errors, startTime);
       }
+
+      // Step 1: Generate files using the generator
+      const gtagHelper = GoogleAnalyticsGenerator.generateGtagHelper(pluginConfig as any);
+      const analyticsProvider = GoogleAnalyticsGenerator.generateAnalyticsProvider(pluginConfig as any);
+      const envConfig = GoogleAnalyticsGenerator.generateEnvConfig(pluginConfig as any);
       
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: ['Google Analytics files have been removed.'],
-        duration: Date.now() - startTime
-      };
+      // Step 2: Write files to project
+      await this.generateFile('src/lib/gtag.ts', gtagHelper);
+      await this.generateFile('src/components/GoogleAnalyticsProvider.tsx', analyticsProvider);
+      await this.generateFile('.env.local', envConfig);
+
+      const duration = Date.now() - startTime;
+
+      return this.createSuccessResult(
+        [
+          { type: 'file' as const, path: 'src/lib/gtag.ts' },
+          { type: 'file' as const, path: 'src/components/GoogleAnalyticsProvider.tsx' },
+          { type: 'file' as const, path: '.env.local' }
+        ],
+        [],
+        [],
+        [],
+        [
+          'Google Analytics integration requires you to wrap your application with the GoogleAnalyticsProvider.',
+          ...validation.warnings
+        ],
+        startTime
+      );
+
     } catch (error) {
-      return this.createErrorResult('Failed to uninstall Google Analytics plugin', startTime, error);
+      return this.createErrorResult(
+        'Failed to install Google Analytics monitoring',
+        [],
+        startTime
+      );
     }
   }
 
-  async update(context: PluginContext): Promise<PluginResult> {
-    return this.install(context);
+  // ============================================================================
+  // PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getDependencies(): string[] {
+    return [];
   }
 
-  getCompatibility(): CompatibilityMatrix {
+  getDevDependencies(): string[] {
+    return [];
+  }
+
+  getCompatibility(): any {
     return {
-      frameworks: ['nextjs'],
-      platforms: [TargetPlatform.WEB],
+      frameworks: ['nextjs', 'react', 'vue', 'svelte'],
+      platforms: ['web'],
       nodeVersions: ['>=16.0.0'],
       packageManagers: ['npm', 'yarn', 'pnpm'],
       conflicts: []
     };
   }
 
-  getDependencies(): string[] {
-    return [];
-  }
-
   getConflicts(): string[] {
     return [];
   }
 
-  getRequirements(): PluginRequirement[] {
+  getRequirements(): any[] {
     return [
-      { type: 'config', name: 'NEXT_PUBLIC_GA_ID', description: 'Your Google Analytics Measurement ID.', optional: false },
+      {
+        type: 'config',
+        name: 'NEXT_PUBLIC_GA_ID',
+        description: 'Your Google Analytics Measurement ID.',
+        optional: false
+      }
     ];
   }
 
   getDefaultConfig(): Record<string, any> {
-    return GoogleAnalyticsDefaultConfig;
-  }
-
-  getConfigSchema(): ConfigSchema {
-    return GoogleAnalyticsConfigSchema;
-  }
-
-  private async createProjectFiles(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    const config = pluginConfig as GoogleAnalyticsConfig;
-
-    const libDir = path.join(projectPath, 'src', 'lib');
-    await fsExtra.ensureDir(libDir);
-    await fsExtra.writeFile(path.join(libDir, 'gtag.ts'), GoogleAnalyticsGenerator.generateGtagHelper(config));
-
-    const componentsDir = path.join(projectPath, 'src', 'components');
-    await fsExtra.ensureDir(componentsDir);
-    await fsExtra.writeFile(path.join(componentsDir, 'GoogleAnalyticsProvider.tsx'), GoogleAnalyticsGenerator.generateAnalyticsProvider(config));
-  }
-
-  private createErrorResult(message: string, startTime: number, error: any): PluginResult {
     return {
-      success: false,
-      artifacts: [],
-      dependencies: [],
-      scripts: [],
-      configs: [],
-      errors: [{ code: 'GA_PLUGIN_ERROR', message, details: error, severity: 'error' }],
-      warnings: [],
-      duration: Date.now() - startTime
+      measurementId: '',
+      enableEcommerce: false,
+      debugMode: false,
+      enableCustomEvents: true,
+      enablePageViews: true,
+      enableUserTiming: false,
+      enableConsentMode: false,
+      enableAnonymization: true
     };
+  }
+
+  getConfigSchema(): any {
+    return GoogleAnalyticsConfigSchema;
   }
 } 

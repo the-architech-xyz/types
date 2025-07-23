@@ -7,24 +7,18 @@
  * No user interaction or business logic - that's handled by agents.
  */
 
-import { IPlugin, PluginMetadata, PluginArtifact, ValidationResult, PluginCategory, PluginContext, PluginResult, TargetPlatform, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
-import { TemplateService, templateService } from '../../../../core/templates/template-service.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
-import { ValidationError } from '../../../../types/agents.js';
-
-import * as path from 'path';
-import fsExtra from 'fs-extra';
-import { structureService, StructureInfo } from '../../../../core/project/structure-service.js';
-import { SupabaseConfig, SupabaseConfigSchema, SupabaseDefaultConfig } from './SupabaseSchema.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIDatabasePlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+import { ValidationResult, ValidationError } from '../../../../types/agents.js';
+import { SupabaseConfigSchema } from './SupabaseSchema.js';
 import { SupabaseGenerator } from './SupabaseGenerator.js';
 
-export class SupabasePlugin implements IPlugin {
-  private templateService: TemplateService;
-  private runner: CommandRunner;
+export class SupabasePlugin extends BasePlugin implements IUIDatabasePlugin {
+  private generator!: SupabaseGenerator;
 
   constructor() {
-    this.templateService = templateService;
-    this.runner = new CommandRunner();
+    super();
+    // Generator will be initialized in install method when pathResolver is available
   }
 
   // ============================================================================
@@ -48,6 +42,223 @@ export class SupabasePlugin implements IPlugin {
   }
 
   // ============================================================================
+  // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getParameterSchema() {
+    return {
+      category: PluginCategory.DATABASE,
+      groups: [
+        { id: 'connection', name: 'Connection Settings', description: 'Configure Supabase connection parameters.', order: 1, parameters: ['supabaseUrl', 'supabaseAnonKey', 'supabaseServiceKey'] },
+        { id: 'features', name: 'Features', description: 'Enable Supabase features.', order: 2, parameters: ['enableRealtime', 'enableEdgeFunctions', 'enableStorage'] },
+        { id: 'performance', name: 'Performance', description: 'Configure performance settings.', order: 3, parameters: ['connectionPoolSize', 'connectionTimeout', 'queryTimeout'] }
+      ],
+      parameters: [
+        {
+          id: 'supabaseUrl',
+          name: 'Supabase URL',
+          type: 'string' as const,
+          description: 'Your Supabase project URL',
+          required: true,
+          group: 'connection'
+        },
+        {
+          id: 'supabaseAnonKey',
+          name: 'Anonymous Key',
+          type: 'string' as const,
+          description: 'Supabase anonymous key for client-side operations',
+          required: true,
+          group: 'connection'
+        },
+        {
+          id: 'supabaseServiceKey',
+          name: 'Service Key',
+          type: 'string' as const,
+          description: 'Supabase service role key for server-side operations',
+          required: false,
+          group: 'connection'
+        },
+        {
+          id: 'enableRealtime',
+          name: 'Enable Realtime',
+          type: 'boolean' as const,
+          description: 'Enable real-time subscriptions',
+          required: false,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enableEdgeFunctions',
+          name: 'Enable Edge Functions',
+          type: 'boolean' as const,
+          description: 'Enable edge functions',
+          required: false,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'enableStorage',
+          name: 'Enable Storage',
+          type: 'boolean' as const,
+          description: 'Enable file storage',
+          required: false,
+          default: true,
+          group: 'features'
+        },
+        {
+          id: 'connectionPoolSize',
+          name: 'Connection Pool Size',
+          type: 'number' as const,
+          description: 'Connection pool size',
+          required: false,
+          default: 10,
+          group: 'performance'
+        },
+        {
+          id: 'connectionTimeout',
+          name: 'Connection Timeout',
+          type: 'number' as const,
+          description: 'Connection timeout in milliseconds',
+          required: false,
+          default: 10000,
+          group: 'performance'
+        },
+        {
+          id: 'queryTimeout',
+          name: 'Query Timeout',
+          type: 'number' as const,
+          description: 'Query timeout in milliseconds',
+          required: false,
+          default: 30000,
+          group: 'performance'
+        }
+      ],
+      dependencies: [],
+      validations: []
+    };
+  }
+
+  // Plugins NEVER generate questions - agents handle this
+  getDynamicQuestions(context: PluginContext): any[] {
+    return [];
+  }
+
+  validateConfiguration(config: Record<string, any>): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: string[] = [];
+
+    // Validate required fields
+    if (!config.supabaseUrl) {
+      errors.push({
+        field: 'supabaseUrl',
+        message: 'Supabase project URL is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    if (!config.supabaseAnonKey) {
+      errors.push({
+        field: 'supabaseAnonKey',
+        message: 'Supabase anonymous key is required',
+        code: 'MISSING_FIELD',
+        severity: 'error'
+      });
+    }
+
+    // URL validation
+    if (config.supabaseUrl && !config.supabaseUrl.includes('supabase.co')) {
+      warnings.push('Project URL should be from Supabase (supabase.co)');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate {
+    return {
+      category: PluginCategory.DATABASE,
+      exports: [
+        {
+          name: 'supabase',
+          type: 'class',
+          implementation: 'Supabase client instance',
+          documentation: 'Main Supabase client for database operations'
+        },
+        {
+          name: 'db',
+          type: 'constant',
+          implementation: 'Database connection utilities',
+          documentation: 'Database connection and utility functions'
+        },
+        {
+          name: 'types',
+          type: 'constant',
+          implementation: 'Database type definitions',
+          documentation: 'TypeScript type definitions for database schema'
+        }
+      ],
+      types: [],
+      utilities: [],
+      constants: [],
+      documentation: 'Supabase database integration with PostgreSQL support'
+    };
+  }
+
+  // ============================================================================
+  // IUIDatabasePlugin INTERFACE IMPLEMENTATIONS
+  // ============================================================================
+
+  getDatabaseProviders(): string[] {
+    return ['supabase'];
+  }
+
+  getORMOptions(): string[] {
+    return ['drizzle', 'prisma', 'kysely'];
+  }
+
+  getDatabaseFeatures(): string[] {
+    return ['realtime', 'edge-functions', 'storage', 'auth', 'row-level-security'];
+  }
+
+  getConnectionOptions(): string[] {
+    return ['direct', 'pooled', 'edge'];
+  }
+
+  getProviderLabel(provider: string): string {
+    return 'Supabase';
+  }
+
+  getProviderDescription(provider: string): string {
+    return 'Open-source Firebase alternative with PostgreSQL database infrastructure';
+  }
+
+  getFeatureLabel(feature: string): string {
+    const labels: Record<string, string> = {
+      'realtime': 'Real-time subscriptions',
+      'edge-functions': 'Edge Functions',
+      'storage': 'File Storage',
+      'auth': 'Authentication',
+      'row-level-security': 'Row Level Security'
+    };
+    return labels[feature] || feature;
+  }
+
+  getFeatureDescription(feature: string): string {
+    const descriptions: Record<string, string> = {
+      'realtime': 'Real-time database subscriptions and live updates',
+      'edge-functions': 'Serverless functions running at the edge',
+      'storage': 'File upload and management system',
+      'auth': 'Built-in authentication and user management',
+      'row-level-security': 'Database-level security policies'
+    };
+    return descriptions[feature] || feature;
+  }
+
+  // ============================================================================
   // PLUGIN LIFECYCLE - Pure Technology Implementation
   // ============================================================================
 
@@ -59,37 +270,43 @@ export class SupabasePlugin implements IPlugin {
       
       context.logger.info('Installing Supabase database infrastructure...');
 
+      // Initialize path resolver
+      this.initializePathResolver(context);
+      
+      // Initialize generator
+      this.generator = new SupabaseGenerator();
+
+      // Validate configuration
+      const validation = this.validateConfiguration(pluginConfig);
+      if (!validation.valid) {
+        return this.createErrorResult('Invalid Supabase configuration', validation.errors, startTime);
+      }
+
       // Step 1: Install dependencies
-      await this.installDependencies(context);
+      await this.installDependencies(['@supabase/supabase-js', '@supabase/auth-helpers-nextjs']);
 
-      // Step 2: Initialize Supabase configuration
-      await this.initializeSupabaseConfig(context);
-
-      // Step 3: Create database connection and utilities
-      await this.createDatabaseFiles(context);
-
-      // Step 4: Generate unified interface files
-      await this.generateUnifiedInterfaceFiles(context);
+      // Step 2: Generate files using the generator
+      const supabaseClient = SupabaseGenerator.generateSupabaseClient(pluginConfig as any);
+      const types = SupabaseGenerator.generateTypes();
+      const databaseClient = SupabaseGenerator.generateDatabaseClient();
+      const unifiedIndex = SupabaseGenerator.generateUnifiedIndex();
+      
+      // Step 3: Write files to project
+      await this.generateFile('src/lib/db/supabase.ts', supabaseClient);
+      await this.generateFile('src/lib/db/types.ts', types);
+      await this.generateFile('src/lib/db/client.ts', databaseClient);
+      await this.generateFile('src/lib/db/index.ts', unifiedIndex);
 
       const duration = Date.now() - startTime;
 
-      return {
-        success: true,
-        artifacts: [
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'db', 'supabase.ts')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'db', 'types.ts')
-          },
-          {
-            type: 'file',
-            path: path.join(projectPath, 'src', 'lib', 'db', 'index.ts')
-          }
+      return this.createSuccessResult(
+        [
+          { type: 'file' as const, path: 'src/lib/db/supabase.ts' },
+          { type: 'file' as const, path: 'src/lib/db/types.ts' },
+          { type: 'file' as const, path: 'src/lib/db/client.ts' },
+          { type: 'file' as const, path: 'src/lib/db/index.ts' }
         ],
-        dependencies: [
+        [
           {
             name: '@supabase/supabase-js',
             version: '^2.39.0',
@@ -98,224 +315,54 @@ export class SupabasePlugin implements IPlugin {
           },
           {
             name: '@supabase/auth-helpers-nextjs',
-            version: '^0.8.7',
-            type: 'production',
-            category: PluginCategory.DATABASE
-          },
-          {
-            name: '@supabase/auth-helpers-react',
-            version: '^0.4.2',
+            version: '^0.8.0',
             type: 'production',
             category: PluginCategory.DATABASE
           }
         ],
-        scripts: [
-          {
-            name: 'db:connect',
-            command: 'node -e "require(\'./src/lib/db/supabase.js\').checkDatabaseConnection()"',
-            description: 'Test database connection',
-            category: 'dev'
-          },
-          {
-            name: 'db:health',
-            command: 'node -e "require(\'./src/lib/db/supabase.js\').healthCheck()"',
-            description: 'Check database health',
-            category: 'dev'
-          },
-          {
-            name: 'db:generate-types',
-            command: 'npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/lib/db/types.ts',
-            description: 'Generate TypeScript types',
-            category: 'dev'
-          },
-          {
-            name: 'db:migrate',
-            command: 'npx supabase db push',
-            description: 'Run database migrations',
-            category: 'dev'
-          },
-          {
-            name: 'db:studio',
-            command: 'npx supabase studio',
-            description: 'Open Supabase Studio',
-            category: 'dev'
-          },
-          {
-            name: 'db:backup',
-            command: 'npx supabase db dump',
-            description: 'Create database backup',
-            category: 'dev'
-          }
-        ],
-        configs: [
-          {
-            file: '.env',
-            content: SupabaseGenerator.generateEnvConfig(pluginConfig as SupabaseConfig),
-            mergeStrategy: 'append'
-          }
-        ],
-        errors: [],
-        warnings: [],
-        duration
-      };
+        [],
+        [],
+        validation.warnings,
+        startTime
+      );
 
     } catch (error) {
       return this.createErrorResult(
-        'Failed to install Supabase database',
-        startTime,
+        'Failed to install Supabase database infrastructure',
         [],
-        error
+        startTime
       );
     }
   }
 
-  async uninstall(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      const { projectPath } = context;
-      
-      context.logger.info('Uninstalling Supabase database...');
+  // ============================================================================
+  // PLUGIN INTERFACE IMPLEMENTATIONS
+  // ============================================================================
 
-      // Remove Supabase dependencies
-      await this.runner.execCommand(['npm', 'uninstall', '@supabase/supabase-js', '@supabase/auth-helpers-nextjs', '@supabase/auth-helpers-react'], { cwd: projectPath });
-
-      // Remove database files
-      const filesToRemove = [
-        path.join(projectPath, 'src', 'lib', 'db', 'supabase.ts'),
-        path.join(projectPath, 'src', 'lib', 'db', 'types.ts'),
-        path.join(projectPath, 'src', 'lib', 'db', 'index.ts')
-      ];
-
-      for (const file of filesToRemove) {
-        if (await fsExtra.pathExists(file)) {
-          await fsExtra.remove(file);
-        }
-      }
-
-      const duration = Date.now() - startTime;
-
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: ['Supabase database files removed. You may need to manually remove dependencies from package.json'],
-        duration
-      };
-
-    } catch (error) {
-      return this.createErrorResult(
-        'Failed to uninstall Supabase database',
-        startTime,
-        [],
-        error
-      );
-    }
+  getDependencies(): string[] {
+    return ['@supabase/supabase-js', '@supabase/auth-helpers-nextjs'];
   }
 
-  async update(context: PluginContext): Promise<PluginResult> {
-    const startTime = Date.now();
-    
-    try {
-      context.logger.info('Updating Supabase database...');
-
-      // Update Supabase dependencies
-      await this.runner.execCommand(['npm', 'update', '@supabase/supabase-js', '@supabase/auth-helpers-nextjs', '@supabase/auth-helpers-react']);
-
-      const duration = Date.now() - startTime;
-
-      return {
-        success: true,
-        artifacts: [],
-        dependencies: [],
-        scripts: [],
-        configs: [],
-        errors: [],
-        warnings: [],
-        duration
-      };
-
-    } catch (error) {
-      return this.createErrorResult(
-        'Failed to update Supabase database',
-        startTime,
-        [],
-        error
-      );
-    }
+  getDevDependencies(): string[] {
+    return ['@supabase/cli'];
   }
 
-  async validate(context: PluginContext): Promise<ValidationResult> {
-    const errors: ValidationError[] = [];
-    const warnings: string[] = [];
-
-    try {
-      // Check if Supabase client is properly configured
-      const supabasePath = path.join(context.projectPath, 'src', 'lib', 'db', 'supabase.ts');
-      if (!await fsExtra.pathExists(supabasePath)) {
-        errors.push({
-          field: 'supabase.client',
-          message: 'Supabase client configuration file not found',
-          code: 'MISSING_CLIENT',
-          severity: 'error'
-        });
-      }
-
-      // Validate environment variables
-      const envPath = path.join(context.projectPath, '.env');
-      if (await fsExtra.pathExists(envPath)) {
-        const envContent = await fsExtra.readFile(envPath, 'utf-8');
-        if (!envContent.includes('SUPABASE_URL')) {
-          warnings.push('SUPABASE_URL not found in .env file');
-        }
-        if (!envContent.includes('SUPABASE_ANON_KEY')) {
-          warnings.push('SUPABASE_ANON_KEY not found in .env file');
-        }
-      }
-
-      return {
-        valid: errors.length === 0,
-        errors,
-        warnings
-      };
-
-    } catch (error) {
-      return {
-        valid: false,
-        errors: [{
-          field: 'validation',
-          message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          code: 'VALIDATION_ERROR',
-          severity: 'error'
-        }],
-        warnings: []
-      };
-    }
-  }
-
-  getCompatibility(): CompatibilityMatrix {
+  getCompatibility(): any {
     return {
-      frameworks: ['nextjs', 'react', 'vue', 'angular', 'express', 'fastify', 'nest'],
-      platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
+      frameworks: ['nextjs', 'react', 'vue', 'svelte'],
+      platforms: ['web', 'mobile'],
       nodeVersions: ['>=16.0.0'],
-      packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
+      packageManagers: ['npm', 'yarn', 'pnpm'],
       databases: ['postgresql'],
       conflicts: []
     };
-  }
-
-  getDependencies(): string[] {
-    return ['@supabase/supabase-js', '@supabase/auth-helpers-nextjs', '@supabase/auth-helpers-react'];
   }
 
   getConflicts(): string[] {
     return [];
   }
 
-  getRequirements(): PluginRequirement[] {
+  getRequirements(): any[] {
     return [
       {
         type: 'package',
@@ -324,139 +371,29 @@ export class SupabasePlugin implements IPlugin {
         version: '^2.39.0'
       },
       {
-        type: 'package',
-        name: '@supabase/auth-helpers-nextjs',
-        description: 'Supabase auth helpers for Next.js',
-        version: '^0.8.7'
-      },
-      {
-        type: 'package',
-        name: '@supabase/auth-helpers-react',
-        description: 'Supabase auth helpers for React',
-        version: '^0.4.2'
-      },
-      {
-        type: 'config',
-        name: 'SUPABASE_URL',
-        description: 'Supabase project URL',
-        optional: false
-      },
-      {
-        type: 'config',
-        name: 'SUPABASE_ANON_KEY',
-        description: 'Supabase anonymous key',
-        optional: false
+        type: 'service',
+        name: 'supabase-project',
+        description: 'Supabase project with PostgreSQL database'
       }
     ];
   }
 
   getDefaultConfig(): Record<string, any> {
-    return SupabaseDefaultConfig;
-  }
-
-  getConfigSchema(): ConfigSchema {
-    return SupabaseConfigSchema;
-  }
-
-  // ============================================================================
-  // PRIVATE IMPLEMENTATION METHODS
-  // ============================================================================
-
-  private async installDependencies(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Installing Supabase dependencies...');
-
-    const dependencies = [
-      '@supabase/supabase-js@^2.39.0',
-      '@supabase/auth-helpers-nextjs@^0.8.7',
-      '@supabase/auth-helpers-react@^0.4.2'
-    ];
-
-    await this.runner.execCommand(['npm', 'install', ...dependencies], { cwd: projectPath });
-  }
-
-  private async initializeSupabaseConfig(context: PluginContext): Promise<void> {
-    const { projectPath, pluginConfig } = context;
-    
-    context.logger.info('Initializing Supabase configuration...');
-
-    // Create database lib directory
-    const dbLibDir = path.join(projectPath, 'src', 'lib', 'db');
-    await fsExtra.ensureDir(dbLibDir);
-
-    // Generate Supabase client configuration
-    const clientContent = SupabaseGenerator.generateSupabaseClient(pluginConfig as SupabaseConfig);
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'supabase.ts'),
-      clientContent
-    );
-
-    // Generate database types
-    const typesContent = SupabaseGenerator.generateTypes();
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'types.ts'),
-      typesContent
-    );
-  }
-
-  private async createDatabaseFiles(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Creating database connection files...');
-
-    const dbLibDir = path.join(projectPath, 'src', 'lib', 'db');
-    await fsExtra.ensureDir(dbLibDir);
-
-    // Generate database client
-    const clientContent = SupabaseGenerator.generateDatabaseClient();
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'client.ts'),
-      clientContent
-    );
-  }
-
-  private async generateUnifiedInterfaceFiles(context: PluginContext): Promise<void> {
-    const { projectPath } = context;
-    
-    context.logger.info('Generating unified interface files...');
-
-    const dbLibDir = path.join(projectPath, 'src', 'lib', 'db');
-    await fsExtra.ensureDir(dbLibDir);
-
-    // Generate unified database interface
-    const unifiedContent = SupabaseGenerator.generateUnifiedIndex();
-    await fsExtra.writeFile(
-      path.join(dbLibDir, 'index.ts'),
-      unifiedContent
-    );
-  }
-
-  private createErrorResult(
-    message: string,
-    startTime: number,
-    errors: any[] = [],
-    originalError?: any
-  ): PluginResult {
-    const duration = Date.now() - startTime;
-    
     return {
-      success: false,
-      artifacts: [],
-      dependencies: [],
-      scripts: [],
-      configs: [],
-      errors: [
-        {
-          code: 'SUPABASE_INSTALL_ERROR',
-          message,
-          details: originalError,
-          severity: 'error'
-        },
-        ...errors
-      ],
-      warnings: [],
-      duration
+      supabaseUrl: '',
+      supabaseAnonKey: '',
+      supabaseServiceKey: '',
+      enableRealtime: true,
+      enableEdgeFunctions: true,
+      enableStorage: true,
+      enableSSL: true,
+      connectionPoolSize: 10,
+      connectionTimeout: 10000,
+      queryTimeout: 30000
     };
+  }
+
+  getConfigSchema(): any {
+    return SupabaseConfigSchema;
   }
 } 

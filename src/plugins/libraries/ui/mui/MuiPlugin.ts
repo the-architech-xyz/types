@@ -35,7 +35,7 @@ export class MuiPlugin extends BasePlugin implements IUIPlugin {
       license: 'MIT',
     };
   }
-  
+
   // ============================================================================
   // ENHANCED PLUGIN INTERFACE IMPLEMENTATION
   // ============================================================================
@@ -68,7 +68,7 @@ export class MuiPlugin extends BasePlugin implements IUIPlugin {
       warnings.push('Theme should be one of: light, dark, system');
     }
 
-    return {
+      return {
       valid: errors.length === 0,
       errors,
       warnings
@@ -151,7 +151,7 @@ export class MuiPlugin extends BasePlugin implements IUIPlugin {
 
   async install(context: PluginContext): Promise<PluginResult> {
     const startTime = Date.now();
-
+    
     try {
       // Initialize path resolver
       this.initializePathResolver(context);
