@@ -333,9 +333,7 @@ export class MongoosePlugin extends BasePlugin implements IUIDatabasePlugin {
     return MongooseSchema.getParameterSchema();
   }
 
-  getDynamicQuestions(context: PluginContext): any[] {
-    return []; // Plugins NEVER generate questions
-  }
+  
 
   validateConfiguration(config: Record<string, any>): ValidationResult {
     const errors: ValidationError[] = [];

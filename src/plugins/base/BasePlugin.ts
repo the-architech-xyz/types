@@ -43,15 +43,6 @@ export abstract class BasePlugin implements IPlugin {
   // ============================================================================
 
   /**
-   * Get dynamic questions - Plugins NEVER generate questions
-   * Agents handle all question generation based on parameter schemas
-   */
-  getDynamicQuestions(context: PluginContext): any[] {
-    // Plugins provide data, agents handle questions
-    return [];
-  }
-
-  /**
    * Validate configuration based on parameter schema
    */
   validateConfiguration(config: Record<string, any>): ValidationResult {

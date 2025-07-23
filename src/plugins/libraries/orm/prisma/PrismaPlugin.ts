@@ -341,9 +341,7 @@ export class PrismaPlugin extends BasePlugin implements IUIDatabasePlugin {
     return PrismaSchema.getParameterSchema();
   }
 
-  getDynamicQuestions(context: PluginContext): any[] {
-    return []; // Plugins NEVER generate questions
-  }
+  
 
   validateConfiguration(config: Record<string, any>): ValidationResult {
     const errors: ValidationError[] = [];

@@ -301,10 +301,6 @@ export class ChakraUIPlugin extends BasePlugin implements IUIPlugin {
     return ChakraUIConfigSchema;
   }
 
-  getDynamicQuestions(context: PluginContext): any[] {
-    return []; // Plugins NEVER generate questions
-  }
-
   validateConfiguration(config: Record<string, any>): ValidationResult {
     const errors: ValidationError[] = [];
     

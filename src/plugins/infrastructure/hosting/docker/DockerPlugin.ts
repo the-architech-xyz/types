@@ -145,11 +145,6 @@ export class DockerPlugin extends BasePlugin implements IUIDeploymentPlugin {
     };
   }
 
-  // Plugins NEVER generate questions - agents handle this
-  getDynamicQuestions(context: PluginContext): any[] {
-    return [];
-  }
-
   validateConfiguration(config: Record<string, any>): ValidationResult {
     const errors: ValidationError[] = [];
     const warnings: string[] = [];

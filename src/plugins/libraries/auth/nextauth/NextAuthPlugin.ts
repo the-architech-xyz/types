@@ -48,11 +48,6 @@ export class NextAuthPlugin extends BasePlugin implements IUIAuthPlugin {
     return NextAuthSchema.getParameterSchema();
   }
 
-  // Plugins NEVER generate questions - agents handle this
-  getDynamicQuestions(context: PluginContext): any[] {
-    return [];
-  }
-
   validateConfiguration(config: Record<string, any>): any {
     const errors: any[] = [];
     const warnings: string[] = [];

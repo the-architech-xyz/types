@@ -167,11 +167,6 @@ export class MongoDBPlugin extends BasePlugin implements IUIDatabasePlugin {
     };
   }
 
-  // Plugins NEVER generate questions - agents handle this
-  getDynamicQuestions(context: PluginContext): any[] {
-    return [];
-  }
-
   validateConfiguration(config: Record<string, any>): ValidationResult {
     const errors: ValidationError[] = [];
     const warnings: string[] = [];

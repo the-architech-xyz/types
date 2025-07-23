@@ -246,11 +246,6 @@ export class StripePlugin extends BasePlugin implements IUIPaymentPlugin {
     };
   }
 
-  // Plugins NEVER generate questions - agents handle this
-  getDynamicQuestions(context: PluginContext): any[] {
-    return [];
-  }
-
   validateConfiguration(config: Record<string, any>): ValidationResult {
     const errors: ValidationError[] = [];
     const warnings: string[] = [];

@@ -204,9 +204,6 @@ export interface IEnhancedPlugin extends IPlugin {
   // Dynamic parameter definition
   getParameterSchema(): ParameterSchema;
   
-  // Dynamic question generation - simplified
-  getDynamicQuestions(context: PluginContext): Question[];
-  
   // Configuration validation
   validateConfiguration(config: Record<string, any>): ValidationResult;
   
@@ -561,10 +558,6 @@ export interface ParameterGroup {
   order: number;
   parameters: string[];
 }
-
-// Remove old complex question types - now using simplified Question from questions.ts
-// export interface PluginQuestion { ... }
-// export interface QuestionChoice { ... }
 
 export interface UnifiedInterfaceTemplate {
   category: PluginCategory;
