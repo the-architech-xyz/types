@@ -4,7 +4,7 @@
  * Pre-configured plugin selections for common use cases.
  * Dramatically reduces questions from 20+ to 2-5 while maintaining customization.
  */
-interface PluginSelection {
+export interface PluginSelection {
     database: DatabaseSelection;
     authentication: AuthSelection;
     ui: UISelection;
@@ -15,48 +15,48 @@ interface PluginSelection {
     payment: PaymentSelection;
     blockchain: BlockchainSelection;
 }
-interface DatabaseSelection {
+export interface DatabaseSelection {
     enabled: boolean;
     provider: string;
     orm: string;
     features: Record<string, boolean>;
 }
-interface AuthSelection {
+export interface AuthSelection {
     enabled: boolean;
     providers: string[];
     features: Record<string, boolean>;
 }
-interface UISelection {
+export interface UISelection {
     enabled: boolean;
     library: string;
     features: Record<string, boolean>;
 }
-interface DeploymentSelection {
+export interface DeploymentSelection {
     enabled: boolean;
     platform: string;
     features: Record<string, boolean>;
 }
-interface TestingSelection {
+export interface TestingSelection {
     enabled: boolean;
     framework: string;
     features: Record<string, boolean>;
 }
-interface EmailSelection {
+export interface EmailSelection {
     enabled: boolean;
     service: string;
     features: Record<string, boolean>;
 }
-interface MonitoringSelection {
+export interface MonitoringSelection {
     enabled: boolean;
     services: string[];
     features: Record<string, boolean>;
 }
-interface PaymentSelection {
+export interface PaymentSelection {
     enabled: boolean;
     providers: string[];
     features: Record<string, boolean>;
 }
-interface BlockchainSelection {
+export interface BlockchainSelection {
     enabled: boolean;
     networks: string[];
     features: Record<string, boolean>;
@@ -111,4 +111,3 @@ export declare class WorkflowTemplateService {
      */
     static getCustomTemplate(): WorkflowTemplate;
 }
-export {};

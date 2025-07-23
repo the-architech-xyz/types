@@ -1,3 +1,9 @@
+/**
+ * Mongoose Generator
+ *
+ * Handles all file generation logic for the Mongoose plugin.
+ * Separated from the main plugin for better organization.
+ */
 import { DatabasePluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
     path: string;

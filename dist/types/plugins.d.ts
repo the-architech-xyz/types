@@ -26,6 +26,12 @@ export interface FrameworkPluginConfig {
     minifier?: string;
     sourceMaps?: boolean;
     optimization?: boolean;
+    appRouter?: boolean;
+    importAlias?: boolean;
+    typescript?: boolean;
+    eslint?: boolean;
+    tailwind?: boolean;
+    srcDir?: boolean;
 }
 /**
  * Billing Options for Payment Plugins

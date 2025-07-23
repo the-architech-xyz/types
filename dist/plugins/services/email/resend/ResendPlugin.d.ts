@@ -1,32 +1,91 @@
 /**
- * Resend Plugin - Pure Technology Implementation
+ * Resend Email Plugin - Pure Technology Implementation
  *
  * Provides Resend email API integration for modern email delivery.
  * Resend is a developer-first email API with excellent TypeScript support,
- * webhooks, and analytics. Focuses only on technology setup and artifact generation.
+ * webhooks, and analytics. Focuses only on email technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
-export declare class ResendPlugin implements IPlugin {
-    private templateService;
-    private runner;
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIEmailPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+import { ValidationResult } from '../../../../types/agents.js';
+export declare class ResendPlugin extends BasePlugin implements IUIEmailPlugin {
+    private generator;
     constructor();
     getMetadata(): PluginMetadata;
+    getParameterSchema(): {
+        category: PluginCategory;
+        groups: {
+            id: string;
+            name: string;
+            description: string;
+            order: number;
+            parameters: string[];
+        }[];
+        parameters: ({
+            id: string;
+            name: string;
+            type: "string";
+            description: string;
+            required: boolean;
+            group: string;
+            default?: never;
+            options?: never;
+        } | {
+            id: string;
+            name: string;
+            type: "string";
+            description: string;
+            required: boolean;
+            default: string;
+            group: string;
+            options?: never;
+        } | {
+            id: string;
+            name: string;
+            type: "boolean";
+            description: string;
+            required: boolean;
+            default: boolean;
+            group: string;
+            options?: never;
+        } | {
+            id: string;
+            name: string;
+            type: "number";
+            description: string;
+            required: boolean;
+            default: number;
+            group: string;
+            options?: never;
+        } | {
+            id: string;
+            name: string;
+            type: "select";
+            description: string;
+            required: boolean;
+            default: string;
+            options: {
+                value: string;
+                label: string;
+            }[];
+            group: string;
+        })[];
+        dependencies: never[];
+        validations: never[];
+    };
+    validateConfiguration(config: Record<string, any>): ValidationResult;
+    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
+    getEmailServices(): string[];
+    getEmailFeatures(): string[];
+    getTemplateOptions(): string[];
     install(context: PluginContext): Promise<PluginResult>;
-    uninstall(context: PluginContext): Promise<PluginResult>;
-    update(context: PluginContext): Promise<PluginResult>;
-    validate(context: PluginContext): Promise<ValidationResult>;
-    getCompatibility(): CompatibilityMatrix;
     getDependencies(): string[];
+    getDevDependencies(): string[];
+    getCompatibility(): any;
     getConflicts(): string[];
-    getRequirements(): PluginRequirement[];
+    getRequirements(): any[];
     getDefaultConfig(): Record<string, any>;
-    getConfigSchema(): ConfigSchema;
-    private installDependencies;
-    private createEmailConfiguration;
-    private createEmailTemplates;
-    private createAPIRoutes;
-    private createEmailUtilities;
-    private generateUnifiedInterfaceFiles;
-    private createErrorResult;
+    getConfigSchema(): any;
+    private isValidEmail;
 }

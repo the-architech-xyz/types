@@ -2,93 +2,59 @@
  * Prisma Schema Definitions
  *
  * Contains all configuration schemas and parameter definitions for the Prisma plugin.
- * Based on: https://www.prisma.io/docs/getting-started
+ * Based on: https://www.prisma.io/
  */
 import { PluginCategory } from '../../../../types/plugins.js';
+import { DATABASE_PROVIDERS, ORM_LIBRARIES, DatabaseFeature } from '../../../../types/core.js';
 export class PrismaSchema {
     static getParameterSchema() {
         return {
             category: PluginCategory.ORM,
             groups: [
-                { id: 'connection', name: 'Database Connection', description: 'Configure the database connection.', order: 1, parameters: ['provider', 'databaseUrl'] },
-                { id: 'features', name: 'Prisma Features', description: 'Enable or disable core Prisma features.', order: 2, parameters: ['enableMigrations', 'enableSeeding', 'enablePrismaStudio'] },
-                { id: 'advanced', name: 'Advanced Options', description: 'Configure advanced Prisma settings.', order: 3, parameters: ['enablePreviewFeatures', 'enableLogging'] },
+                { id: 'provider', name: 'Database Provider', description: 'Choose your database provider.', order: 1, parameters: ['provider'] },
+                { id: 'connection', name: 'Connection Settings', description: 'Configure database connection.', order: 2, parameters: ['connection'] },
+                { id: 'features', name: 'Features', description: 'Enable additional features.', order: 3, parameters: ['features'] },
             ],
             parameters: [
                 {
                     id: 'provider',
                     name: 'Database Provider',
                     type: 'select',
-                    description: 'The underlying database provider.',
+                    description: 'Select the database provider to use.',
                     required: true,
-                    default: 'postgresql',
+                    default: DATABASE_PROVIDERS.NEON,
                     options: [
-                        { value: 'postgresql', label: 'PostgreSQL' },
-                        { value: 'mysql', label: 'MySQL' },
-                        { value: 'sqlite', label: 'SQLite' },
-                        { value: 'sqlserver', label: 'SQL Server' },
-                        { value: 'mongodb', label: 'MongoDB' },
+                        { value: DATABASE_PROVIDERS.NEON, label: 'Neon (PostgreSQL)', recommended: true },
+                        { value: DATABASE_PROVIDERS.SUPABASE, label: 'Supabase', description: 'Open source Firebase alternative' },
+                        { value: DATABASE_PROVIDERS.MONGODB, label: 'MongoDB', description: 'NoSQL document database' },
+                        { value: DATABASE_PROVIDERS.PLANETSCALE, label: 'PlanetScale', description: 'MySQL-compatible serverless database' },
+                        { value: DATABASE_PROVIDERS.LOCAL_SQLITE, label: 'Local SQLite', description: 'Local SQLite database' }
                     ],
-                    group: 'connection'
+                    group: 'provider'
                 },
                 {
-                    id: 'databaseUrl',
-                    name: 'Database URL',
+                    id: 'connection',
+                    name: 'Connection String',
                     type: 'string',
-                    description: 'The full connection URL for your database.',
+                    description: 'Database connection string or URL',
                     required: true,
                     default: 'postgresql://user:password@localhost:5432/myapp',
                     group: 'connection'
                 },
                 {
-                    id: 'enableMigrations',
-                    name: 'Enable Migrations',
-                    type: 'boolean',
-                    description: 'Use `prisma migrate` for schema migrations.',
-                    required: true,
-                    default: true,
-                    group: 'features'
-                },
-                {
-                    id: 'enableSeeding',
-                    name: 'Enable Seeding',
-                    type: 'boolean',
-                    description: 'Enable database seeding with a `seed.ts` file.',
-                    required: true,
-                    default: true,
-                    group: 'features'
-                },
-                {
-                    id: 'enablePrismaStudio',
-                    name: 'Enable Prisma Studio',
-                    type: 'boolean',
-                    description: 'Enable the Prisma Studio GUI for database browsing.',
-                    required: true,
-                    default: true,
-                    group: 'features'
-                },
-                {
-                    id: 'enablePreviewFeatures',
-                    name: 'Enable Preview Features',
+                    id: 'features',
+                    name: 'Features',
                     type: 'multiselect',
-                    description: 'Enable specific preview features in Prisma.',
+                    description: 'Select additional features to enable.',
                     required: false,
-                    default: [],
+                    default: [DatabaseFeature.MIGRATIONS, DatabaseFeature.SEEDING],
                     options: [
-                        { value: 'fullTextSearch', label: 'Full Text Search' },
-                        { value: 'fullTextIndex', label: 'Full Text Index' },
-                        { value: 'extendedWhereUnique', label: 'Extended Where Unique' }
+                        { value: DatabaseFeature.MIGRATIONS, label: 'Migrations', description: 'Database migration support' },
+                        { value: DatabaseFeature.SEEDING, label: 'Seeding', description: 'Database seeding support' },
+                        { value: DatabaseFeature.BACKUP, label: 'Backup', description: 'Database backup support' },
+                        { value: DatabaseFeature.MONITORING, label: 'Monitoring', description: 'Database monitoring support' }
                     ],
-                    group: 'advanced'
-                },
-                {
-                    id: 'enableLogging',
-                    name: 'Enable Logging',
-                    type: 'boolean',
-                    description: 'Enable Prisma query logging in development.',
-                    required: true,
-                    default: true,
-                    group: 'advanced'
+                    group: 'features'
                 }
             ],
             dependencies: [],
@@ -96,7 +62,18 @@ export class PrismaSchema {
         };
     }
     static getDatabaseProviders() {
-        return [DatabaseProvider.NEON, DatabaseProvider.SUPABASE, DatabaseProvider.MONGODB, DatabaseProvider.PLANETSCALE, DatabaseProvider.LOCAL];
+        return [DATABASE_PROVIDERS.NEON, DATABASE_PROVIDERS.SUPABASE, DATABASE_PROVIDERS.MONGODB, DATABASE_PROVIDERS.PLANETSCALE, DATABASE_PROVIDERS.LOCAL_SQLITE];
+    }
+    static getORMOptions() {
+        return [ORM_LIBRARIES.PRISMA];
+    }
+    static getDatabaseFeatures() {
+        return [
+            DatabaseFeature.MIGRATIONS,
+            DatabaseFeature.SEEDING,
+            DatabaseFeature.BACKUP,
+            DatabaseFeature.MONITORING
+        ];
     }
 }
 //# sourceMappingURL=PrismaSchema.js.map

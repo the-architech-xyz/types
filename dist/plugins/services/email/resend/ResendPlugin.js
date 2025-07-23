@@ -1,24 +1,20 @@
 /**
- * Resend Plugin - Pure Technology Implementation
+ * Resend Email Plugin - Pure Technology Implementation
  *
  * Provides Resend email API integration for modern email delivery.
  * Resend is a developer-first email API with excellent TypeScript support,
- * webhooks, and analytics. Focuses only on technology setup and artifact generation.
+ * webhooks, and analytics. Focuses only on email technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
-import { PluginCategory, TargetPlatform } from '../../../../types/plugins.js';
-import { templateService } from '../../../../core/templates/template-service.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
-import { ResendConfigSchema, ResendDefaultConfig } from './ResendSchema.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { ResendConfigSchema } from './ResendSchema.js';
 import { ResendGenerator } from './ResendGenerator.js';
-export class ResendPlugin {
-    templateService;
-    runner;
+export class ResendPlugin extends BasePlugin {
+    generator;
     constructor() {
-        this.templateService = templateService;
-        this.runner = new CommandRunner();
+        super();
+        // Generator will be initialized in install method when pathResolver is available
     }
     // ============================================================================
     // PLUGIN METADATA
@@ -39,6 +35,324 @@ export class ResendPlugin {
         };
     }
     // ============================================================================
+    // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getParameterSchema() {
+        return {
+            category: PluginCategory.EMAIL,
+            groups: [
+                { id: 'credentials', name: 'Credentials', description: 'Configure Resend API credentials.', order: 1, parameters: ['apiKey'] },
+                { id: 'sender', name: 'Sender Settings', description: 'Configure default sender information.', order: 2, parameters: ['fromEmail', 'fromName', 'replyTo'] },
+                { id: 'templates', name: 'Email Templates', description: 'Configure email templates.', order: 3, parameters: ['welcome', 'verification', 'resetPassword', 'notification', 'marketing'] },
+                { id: 'features', name: 'Features', description: 'Configure email features.', order: 4, parameters: ['analytics', 'webhooks', 'templates', 'validation'] },
+                { id: 'delivery', name: 'Delivery Settings', description: 'Configure email delivery settings.', order: 5, parameters: ['retryAttempts', 'timeout', 'priority'] },
+                { id: 'security', name: 'Security Settings', description: 'Configure email security settings.', order: 6, parameters: ['enableDKIM', 'enableSPF', 'enableDMARC'] },
+                { id: 'analytics', name: 'Analytics Settings', description: 'Configure email analytics.', order: 7, parameters: ['enableOpenTracking', 'enableClickTracking', 'enableUnsubscribeTracking'] }
+            ],
+            parameters: [
+                {
+                    id: 'apiKey',
+                    name: 'API Key',
+                    type: 'string',
+                    description: 'Resend API key.',
+                    required: true,
+                    group: 'credentials'
+                },
+                {
+                    id: 'fromEmail',
+                    name: 'From Email',
+                    type: 'string',
+                    description: 'Default sender email address.',
+                    required: true,
+                    default: 'noreply@yourdomain.com',
+                    group: 'sender'
+                },
+                {
+                    id: 'fromName',
+                    name: 'From Name',
+                    type: 'string',
+                    description: 'Default sender name.',
+                    required: false,
+                    default: 'Your App',
+                    group: 'sender'
+                },
+                {
+                    id: 'replyTo',
+                    name: 'Reply To',
+                    type: 'string',
+                    description: 'Reply-to email address.',
+                    required: false,
+                    default: 'support@yourdomain.com',
+                    group: 'sender'
+                },
+                {
+                    id: 'welcome',
+                    name: 'Welcome Template',
+                    type: 'boolean',
+                    description: 'Enable welcome email template.',
+                    required: false,
+                    default: true,
+                    group: 'templates'
+                },
+                {
+                    id: 'verification',
+                    name: 'Verification Template',
+                    type: 'boolean',
+                    description: 'Enable email verification template.',
+                    required: false,
+                    default: true,
+                    group: 'templates'
+                },
+                {
+                    id: 'resetPassword',
+                    name: 'Reset Password Template',
+                    type: 'boolean',
+                    description: 'Enable password reset template.',
+                    required: false,
+                    default: true,
+                    group: 'templates'
+                },
+                {
+                    id: 'notification',
+                    name: 'Notification Template',
+                    type: 'boolean',
+                    description: 'Enable notification template.',
+                    required: false,
+                    default: true,
+                    group: 'templates'
+                },
+                {
+                    id: 'marketing',
+                    name: 'Marketing Template',
+                    type: 'boolean',
+                    description: 'Enable marketing email template.',
+                    required: false,
+                    default: false,
+                    group: 'templates'
+                },
+                {
+                    id: 'analytics',
+                    name: 'Analytics',
+                    type: 'boolean',
+                    description: 'Enable email analytics.',
+                    required: false,
+                    default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'webhooks',
+                    name: 'Webhooks',
+                    type: 'boolean',
+                    description: 'Enable webhook notifications.',
+                    required: false,
+                    default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'templates',
+                    name: 'Templates',
+                    type: 'boolean',
+                    description: 'Enable email templates.',
+                    required: false,
+                    default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'validation',
+                    name: 'Validation',
+                    type: 'boolean',
+                    description: 'Enable email validation.',
+                    required: false,
+                    default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'retryAttempts',
+                    name: 'Retry Attempts',
+                    type: 'number',
+                    description: 'Number of retry attempts for failed emails.',
+                    required: false,
+                    default: 3,
+                    group: 'delivery'
+                },
+                {
+                    id: 'timeout',
+                    name: 'Timeout',
+                    type: 'number',
+                    description: 'Email sending timeout in seconds.',
+                    required: false,
+                    default: 30,
+                    group: 'delivery'
+                },
+                {
+                    id: 'priority',
+                    name: 'Priority',
+                    type: 'select',
+                    description: 'Email delivery priority.',
+                    required: false,
+                    default: 'normal',
+                    options: [
+                        { value: 'high', label: 'High' },
+                        { value: 'normal', label: 'Normal' },
+                        { value: 'low', label: 'Low' }
+                    ],
+                    group: 'delivery'
+                },
+                {
+                    id: 'enableDKIM',
+                    name: 'Enable DKIM',
+                    type: 'boolean',
+                    description: 'Enable DKIM authentication.',
+                    required: false,
+                    default: true,
+                    group: 'security'
+                },
+                {
+                    id: 'enableSPF',
+                    name: 'Enable SPF',
+                    type: 'boolean',
+                    description: 'Enable SPF authentication.',
+                    required: false,
+                    default: true,
+                    group: 'security'
+                },
+                {
+                    id: 'enableDMARC',
+                    name: 'Enable DMARC',
+                    type: 'boolean',
+                    description: 'Enable DMARC authentication.',
+                    required: false,
+                    default: true,
+                    group: 'security'
+                },
+                {
+                    id: 'enableOpenTracking',
+                    name: 'Open Tracking',
+                    type: 'boolean',
+                    description: 'Enable email open tracking.',
+                    required: false,
+                    default: true,
+                    group: 'analytics'
+                },
+                {
+                    id: 'enableClickTracking',
+                    name: 'Click Tracking',
+                    type: 'boolean',
+                    description: 'Enable email click tracking.',
+                    required: false,
+                    default: true,
+                    group: 'analytics'
+                },
+                {
+                    id: 'enableUnsubscribeTracking',
+                    name: 'Unsubscribe Tracking',
+                    type: 'boolean',
+                    description: 'Enable unsubscribe tracking.',
+                    required: false,
+                    default: true,
+                    group: 'analytics'
+                }
+            ],
+            dependencies: [],
+            validations: []
+        };
+    }
+    validateConfiguration(config) {
+        const errors = [];
+        const warnings = [];
+        // Validate required fields
+        if (!config.apiKey) {
+            errors.push({
+                field: 'apiKey',
+                message: 'Resend API key is required',
+                code: 'MISSING_FIELD',
+                severity: 'error'
+            });
+        }
+        if (!config.fromEmail) {
+            errors.push({
+                field: 'fromEmail',
+                message: 'From email address is required',
+                code: 'MISSING_FIELD',
+                severity: 'error'
+            });
+        }
+        // Validate email format
+        if (config.fromEmail && !this.isValidEmail(config.fromEmail)) {
+            errors.push({
+                field: 'fromEmail',
+                message: 'Invalid email format for from email address',
+                code: 'INVALID_EMAIL',
+                severity: 'error'
+            });
+        }
+        if (config.replyTo && !this.isValidEmail(config.replyTo)) {
+            errors.push({
+                field: 'replyTo',
+                message: 'Invalid email format for reply-to address',
+                code: 'INVALID_EMAIL',
+                severity: 'error'
+            });
+        }
+        // Validate API key format
+        if (config.apiKey && !config.apiKey.startsWith('re_')) {
+            warnings.push('Resend API key should start with "re_"');
+        }
+        // Validate numeric fields
+        if (config.retryAttempts && (config.retryAttempts < 1 || config.retryAttempts > 10)) {
+            warnings.push('Retry attempts should be between 1 and 10');
+        }
+        if (config.timeout && (config.timeout < 5 || config.timeout > 120)) {
+            warnings.push('Timeout should be between 5 and 120 seconds');
+        }
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings
+        };
+    }
+    generateUnifiedInterface(config) {
+        return {
+            category: PluginCategory.EMAIL,
+            exports: [
+                {
+                    name: 'resend',
+                    type: 'constant',
+                    implementation: 'Resend client configuration',
+                    documentation: 'Resend API client for email sending'
+                },
+                {
+                    name: 'EmailService',
+                    type: 'class',
+                    implementation: 'Email service class',
+                    documentation: 'Unified email service for Resend operations'
+                },
+                {
+                    name: 'email',
+                    type: 'constant',
+                    implementation: 'Email utilities',
+                    documentation: 'Resend email processing utilities'
+                }
+            ],
+            types: [],
+            utilities: [],
+            constants: [],
+            documentation: 'Resend email API integration with TypeScript support, webhooks, and analytics'
+        };
+    }
+    // ============================================================================
+    // IUIEmailPlugin INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getEmailServices() {
+        return ['resend', 'resend-api', 'resend-webhooks'];
+    }
+    getEmailFeatures() {
+        return ['transactional-emails', 'email-templates', 'email-tracking', 'analytics', 'webhooks'];
+    }
+    getTemplateOptions() {
+        return ['react-templates', 'html-templates', 'text-templates', 'dynamic-templates'];
+    }
+    // ============================================================================
     // PLUGIN LIFECYCLE - Pure Technology Implementation
     // ============================================================================
     async install(context) {
@@ -46,201 +360,87 @@ export class ResendPlugin {
         try {
             const { projectName, projectPath, pluginConfig } = context;
             context.logger.info('Installing Resend email service...');
+            // Initialize path resolver
+            this.initializePathResolver(context);
+            // Initialize generator
+            this.generator = new ResendGenerator();
+            // Validate configuration
+            const validation = this.validateConfiguration(pluginConfig);
+            if (!validation.valid) {
+                return this.createErrorResult('Invalid Resend configuration', validation.errors, startTime);
+            }
             // Step 1: Install dependencies
-            await this.installDependencies(context);
-            // Step 2: Create email service configuration
-            await this.createEmailConfiguration(context);
-            // Step 3: Create email templates
-            await this.createEmailTemplates(context);
-            // Step 4: Create API routes for webhooks
-            await this.createAPIRoutes(context);
-            // Step 5: Generate unified interface files
-            await this.generateUnifiedInterfaceFiles(context);
-            // Step 6: Create email utilities
-            await this.createEmailUtilities(context);
+            await this.installDependencies(['resend']);
+            // Step 2: Generate files using the generator
+            const emailClient = ResendGenerator.generateEmailClient(pluginConfig);
+            const emailConfig = ResendGenerator.generateEmailConfig(pluginConfig);
+            const emailTypes = ResendGenerator.generateEmailTypes();
+            const emailService = ResendGenerator.generateEmailService();
+            const envConfig = ResendGenerator.generateEnvConfig(pluginConfig);
+            // Step 3: Write files to project
+            await this.generateFile('src/lib/email/resend.ts', emailClient);
+            await this.generateFile('src/lib/email/config.ts', emailConfig);
+            await this.generateFile('src/lib/email/types.ts', emailTypes);
+            await this.generateFile('src/lib/email/service.ts', emailService);
+            await this.generateFile('.env.local', envConfig);
+            // Step 4: Generate unified interface
+            const unifiedIndex = `/**
+ * Unified Email Interface - Resend Implementation
+ * 
+ * This file provides a unified interface for email operations
+ * that works with Resend.
+ */
+
+export { resend } from './resend.js';
+export { EmailService } from './service.js';
+export type * from './types.js';
+
+// Default export for convenience
+export { EmailService as default } from './service.js';
+`;
+            await this.generateFile('src/lib/email/index.ts', unifiedIndex);
             const duration = Date.now() - startTime;
-            return {
-                success: true,
-                artifacts: [
-                    {
-                        type: 'file',
-                        path: path.join(projectPath, 'src', 'lib', 'email', 'resend.ts')
-                    },
-                    {
-                        type: 'file',
-                        path: path.join(projectPath, 'src', 'lib', 'email', 'config.ts')
-                    },
-                    {
-                        type: 'file',
-                        path: path.join(projectPath, 'src', 'lib', 'email', 'types.ts')
-                    },
-                    {
-                        type: 'file',
-                        path: path.join(projectPath, 'src', 'lib', 'email', 'service.ts')
-                    },
-                    {
-                        type: 'file',
-                        path: path.join(projectPath, 'src', 'lib', 'email', 'index.ts')
-                    }
-                ],
-                dependencies: [
-                    {
-                        name: 'resend',
-                        version: '^3.1.0',
-                        type: 'production',
-                        category: PluginCategory.EMAIL
-                    }
-                ],
-                scripts: [
-                    {
-                        name: 'email:test',
-                        command: 'node -e "require(\'./src/lib/email/service.js\').emailService.sendEmail({to:\'test@example.com\',subject:\'Test\',html:\'<h1>Test</h1>\'})\"',
-                        description: 'Test email sending',
-                        category: 'dev'
-                    },
-                    {
-                        name: 'email:validate',
-                        command: 'node -e "require(\'./src/lib/email/service.js\').emailService.validateEmail(\'test@example.com\')\"',
-                        description: 'Validate email addresses',
-                        category: 'dev'
-                    },
-                    {
-                        name: 'email:webhook',
-                        command: 'npx resend webhook:listen',
-                        description: 'Listen for webhook events',
-                        category: 'dev'
-                    }
-                ],
-                configs: [
-                    {
-                        file: '.env',
-                        content: ResendGenerator.generateEnvConfig(pluginConfig),
-                        mergeStrategy: 'append'
-                    }
-                ],
-                errors: [],
-                warnings: [],
-                duration
-            };
+            return this.createSuccessResult([
+                { type: 'file', path: 'src/lib/email/resend.ts' },
+                { type: 'file', path: 'src/lib/email/config.ts' },
+                { type: 'file', path: 'src/lib/email/types.ts' },
+                { type: 'file', path: 'src/lib/email/service.ts' },
+                { type: 'file', path: 'src/lib/email/index.ts' },
+                { type: 'file', path: '.env.local' }
+            ], [
+                {
+                    name: 'resend',
+                    version: '^3.1.0',
+                    type: 'production',
+                    category: PluginCategory.EMAIL
+                }
+            ], [
+                { name: 'email:test', command: 'node -e "require(\'./src/lib/email/service.js\').EmailService.sendEmail({to:\'test@example.com\',subject:\'Test\',html:\'<h1>Test</h1>\'})"', description: 'Test email sending', category: 'dev' },
+                { name: 'email:validate', command: 'node -e "require(\'./src/lib/email/service.js\').EmailService.validateEmail(\'test@example.com\')"', description: 'Validate email addresses', category: 'dev' },
+                { name: 'email:webhook', command: 'npx resend webhook:listen', description: 'Listen for webhook events', category: 'dev' }
+            ], [], validation.warnings, startTime);
         }
         catch (error) {
-            return this.createErrorResult('Failed to install Resend email service', startTime, [], error);
+            return this.createErrorResult('Failed to install Resend email service', [], startTime);
         }
     }
-    async uninstall(context) {
-        const startTime = Date.now();
-        try {
-            const { projectPath } = context;
-            context.logger.info('Uninstalling Resend email service...');
-            // Remove Resend dependencies
-            await this.runner.execCommand(['npm', 'uninstall', 'resend'], { cwd: projectPath });
-            // Remove email service files
-            const filesToRemove = [
-                path.join(projectPath, 'src', 'lib', 'email', 'resend.ts'),
-                path.join(projectPath, 'src', 'lib', 'email', 'config.ts'),
-                path.join(projectPath, 'src', 'lib', 'email', 'types.ts'),
-                path.join(projectPath, 'src', 'lib', 'email', 'service.ts'),
-                path.join(projectPath, 'src', 'lib', 'email', 'index.ts')
-            ];
-            for (const file of filesToRemove) {
-                if (await fsExtra.pathExists(file)) {
-                    await fsExtra.remove(file);
-                }
-            }
-            const duration = Date.now() - startTime;
-            return {
-                success: true,
-                artifacts: [],
-                dependencies: [],
-                scripts: [],
-                configs: [],
-                errors: [],
-                warnings: ['Resend email service files removed. You may need to manually remove dependencies from package.json'],
-                duration
-            };
-        }
-        catch (error) {
-            return this.createErrorResult('Failed to uninstall Resend email service', startTime, [], error);
-        }
+    // ============================================================================
+    // PLUGIN INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getDependencies() {
+        return ['resend'];
     }
-    async update(context) {
-        const startTime = Date.now();
-        try {
-            context.logger.info('Updating Resend email service...');
-            // Update Resend dependencies
-            await this.runner.execCommand(['npm', 'update', 'resend']);
-            const duration = Date.now() - startTime;
-            return {
-                success: true,
-                artifacts: [],
-                dependencies: [],
-                scripts: [],
-                configs: [],
-                errors: [],
-                warnings: [],
-                duration
-            };
-        }
-        catch (error) {
-            return this.createErrorResult('Failed to update Resend email service', startTime, [], error);
-        }
-    }
-    async validate(context) {
-        const errors = [];
-        const warnings = [];
-        try {
-            // Check if Resend client is properly configured
-            const resendPath = path.join(context.projectPath, 'src', 'lib', 'email', 'resend.ts');
-            if (!await fsExtra.pathExists(resendPath)) {
-                errors.push({
-                    field: 'resend.client',
-                    message: 'Resend client configuration file not found',
-                    code: 'MISSING_CLIENT',
-                    severity: 'error'
-                });
-            }
-            // Validate environment variables
-            const envPath = path.join(context.projectPath, '.env');
-            if (await fsExtra.pathExists(envPath)) {
-                const envContent = await fsExtra.readFile(envPath, 'utf-8');
-                if (!envContent.includes('RESEND_API_KEY')) {
-                    warnings.push('RESEND_API_KEY not found in .env file');
-                }
-                if (!envContent.includes('EMAIL_FROM')) {
-                    warnings.push('EMAIL_FROM not found in .env file');
-                }
-            }
-            return {
-                valid: errors.length === 0,
-                errors,
-                warnings
-            };
-        }
-        catch (error) {
-            return {
-                valid: false,
-                errors: [{
-                        field: 'validation',
-                        message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                        code: 'VALIDATION_ERROR',
-                        severity: 'error'
-                    }],
-                warnings: []
-            };
-        }
+    getDevDependencies() {
+        return [];
     }
     getCompatibility() {
         return {
-            frameworks: ['nextjs', 'react', 'vue', 'angular', 'express', 'fastify', 'nest'],
-            platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
+            frameworks: ['nextjs', 'react', 'vue', 'svelte', 'express', 'fastify'],
+            platforms: ['web', 'server'],
             nodeVersions: ['>=16.0.0'],
-            packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
-            databases: [],
+            packageManagers: ['npm', 'yarn', 'pnpm'],
             conflicts: []
         };
-    }
-    getDependencies() {
-        return ['resend'];
     }
     getConflicts() {
         return [];
@@ -268,105 +468,40 @@ export class ResendPlugin {
         ];
     }
     getDefaultConfig() {
-        return ResendDefaultConfig;
+        return {
+            apiKey: '',
+            fromEmail: 'noreply@yourdomain.com',
+            fromName: 'Your App',
+            replyTo: 'support@yourdomain.com',
+            welcome: true,
+            verification: true,
+            resetPassword: true,
+            notification: true,
+            marketing: false,
+            analytics: true,
+            webhooks: true,
+            templates: true,
+            validation: true,
+            retryAttempts: 3,
+            timeout: 30,
+            priority: 'normal',
+            enableDKIM: true,
+            enableSPF: true,
+            enableDMARC: true,
+            enableOpenTracking: true,
+            enableClickTracking: true,
+            enableUnsubscribeTracking: true
+        };
     }
     getConfigSchema() {
         return ResendConfigSchema;
     }
     // ============================================================================
-    // PRIVATE IMPLEMENTATION METHODS
+    // PRIVATE UTILITY METHODS
     // ============================================================================
-    async installDependencies(context) {
-        const { projectPath } = context;
-        context.logger.info('Installing Resend dependencies...');
-        const dependencies = ['resend@^3.1.0'];
-        await this.runner.execCommand(['npm', 'install', ...dependencies], { cwd: projectPath });
-    }
-    async createEmailConfiguration(context) {
-        const { projectPath, pluginConfig } = context;
-        context.logger.info('Creating email configuration...');
-        // Create email lib directory
-        const emailLibDir = path.join(projectPath, 'src', 'lib', 'email');
-        await fsExtra.ensureDir(emailLibDir);
-        // Generate Resend client
-        const clientContent = ResendGenerator.generateEmailClient(pluginConfig);
-        await fsExtra.writeFile(path.join(emailLibDir, 'resend.ts'), clientContent);
-        // Generate email configuration
-        const configContent = ResendGenerator.generateEmailConfig(pluginConfig);
-        await fsExtra.writeFile(path.join(emailLibDir, 'config.ts'), configContent);
-        // Generate email types
-        const typesContent = ResendGenerator.generateEmailTypes();
-        await fsExtra.writeFile(path.join(emailLibDir, 'types.ts'), typesContent);
-    }
-    async createEmailTemplates(context) {
-        const { projectPath } = context;
-        context.logger.info('Creating email templates...');
-        // Create templates directory
-        const templatesDir = path.join(projectPath, 'src', 'lib', 'email', 'templates');
-        await fsExtra.ensureDir(templatesDir);
-        // Note: Template generation would be handled by the generator
-        // For now, we'll create a basic template structure
-    }
-    async createAPIRoutes(context) {
-        const { projectPath } = context;
-        context.logger.info('Creating API routes for webhooks...');
-        // Create API routes directory
-        const apiDir = path.join(projectPath, 'src', 'app', 'api', 'webhooks', 'resend');
-        await fsExtra.ensureDir(apiDir);
-        // Note: Webhook route generation would be handled by the generator
-    }
-    async createEmailUtilities(context) {
-        const { projectPath } = context;
-        context.logger.info('Creating email utilities...');
-        const emailLibDir = path.join(projectPath, 'src', 'lib', 'email');
-        await fsExtra.ensureDir(emailLibDir);
-        // Generate email service
-        const serviceContent = ResendGenerator.generateEmailService();
-        await fsExtra.writeFile(path.join(emailLibDir, 'service.ts'), serviceContent);
-    }
-    async generateUnifiedInterfaceFiles(context) {
-        const { projectPath } = context;
-        context.logger.info('Generating unified interface files...');
-        const emailLibDir = path.join(projectPath, 'src', 'lib', 'email');
-        await fsExtra.ensureDir(emailLibDir);
-        // Generate unified index
-        const indexContent = `/**
- * Unified Email Interface - Resend Implementation
- * 
- * This file provides a unified interface for email operations
- * that works with Resend.
- */
-
-export { default as resend } from './resend.js';
-export { default as emailConfig } from './config.js';
-export { emailService } from './service.js';
-export type * from './types.js';
-
-// Default export for convenience
-export { emailService as default } from './service.js';
-`;
-        await fsExtra.writeFile(path.join(emailLibDir, 'index.ts'), indexContent);
-    }
-    createErrorResult(message, startTime, errors = [], originalError) {
-        const duration = Date.now() - startTime;
-        return {
-            success: false,
-            artifacts: [],
-            dependencies: [],
-            scripts: [],
-            configs: [],
-            errors: [
-                {
-                    code: 'RESEND_INSTALL_ERROR',
-                    message,
-                    details: originalError,
-                    severity: 'error'
-                },
-                ...errors
-            ],
-            warnings: [],
-            duration
-        };
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     }
 }
 //# sourceMappingURL=ResendPlugin.js.map

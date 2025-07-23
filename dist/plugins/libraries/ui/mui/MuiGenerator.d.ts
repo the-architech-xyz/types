@@ -1,3 +1,9 @@
+/**
+ * MUI Code Generator
+ *
+ * Handles all code generation for MUI UI library integration.
+ * Based on: https://mui.com/
+ */
 import { UIPluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
     path: string;

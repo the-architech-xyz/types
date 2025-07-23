@@ -1,8 +1,8 @@
 /**
- * Shadcn/ui Code Generator
+ * Shadcn/UI Code Generator
  *
- * Handles all code generation for Shadcn/ui design system integration.
- * Based on: https://ui.shadcn.com/docs/installation
+ * Handles all code generation for Shadcn/UI library integration.
+ * Based on: https://ui.shadcn.com/
  */
 import { UIPluginConfig } from '../../../../types/plugins.js';
 export interface GeneratedFile {
@@ -15,7 +15,9 @@ export declare class ShadcnUIGenerator {
     generateCSSVariables(config: UIPluginConfig): GeneratedFile;
     generateUtilsFile(): GeneratedFile;
     generateComponentsJson(config: UIPluginConfig): GeneratedFile;
-    generateButtonComponent(): GeneratedFile;
+    private generateComponentExports;
+    private getComponentName;
+    generateButtonComponent(config: UIPluginConfig): GeneratedFile;
     generateCardComponent(): GeneratedFile;
-    generateUnifiedIndex(): GeneratedFile;
+    generateUnifiedIndex(config: UIPluginConfig): GeneratedFile;
 }

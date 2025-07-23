@@ -222,6 +222,12 @@ export class UIAgent extends AbstractAgent {
         };
     }
     // ============================================================================
+    // UTILITY METHODS
+    // ============================================================================
+    isExpertMode(context) {
+        return context.state.get('expertMode') === true || context.config.expertMode === true;
+    }
+    // ============================================================================
     // PLUGIN SELECTION
     // ============================================================================
     async selectUIPlugin(context) {

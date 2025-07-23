@@ -9,20 +9,25 @@
  * - https://next-auth.js.org/providers
  * - https://next-auth.js.org/adapters
  */
-import { BaseAuthPlugin } from '../../../base/index.js';
-import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugins.js';
-import { AuthProvider, AuthFeature, SessionOption, SecurityOption, ParameterSchema, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
-export declare class NextAuthPlugin extends BaseAuthPlugin {
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, IUIAuthPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+export declare class NextAuthPlugin extends BasePlugin implements IUIAuthPlugin {
     private generator;
     constructor();
     getMetadata(): PluginMetadata;
-    getParameterSchema(): ParameterSchema;
-    getAuthProviders(): AuthProvider[];
-    getAuthFeatures(): AuthFeature[];
-    getSessionOptions(): SessionOption[];
-    getSecurityOptions(): SecurityOption[];
-    protected getProviderLabel(provider: AuthProvider): string;
-    protected getFeatureLabel(feature: AuthFeature): string;
+    getParameterSchema(): import("../../../../types/plugins.js").ParameterSchema;
+    validateConfiguration(config: Record<string, any>): any;
     generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
+    getAuthProviders(): string[];
+    getAuthFeatures(): string[];
+    getSessionOptions(): string[];
+    getSecurityOptions(): string[];
     install(context: PluginContext): Promise<PluginResult>;
+    getDependencies(): string[];
+    getDevDependencies(): string[];
+    getCompatibility(): any;
+    getConflicts(): string[];
+    getRequirements(): any[];
+    getDefaultConfig(): Record<string, any>;
+    getConfigSchema(): any;
 }

@@ -1,14 +1,23 @@
-import { PluginCategory, TargetPlatform } from '../../../../types/plugins.js';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
-import { EthereumConfigSchema, EthereumDefaultConfig } from './EthereumSchema.js';
+/**
+ * Ethereum Blockchain Plugin - Pure Technology Implementation
+ *
+ * Provides Ethereum blockchain integration with smart contracts and Web3 setup.
+ * Focuses only on blockchain technology setup and artifact generation.
+ * No user interaction or business logic - that's handled by agents.
+ */
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { EthereumConfigSchema } from './EthereumSchema.js';
 import { EthereumGenerator } from './EthereumGenerator.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
-export class EthereumPlugin {
-    runner;
+export class EthereumPlugin extends BasePlugin {
+    generator;
     constructor() {
-        this.runner = new CommandRunner();
+        super();
+        // Generator will be initialized in install method when pathResolver is available
     }
+    // ============================================================================
+    // PLUGIN METADATA
+    // ============================================================================
     getMetadata() {
         return {
             id: 'ethereum',
@@ -17,140 +26,304 @@ export class EthereumPlugin {
             description: 'Ethereum blockchain integration with smart contracts and Web3',
             author: 'The Architech Team',
             category: PluginCategory.CUSTOM,
-            tags: ['blockchain', 'ethereum', 'web3', 'smart-contracts', 'defi', 'nft'],
+            tags: ['blockchain', 'ethereum', 'web3', 'smart-contracts', 'defi', 'nft', 'wallet'],
             license: 'MIT',
             repository: 'https://github.com/ethereum/ethereum-js',
             homepage: 'https://ethereum.org',
             documentation: 'https://docs.ethereum.org'
         };
     }
-    async validate(context) {
+    // ============================================================================
+    // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getParameterSchema() {
+        return {
+            category: PluginCategory.CUSTOM,
+            groups: [
+                { id: 'network', name: 'Network Settings', description: 'Configure Ethereum network connection.', order: 1, parameters: ['network', 'provider'] },
+                { id: 'provider', name: 'Provider Settings', description: 'Configure RPC provider settings.', order: 2, parameters: ['apiKey', 'rpcUrl'] },
+                { id: 'wallet', name: 'Wallet Integration', description: 'Configure wallet connection settings.', order: 3, parameters: ['enableWalletConnect', 'walletConnectProjectId'] }
+            ],
+            parameters: [
+                {
+                    id: 'network',
+                    name: 'Network',
+                    type: 'select',
+                    description: 'The Ethereum network to connect to.',
+                    required: true,
+                    default: 'sepolia',
+                    options: [
+                        { value: 'mainnet', label: 'Mainnet (Production)' },
+                        { value: 'sepolia', label: 'Sepolia (Testnet)' },
+                        { value: 'goerli', label: 'Goerli (Testnet)' },
+                        { value: 'local', label: 'Local (Development)' }
+                    ],
+                    group: 'network'
+                },
+                {
+                    id: 'provider',
+                    name: 'Provider',
+                    type: 'select',
+                    description: 'The JSON-RPC provider to use for network access.',
+                    required: true,
+                    default: 'public',
+                    options: [
+                        { value: 'alchemy', label: 'Alchemy' },
+                        { value: 'infura', label: 'Infura' },
+                        { value: 'public', label: 'Public RPC' },
+                        { value: 'custom', label: 'Custom RPC' }
+                    ],
+                    group: 'network'
+                },
+                {
+                    id: 'apiKey',
+                    name: 'API Key',
+                    type: 'string',
+                    description: 'Your API key for the selected provider (Alchemy or Infura).',
+                    required: false,
+                    group: 'provider'
+                },
+                {
+                    id: 'rpcUrl',
+                    name: 'Custom RPC URL',
+                    type: 'string',
+                    description: 'A custom JSON-RPC URL to connect to the network.',
+                    required: false,
+                    group: 'provider'
+                },
+                {
+                    id: 'enableWalletConnect',
+                    name: 'Enable WalletConnect',
+                    type: 'boolean',
+                    description: 'Enable WalletConnect for connecting to mobile wallets.',
+                    required: false,
+                    default: true,
+                    group: 'wallet'
+                },
+                {
+                    id: 'walletConnectProjectId',
+                    name: 'WalletConnect Project ID',
+                    type: 'string',
+                    description: 'Your project ID from WalletConnect Cloud.',
+                    required: false,
+                    group: 'wallet'
+                }
+            ],
+            dependencies: [],
+            validations: []
+        };
+    }
+    validateConfiguration(config) {
         const errors = [];
-        const { pluginConfig } = context;
-        const config = pluginConfig;
+        const warnings = [];
+        // Validate required fields
+        if (!config.network) {
+            errors.push({
+                field: 'network',
+                message: 'Ethereum network is required',
+                code: 'MISSING_FIELD',
+                severity: 'error'
+            });
+        }
+        if (!config.provider) {
+            errors.push({
+                field: 'provider',
+                message: 'Provider is required',
+                code: 'MISSING_FIELD',
+                severity: 'error'
+            });
+        }
+        // Validate provider-specific requirements
         if (config.provider === 'custom' && !config.rpcUrl) {
-            errors.push({ field: 'rpcUrl', message: 'A custom RPC URL is required when the provider is set to "custom".', code: 'MISSING_RPC_URL', severity: 'error' });
+            errors.push({
+                field: 'rpcUrl',
+                message: 'A custom RPC URL is required when the provider is set to "custom"',
+                code: 'MISSING_RPC_URL',
+                severity: 'error'
+            });
         }
         if ((config.provider === 'alchemy' || config.provider === 'infura') && !config.apiKey) {
-            errors.push({ field: 'apiKey', message: `An API key is required for the "${config.provider}" provider.`, code: 'MISSING_API_KEY', severity: 'error' });
+            errors.push({
+                field: 'apiKey',
+                message: `An API key is required for the "${config.provider}" provider`,
+                code: 'MISSING_API_KEY',
+                severity: 'error'
+            });
         }
         if (config.enableWalletConnect && !config.walletConnectProjectId) {
-            errors.push({ field: 'walletConnectProjectId', message: 'A WalletConnect project ID is required when WalletConnect is enabled.', code: 'MISSING_WC_PROJECT_ID', severity: 'error' });
+            errors.push({
+                field: 'walletConnectProjectId',
+                message: 'A WalletConnect project ID is required when WalletConnect is enabled',
+                code: 'MISSING_WC_PROJECT_ID',
+                severity: 'error'
+            });
         }
-        return { valid: errors.length === 0, errors, warnings: [] };
+        // Validate network and provider combinations
+        if (config.network === 'mainnet' && config.provider === 'public') {
+            warnings.push('Using public RPC for mainnet may have rate limits. Consider using Alchemy or Infura for production.');
+        }
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings
+        };
     }
+    generateUnifiedInterface(config) {
+        return {
+            category: PluginCategory.CUSTOM,
+            exports: [
+                {
+                    name: 'wagmiConfig',
+                    type: 'constant',
+                    implementation: 'Wagmi configuration',
+                    documentation: 'Wagmi configuration for Ethereum blockchain interaction'
+                },
+                {
+                    name: 'Web3Provider',
+                    type: 'class',
+                    implementation: 'React provider for Web3',
+                    documentation: 'Provider component for Web3 context and wallet connection'
+                },
+                {
+                    name: 'ethereum',
+                    type: 'constant',
+                    implementation: 'Ethereum utilities',
+                    documentation: 'Ethereum blockchain interaction utilities'
+                }
+            ],
+            types: [],
+            utilities: [],
+            constants: [],
+            documentation: 'Ethereum blockchain integration with smart contracts and Web3'
+        };
+    }
+    // ============================================================================
+    // IUIBlockchainPlugin INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getBlockchainNetworks() {
+        return ['ethereum', 'polygon', 'arbitrum', 'optimism', 'base'];
+    }
+    getSmartContractOptions() {
+        return ['erc20', 'erc721', 'erc1155', 'defi', 'governance', 'custom'];
+    }
+    getWalletOptions() {
+        return ['metamask', 'walletconnect', 'coinbase', 'rainbow', 'trust'];
+    }
+    // ============================================================================
+    // PLUGIN LIFECYCLE - Pure Technology Implementation
+    // ============================================================================
     async install(context) {
         const startTime = Date.now();
         try {
-            await this.installDependencies(context);
-            await this.createProjectFiles(context);
+            const { projectName, projectPath, pluginConfig } = context;
+            context.logger.info('Installing Ethereum blockchain integration...');
+            // Initialize path resolver
+            this.initializePathResolver(context);
+            // Initialize generator
+            this.generator = new EthereumGenerator();
+            // Validate configuration
+            const validation = this.validateConfiguration(pluginConfig);
+            if (!validation.valid) {
+                return this.createErrorResult('Invalid Ethereum configuration', validation.errors, startTime);
+            }
+            // Step 1: Install dependencies
+            await this.installDependencies(['wagmi', 'viem', '@tanstack/react-query']);
+            // Step 2: Generate files using the generator
+            const wagmiConfig = EthereumGenerator.generateWagmiConfig(pluginConfig);
+            const web3Provider = EthereumGenerator.generateWeb3Provider(pluginConfig);
+            const envConfig = EthereumGenerator.generateEnvConfig(pluginConfig);
+            // Step 3: Write files to project
+            await this.generateFile('src/lib/ethereum/config.ts', wagmiConfig);
+            await this.generateFile('src/components/providers/Web3Provider.tsx', web3Provider);
+            await this.generateFile('.env.local', envConfig);
             const duration = Date.now() - startTime;
-            return {
-                success: true,
-                artifacts: [
-                    { type: 'file', path: path.join('src', 'lib', 'ethereum', 'config.ts') },
-                    { type: 'file', path: path.join('src', 'components', 'providers', 'Web3Provider.tsx') },
-                ],
-                dependencies: [
-                    { name: 'wagmi', version: '^2.5.7', type: 'production', category: PluginCategory.CUSTOM },
-                    { name: 'viem', version: '^2.7.12', type: 'production', category: PluginCategory.CUSTOM },
-                    { name: '@tanstack/react-query', version: '^5.22.2', type: 'production', category: PluginCategory.CUSTOM },
-                ],
-                scripts: [],
-                configs: [{
-                        file: '.env',
-                        content: EthereumGenerator.generateEnvConfig(context.pluginConfig),
-                        mergeStrategy: 'append'
-                    }],
-                errors: [],
-                warnings: [],
-                duration
-            };
+            return this.createSuccessResult([
+                { type: 'file', path: 'src/lib/ethereum/config.ts' },
+                { type: 'file', path: 'src/components/providers/Web3Provider.tsx' },
+                { type: 'file', path: '.env.local' }
+            ], [
+                {
+                    name: 'wagmi',
+                    version: '^2.5.7',
+                    type: 'production',
+                    category: PluginCategory.CUSTOM
+                },
+                {
+                    name: 'viem',
+                    version: '^2.7.12',
+                    type: 'production',
+                    category: PluginCategory.CUSTOM
+                },
+                {
+                    name: '@tanstack/react-query',
+                    version: '^5.22.2',
+                    type: 'production',
+                    category: PluginCategory.CUSTOM
+                }
+            ], [], [], [
+                'Ethereum integration requires you to wrap your application with the Web3Provider component.',
+                ...validation.warnings
+            ], startTime);
         }
         catch (error) {
-            return this.createErrorResult('Failed to install Ethereum plugin', startTime, error);
+            return this.createErrorResult('Failed to install Ethereum blockchain integration', [], startTime);
         }
     }
-    async uninstall(context) {
-        const startTime = Date.now();
-        try {
-            await this.runner.execCommand(['npm', 'uninstall', 'wagmi', 'viem', '@tanstack/react-query'], { cwd: context.projectPath });
-            const libDir = path.join(context.projectPath, 'src', 'lib', 'ethereum');
-            if (await fsExtra.pathExists(libDir))
-                await fsExtra.remove(libDir);
-            const componentsDir = path.join(context.projectPath, 'src', 'components', 'providers', 'Web3Provider.tsx');
-            if (await fsExtra.pathExists(componentsDir))
-                await fsExtra.remove(componentsDir);
-            return {
-                success: true,
-                artifacts: [],
-                dependencies: [],
-                scripts: [],
-                configs: [],
-                errors: [],
-                warnings: ['Ethereum files and dependencies have been removed.'],
-                duration: Date.now() - startTime
-            };
-        }
-        catch (error) {
-            return this.createErrorResult('Failed to uninstall Ethereum plugin', startTime, error);
-        }
+    // ============================================================================
+    // PLUGIN INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getDependencies() {
+        return ['wagmi', 'viem', '@tanstack/react-query'];
     }
-    async update(context) {
-        return this.install(context);
+    getDevDependencies() {
+        return [];
     }
     getCompatibility() {
         return {
-            frameworks: ['nextjs', 'react'],
-            platforms: [TargetPlatform.WEB],
+            frameworks: ['nextjs', 'react', 'vue', 'svelte'],
+            platforms: ['web', 'mobile'],
             nodeVersions: ['>=16.0.0'],
             packageManagers: ['npm', 'yarn', 'pnpm'],
             conflicts: []
         };
-    }
-    getDependencies() {
-        return ['wagmi', 'viem', '@tanstack/react-query'];
     }
     getConflicts() {
         return [];
     }
     getRequirements() {
         return [
-            { type: 'package', name: 'wagmi', description: 'React Hooks for Ethereum.', version: '^2.5.7' },
-            { type: 'package', name: 'viem', description: 'A TypeScript interface for Ethereum.', version: '^2.7.12' },
-            { type: 'package', name: '@tanstack/react-query', description: 'Data-fetching and state management for React.', version: '^5.22.2' },
+            {
+                type: 'package',
+                name: 'wagmi',
+                description: 'React hooks for Ethereum',
+                version: '^2.5.7'
+            },
+            {
+                type: 'package',
+                name: 'viem',
+                description: 'TypeScript interface for Ethereum',
+                version: '^2.7.12'
+            },
+            {
+                type: 'package',
+                name: '@tanstack/react-query',
+                description: 'Data synchronization for React',
+                version: '^5.22.2'
+            }
         ];
     }
     getDefaultConfig() {
-        return EthereumDefaultConfig;
+        return {
+            network: 'sepolia',
+            provider: 'public',
+            apiKey: '',
+            rpcUrl: '',
+            enableWalletConnect: true,
+            walletConnectProjectId: ''
+        };
     }
     getConfigSchema() {
         return EthereumConfigSchema;
-    }
-    async installDependencies(context) {
-        await this.runner.execCommand(['npm', 'install', 'wagmi', 'viem', '@tanstack/react-query'], { cwd: context.projectPath });
-    }
-    async createProjectFiles(context) {
-        const { projectPath, pluginConfig } = context;
-        const config = pluginConfig;
-        const libDir = path.join(projectPath, 'src', 'lib', 'ethereum');
-        await fsExtra.ensureDir(libDir);
-        await fsExtra.writeFile(path.join(libDir, 'config.ts'), EthereumGenerator.generateWagmiConfig(config));
-        const componentsDir = path.join(projectPath, 'src', 'components', 'providers');
-        await fsExtra.ensureDir(componentsDir);
-        await fsExtra.writeFile(path.join(componentsDir, 'Web3Provider.tsx'), EthereumGenerator.generateWeb3Provider(config));
-    }
-    createErrorResult(message, startTime, error) {
-        return {
-            success: false,
-            artifacts: [],
-            dependencies: [],
-            scripts: [],
-            configs: [],
-            errors: [{ code: 'ETHEREUM_PLUGIN_ERROR', message, details: error, severity: 'error' }],
-            warnings: [],
-            duration: Date.now() - startTime
-        };
     }
 }
 //# sourceMappingURL=EthereumPlugin.js.map

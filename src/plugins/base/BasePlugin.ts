@@ -54,6 +54,14 @@ export abstract class BasePlugin implements IPlugin {
     return this.validateRequiredConfig(config, required);
   }
 
+  /**
+   * Get dynamic questions - plugins should not generate questions
+   * This method returns an empty array by default since agents handle questions
+   */
+  getDynamicQuestions(context: any): any[] {
+    return [];
+  }
+
   // ============================================================================
   // PATH RESOLVER INITIALIZATION
   // ============================================================================
@@ -309,4 +317,4 @@ export abstract class BasePlugin implements IPlugin {
       required: []
     };
   }
-} 
+}

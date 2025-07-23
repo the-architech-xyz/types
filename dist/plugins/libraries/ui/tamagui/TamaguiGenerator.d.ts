@@ -5,8 +5,8 @@ export interface GeneratedFile {
 }
 export declare class TamaguiGenerator {
     generateAllFiles(config: UIPluginConfig): GeneratedFile[];
-    generateThemeConfig(config: UIPluginConfig): GeneratedFile;
-    generateProviderSetup(config: UIPluginConfig): GeneratedFile;
+    generateTamaguiConfig(config: UIPluginConfig): GeneratedFile;
+    generateProviderComponent(config: UIPluginConfig): GeneratedFile;
     generateUnifiedIndex(config: UIPluginConfig): GeneratedFile;
     private generateComponentExports;
     private getComponentName;

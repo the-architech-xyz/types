@@ -1,5 +1,5 @@
 /**
- * Base Plugin Class
+ * Base Plugin Class - Single Base Class for All Plugins
  *
  * Provides common functionality for all plugins:
  * - Error handling
@@ -7,6 +7,8 @@
  * - Lifecycle management
  * - Path resolution
  * - Logging
+ * - Parameter schema management
+ * - Configuration validation
  */
 import { PathResolver } from './PathResolver.js';
 import { CommandRunner } from '../../core/cli/command-runner.js';
@@ -19,6 +21,26 @@ export class BasePlugin {
     constructor() {
         this.runner = new CommandRunner();
         this.templateService = templateService;
+    }
+    // ============================================================================
+    // PLUGIN INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    /**
+     * Validate configuration based on parameter schema
+     */
+    validateConfiguration(config) {
+        const schema = this.getParameterSchema();
+        const required = schema.parameters
+            .filter(param => param.required)
+            .map(param => param.id);
+        return this.validateRequiredConfig(config, required);
+    }
+    /**
+     * Get dynamic questions - plugins should not generate questions
+     * This method returns an empty array by default since agents handle questions
+     */
+    getDynamicQuestions(context) {
+        return [];
     }
     // ============================================================================
     // PATH RESOLVER INITIALIZATION
@@ -79,15 +101,33 @@ export class BasePlugin {
         };
     }
     // ============================================================================
+    // COMMON VALIDATION
+    // ============================================================================
+    validateRequiredConfig(config, required) {
+        const errors = [];
+        for (const field of required) {
+            if (!config[field]) {
+                errors.push({
+                    field,
+                    message: `${field} is required`,
+                    code: 'MISSING_FIELD',
+                    severity: 'error'
+                });
+            }
+        }
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings: []
+        };
+    }
+    // ============================================================================
     // COMMON FILE OPERATIONS
     // ============================================================================
     async generateFile(filePath, content) {
         try {
-            // Ensure path resolver is initialized
             this.ensurePathResolverInitialized();
-            // Ensure directory exists
             await this.pathResolver.ensureDirectory(filePath);
-            // Write file
             await fsExtra.writeFile(filePath, content, 'utf8');
         }
         catch (error) {
@@ -162,133 +202,8 @@ export class BasePlugin {
         }
     }
     // ============================================================================
-    // COMMON VALIDATION
+    // IPlugin INTERFACE IMPLEMENTATIONS
     // ============================================================================
-    validateRequiredConfig(config, required) {
-        const errors = [];
-        for (const field of required) {
-            if (!config[field]) {
-                errors.push({
-                    field,
-                    message: `${field} is required`,
-                    code: 'MISSING_FIELD',
-                    severity: 'error'
-                });
-            }
-        }
-        return {
-            valid: errors.length === 0,
-            errors,
-            warnings: []
-        };
-    }
-    validateStringField(config, field, pattern, minLength, maxLength) {
-        const errors = [];
-        const value = config[field];
-        if (!value) {
-            errors.push({
-                field,
-                message: `${field} is required`,
-                code: 'MISSING_FIELD',
-                severity: 'error'
-            });
-            return { valid: false, errors, warnings: [] };
-        }
-        if (typeof value !== 'string') {
-            errors.push({
-                field,
-                message: `${field} must be a string`,
-                code: 'INVALID_TYPE',
-                severity: 'error'
-            });
-            return { valid: false, errors, warnings: [] };
-        }
-        if (minLength && value.length < minLength) {
-            errors.push({
-                field,
-                message: `${field} must be at least ${minLength} characters`,
-                code: 'MIN_LENGTH',
-                severity: 'error'
-            });
-        }
-        if (maxLength && value.length > maxLength) {
-            errors.push({
-                field,
-                message: `${field} must be at most ${maxLength} characters`,
-                code: 'MAX_LENGTH',
-                severity: 'error'
-            });
-        }
-        if (pattern && !pattern.test(value)) {
-            errors.push({
-                field,
-                message: `${field} format is invalid`,
-                code: 'INVALID_FORMAT',
-                severity: 'error'
-            });
-        }
-        return {
-            valid: errors.length === 0,
-            errors,
-            warnings: []
-        };
-    }
-    // ============================================================================
-    // COMMON LIFECYCLE MANAGEMENT
-    // ============================================================================
-    async executeLifecycle(context) {
-        const startTime = Date.now();
-        try {
-            // Initialize path resolver
-            this.initializePathResolver(context);
-            // Validate context
-            const validation = await this.validate(context);
-            if (!validation.valid) {
-                return this.createErrorResult('Plugin validation failed', validation.errors, startTime);
-            }
-            // Execute plugin-specific installation
-            const result = await this.install(context);
-            // Validate installation
-            if (result.success) {
-                await this.validateInstallation(context);
-            }
-            return result;
-        }
-        catch (error) {
-            return this.createErrorResult('Plugin lifecycle failed', [error], startTime);
-        }
-    }
-    async validateInstallation(context) {
-        // Override in subclasses if needed
-        // Default implementation does nothing
-    }
-    // ============================================================================
-    // COMMON UTILITIES
-    // ============================================================================
-    getModuleName() {
-        this.ensurePathResolverInitialized();
-        // Extract module name from plugin ID
-        const pluginId = this.pathResolver['context'].pluginId;
-        if (pluginId.includes('drizzle') || pluginId.includes('prisma'))
-            return 'db';
-        if (pluginId.includes('auth') || pluginId.includes('nextauth'))
-            return 'auth';
-        if (pluginId.includes('ui') || pluginId.includes('shadcn'))
-            return 'ui';
-        if (pluginId.includes('deploy') || pluginId.includes('vercel'))
-            return 'deployment';
-        if (pluginId.includes('test') || pluginId.includes('vitest'))
-            return 'testing';
-        if (pluginId.includes('email') || pluginId.includes('resend'))
-            return 'email';
-        if (pluginId.includes('monitor') || pluginId.includes('sentry'))
-            return 'monitoring';
-        if (pluginId.includes('payment') || pluginId.includes('stripe'))
-            return 'payment';
-        if (pluginId.includes('blockchain') || pluginId.includes('ethereum'))
-            return 'blockchain';
-        return 'custom';
-    }
     async validate(context) {
         // Default validation - override in subclasses if needed
         return {

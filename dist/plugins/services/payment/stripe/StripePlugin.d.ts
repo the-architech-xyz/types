@@ -5,25 +5,67 @@
  * Focuses only on payment technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
-export declare class StripePlugin implements IPlugin {
-    private templateService;
-    private runner;
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, PluginCategory, IUIPaymentPlugin, UnifiedInterfaceTemplate } from '../../../../types/plugins.js';
+import { ValidationResult } from '../../../../types/agents.js';
+export declare class StripePlugin extends BasePlugin implements IUIPaymentPlugin {
+    private generator;
     constructor();
     getMetadata(): PluginMetadata;
+    getParameterSchema(): {
+        category: PluginCategory;
+        groups: {
+            id: string;
+            name: string;
+            description: string;
+            order: number;
+            parameters: string[];
+        }[];
+        parameters: ({
+            id: string;
+            name: string;
+            type: "string";
+            description: string;
+            required: boolean;
+            group: string;
+            default?: never;
+            options?: never;
+        } | {
+            id: string;
+            name: string;
+            type: "boolean";
+            description: string;
+            required: boolean;
+            default: boolean;
+            group: string;
+            options?: never;
+        } | {
+            id: string;
+            name: string;
+            type: "select";
+            description: string;
+            required: boolean;
+            default: string;
+            options: {
+                value: string;
+                label: string;
+            }[];
+            group: string;
+        })[];
+        dependencies: never[];
+        validations: never[];
+    };
+    validateConfiguration(config: Record<string, any>): ValidationResult;
+    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
+    getPaymentProviders(): string[];
+    getPaymentFeatures(): string[];
+    getCurrencyOptions(): string[];
     install(context: PluginContext): Promise<PluginResult>;
-    uninstall(context: PluginContext): Promise<PluginResult>;
-    update(context: PluginContext): Promise<PluginResult>;
-    validate(context: PluginContext): Promise<ValidationResult>;
-    getCompatibility(): CompatibilityMatrix;
     getDependencies(): string[];
+    getDevDependencies(): string[];
+    getCompatibility(): any;
     getConflicts(): string[];
-    getRequirements(): PluginRequirement[];
+    getRequirements(): any[];
     getDefaultConfig(): Record<string, any>;
-    getConfigSchema(): ConfigSchema;
-    private installDependencies;
-    private initializeStripeConfig;
-    private createPaymentFiles;
-    private generateUnifiedInterfaceFiles;
-    private createErrorResult;
+    getConfigSchema(): any;
 }

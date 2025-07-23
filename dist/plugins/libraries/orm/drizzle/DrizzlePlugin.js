@@ -6,11 +6,12 @@
  * - DrizzleGenerator: File generation logic
  * - DrizzlePlugin: Main plugin class (this file)
  */
-import { BaseDatabasePlugin } from '../../../base/BaseDatabasePlugin.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
 import { PluginCategory } from '../../../../types/plugins.js';
-import { DatabaseProvider, ORMOption, DatabaseFeature } from '../../../../types/plugin-interfaces.js';
+import { DATABASE_PROVIDERS, ORM_LIBRARIES } from '../../../../types/core.js';
 import { DrizzleSchema } from './DrizzleSchema.js';
-export class DrizzlePlugin extends BaseDatabasePlugin {
+import { DrizzleGenerator } from './DrizzleGenerator.js';
+export class DrizzlePlugin extends BasePlugin {
     generator;
     constructor() {
         super();
@@ -39,46 +40,6 @@ export class DrizzlePlugin extends BaseDatabasePlugin {
     getParameterSchema() {
         return DrizzleSchema.getParameterSchema();
     }
-    getDynamicQuestions(context) {
-        // For now, return a simplified set of questions
-        // This will eventually use DynamicQuestionGenerator
-        return [
-            {
-                id: 'provider',
-                type: 'select',
-                name: 'provider',
-                message: 'Select database provider',
-                choices: [
-                    { name: 'Neon (PostgreSQL)', value: DatabaseProvider.NEON },
-                    { name: 'Supabase', value: DatabaseProvider.SUPABASE },
-                    { name: 'MongoDB', value: DatabaseProvider.MONGODB },
-                    { name: 'PlanetScale', value: DatabaseProvider.PLANETSCALE },
-                    { name: 'Local SQLite', value: DatabaseProvider.LOCAL }
-                ],
-                default: DatabaseProvider.NEON
-            },
-            {
-                id: 'connectionString',
-                type: 'input',
-                name: 'connectionString',
-                message: 'Database connection string',
-                when: (answers) => answers.provider !== DatabaseProvider.LOCAL
-            },
-            {
-                id: 'features',
-                type: 'checkbox',
-                name: 'features',
-                message: 'Select database features',
-                choices: [
-                    { name: 'Migrations', value: DatabaseFeature.MIGRATIONS, checked: true },
-                    { name: 'Seeding', value: DatabaseFeature.SEEDING },
-                    { name: 'Backup', value: DatabaseFeature.BACKUP },
-                    { name: 'Connection Pooling', value: DatabaseFeature.CONNECTION_POOLING },
-                    { name: 'SSL', value: DatabaseFeature.SSL }
-                ]
-            }
-        ];
-    }
     validateConfiguration(config) {
         const errors = [];
         const warnings = [];
@@ -87,27 +48,24 @@ export class DrizzlePlugin extends BaseDatabasePlugin {
             errors.push({
                 field: 'provider',
                 message: 'Database provider is required',
-                code: 'MISSING_PROVIDER',
+                code: 'MISSING_FIELD',
                 severity: 'error'
             });
         }
-        if (config.provider !== DatabaseProvider.LOCAL && !config.connectionString) {
+        if (config.provider !== DATABASE_PROVIDERS.LOCAL_SQLITE && !config.connectionString) {
             errors.push({
                 field: 'connectionString',
                 message: 'Connection string is required for remote databases',
-                code: 'MISSING_CONNECTION_STRING',
+                code: 'MISSING_FIELD',
                 severity: 'error'
             });
         }
         // Provider-specific validation
-        if (config.provider === DatabaseProvider.NEON && !config.connectionString?.includes('neon.tech')) {
+        if (config.provider === DATABASE_PROVIDERS.NEON && !config.connectionString?.includes('neon.tech')) {
             warnings.push('Connection string should be from Neon (neon.tech)');
         }
-        if (config.provider === DatabaseProvider.SUPABASE && !config.connectionString?.includes('supabase.co')) {
+        if (config.provider === DATABASE_PROVIDERS.SUPABASE && !config.connectionString?.includes('supabase.co')) {
             warnings.push('Connection string should be from Supabase (supabase.co)');
-        }
-        if (config.provider === DatabaseProvider.MONGODB && config.ormType !== ORMOption.MONGOOSE) {
-            warnings.push('MongoDB works best with Mongoose ORM');
         }
         return {
             valid: errors.length === 0,
@@ -120,152 +78,146 @@ export class DrizzlePlugin extends BaseDatabasePlugin {
             category: PluginCategory.DATABASE,
             exports: [
                 {
-                    name: 'connect',
-                    type: 'function',
-                    implementation: 'export const connect = () => db;',
-                    documentation: 'Connect to the database',
-                    parameters: [],
-                    returnType: 'Database',
-                    examples: ['const db = connect();']
+                    name: 'db',
+                    type: 'constant',
+                    implementation: 'Database connection instance',
+                    documentation: 'Main database connection object',
+                    examples: ['import { db } from "@/lib/db"']
                 },
                 {
                     name: 'query',
                     type: 'function',
-                    implementation: 'export const query = (sql: string, params?: any[]) => db.execute(sql, params);',
-                    documentation: 'Execute a raw SQL query',
-                    parameters: [
-                        { id: 'sql', name: 'sql', type: 'string', description: 'SQL query string', required: true },
-                        { id: 'params', name: 'params', type: 'array', description: 'Query parameters', required: false }
-                    ],
-                    returnType: 'Promise<any>',
-                    examples: ['const result = await query("SELECT * FROM users WHERE id = ?", [1]);']
-                },
-                {
-                    name: 'DatabaseClient',
-                    type: 'class',
-                    implementation: 'export class DatabaseClient { /* implementation */ }',
-                    documentation: 'Type-safe database client for common operations',
-                    parameters: [],
-                    returnType: 'DatabaseClient',
-                    examples: ['const client = new DatabaseClient(db);']
+                    implementation: 'Database query function',
+                    documentation: 'Execute database queries',
+                    examples: ['const users = await query("SELECT * FROM users")']
                 }
             ],
             types: [
                 {
                     name: 'DatabaseConfig',
                     type: 'interface',
-                    definition: 'interface DatabaseConfig { provider: string; connection: any; features: any; orm?: any; }',
-                    documentation: 'Database configuration interface',
-                    properties: [
-                        { name: 'provider', type: 'string', required: true, description: 'Database provider' },
-                        { name: 'connection', type: 'any', required: true, description: 'Connection configuration' },
-                        { name: 'features', type: 'any', required: true, description: 'Database features' },
-                        { name: 'orm', type: 'any', required: false, description: 'ORM configuration' }
-                    ]
+                    definition: 'interface DatabaseConfig { provider: string; connectionString?: string; }',
+                    documentation: 'Database configuration interface'
                 }
             ],
             utilities: [
                 {
-                    name: 'createConnection',
+                    name: 'connect',
                     type: 'function',
-                    implementation: 'export const createConnection = () => db;',
-                    documentation: 'Create a new database connection',
+                    implementation: 'Database connection function',
+                    documentation: 'Connect to the database',
                     parameters: [],
-                    returnType: 'Database',
-                    examples: ['const connection = createConnection();']
+                    returnType: 'Promise<void>',
+                    examples: ['await connect()']
                 }
             ],
             constants: [
                 {
-                    name: 'DEFAULT_TIMEOUT',
-                    value: 30000,
-                    documentation: 'Default database connection timeout (30 seconds)',
-                    type: 'number'
+                    name: 'DATABASE_URL',
+                    value: 'process.env.DATABASE_URL',
+                    documentation: 'Database connection URL',
+                    type: 'string'
                 }
             ],
-            documentation: 'Database module providing unified interface for database operations'
+            documentation: 'Drizzle ORM unified interface for database operations'
         };
     }
     // ============================================================================
-    // DATABASE-SPECIFIC ABSTRACT METHODS IMPLEMENTATION
+    // DATABASE PLUGIN INTERFACE IMPLEMENTATION
     // ============================================================================
     getDatabaseProviders() {
-        return DrizzleSchema.getDatabaseProviders();
+        return [
+            DATABASE_PROVIDERS.NEON,
+            DATABASE_PROVIDERS.SUPABASE,
+            DATABASE_PROVIDERS.MONGODB,
+            DATABASE_PROVIDERS.PLANETSCALE,
+            DATABASE_PROVIDERS.LOCAL_SQLITE
+        ];
     }
     getORMOptions() {
-        return DrizzleSchema.getORMOptions();
+        return [ORM_LIBRARIES.DRIZZLE];
     }
     getDatabaseFeatures() {
-        return DrizzleSchema.getDatabaseFeatures();
+        return ['migrations', 'seeding', 'backup', 'connection_pooling', 'ssl'];
     }
-    getConnectionOptions(provider) {
-        switch (provider) {
-            case DatabaseProvider.NEON:
-                return [
-                    { name: 'connectionString', type: 'string', required: true, description: 'Neon connection string' },
-                    { name: 'region', type: 'string', required: false, description: 'Neon region' }
-                ];
-            case DatabaseProvider.SUPABASE:
-                return [
-                    { name: 'projectUrl', type: 'string', required: true, description: 'Supabase project URL' },
-                    { name: 'apiKey', type: 'string', required: true, description: 'Supabase API key' },
-                    { name: 'anonKey', type: 'string', required: false, description: 'Supabase anonymous key' }
-                ];
-            case DatabaseProvider.MONGODB:
-                return [
-                    { name: 'connectionString', type: 'string', required: true, description: 'MongoDB connection string' },
-                    { name: 'databaseName', type: 'string', required: true, description: 'MongoDB database name' }
-                ];
-            default:
-                return [
-                    { name: 'connectionString', type: 'string', required: true, description: 'Database connection string' }
-                ];
-        }
+    getConnectionOptions() {
+        return ['connectionString', 'host', 'port', 'username', 'password', 'database', 'ssl'];
     }
     getProviderLabel(provider) {
-        return DrizzleSchema.getProviderLabel(provider);
+        const labels = {
+            [DATABASE_PROVIDERS.NEON]: 'Neon (PostgreSQL)',
+            [DATABASE_PROVIDERS.SUPABASE]: 'Supabase',
+            [DATABASE_PROVIDERS.MONGODB]: 'MongoDB',
+            [DATABASE_PROVIDERS.PLANETSCALE]: 'PlanetScale',
+            [DATABASE_PROVIDERS.LOCAL_SQLITE]: 'Local SQLite'
+        };
+        return labels[provider] || provider;
     }
     getProviderDescription(provider) {
-        return DrizzleSchema.getProviderDescription(provider);
+        const descriptions = {
+            [DATABASE_PROVIDERS.NEON]: 'Serverless PostgreSQL with branching',
+            [DATABASE_PROVIDERS.SUPABASE]: 'Open source Firebase alternative',
+            [DATABASE_PROVIDERS.MONGODB]: 'NoSQL document database',
+            [DATABASE_PROVIDERS.PLANETSCALE]: 'MySQL-compatible serverless database',
+            [DATABASE_PROVIDERS.LOCAL_SQLITE]: 'Local SQLite for development'
+        };
+        return descriptions[provider] || '';
     }
     getFeatureLabel(feature) {
-        return DrizzleSchema.getFeatureLabel(feature);
+        return feature.charAt(0).toUpperCase() + feature.slice(1).replace('_', ' ');
     }
     getFeatureDescription(feature) {
-        return DrizzleSchema.getFeatureDescription(feature);
+        const descriptions = {
+            migrations: 'Database schema versioning and migrations',
+            seeding: 'Initial data seeding for development',
+            backup: 'Automated database backups',
+            connection_pooling: 'Connection pooling and caching',
+            ssl: 'SSL/TLS encryption for connections'
+        };
+        return descriptions[feature] || '';
     }
     // ============================================================================
-    // MAIN INSTALLATION LOGIC
+    // PLUGIN INSTALLATION
     // ============================================================================
     async install(context) {
         const startTime = Date.now();
-        const config = context.pluginConfig;
         try {
-            // Initialize path resolver first
+            // Initialize path resolver
             this.initializePathResolver(context);
-            // 1. Generate all file contents
-            const allFiles = this.generator.generateAllFiles(config);
-            // 2. Use BasePlugin to write files
-            for (const file of allFiles) {
-                // Correctly determine if it's a root config or a lib file
-                const isRootConfig = file.path === 'drizzle.config.ts';
-                const filePath = isRootConfig
-                    ? this.pathResolver.getConfigPath(file.path)
-                    : this.pathResolver.getLibPath('db', file.path.replace('db/', ''));
-                await this.generateFile(filePath, file.content);
+            // Initialize generator with path resolver
+            this.generator = new DrizzleGenerator(this.pathResolver);
+            // Get configuration from context
+            const config = context.pluginConfig;
+            // Validate configuration
+            const validation = this.validateConfiguration(config);
+            if (!validation.valid) {
+                return this.createErrorResult('Configuration validation failed', validation.errors, startTime);
             }
-            // 3. Add dependencies
-            await this.installDependencies(['drizzle-orm', 'postgres'], ['drizzle-kit', 'dotenv']);
-            // 4. Add scripts
+            // Install dependencies
+            const dependencies = this.getDependencies();
+            const devDependencies = this.getDevDependencies();
+            await this.installDependencies(dependencies, devDependencies);
+            // Generate files
+            await this.generator.generateDrizzleConfig(config);
+            await this.generator.generateSchemaFile(config);
+            await this.generator.generateConnectionFile(config);
+            await this.generator.generateUnifiedInterface(config);
+            // Add scripts to package.json
             const scripts = this.generator.generateScripts(config);
             await this.addScripts(scripts);
-            // 5. Add environment variables
+            // Generate environment variables
             const envVars = this.generator.generateEnvVars(config);
-            // await this.addEnvVariables(envVars); // Assuming a method exists in BasePlugin
-            return this.createSuccessResult([], [], Object.entries(scripts).map(([name, command]) => ({ name, command })), [], [], startTime);
+            return this.createSuccessResult([
+                { type: 'config', path: 'drizzle.config.ts', description: 'Drizzle configuration' },
+                { type: 'schema', path: this.pathResolver.getSchemaPath(), description: 'Database schema' },
+                { type: 'connection', path: this.pathResolver.getLibPath('db', 'connection.ts'), description: 'Database connection' },
+                { type: 'interface', path: this.pathResolver.getUnifiedInterfacePath('db'), description: 'Unified database interface' }
+            ], dependencies, Object.keys(scripts), [
+                { type: 'env', content: envVars, description: 'Database environment variables' }
+            ], validation.warnings, startTime);
         }
         catch (error) {
-            return this.createErrorResult('Drizzle installation failed', [error], startTime);
+            return this.createErrorResult('Drizzle plugin installation failed', [error], startTime);
         }
     }
     // ============================================================================
@@ -304,29 +256,24 @@ export class DrizzlePlugin extends BaseDatabasePlugin {
     }
     getDefaultConfig() {
         return {
-            provider: DatabaseProvider.NEON,
-            features: {
-                migrations: true,
-                seeding: false,
-                backup: false,
-                connectionPooling: false,
-                ssl: true
-            },
-            orm: {
-                type: ORMOption.DRIZZLE
-            }
+            provider: DATABASE_PROVIDERS.NEON,
+            ormType: ORM_LIBRARIES.DRIZZLE,
+            features: ['migrations'],
+            connectionString: '',
+            ssl: true
         };
     }
     getConfigSchema() {
         return {
             type: 'object',
             properties: {
-                provider: { type: 'string', enum: Object.values(DatabaseProvider) },
-                connection: { type: 'object' },
-                features: { type: 'object' },
-                orm: { type: 'object' }
+                provider: { type: 'string', enum: Object.values(DATABASE_PROVIDERS) },
+                ormType: { type: 'string', enum: Object.values(ORM_LIBRARIES) },
+                features: { type: 'array', items: { type: 'string' } },
+                connectionString: { type: 'string' },
+                ssl: { type: 'boolean' }
             },
-            required: ['provider', 'connection']
+            required: ['provider', 'ormType']
         };
     }
 }

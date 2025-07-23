@@ -4,7 +4,8 @@
  * Contains all configuration schemas and parameter definitions for the Better Auth plugin.
  * Based on: https://better-auth.com/docs
  */
-import { ParameterSchema, AuthProvider, AuthFeature } from '../../../../types/plugins.js';
+import { ParameterSchema } from '../../../../types/plugins.js';
+import { AuthProvider, AuthFeature } from '../../../../types/core.js';
 export interface ParameterValidationRule {
     type: 'required' | 'pattern' | 'min' | 'max' | 'minLength' | 'maxLength' | 'custom';
     value?: any;

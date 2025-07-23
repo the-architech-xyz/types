@@ -5,11 +5,11 @@
  * Focuses only on technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
-import { BaseFrameworkPlugin } from '../../../base/index.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
 import { PluginCategory } from '../../../../types/plugins.js';
 import { NextJSSchema } from './NextJSSchema.js';
 import { NextJSGenerator } from './NextJSGenerator.js';
-export class NextJSPlugin extends BaseFrameworkPlugin {
+export class NextJSPlugin extends BasePlugin {
     generator;
     constructor() {
         super();
@@ -31,51 +31,188 @@ export class NextJSPlugin extends BaseFrameworkPlugin {
         };
     }
     // ============================================================================
-    // ABSTRACT METHOD IMPLEMENTATIONS
+    // ENHANCED PLUGIN INTERFACE IMPLEMENTATION
     // ============================================================================
     getParameterSchema() {
         return NextJSSchema.getParameterSchema();
     }
-    getFrameworkOptions() {
-        return NextJSSchema.getFrameworkOptions();
-    }
-    getBuildOptions() {
-        return NextJSSchema.getBuildOptions();
-    }
-    getDeploymentOptions() {
-        return NextJSSchema.getDeploymentOptions();
+    validateConfiguration(config) {
+        const errors = [];
+        const warnings = [];
+        // Validate required fields
+        if (!config.router) {
+            errors.push({
+                field: 'router',
+                message: 'Router type is required',
+                code: 'MISSING_FIELD',
+                severity: 'error'
+            });
+        }
+        // Validate router configuration
+        if (config.router && !['app', 'pages'].includes(config.router)) {
+            warnings.push('Router should be either "app" or "pages"');
+        }
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings
+        };
     }
     generateUnifiedInterface(config) {
         return {
             category: PluginCategory.FRAMEWORK,
-            exports: [], types: [], utilities: [], constants: [],
-            documentation: 'Next.js framework integration',
+            exports: [
+                {
+                    name: 'NextPage',
+                    type: 'interface',
+                    implementation: 'Next.js page interface',
+                    documentation: 'Interface for Next.js pages',
+                    examples: ['const MyPage: NextPage = () => <div>Hello</div>']
+                },
+                {
+                    name: 'NextApiRequest',
+                    type: 'interface',
+                    implementation: 'Next.js API request interface',
+                    documentation: 'Interface for Next.js API requests',
+                    examples: ['export default function handler(req: NextApiRequest) {}']
+                }
+            ],
+            types: [
+                {
+                    name: 'NextConfig',
+                    type: 'interface',
+                    definition: 'interface NextConfig { experimental?: any; env?: Record<string, string>; }',
+                    documentation: 'Next.js configuration interface'
+                }
+            ],
+            utilities: [
+                {
+                    name: 'getServerSideProps',
+                    type: 'function',
+                    implementation: 'Server-side props function',
+                    documentation: 'Get server-side props for pages',
+                    parameters: [],
+                    returnType: 'Promise<{ props: any }>',
+                    examples: ['export const getServerSideProps = async () => ({ props: {} })']
+                }
+            ],
+            constants: [
+                {
+                    name: 'NEXT_PUBLIC_API_URL',
+                    value: 'process.env.NEXT_PUBLIC_API_URL',
+                    documentation: 'Public API URL for client-side',
+                    type: 'string'
+                }
+            ],
+            documentation: 'Next.js framework integration'
         };
     }
     // ============================================================================
-    // MAIN INSTALL METHOD
+    // FRAMEWORK PLUGIN INTERFACE IMPLEMENTATION
+    // ============================================================================
+    getFrameworkOptions() {
+        return ['nextjs', 'react', 'typescript'];
+    }
+    getBuildOptions() {
+        return ['webpack', 'turbopack', 'swc'];
+    }
+    getDeploymentOptions() {
+        return ['vercel', 'netlify', 'aws', 'docker'];
+    }
+    // ============================================================================
+    // PLUGIN INSTALLATION
     // ============================================================================
     async install(context) {
         const startTime = Date.now();
-        const config = context.pluginConfig;
         try {
-            // 1. Generate all file contents
+            // Initialize path resolver
+            this.initializePathResolver(context);
+            // Get configuration from context
+            const config = context.pluginConfig;
+            // Validate configuration
+            const validation = this.validateConfiguration(config);
+            if (!validation.valid) {
+                return this.createErrorResult('Configuration validation failed', validation.errors, startTime);
+            }
+            // Install dependencies
+            const dependencies = this.getDependencies();
+            const devDependencies = this.getDevDependencies();
+            await this.installDependencies(dependencies, devDependencies);
+            // Generate files
             const allFiles = this.generator.generateAllFiles(config);
-            // 2. Use BasePlugin methods to write files
             for (const file of allFiles) {
                 const filePath = this.pathResolver.getConfigPath(file.path);
                 await this.generateFile(filePath, file.content);
             }
-            // 3. Add dependencies
-            await this.installDependencies(['next', 'react', 'react-dom'], ['@types/node', '@types/react', '@types/react-dom', 'eslint', 'eslint-config-next', 'tailwindcss', 'autoprefixer', 'postcss']);
-            // 4. Add scripts
+            // Add scripts
             const scripts = this.generator.generateScripts(config);
             await this.addScripts(scripts);
-            return this.createSuccessResult([], [], [], [], [], startTime);
+            return this.createSuccessResult([
+                { type: 'config', path: 'next.config.js', description: 'Next.js configuration' },
+                { type: 'config', path: 'tsconfig.json', description: 'TypeScript configuration' },
+                { type: 'config', path: 'tailwind.config.js', description: 'Tailwind CSS configuration' },
+                { type: 'interface', path: this.pathResolver.getUnifiedInterfacePath('framework'), description: 'Unified framework interface' }
+            ], dependencies, Object.keys(scripts), [], validation.warnings, startTime);
         }
         catch (error) {
-            return this.createErrorResult('Next.js installation failed', [error], startTime);
+            return this.createErrorResult('Next.js plugin installation failed', [error], startTime);
         }
+    }
+    // ============================================================================
+    // DEPENDENCIES AND CONFIGURATION
+    // ============================================================================
+    getDependencies() {
+        return ['next', 'react', 'react-dom'];
+    }
+    getDevDependencies() {
+        return [
+            '@types/node',
+            '@types/react',
+            '@types/react-dom',
+            'eslint',
+            'eslint-config-next',
+            'tailwindcss',
+            'autoprefixer',
+            'postcss'
+        ];
+    }
+    getCompatibility() {
+        return {
+            frameworks: ['react'],
+            platforms: ['node', 'browser'],
+            nodeVersions: ['>=16.0.0'],
+            packageManagers: ['npm', 'yarn', 'pnpm'],
+            conflicts: ['gatsby', 'nuxt', 'sveltekit']
+        };
+    }
+    getConflicts() {
+        return ['gatsby', 'nuxt', 'sveltekit'];
+    }
+    getRequirements() {
+        return [
+            { type: 'node', version: '>=16.0.0' },
+            { type: 'package-manager', name: 'npm, yarn, or pnpm' }
+        ];
+    }
+    getDefaultConfig() {
+        return {
+            router: 'app',
+            typescript: true,
+            tailwind: true,
+            eslint: true
+        };
+    }
+    getConfigSchema() {
+        return {
+            type: 'object',
+            properties: {
+                router: { type: 'string', enum: ['app', 'pages'] },
+                typescript: { type: 'boolean' },
+                tailwind: { type: 'boolean' },
+                eslint: { type: 'boolean' }
+            },
+            required: ['router']
+        };
     }
 }
 //# sourceMappingURL=NextJSPlugin.js.map

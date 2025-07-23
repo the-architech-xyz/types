@@ -1,33 +1,35 @@
 /**
- * Shadcn/ui Code Generator
+ * Shadcn/UI Code Generator
  *
- * Handles all code generation for Shadcn/ui design system integration.
- * Based on: https://ui.shadcn.com/docs/installation
+ * Handles all code generation for Shadcn/UI library integration.
+ * Based on: https://ui.shadcn.com/
  */
+import { ComponentOption } from '../../../../types/core.js';
 export class ShadcnUIGenerator {
     generateAllFiles(config) {
-        const files = [
-            this.generateTailwindConfig(config),
-            this.generateCSSVariables(config),
-            this.generateUtilsFile(),
-            this.generateComponentsJson(config),
-            this.generateUnifiedIndex(),
-        ];
-        // Add selected components
-        if (config.components.list) {
-            for (const component of config.components.list) {
-                // Correctly format the component name to match the method name (e.g., 'button' -> 'generateButtonComponent')
-                const methodName = `generate${component.charAt(0).toUpperCase() + component.slice(1)}Component`;
+        const files = [];
+        // Generate theme config
+        files.push(this.generateTailwindConfig(config));
+        files.push(this.generateCSSVariables(config));
+        files.push(this.generateUtilsFile());
+        files.push(this.generateComponentsJson(config));
+        files.push(this.generateUnifiedIndex(config));
+        // Generate component files based on selected components
+        const components = config.components || [];
+        if (components.length > 0) {
+            for (const component of components) {
+                const componentName = this.getComponentName(component);
+                const methodName = `generate${componentName}Component`;
                 const generatorMethod = this[methodName];
                 if (typeof generatorMethod === 'function') {
-                    files.push(generatorMethod.call(this));
+                    files.push(generatorMethod.call(this, config));
                 }
             }
         }
         return files;
     }
     generateTailwindConfig(config) {
-        const enableAnimations = config.features.animations;
+        const enableAnimations = true; // Default to true for Shadcn/UI
         const content = `import type { Config } from 'tailwindcss';
 
 const config: Config = {
@@ -193,7 +195,34 @@ export function cn(...inputs: ClassValue[]) {
         }, null, 2);
         return { path: 'components.json', content };
     }
-    generateButtonComponent() {
+    generateComponentExports(config) {
+        const components = config.components || [];
+        const exports = [];
+        if (components.length > 0) {
+            for (const component of components) {
+                const componentName = this.getComponentName(component);
+                exports.push(`export { ${componentName} } from './${componentName.toLowerCase()}.js';`);
+            }
+        }
+        return exports.join('\n');
+    }
+    getComponentName(component) {
+        const names = {
+            [ComponentOption.BUTTON]: 'Button',
+            [ComponentOption.CARD]: 'Card',
+            [ComponentOption.INPUT]: 'Input',
+            [ComponentOption.FORM]: 'Form',
+            [ComponentOption.MODAL]: 'Modal',
+            [ComponentOption.TABLE]: 'Table',
+            [ComponentOption.NAVIGATION]: 'Navigation',
+            [ComponentOption.BADGE]: 'Badge',
+            [ComponentOption.AVATAR]: 'Avatar',
+            [ComponentOption.ALERT]: 'Alert'
+        };
+        return names[component] || component;
+    }
+    generateButtonComponent(config) {
+        const enableAnimations = true; // Default to true for Shadcn/UI
         const content = `import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -336,7 +365,7 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 `;
         return { path: 'components/card.tsx', content };
     }
-    generateUnifiedIndex() {
+    generateUnifiedIndex(config) {
         const content = `/**
  * Unified UI Interface - Shadcn/ui Implementation
  * 

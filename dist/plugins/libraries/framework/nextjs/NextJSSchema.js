@@ -1,22 +1,60 @@
+/**
+ * Next.js Schema Definitions
+ *
+ * Contains all configuration schemas and parameter definitions for the Next.js plugin.
+ * Based on: https://nextjs.org/
+ */
 import { PluginCategory } from '../../../../types/plugins.js';
+import { FrameworkOption, BuildOption, DeploymentOption } from '../../../../types/core.js';
 export class NextJSSchema {
     static getParameterSchema() {
         return {
             category: PluginCategory.FRAMEWORK,
             groups: [
-                { id: 'core', name: 'Core Framework', description: 'Configure the main Next.js settings.', order: 1, parameters: ['typescript', 'appRouter', 'srcDir'] },
-                { id: 'styling', name: 'Styling & UI', description: 'Configure styling and UI options.', order: 2, parameters: ['tailwind', 'importAlias'] },
-                { id: 'development', name: 'Development Tools', description: 'Configure development and linting tools.', order: 3, parameters: ['eslint', 'skipInstall'] },
+                { id: 'framework', name: 'Framework Configuration', description: 'Configure the Next.js framework.', order: 1, parameters: ['framework'] },
+                { id: 'build', name: 'Build Configuration', description: 'Configure the build process.', order: 2, parameters: ['buildTool'] },
+                { id: 'deployment', name: 'Deployment Configuration', description: 'Configure deployment options.', order: 3, parameters: ['deploymentTarget'] },
+                { id: 'features', name: 'Features', description: 'Enable additional features.', order: 4, parameters: ['appRouter', 'importAlias', 'typescript', 'eslint', 'tailwind'] },
             ],
             parameters: [
                 {
-                    id: 'typescript',
-                    name: 'TypeScript',
-                    type: 'boolean',
-                    description: 'Enable TypeScript support for better type safety.',
+                    id: 'framework',
+                    name: 'Framework',
+                    type: 'select',
+                    description: 'Select the framework to use.',
                     required: true,
-                    default: true,
-                    group: 'core'
+                    default: FrameworkOption.NEXTJS,
+                    options: [
+                        { value: FrameworkOption.NEXTJS, label: 'Next.js', description: 'React framework for production' }
+                    ],
+                    group: 'framework'
+                },
+                {
+                    id: 'buildTool',
+                    name: 'Build Tool',
+                    type: 'select',
+                    description: 'Select the build tool to use.',
+                    required: true,
+                    default: BuildOption.WEBPACK,
+                    options: [
+                        { value: BuildOption.WEBPACK, label: 'Webpack', description: 'Default Next.js bundler' },
+                        { value: BuildOption.TURBOPACK, label: 'Turbopack', description: 'Next.js new bundler (experimental)' }
+                    ],
+                    group: 'build'
+                },
+                {
+                    id: 'deploymentTarget',
+                    name: 'Deployment Target',
+                    type: 'select',
+                    description: 'Select the deployment target.',
+                    required: true,
+                    default: DeploymentOption.SSR,
+                    options: [
+                        { value: DeploymentOption.SSR, label: 'Vercel', description: 'Next.js creator platform' },
+                        { value: DeploymentOption.SERVERLESS, label: 'Railway', description: 'Modern deployment platform' },
+                        { value: DeploymentOption.STATIC, label: 'Netlify', description: 'Static site hosting' }
+                    ],
+                    group: 'deployment'
                 },
                 {
                     id: 'appRouter',
@@ -25,52 +63,43 @@ export class NextJSSchema {
                     description: 'Use the new App Router (recommended for new projects).',
                     required: true,
                     default: true,
-                    group: 'core'
-                },
-                {
-                    id: 'srcDir',
-                    name: 'Source Directory',
-                    type: 'boolean',
-                    description: 'Use src/ directory for better organization.',
-                    required: true,
-                    default: true,
-                    group: 'core'
-                },
-                {
-                    id: 'tailwind',
-                    name: 'Tailwind CSS',
-                    type: 'boolean',
-                    description: 'Include Tailwind CSS for utility-first styling.',
-                    required: true,
-                    default: true,
-                    group: 'styling'
+                    group: 'features'
                 },
                 {
                     id: 'importAlias',
                     name: 'Import Alias',
-                    type: 'string',
-                    description: 'Configure import alias for cleaner imports (e.g., @/*).',
-                    required: false,
-                    default: '@/*',
-                    group: 'styling'
+                    type: 'boolean',
+                    description: 'Enable import alias (@/ for src directory).',
+                    required: true,
+                    default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'typescript',
+                    name: 'TypeScript',
+                    type: 'boolean',
+                    description: 'Enable TypeScript support.',
+                    required: true,
+                    default: true,
+                    group: 'features'
                 },
                 {
                     id: 'eslint',
                     name: 'ESLint',
                     type: 'boolean',
-                    description: 'Include ESLint for code linting and quality.',
+                    description: 'Enable ESLint for code linting.',
                     required: true,
                     default: true,
-                    group: 'development'
+                    group: 'features'
                 },
                 {
-                    id: 'skipInstall',
-                    name: 'Skip Installation',
+                    id: 'tailwind',
+                    name: 'Tailwind CSS',
                     type: 'boolean',
-                    description: 'Skip automatic dependency installation.',
+                    description: 'Enable Tailwind CSS for styling.',
                     required: true,
-                    default: false,
-                    group: 'development'
+                    default: true,
+                    group: 'features'
                 }
             ],
             dependencies: [],
@@ -78,22 +107,13 @@ export class NextJSSchema {
         };
     }
     static getFrameworkOptions() {
-        return [
-            { name: 'Next.js', value: 'nextjs', label: 'Next.js', description: 'React framework for production' }
-        ];
+        return [FrameworkOption.NEXTJS];
     }
     static getBuildOptions() {
-        return [
-            { name: 'Webpack', value: 'webpack', label: 'Webpack', description: 'Default Next.js bundler' },
-            { name: 'Turbopack', value: 'turbopack', label: 'Turbopack', description: 'Next.js new bundler (experimental)' }
-        ];
+        return [BuildOption.WEBPACK, BuildOption.TURBOPACK];
     }
     static getDeploymentOptions() {
-        return [
-            { name: 'Vercel', value: 'vercel', label: 'Vercel', description: 'Next.js creator platform' },
-            { name: 'Railway', value: 'railway', label: 'Railway', description: 'Modern deployment platform' },
-            { name: 'Netlify', value: 'netlify', label: 'Netlify', description: 'Static site hosting' }
-        ];
+        return [DeploymentOption.SSR, DeploymentOption.SERVERLESS, DeploymentOption.STATIC];
     }
 }
 //# sourceMappingURL=NextJSSchema.js.map

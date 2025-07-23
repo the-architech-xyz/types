@@ -9,27 +9,32 @@
  * - https://chakra-ui.com/docs/components
  * - https://chakra-ui.com/docs/theming
  */
-import { IPlugin, PluginMetadata, ValidationResult, PluginContext, PluginResult, CompatibilityMatrix, ConfigSchema, PluginRequirement } from '../../../../types/plugins.js';
-export declare class ChakraUIPlugin implements IPlugin {
-    private templateService;
-    private runner;
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, IUIPlugin, UnifiedInterfaceTemplate, ValidationResult } from '../../../../types/plugins.js';
+export declare class ChakraUIPlugin extends BasePlugin implements IUIPlugin {
     constructor();
     getMetadata(): PluginMetadata;
     install(context: PluginContext): Promise<PluginResult>;
     uninstall(context: PluginContext): Promise<PluginResult>;
     update(context: PluginContext): Promise<PluginResult>;
     validate(context: PluginContext): Promise<ValidationResult>;
-    getCompatibility(): CompatibilityMatrix;
+    getCompatibility(): any;
     getDependencies(): string[];
     getConflicts(): string[];
-    getRequirements(): PluginRequirement[];
+    getRequirements(): any[];
     getDefaultConfig(): Record<string, any>;
-    getConfigSchema(): ConfigSchema;
-    private installDependencies;
+    getConfigSchema(): any;
+    getParameterSchema(): any;
+    validateConfiguration(config: Record<string, any>): ValidationResult;
+    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
+    getUILibraries(): string[];
+    getComponentOptions(): string[];
+    getThemeOptions(): string[];
+    getStylingOptions(): string[];
+    private installChakraDependencies;
     private createThemeConfiguration;
     private createProviderSetup;
     private createComponentExamples;
     private addEnvironmentConfig;
     private generateUnifiedInterfaceFiles;
-    private createErrorResult;
 }

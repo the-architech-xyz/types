@@ -204,6 +204,9 @@ export interface IEnhancedPlugin extends IPlugin {
   // Dynamic parameter definition
   getParameterSchema(): ParameterSchema;
   
+  // Dynamic question generation - simplified (returns empty array by default)
+  getDynamicQuestions(context: PluginContext): Question[];
+  
   // Configuration validation
   validateConfiguration(config: Record<string, any>): ValidationResult;
   

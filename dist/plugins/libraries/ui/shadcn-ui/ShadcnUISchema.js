@@ -1,94 +1,72 @@
 /**
- * Shadcn/ui Schema Definitions
+ * Shadcn/UI Schema Definitions
  *
- * Contains all configuration schemas and parameter definitions for the Shadcn/ui plugin.
- * Based on: https://ui.shadcn.com/docs/installation
+ * Contains all configuration schemas and parameter definitions for the Shadcn/UI plugin.
+ * Based on: https://ui.shadcn.com/
  */
-import { ComponentOption, ThemeOption } from '../../../../types/plugins.js';
 import { PluginCategory } from '../../../../types/plugins.js';
+import { UI_LIBRARIES, ComponentOption, ThemeOption } from '../../../../types/core.js';
 export class ShadcnUISchema {
     static getParameterSchema() {
         return {
-            category: PluginCategory.DESIGN_SYSTEM,
+            category: PluginCategory.UI_LIBRARY,
             groups: [
-                { id: 'styling', name: 'Styling & Theme', description: 'Configure the look and feel of your application.', order: 1, parameters: ['style', 'baseColor', 'themeMode', 'cssVariables'] },
-                { id: 'components', name: 'Default Components', description: 'Select the initial set of UI components to install.', order: 2, parameters: ['components'] },
-                { id: 'features', name: 'Advanced Features', description: 'Enable extra functionality for your UI.', order: 3, parameters: ['enableAnimations'] },
+                { id: 'theme', name: 'Theme Configuration', description: 'Configure the theme and styling.', order: 1, parameters: ['theme'] },
+                { id: 'components', name: 'Component Selection', description: 'Select which components to include.', order: 2, parameters: ['components'] },
+                { id: 'features', name: 'Additional Features', description: 'Enable additional Shadcn/UI features.', order: 3, parameters: ['enableAnimations', 'enableRTL'] },
             ],
             parameters: [
                 {
-                    id: 'library',
-                    name: 'UI Library',
-                    type: 'select',
-                    description: 'The core UI library to use.',
-                    required: true,
-                    default: UILibrary.SHADCN_UI,
-                    options: [{ value: UILibrary.SHADCN_UI, label: 'Shadcn/UI', recommended: true }],
-                    group: 'styling'
-                },
-                {
-                    id: 'style',
-                    name: 'Style',
-                    type: 'select',
-                    description: 'Choose between the default and New York styles.',
-                    required: true,
-                    default: 'default',
-                    options: [
-                        { value: 'default', label: 'Default', description: 'The default, more rounded style.' },
-                        { value: 'new-york', label: 'New York', description: 'A more squared, modern style.' }
-                    ],
-                    group: 'styling'
-                },
-                {
-                    id: 'baseColor',
-                    name: 'Base Color',
-                    type: 'select',
-                    description: 'The base color used for generating the color palette.',
-                    required: true,
-                    default: 'slate',
-                    options: ['slate', 'gray', 'zinc', 'neutral', 'stone'].map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })),
-                    group: 'styling'
-                },
-                {
-                    id: 'themeMode',
+                    id: 'theme',
                     name: 'Theme Mode',
                     type: 'select',
-                    description: 'Configure light/dark mode support.',
+                    description: 'Choose the theme mode for your application.',
                     required: true,
-                    default: ThemeOption.SYSTEM,
+                    default: ThemeOption.LIGHT,
                     options: [
-                        { value: ThemeOption.LIGHT, label: 'Light Only' },
-                        { value: ThemeOption.DARK, label: 'Dark Only' },
-                        { value: ThemeOption.SYSTEM, label: 'Light & Dark (System)' }
+                        { value: ThemeOption.LIGHT, label: 'Light', description: 'Light theme' },
+                        { value: ThemeOption.DARK, label: 'Dark', description: 'Dark theme' },
+                        { value: ThemeOption.SYSTEM, label: 'System', description: 'Follow system preference' }
                     ],
-                    group: 'styling'
-                },
-                {
-                    id: 'cssVariables',
-                    name: 'Use CSS Variables',
-                    type: 'boolean',
-                    description: 'Use CSS variables for theming instead of Tailwind utility classes.',
-                    required: true,
-                    default: true,
-                    group: 'styling'
+                    group: 'theme'
                 },
                 {
                     id: 'components',
-                    name: 'Default Components',
+                    name: 'Components',
                     type: 'multiselect',
-                    description: 'Select the components you want to install by default.',
-                    required: false,
-                    default: [ComponentOption.BUTTON, ComponentOption.CARD],
-                    options: Object.values(ComponentOption).map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) })),
+                    description: 'Select the Shadcn/UI components to include in your project.',
+                    required: true,
+                    default: [ComponentOption.BUTTON, ComponentOption.CARD, ComponentOption.INPUT, ComponentOption.FORM, ComponentOption.MODAL, ComponentOption.NAVIGATION, ComponentOption.TABLE, ComponentOption.BADGE, ComponentOption.AVATAR, ComponentOption.ALERT],
+                    options: [
+                        { value: ComponentOption.BUTTON, label: 'Button', description: 'Button components' },
+                        { value: ComponentOption.INPUT, label: 'Input', description: 'Input and form field components' },
+                        { value: ComponentOption.CARD, label: 'Card', description: 'Card and container components' },
+                        { value: ComponentOption.FORM, label: 'Form', description: 'Form components and validation' },
+                        { value: ComponentOption.MODAL, label: 'Modal', description: 'Modal and dialog components' },
+                        { value: ComponentOption.TABLE, label: 'Table', description: 'Data table components' },
+                        { value: ComponentOption.NAVIGATION, label: 'Navigation', description: 'Navigation and menu components' },
+                        { value: ComponentOption.BADGE, label: 'Badge', description: 'Badge and notification components' },
+                        { value: ComponentOption.AVATAR, label: 'Avatar', description: 'Avatar and profile components' },
+                        { value: ComponentOption.ALERT, label: 'Alert', description: 'Alert and notification components' }
+                    ],
                     group: 'components'
                 },
                 {
                     id: 'enableAnimations',
                     name: 'Enable Animations',
                     type: 'boolean',
-                    description: 'Include `tailwindcss-animate` for animations.',
+                    description: 'Enable Shadcn/UI animations and transitions.',
                     required: true,
                     default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'enableRTL',
+                    name: 'Enable RTL Support',
+                    type: 'boolean',
+                    description: 'Enable right-to-left language support.',
+                    required: true,
+                    default: false,
                     group: 'features'
                 }
             ],
@@ -97,10 +75,24 @@ export class ShadcnUISchema {
         };
     }
     static getUILibraries() {
-        return [UILibrary.SHADCN_UI];
+        return [UI_LIBRARIES.SHADCN_UI];
     }
     static getComponentOptions() {
-        return Object.values(ComponentOption);
+        return [
+            ComponentOption.BUTTON,
+            ComponentOption.INPUT,
+            ComponentOption.CARD,
+            ComponentOption.FORM,
+            ComponentOption.MODAL,
+            ComponentOption.TABLE,
+            ComponentOption.NAVIGATION,
+            ComponentOption.BADGE,
+            ComponentOption.AVATAR,
+            ComponentOption.ALERT
+        ];
+    }
+    static getThemeOptions() {
+        return [ThemeOption.LIGHT, ThemeOption.DARK, ThemeOption.SYSTEM];
     }
 }
 //# sourceMappingURL=ShadcnUISchema.js.map

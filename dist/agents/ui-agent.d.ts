@@ -12,6 +12,7 @@ export declare class UIAgent extends AbstractAgent {
     protected getAgentCapabilities(): AgentCapability[];
     protected executeInternal(context: AgentContext): Promise<AgentResult>;
     validate(context: AgentContext): Promise<ValidationResult>;
+    private isExpertMode;
     private selectUIPlugin;
     private selectUIPluginExpertMode;
     private getUIConfig;

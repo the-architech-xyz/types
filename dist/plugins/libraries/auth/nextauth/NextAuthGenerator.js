@@ -4,6 +4,7 @@
  * Handles all code generation for NextAuth authentication integration.
  * Based on: https://next-auth.js.org/configuration
  */
+import { AUTH_PROVIDERS } from '../../../../types/core.js';
 export class NextAuthGenerator {
     generateAllFiles(config) {
         return [
@@ -17,8 +18,8 @@ export class NextAuthGenerator {
     }
     generateAuthConfig(config) {
         const providers = config.providers || [];
-        const sessionDuration = config.session.duration || 30 * 24 * 60 * 60;
-        const sessionStrategy = config.session.strategy || 'jwt';
+        const sessionDuration = 30 * 24 * 60 * 60; // Default 30 days
+        const sessionStrategy = config.session === 'database' ? 'database' : 'jwt';
         const content = `import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
@@ -38,7 +39,7 @@ export const authOptions = {
   providers: [
     ${providers.map(provider => {
             switch (provider) {
-                case 'credentials':
+                case AUTH_PROVIDERS.EMAIL:
                     return `CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -75,12 +76,12 @@ export const authOptions = {
         };
       }
     })`;
-                case 'google':
+                case AUTH_PROVIDERS.GOOGLE:
                     return `GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     })`;
-                case 'github':
+                case AUTH_PROVIDERS.GITHUB:
                     return `GitHubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
@@ -472,11 +473,11 @@ model VerificationToken {
         envVars['NEXTAUTH_SECRET'] = Math.random().toString(36).substring(2, 15);
         envVars['NEXTAUTH_URL'] = "http://localhost:3000";
         envVars['DATABASE_URL'] = config.databaseUrl; // Placeholder
-        if (providers.includes(AuthProvider.GOOGLE)) {
+        if (providers.includes(AUTH_PROVIDERS.GOOGLE)) {
             envVars['GOOGLE_CLIENT_ID'] = "your-google-client-id";
             envVars['GOOGLE_CLIENT_SECRET'] = "your-google-client-secret";
         }
-        if (providers.includes(AuthProvider.GITHUB)) {
+        if (providers.includes(AUTH_PROVIDERS.GITHUB)) {
             envVars['GITHUB_CLIENT_ID'] = "your-github-client-id";
             envVars['GITHUB_CLIENT_SECRET'] = "your-github-client-secret";
         }

@@ -10,22 +10,36 @@
  * - https://www.prisma.io/docs/concepts/components/prisma-client
  * - https://www.prisma.io/docs/guides/performance-and-optimization
  */
-import { BaseDatabasePlugin } from '../../../base/index.js';
-import { PluginContext, PluginResult, PluginMetadata } from '../../../../types/plugins.js';
-import { DatabaseProvider, ORMOption, DatabaseFeature, ParameterSchema, UnifiedInterfaceTemplate, ConnectionOption } from '../../../../types/plugins.js';
-export declare class PrismaPlugin extends BaseDatabasePlugin {
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginContext, PluginResult, PluginMetadata, IUIDatabasePlugin, UnifiedInterfaceTemplate, ValidationResult } from '../../../../types/plugins.js';
+export declare class PrismaPlugin extends BasePlugin implements IUIDatabasePlugin {
     private generator;
     constructor();
     getMetadata(): PluginMetadata;
-    getParameterSchema(): ParameterSchema;
-    getDatabaseProviders(): DatabaseProvider[];
-    getORMOptions(): ORMOption[];
-    getDatabaseFeatures(): DatabaseFeature[];
-    getConnectionOptions(provider: DatabaseProvider): ConnectionOption[];
-    getProviderLabel(provider: DatabaseProvider): string;
-    getProviderDescription(provider: DatabaseProvider): string;
-    getFeatureLabel(feature: DatabaseFeature): string;
-    getFeatureDescription(feature: DatabaseFeature): string;
-    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
     install(context: PluginContext): Promise<PluginResult>;
+    uninstall(context: PluginContext): Promise<PluginResult>;
+    update(context: PluginContext): Promise<PluginResult>;
+    validate(context: PluginContext): Promise<ValidationResult>;
+    getCompatibility(): any;
+    getDependencies(): string[];
+    getConflicts(): string[];
+    getRequirements(): any[];
+    getDefaultConfig(): Record<string, any>;
+    getConfigSchema(): any;
+    getParameterSchema(): any;
+    validateConfiguration(config: Record<string, any>): ValidationResult;
+    generateUnifiedInterface(config: Record<string, any>): UnifiedInterfaceTemplate;
+    getDatabaseProviders(): string[];
+    getORMOptions(): string[];
+    getDatabaseFeatures(): string[];
+    getConnectionOptions(): string[];
+    getProviderLabel(provider: string): string;
+    getProviderDescription(provider: string): string;
+    getFeatureLabel(feature: string): string;
+    getFeatureDescription(feature: string): string;
+    private installPrismaDependencies;
+    private initializePrismaConfig;
+    private createDatabaseFiles;
+    private generateUnifiedInterfaceFiles;
+    private setupPrismaStudio;
 }

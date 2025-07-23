@@ -461,13 +461,20 @@ export type { PrismaClient } from '@prisma/client';
     }
     generateEnvConfig(config) {
         const envVars = {};
-        if ('connectionString' in config.connection) {
-            envVars['DATABASE_URL'] = config.connection.connectionString;
+        // Check if connection exists and has connectionString
+        if (config.connection && 'connectionString' in config.connection) {
+            const connectionString = config.connection.connectionString;
+            envVars['DATABASE_URL'] = connectionString;
         }
-        else if ('projectUrl' in config.connection) {
+        else if (config.connection && 'projectUrl' in config.connection) {
             // For providers like Supabase, we might construct a postgresql URL
             // This is a simplification; a real implementation might need more logic
-            envVars['DATABASE_URL'] = config.connection.projectUrl;
+            const projectUrl = config.connection.projectUrl;
+            envVars['DATABASE_URL'] = projectUrl;
+        }
+        // Fallback to direct connectionString if available
+        if (config.connectionString) {
+            envVars['DATABASE_URL'] = config.connectionString;
         }
         return envVars;
     }

@@ -2,9 +2,10 @@
  * NextAuth Schema Definitions
  *
  * Contains all configuration schemas and parameter definitions for the NextAuth plugin.
- * Based on: https://next-auth.js.org/configuration
+ * Based on: https://next-auth.js.org/
  */
-import { ParameterSchema, AuthProvider, AuthFeature } from '../../../../types/plugins.js';
+import { ParameterSchema } from '../../../../types/plugins.js';
+import { AuthProvider, AuthFeature } from '../../../../types/core.js';
 export interface ParameterValidationRule {
     type: 'required' | 'pattern' | 'min' | 'max' | 'minLength' | 'maxLength' | 'custom';
     value?: any;

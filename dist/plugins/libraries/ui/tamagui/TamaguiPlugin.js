@@ -5,11 +5,11 @@
  * Focuses only on technology setup and artifact generation.
  * No user interaction or business logic - that's handled by agents.
  */
-import { BaseUIPlugin } from '../../../base/index.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
 import { PluginCategory } from '../../../../types/plugins.js';
 import { TamaguiSchema } from './TamaguiSchema.js';
 import { TamaguiGenerator } from './TamaguiGenerator.js';
-export class TamaguiPlugin extends BaseUIPlugin {
+export class TamaguiPlugin extends BasePlugin {
     generator;
     constructor() {
         super();
@@ -31,79 +31,179 @@ export class TamaguiPlugin extends BaseUIPlugin {
         };
     }
     // ============================================================================
-    // ABSTRACT METHOD IMPLEMENTATIONS
+    // ENHANCED PLUGIN INTERFACE IMPLEMENTATION
     // ============================================================================
     getParameterSchema() {
         return TamaguiSchema.getParameterSchema();
     }
-    getUILibraries() {
-        return TamaguiSchema.getUILibraries();
-    }
-    getComponentOptions() {
-        return TamaguiSchema.getComponentOptions();
-    }
-    getThemeOptions() {
-        return TamaguiSchema.getThemeOptions();
-    }
-    getStylingOptions() {
-        return TamaguiSchema.getStylingOptions();
-    }
-    getLibraryLabel(library) {
-        switch (library) {
-            case UILibrary.TAMAGUI:
-                return 'Tamagui';
-            case UILibrary.SHADCN_UI:
-                return 'Shadcn/UI';
-            case UILibrary.CHAKRA_UI:
-                return 'Chakra UI';
-            case UILibrary.MUI:
-                return 'Material-UI (MUI)';
-            case UILibrary.ANT_DESIGN:
-                return 'Ant Design';
-            case UILibrary.RADIX_UI:
-                return 'Radix UI';
-            default:
-                return library;
+    validateConfiguration(config) {
+        const errors = [];
+        const warnings = [];
+        // Validate required fields
+        if (!config.components || config.components.length === 0) {
+            errors.push({
+                field: 'components',
+                message: 'At least one component is required',
+                code: 'MISSING_FIELD',
+                severity: 'error'
+            });
         }
+        // Validate platform configuration
+        if (config.platforms && !Array.isArray(config.platforms)) {
+            warnings.push('Platforms should be an array');
+        }
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings
+        };
     }
     generateUnifiedInterface(config) {
         return {
             category: PluginCategory.UI_LIBRARY,
-            exports: [], types: [], utilities: [], constants: [],
-            documentation: 'Tamagui universal UI kit integration',
+            exports: [
+                {
+                    name: 'Button',
+                    type: 'class',
+                    implementation: 'Tamagui Button component',
+                    documentation: 'Universal button component for web and native',
+                    examples: ['<Button>Click me</Button>']
+                },
+                {
+                    name: 'Text',
+                    type: 'class',
+                    implementation: 'Tamagui Text component',
+                    documentation: 'Universal text component for web and native',
+                    examples: ['<Text>Hello World</Text>']
+                }
+            ],
+            types: [
+                {
+                    name: 'TamaguiConfig',
+                    type: 'interface',
+                    definition: 'interface TamaguiConfig { themes: Record<string, any>; tokens: Record<string, any>; }',
+                    documentation: 'Tamagui configuration interface'
+                }
+            ],
+            utilities: [
+                {
+                    name: 'createTamagui',
+                    type: 'function',
+                    implementation: 'Create Tamagui configuration',
+                    documentation: 'Create Tamagui configuration for universal UI',
+                    parameters: [],
+                    returnType: 'TamaguiConfig',
+                    examples: ['const config = createTamagui({ themes, tokens })']
+                }
+            ],
+            constants: [
+                {
+                    name: 'tamaguiConfig',
+                    value: 'createTamagui(config)',
+                    documentation: 'Tamagui configuration instance',
+                    type: 'TamaguiConfig'
+                }
+            ],
+            documentation: 'Tamagui universal UI kit integration'
         };
     }
     // ============================================================================
-    // MAIN INSTALL METHOD
+    // UI PLUGIN INTERFACE IMPLEMENTATION
+    // ============================================================================
+    getUILibraries() {
+        return ['tamagui'];
+    }
+    getComponentOptions() {
+        return ['button', 'text', 'card', 'input', 'select', 'dialog', 'form', 'list'];
+    }
+    getThemeOptions() {
+        return ['light', 'dark', 'system'];
+    }
+    getStylingOptions() {
+        return ['tamagui', 'styled-components', 'css-modules'];
+    }
+    // ============================================================================
+    // PLUGIN INSTALLATION
     // ============================================================================
     async install(context) {
         const startTime = Date.now();
-        const config = context.pluginConfig;
         try {
-            // 1. Generate all file contents
-            const allFiles = this.generator.generateAllFiles(config);
-            // 2. Use BasePlugin methods to write files
-            for (const file of allFiles) {
-                if (file.path === 'tamagui.config.ts') {
-                    // Config file goes to root
-                    await this.generateFile(file.path, file.content);
-                }
-                else {
-                    // UI files go to lib/ui directory
-                    const filePath = this.pathResolver.getLibPath('ui', file.path.replace('src/lib/ui/', ''));
-                    await this.generateFile(filePath, file.content);
-                }
+            // Initialize path resolver
+            this.initializePathResolver(context);
+            // Get configuration from context
+            const config = context.pluginConfig;
+            // Validate configuration
+            const validation = this.validateConfiguration(config);
+            if (!validation.valid) {
+                return this.createErrorResult('Configuration validation failed', validation.errors, startTime);
             }
-            // 3. Add dependencies
-            await this.installDependencies(['tamagui', '@tamagui/core', '@tamagui/themes', '@tamagui/font-inter', '@tamagui/shorthands'], ['@tamagui/config', '@tamagui/animations-react-native']);
-            // 4. Add scripts
+            // Install dependencies
+            const dependencies = this.getDependencies();
+            const devDependencies = this.getDevDependencies();
+            await this.installDependencies(dependencies, devDependencies);
+            // Generate files
+            const allFiles = this.generator.generateAllFiles(config);
+            for (const file of allFiles) {
+                const filePath = this.pathResolver.getLibPath('ui', file.path.replace('src/lib/ui/', ''));
+                await this.generateFile(filePath, file.content);
+            }
+            // Add scripts
             const scripts = this.generator.generateScripts(config);
             await this.addScripts(scripts);
-            return this.createSuccessResult([], [], [], [], [], startTime);
+            return this.createSuccessResult([
+                { type: 'config', path: 'tamagui.config.ts', description: 'Tamagui configuration' },
+                { type: 'components', path: 'src/components/ui', description: 'Tamagui components' },
+                { type: 'interface', path: this.pathResolver.getUnifiedInterfacePath('ui'), description: 'Unified UI interface' }
+            ], dependencies, Object.keys(scripts), [], validation.warnings, startTime);
         }
         catch (error) {
-            return this.createErrorResult('Tamagui installation failed', [error], startTime);
+            return this.createErrorResult('Tamagui plugin installation failed', [error], startTime);
         }
+    }
+    // ============================================================================
+    // DEPENDENCIES AND CONFIGURATION
+    // ============================================================================
+    getDependencies() {
+        return ['tamagui', '@tamagui/core', '@tamagui/config'];
+    }
+    getDevDependencies() {
+        return ['@tamagui/babel-plugin', '@tamagui/vite-plugin'];
+    }
+    getCompatibility() {
+        return {
+            frameworks: ['nextjs', 'react', 'react-native'],
+            platforms: ['node', 'browser', 'mobile'],
+            nodeVersions: ['>=16.0.0'],
+            packageManagers: ['npm', 'yarn', 'pnpm'],
+            conflicts: ['shadcn-ui', 'mui', 'chakra-ui']
+        };
+    }
+    getConflicts() {
+        return ['shadcn-ui', 'mui', 'chakra-ui'];
+    }
+    getRequirements() {
+        return [
+            { type: 'framework', name: 'React or React Native' },
+            { type: 'node', version: '>=16.0.0' }
+        ];
+    }
+    getDefaultConfig() {
+        return {
+            components: ['button', 'text'],
+            platforms: ['web'],
+            theme: 'light'
+        };
+    }
+    getConfigSchema() {
+        return {
+            type: 'object',
+            properties: {
+                components: { type: 'array', items: { type: 'string' } },
+                platforms: { type: 'array', items: { type: 'string' } },
+                theme: { type: 'string', enum: ['light', 'dark', 'system'] }
+            },
+            required: ['components']
+        };
     }
 }
 //# sourceMappingURL=TamaguiPlugin.js.map

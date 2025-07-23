@@ -2,8 +2,8 @@ import { ComponentOption, ThemeOption } from '../../../../types/plugins.js';
 export class TamaguiGenerator {
     generateAllFiles(config) {
         return [
-            this.generateThemeConfig(config),
-            this.generateProviderSetup(config),
+            this.generateTamaguiConfig(config),
+            this.generateProviderComponent(config),
             this.generateUnifiedIndex(config),
             this.generateButtonComponent(config),
             this.generateCardComponent(config),
@@ -20,57 +20,46 @@ export class TamaguiGenerator {
             this.generateAlertComponent(config)
         ];
     }
-    generateThemeConfig(config) {
-        const content = `import { createTamagui, createTokens } from 'tamagui';
-import { createInterFont } from '@tamagui/font-inter';
-import { shorthands } from '@tamagui/shorthands';
-import { themes, tokens } from '@tamagui/themes';
-
-const interFont = createInterFont();
+    generateTamaguiConfig(config) {
+        const content = `import { createTamagui } from 'tamagui'
+import { createInterFont } from '@tamagui/font-inter'
+import { shorthands } from '@tamagui/shorthands'
+import { themes, tokens } from '@tamagui/themes'
 
 const config = createTamagui({
+  defaultTheme: '${config.theme || ThemeOption.LIGHT}',
+  shouldAddPrefersColorThemes: true,
+  themeClassNameOnRoot: true,
+  shorthands,
   fonts: {
-    heading: interFont,
-    body: interFont,
+    heading: createInterFont(),
+    body: createInterFont(),
   },
   themes,
   tokens,
-  shorthands,
-  defaultTheme: '${config.theme?.mode || ThemeOption.LIGHT}',
-  shouldAddPrefersColorThemes: ${config.enableColorMode || true},
-  animationDriver: ${config.enableAnimations !== false ? 'react-native' : 'css'},
-  rtl: ${config.enableRTL || false},
-  cssReset: ${config.enableCSSReset !== false},
-});
+})
 
-export type AppConfig = typeof config;
+export type AppConfig = typeof config
 
 declare module 'tamagui' {
   interface TamaguiCustomConfig extends AppConfig {}
 }
 
-export default config;
+export default config
 `;
         return { path: 'tamagui.config.ts', content };
     }
-    generateProviderSetup(config) {
-        const content = `import React from 'react';
-import { TamaguiProvider } from 'tamagui';
-import config from './tamagui.config';
+    generateProviderComponent(config) {
+        const content = `import { TamaguiProvider } from 'tamagui'
+import config from './tamagui.config'
 
-interface TamaguiProviderProps {
-  children: React.ReactNode;
-}
-
-export const TamaguiProviderWrapper: React.FC<TamaguiProviderProps> = ({ children }) => {
+export function TamaguiProviderWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <TamaguiProvider config={config} defaultTheme="${config.theme?.mode || ThemeOption.LIGHT}">
+    <TamaguiProvider config={config} defaultTheme="${config.theme || ThemeOption.LIGHT}">
       {children}
     </TamaguiProvider>
-  );
-};
-
-export default TamaguiProviderWrapper;
+  )
+}
 `;
         return { path: 'src/lib/ui/provider.tsx', content };
     }
@@ -82,14 +71,14 @@ export default TamaguiProviderWrapper;
  * making it easy to import and use components consistently across your application.
  */
 
-// Provider exports
-export { TamaguiProviderWrapper } from './provider.js';
+// Theme exports
+export { config as tamaguiConfig } from './tamagui.config.js';
 
 // Component exports
 ${this.generateComponentExports(config)}
 
 // Utility exports
-export { YStack, XStack, ZStack, HStack, VStack } from 'tamagui';
+export { Box, Container, Grid, Stack, Text } from 'tamagui';
 
 // Hook exports
 export { useTheme, useMedia } from 'tamagui';
@@ -97,9 +86,9 @@ export { useTheme, useMedia } from 'tamagui';
         return { path: 'src/lib/ui/index.ts', content };
     }
     generateComponentExports(config) {
-        const components = config.components?.list || [];
+        const components = config.components || [];
         const exports = [];
-        components.forEach(component => {
+        components.forEach((component) => {
             const componentName = this.getComponentName(component);
             exports.push(`export { ${componentName} } from './${componentName.toLowerCase()}.js';`);
         });
@@ -114,9 +103,6 @@ export { useTheme, useMedia } from 'tamagui';
             [ComponentOption.MODAL]: 'Modal',
             [ComponentOption.TABLE]: 'Table',
             [ComponentOption.NAVIGATION]: 'Navigation',
-            [ComponentOption.SELECT]: 'Select',
-            [ComponentOption.CHECKBOX]: 'Checkbox',
-            [ComponentOption.SWITCH]: 'Switch',
             [ComponentOption.BADGE]: 'Badge',
             [ComponentOption.AVATAR]: 'Avatar',
             [ComponentOption.ALERT]: 'Alert'
@@ -539,7 +525,7 @@ Alert.displayName = 'Alert';
     }
     generateEnvConfig(config) {
         return {
-            'TAMAGUI_THEME_MODE': config.theme?.mode || ThemeOption.LIGHT,
+            'TAMAGUI_THEME_MODE': config.theme || ThemeOption.LIGHT,
             'TAMAGUI_ENABLE_ANIMATIONS': config.enableAnimations !== false ? 'true' : 'false'
         };
     }

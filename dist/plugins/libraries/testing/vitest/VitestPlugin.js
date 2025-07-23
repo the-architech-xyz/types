@@ -1,8 +1,8 @@
-import { BaseTestingPlugin } from '../../../base/index.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
 import { PluginCategory } from '../../../../types/plugins.js';
 import { VitestSchema } from './VitestSchema.js';
 import { VitestGenerator } from './VitestGenerator.js';
-export class VitestPlugin extends BaseTestingPlugin {
+export class VitestPlugin extends BasePlugin {
     generator;
     constructor() {
         super();
@@ -24,61 +24,189 @@ export class VitestPlugin extends BaseTestingPlugin {
         };
     }
     // ============================================================================
-    // ABSTRACT METHOD IMPLEMENTATIONS
+    // ENHANCED PLUGIN INTERFACE IMPLEMENTATION
     // ============================================================================
     getParameterSchema() {
         return VitestSchema.getParameterSchema();
     }
-    getTestingFrameworks() {
-        return [TestingFramework.VITEST];
-    }
-    getTestTypes() {
-        return [
-            { name: 'Unit Tests', value: 'unit', description: 'Test individual functions and components' },
-            { name: 'Integration Tests', value: 'integration', description: 'Test how components work together' },
-            { name: 'E2E Tests', value: 'e2e', description: 'Test complete user workflows' }
-        ];
-    }
-    getCoverageOptions() {
-        return [
-            { name: 'Enable Coverage', value: true, description: 'Generate coverage reports', type: 'boolean' },
-            { name: 'Coverage Threshold', value: 80, description: 'Minimum coverage percentage', type: 'number' }
-        ];
+    validateConfiguration(config) {
+        const errors = [];
+        const warnings = [];
+        // Validate required fields
+        if (!config.testTypes || config.testTypes.length === 0) {
+            errors.push({
+                field: 'testTypes',
+                message: 'At least one test type is required',
+                code: 'MISSING_FIELD',
+                severity: 'error'
+            });
+        }
+        // Validate coverage threshold
+        if (config.coverage && config.coverageThreshold && (config.coverageThreshold < 0 || config.coverageThreshold > 100)) {
+            warnings.push('Coverage threshold should be between 0 and 100');
+        }
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings
+        };
     }
     generateUnifiedInterface(config) {
         return {
             category: PluginCategory.TESTING,
-            exports: [], types: [], utilities: [], constants: [],
-            documentation: 'Vitest testing framework integration',
+            exports: [
+                {
+                    name: 'describe',
+                    type: 'function',
+                    implementation: 'Test suite function',
+                    documentation: 'Define a test suite',
+                    examples: ['describe("MyComponent", () => {})']
+                },
+                {
+                    name: 'it',
+                    type: 'function',
+                    implementation: 'Test case function',
+                    documentation: 'Define a test case',
+                    examples: ['it("should render correctly", () => {})']
+                },
+                {
+                    name: 'expect',
+                    type: 'function',
+                    implementation: 'Assertion function',
+                    documentation: 'Make assertions in tests',
+                    examples: ['expect(element).toBeInTheDocument()']
+                }
+            ],
+            types: [
+                {
+                    name: 'TestConfig',
+                    type: 'interface',
+                    definition: 'interface TestConfig { coverage?: boolean; threshold?: number; }',
+                    documentation: 'Test configuration interface'
+                }
+            ],
+            utilities: [
+                {
+                    name: 'render',
+                    type: 'function',
+                    implementation: 'Component render utility',
+                    documentation: 'Render React components for testing',
+                    parameters: [],
+                    returnType: 'RenderResult',
+                    examples: ['const { getByText } = render(<MyComponent />)']
+                }
+            ],
+            constants: [
+                {
+                    name: 'TEST_TIMEOUT',
+                    value: '5000',
+                    documentation: 'Default test timeout in milliseconds',
+                    type: 'number'
+                }
+            ],
+            documentation: 'Vitest testing framework integration'
         };
     }
     // ============================================================================
-    // MAIN INSTALL METHOD
+    // TESTING PLUGIN INTERFACE IMPLEMENTATION
+    // ============================================================================
+    getTestingFrameworks() {
+        return ['vitest'];
+    }
+    getTestTypes() {
+        return ['unit', 'integration', 'e2e'];
+    }
+    getCoverageOptions() {
+        return ['coverage', 'threshold', 'reports'];
+    }
+    getEnvironmentOptions() {
+        return ['jsdom', 'node', 'happy-dom'];
+    }
+    // ============================================================================
+    // PLUGIN INSTALLATION
     // ============================================================================
     async install(context) {
         const startTime = Date.now();
-        const config = context.pluginConfig;
         try {
-            // 1. Generate all file contents
+            // Initialize path resolver
+            this.initializePathResolver(context);
+            // Get configuration from context
+            const config = context.pluginConfig;
+            // Validate configuration
+            const validation = this.validateConfiguration(config);
+            if (!validation.valid) {
+                return this.createErrorResult('Configuration validation failed', validation.errors, startTime);
+            }
+            // Install dependencies
+            const dependencies = this.getDependencies();
+            const devDependencies = this.getDevDependencies();
+            await this.installDependencies(dependencies, devDependencies);
+            // Generate files
             const allFiles = this.generator.generateAllFiles(config);
-            // 2. Use BasePlugin methods to write files
             for (const file of allFiles) {
                 const filePath = this.pathResolver.getConfigPath(file.path);
                 await this.generateFile(filePath, file.content);
             }
-            // 3. Add dependencies
-            await this.installDependencies(['vitest'], ['@vitest/ui', '@vitest/coverage-v8']);
-            // 4. Add scripts
+            // Add scripts
             await this.addScripts({
                 "test": "vitest",
                 "test:ui": "vitest --ui",
                 "test:coverage": "vitest --coverage"
             });
-            return this.createSuccessResult([], [], [], [], [], startTime);
+            return this.createSuccessResult([
+                { type: 'config', path: 'vitest.config.ts', description: 'Vitest configuration' },
+                { type: 'config', path: 'coverage.config.js', description: 'Coverage configuration' },
+                { type: 'interface', path: this.pathResolver.getUnifiedInterfacePath('testing'), description: 'Unified testing interface' }
+            ], dependencies, ['test', 'test:ui', 'test:coverage'], [], validation.warnings, startTime);
         }
         catch (error) {
-            return this.createErrorResult('Vitest installation failed', [error], startTime);
+            return this.createErrorResult('Vitest plugin installation failed', [error], startTime);
         }
+    }
+    // ============================================================================
+    // DEPENDENCIES AND CONFIGURATION
+    // ============================================================================
+    getDependencies() {
+        return ['vitest'];
+    }
+    getDevDependencies() {
+        return ['@vitest/ui', '@vitest/coverage-v8', '@testing-library/react', '@testing-library/jest-dom'];
+    }
+    getCompatibility() {
+        return {
+            frameworks: ['react', 'vue', 'svelte', 'nextjs'],
+            platforms: ['node', 'browser'],
+            nodeVersions: ['>=16.0.0'],
+            packageManagers: ['npm', 'yarn', 'pnpm'],
+            conflicts: ['jest', 'mocha']
+        };
+    }
+    getConflicts() {
+        return ['jest', 'mocha'];
+    }
+    getRequirements() {
+        return [
+            { type: 'node', version: '>=16.0.0' },
+            { type: 'framework', name: 'React, Vue, or Svelte' }
+        ];
+    }
+    getDefaultConfig() {
+        return {
+            testTypes: ['unit'],
+            coverage: true,
+            coverageThreshold: 80
+        };
+    }
+    getConfigSchema() {
+        return {
+            type: 'object',
+            properties: {
+                testTypes: { type: 'array', items: { type: 'string' } },
+                coverage: { type: 'boolean' },
+                coverageThreshold: { type: 'number' }
+            },
+            required: ['testTypes']
+        };
     }
 }
 //# sourceMappingURL=VitestPlugin.js.map

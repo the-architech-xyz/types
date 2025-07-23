@@ -5,19 +5,15 @@
  * Focuses only on database connection and configuration.
  * ORM functionality is handled by separate ORM plugins.
  */
-import { PluginCategory, TargetPlatform } from '../../../../types/plugins.js';
-import { templateService } from '../../../../core/templates/template-service.js';
-import { CommandRunner } from '../../../../core/cli/command-runner.js';
-import * as path from 'path';
-import fsExtra from 'fs-extra';
-import { NeonConfigSchema, NeonDefaultConfig } from './NeonSchema.js';
+import { BasePlugin } from '../../../base/BasePlugin.js';
+import { PluginCategory } from '../../../../types/plugins.js';
+import { NeonConfigSchema } from './NeonSchema.js';
 import { NeonGenerator } from './NeonGenerator.js';
-export class NeonPlugin {
-    templateService;
-    runner;
+export class NeonPlugin extends BasePlugin {
+    generator;
     constructor() {
-        this.templateService = templateService;
-        this.runner = new CommandRunner();
+        super();
+        // Generator will be initialized in install method when pathResolver is available
     }
     // ============================================================================
     // PLUGIN METADATA
@@ -38,318 +34,320 @@ export class NeonPlugin {
         };
     }
     // ============================================================================
-    // PLUGIN LIFECYCLE - Pure Infrastructure Implementation
+    // ENHANCED PLUGIN INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getParameterSchema() {
+        return {
+            category: PluginCategory.DATABASE,
+            groups: [
+                { id: 'connection', name: 'Connection Settings', description: 'Configure Neon database connection.', order: 1, parameters: ['connectionString', 'host', 'port', 'username', 'password', 'database'] },
+                { id: 'features', name: 'Features', description: 'Enable Neon features.', order: 2, parameters: ['enableBranching', 'enableAutoscaling', 'enableServerless'] },
+                { id: 'performance', name: 'Performance', description: 'Configure performance settings.', order: 3, parameters: ['connectionPoolSize', 'connectionTimeout', 'queryTimeout'] }
+            ],
+            parameters: [
+                {
+                    id: 'connectionString',
+                    name: 'Connection String',
+                    type: 'string',
+                    description: 'Neon database connection string',
+                    required: true,
+                    group: 'connection'
+                },
+                {
+                    id: 'host',
+                    name: 'Host',
+                    type: 'string',
+                    description: 'Neon database host',
+                    required: false,
+                    group: 'connection'
+                },
+                {
+                    id: 'port',
+                    name: 'Port',
+                    type: 'number',
+                    description: 'Database port',
+                    required: false,
+                    default: 5432,
+                    group: 'connection'
+                },
+                {
+                    id: 'username',
+                    name: 'Username',
+                    type: 'string',
+                    description: 'Database username',
+                    required: false,
+                    group: 'connection'
+                },
+                {
+                    id: 'password',
+                    name: 'Password',
+                    type: 'string',
+                    description: 'Database password',
+                    required: false,
+                    group: 'connection'
+                },
+                {
+                    id: 'database',
+                    name: 'Database Name',
+                    type: 'string',
+                    description: 'Database name',
+                    required: false,
+                    group: 'connection'
+                },
+                {
+                    id: 'enableBranching',
+                    name: 'Enable Branching',
+                    type: 'boolean',
+                    description: 'Enable database branching',
+                    required: false,
+                    default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'enableAutoscaling',
+                    name: 'Enable Autoscaling',
+                    type: 'boolean',
+                    description: 'Enable automatic scaling',
+                    required: false,
+                    default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'enableServerless',
+                    name: 'Enable Serverless',
+                    type: 'boolean',
+                    description: 'Enable serverless mode',
+                    required: false,
+                    default: true,
+                    group: 'features'
+                },
+                {
+                    id: 'connectionPoolSize',
+                    name: 'Connection Pool Size',
+                    type: 'number',
+                    description: 'Connection pool size',
+                    required: false,
+                    default: 10,
+                    group: 'performance'
+                },
+                {
+                    id: 'connectionTimeout',
+                    name: 'Connection Timeout',
+                    type: 'number',
+                    description: 'Connection timeout in milliseconds',
+                    required: false,
+                    default: 10000,
+                    group: 'performance'
+                },
+                {
+                    id: 'queryTimeout',
+                    name: 'Query Timeout',
+                    type: 'number',
+                    description: 'Query timeout in milliseconds',
+                    required: false,
+                    default: 30000,
+                    group: 'performance'
+                }
+            ],
+            dependencies: [],
+            validations: []
+        };
+    }
+    validateConfiguration(config) {
+        const errors = [];
+        const warnings = [];
+        // Validate required fields
+        if (!config.connectionString && !config.host) {
+            errors.push({
+                field: 'connectionString',
+                message: 'Either connection string or host is required',
+                code: 'MISSING_FIELD',
+                severity: 'error'
+            });
+        }
+        // URL validation
+        if (config.connectionString && !config.connectionString.includes('neon.tech')) {
+            warnings.push('Connection string should be from Neon (neon.tech)');
+        }
+        return {
+            valid: errors.length === 0,
+            errors,
+            warnings
+        };
+    }
+    generateUnifiedInterface(config) {
+        return {
+            category: PluginCategory.DATABASE,
+            exports: [
+                {
+                    name: 'neon',
+                    type: 'class',
+                    implementation: 'Neon database client',
+                    documentation: 'Main Neon database client for PostgreSQL operations'
+                },
+                {
+                    name: 'db',
+                    type: 'constant',
+                    implementation: 'Database connection utilities',
+                    documentation: 'Database connection and utility functions'
+                },
+                {
+                    name: 'config',
+                    type: 'constant',
+                    implementation: 'Database configuration',
+                    documentation: 'Neon database configuration'
+                }
+            ],
+            types: [],
+            utilities: [],
+            constants: [],
+            documentation: 'Neon serverless PostgreSQL database integration'
+        };
+    }
+    // ============================================================================
+    // IUIDatabasePlugin INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getDatabaseProviders() {
+        return ['neon'];
+    }
+    getORMOptions() {
+        return ['drizzle', 'prisma', 'kysely'];
+    }
+    getDatabaseFeatures() {
+        return ['branching', 'autoscaling', 'serverless', 'connection-pooling'];
+    }
+    getConnectionOptions() {
+        return ['direct', 'pooled', 'serverless'];
+    }
+    getProviderLabel(provider) {
+        return 'Neon';
+    }
+    getProviderDescription(provider) {
+        return 'Serverless PostgreSQL with branching and autoscaling';
+    }
+    getFeatureLabel(feature) {
+        const labels = {
+            'branching': 'Database Branching',
+            'autoscaling': 'Auto Scaling',
+            'serverless': 'Serverless Mode',
+            'connection-pooling': 'Connection Pooling'
+        };
+        return labels[feature] || feature;
+    }
+    getFeatureDescription(feature) {
+        const descriptions = {
+            'branching': 'Create and manage database branches for development',
+            'autoscaling': 'Automatic scaling based on demand',
+            'serverless': 'Serverless PostgreSQL with pay-per-use pricing',
+            'connection-pooling': 'Efficient connection management'
+        };
+        return descriptions[feature] || feature;
+    }
+    // ============================================================================
+    // PLUGIN LIFECYCLE - Pure Technology Implementation
     // ============================================================================
     async install(context) {
         const startTime = Date.now();
         try {
-            const { projectPath, pluginConfig } = context;
-            context.logger.info('Setting up Neon PostgreSQL database...');
-            // Step 1: Install Neon CLI (optional, for management)
-            await this.installNeonCLI(context);
-            // Step 2: Create database configuration
-            await this.createDatabaseConfig(context);
-            // Step 3: Add environment configuration
-            await this.addEnvironmentConfig(context);
-            // Step 4: Generate unified interface files
-            await this.generateUnifiedInterfaceFiles(context);
+            const { projectName, projectPath, pluginConfig } = context;
+            context.logger.info('Installing Neon database infrastructure...');
+            // Initialize path resolver
+            this.initializePathResolver(context);
+            // Initialize generator
+            this.generator = new NeonGenerator();
+            // Validate configuration
+            const validation = this.validateConfiguration(pluginConfig);
+            if (!validation.valid) {
+                return this.createErrorResult('Invalid Neon configuration', validation.errors, startTime);
+            }
+            // Step 1: Install dependencies
+            await this.installDependencies(['@neondatabase/serverless', 'pg']);
+            // Step 2: Generate files using the generator
+            const neonConfig = NeonGenerator.generateNeonConfig(pluginConfig);
+            const envConfig = NeonGenerator.generateEnvConfig(pluginConfig);
+            // Step 3: Write files to project
+            await this.generateFile('src/lib/database/neon.ts', neonConfig);
+            await this.generateFile('.env.local', envConfig);
+            await this.generateFile('src/lib/database/index.ts', `export * from './neon.js';`);
             const duration = Date.now() - startTime;
-            return {
-                success: true,
-                artifacts: [
-                    {
-                        type: 'file',
-                        path: path.join(projectPath, 'src', 'lib', 'database', 'neon.ts')
-                    },
-                    {
-                        type: 'file',
-                        path: path.join(projectPath, 'neon.config.ts')
-                    }
-                ],
-                dependencies: [
-                    {
-                        name: '@neondatabase/serverless',
-                        version: '^1.0.1',
-                        type: 'production',
-                        category: PluginCategory.DATABASE
-                    },
-                    {
-                        name: 'pg',
-                        version: '^8.11.0',
-                        type: 'production',
-                        category: PluginCategory.DATABASE
-                    },
-                    {
-                        name: '@types/pg',
-                        version: '^8.10.0',
-                        type: 'development',
-                        category: PluginCategory.DATABASE
-                    }
-                ],
-                scripts: [
-                    {
-                        name: 'db:connect',
-                        command: 'node -e "require(\'./src/lib/database/neon.js\').databaseConnection.connect()"',
-                        description: 'Test database connection',
-                        category: 'custom'
-                    },
-                    {
-                        name: 'db:health',
-                        command: 'node -e "require(\'./src/lib/database/neon.js\').databaseConnection.healthCheck()"',
-                        description: 'Check database health',
-                        category: 'custom'
-                    },
-                    {
-                        name: 'db:migrate',
-                        command: 'drizzle-kit push',
-                        description: 'Run database migrations',
-                        category: 'custom'
-                    },
-                    {
-                        name: 'db:studio',
-                        command: 'drizzle-kit studio',
-                        description: 'Open Drizzle Studio',
-                        category: 'custom'
-                    },
-                    {
-                        name: 'db:generate',
-                        command: 'drizzle-kit generate',
-                        description: 'Generate migration files',
-                        category: 'custom'
-                    },
-                    {
-                        name: 'db:backup',
-                        command: 'node scripts/backup.js',
-                        description: 'Create database backup',
-                        category: 'custom'
-                    }
-                ],
-                configs: [
-                    {
-                        file: 'neon.config.ts',
-                        content: NeonGenerator.generateNeonConfig(pluginConfig),
-                        mergeStrategy: 'replace'
-                    }
-                ],
-                errors: [],
-                warnings: [],
-                duration
-            };
+            return this.createSuccessResult([
+                { type: 'file', path: 'src/lib/database/neon.ts' },
+                { type: 'file', path: 'neon.config.ts' },
+                { type: 'file', path: 'src/lib/database/index.ts' }
+            ], [
+                {
+                    name: '@neondatabase/serverless',
+                    version: '^1.0.1',
+                    type: 'production',
+                    category: PluginCategory.DATABASE
+                },
+                {
+                    name: 'pg',
+                    version: '^8.11.0',
+                    type: 'production',
+                    category: PluginCategory.DATABASE
+                }
+            ], [], [], validation.warnings, startTime);
         }
         catch (error) {
-            return this.createErrorResult('Failed to install Neon database', startTime, [], error);
+            return this.createErrorResult('Failed to install Neon database infrastructure', [], startTime);
         }
     }
-    async uninstall(context) {
-        const startTime = Date.now();
-        try {
-            const { projectPath } = context;
-            context.logger.info('Uninstalling Neon database...');
-            // Remove Neon dependencies
-            await this.runner.execCommand(['npm', 'uninstall', '@neondatabase/serverless', 'pg', '@types/pg'], { cwd: projectPath });
-            // Remove configuration files
-            const configPath = path.join(projectPath, 'neon.config.ts');
-            if (await fsExtra.pathExists(configPath)) {
-                await fsExtra.remove(configPath);
-            }
-            // Remove database files
-            const dbPath = path.join(projectPath, 'src', 'lib', 'database', 'neon.ts');
-            if (await fsExtra.pathExists(dbPath)) {
-                await fsExtra.remove(dbPath);
-            }
-            const duration = Date.now() - startTime;
-            return {
-                success: true,
-                artifacts: [],
-                dependencies: [],
-                scripts: [],
-                configs: [],
-                errors: [],
-                warnings: [],
-                duration
-            };
-        }
-        catch (error) {
-            return this.createErrorResult('Failed to uninstall Neon database', startTime, [], error);
-        }
+    // ============================================================================
+    // PLUGIN INTERFACE IMPLEMENTATIONS
+    // ============================================================================
+    getDependencies() {
+        return ['@neondatabase/serverless', 'pg'];
     }
-    async update(context) {
-        const startTime = Date.now();
-        try {
-            const { projectPath } = context;
-            context.logger.info('Updating Neon database...');
-            // Update Neon dependencies
-            await this.runner.execCommand(['npm', 'update', '@neondatabase/serverless', 'pg', '@types/pg'], { cwd: projectPath });
-            const duration = Date.now() - startTime;
-            return {
-                success: true,
-                artifacts: [],
-                dependencies: [],
-                scripts: [],
-                configs: [],
-                errors: [],
-                warnings: [],
-                duration
-            };
-        }
-        catch (error) {
-            return this.createErrorResult('Failed to update Neon database', startTime, [], error);
-        }
-    }
-    async validate(context) {
-        const errors = [];
-        const warnings = [];
-        try {
-            const { projectPath } = context;
-            // Check if package.json exists
-            const packageJsonPath = path.join(projectPath, 'package.json');
-            if (!await fsExtra.pathExists(packageJsonPath)) {
-                errors.push({
-                    code: 'MISSING_PACKAGE_JSON',
-                    message: 'package.json not found in project directory',
-                    severity: 'error'
-                });
-            }
-            // Check if it's a Node.js project
-            const packageJson = await fsExtra.readJson(packageJsonPath);
-            if (!packageJson.dependencies && !packageJson.devDependencies) {
-                errors.push({
-                    code: 'NOT_NODE_PROJECT',
-                    message: 'Neon requires a Node.js project',
-                    severity: 'error'
-                });
-            }
-            // Check Node.js version
-            const nodeVersion = process.version;
-            const majorVersion = parseInt(nodeVersion?.slice(1).split('.')[0] || '16');
-            if (majorVersion < 16) {
-                errors.push({
-                    code: 'NODE_VERSION_TOO_OLD',
-                    message: 'Node.js 16 or higher is required for Neon',
-                    severity: 'error'
-                });
-            }
-            return {
-                valid: errors.length === 0,
-                errors,
-                warnings
-            };
-        }
-        catch (error) {
-            errors.push({
-                code: 'VALIDATION_ERROR',
-                message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                severity: 'error'
-            });
-            return {
-                valid: false,
-                errors,
-                warnings
-            };
-        }
+    getDevDependencies() {
+        return ['@neondatabase/cli'];
     }
     getCompatibility() {
         return {
-            frameworks: ['nextjs', 'react', 'node', 'express', 'fastify'],
-            platforms: [TargetPlatform.WEB, TargetPlatform.SERVER],
+            frameworks: ['nextjs', 'react', 'vue', 'svelte'],
+            platforms: ['web', 'mobile'],
             nodeVersions: ['>=16.0.0'],
-            packageManagers: ['npm', 'yarn', 'pnpm', 'bun'],
-            databases: [],
-            uiLibraries: [],
-            conflicts: ['supabase', 'mongodb', 'mysql', 'sqlite'] // Conflicts with other database providers
+            packageManagers: ['npm', 'yarn', 'pnpm'],
+            databases: ['postgresql'],
+            conflicts: []
         };
     }
-    getDependencies() {
-        return ['node'];
-    }
     getConflicts() {
-        return ['supabase', 'mongodb', 'mysql', 'sqlite'];
+        return [];
     }
     getRequirements() {
         return [
             {
-                type: 'binary',
-                name: 'node',
-                description: 'Node.js 16 or higher',
-                version: '>=16.0.0'
+                type: 'package',
+                name: '@neondatabase/serverless',
+                description: 'Neon serverless driver',
+                version: '^1.0.1'
             },
             {
-                type: 'package',
-                name: 'package.json',
-                description: 'Valid package.json file',
-                version: 'any'
+                type: 'service',
+                name: 'neon-project',
+                description: 'Neon PostgreSQL project'
             }
         ];
     }
     getDefaultConfig() {
-        return NeonDefaultConfig;
+        return {
+            connectionString: '',
+            host: '',
+            port: 5432,
+            username: '',
+            password: '',
+            database: '',
+            enableBranching: true,
+            enableAutoscaling: true,
+            enableServerless: true,
+            connectionPoolSize: 10,
+            connectionTimeout: 10000,
+            queryTimeout: 30000
+        };
     }
     getConfigSchema() {
         return NeonConfigSchema;
-    }
-    // ============================================================================
-    // PRIVATE METHODS
-    // ============================================================================
-    async installNeonCLI(context) {
-        const { projectPath } = context;
-        context.logger.info('Installing Neon CLI...');
-        // Install Neon CLI globally (optional)
-        try {
-            await this.runner.execCommand(['npm', 'install', '-g', '@neondatabase/cli'], { cwd: projectPath });
-        }
-        catch (error) {
-            context.logger.warn('Failed to install Neon CLI globally. You can install it manually with: npm install -g @neondatabase/cli');
-        }
-    }
-    async createDatabaseConfig(context) {
-        const { projectPath, pluginConfig } = context;
-        context.logger.info('Creating Neon database configuration...');
-        const configContent = NeonGenerator.generateNeonConfig(pluginConfig);
-        await fsExtra.writeFile(path.join(projectPath, 'neon.config.ts'), configContent);
-    }
-    async addEnvironmentConfig(context) {
-        const { projectPath, pluginConfig } = context;
-        context.logger.info('Adding environment configuration...');
-        const envContent = NeonGenerator.generateEnvConfig(pluginConfig);
-        const envPath = path.join(projectPath, '.env.local');
-        // Append to existing .env.local or create new
-        let existingContent = '';
-        if (await fsExtra.pathExists(envPath)) {
-            existingContent = await fsExtra.readFile(envPath, 'utf-8');
-        }
-        const fullContent = existingContent + '\n' + envContent;
-        await fsExtra.writeFile(envPath, fullContent);
-    }
-    async generateUnifiedInterfaceFiles(context) {
-        const { projectPath, pluginConfig } = context;
-        context.logger.info('Generating unified interface files...');
-        // Create database lib directory
-        const dbLibDir = path.join(projectPath, 'src', 'lib', 'database');
-        await fsExtra.ensureDir(dbLibDir);
-        // Generate Neon connection file
-        const connectionContent = NeonGenerator.generateNeonConnection(pluginConfig);
-        await fsExtra.writeFile(path.join(dbLibDir, 'neon.ts'), connectionContent);
-    }
-    createErrorResult(message, startTime, errors = [], originalError) {
-        const duration = Date.now() - startTime;
-        if (originalError) {
-            errors.push({
-                code: 'NEON_INSTALL_ERROR',
-                message: originalError instanceof Error ? originalError.message : String(originalError),
-                severity: 'error',
-                details: originalError
-            });
-        }
-        return {
-            success: false,
-            artifacts: [],
-            dependencies: [],
-            scripts: [],
-            configs: [],
-            errors,
-            warnings: [],
-            duration
-        };
     }
 }
 //# sourceMappingURL=NeonPlugin.js.map

@@ -4,7 +4,8 @@
  * Handles all file generation logic for the Drizzle plugin.
  * Separated from the main plugin for better organization.
  */
-import { DatabasePluginConfig } from '../../../../types/plugin-interfaces.js';
+import { DatabasePluginConfig } from '../../../../types/plugins.js';
+import { PathResolver } from '../../../base/PathResolver.js';
 /**
  * Defines a file artifact to be generated, containing its relative path and content.
  */
@@ -13,6 +14,8 @@ export interface GeneratedFile {
     content: string;
 }
 export declare class DrizzleGenerator {
+    private pathResolver;
+    constructor(pathResolver: PathResolver);
     /**
      * Generate all necessary files for the Drizzle plugin.
      * @returns An array of GeneratedFile objects.
@@ -43,7 +46,7 @@ export declare class DrizzleGenerator {
      */
     generateEnvVars(config: DatabasePluginConfig): Record<string, string>;
     /**
-     * Generate package.json scripts.
+     * Generate package.json scripts
      */
     generateScripts(config: DatabasePluginConfig): Record<string, string>;
     private generateDrizzleConfigContent;
