@@ -1,0 +1,37 @@
+version: "1.0"
+project:
+  name: "test-complete"
+  framework: "nextjs"
+  path: "./test-complete"
+modules:
+  - id: "nextjs"
+    category: "framework"
+    version: "latest"
+    parameters:
+      typescript: true
+      tailwind: true
+      appRouter: true
+  - id: "shadcn-ui"
+    category: "ui"
+    version: "latest"
+    parameters:
+      components: ["button", "input", "card", "dialog"]
+  - id: "drizzle"
+    category: "database"
+    version: "latest"
+    parameters:
+      databaseType: "postgresql"
+  - id: "better-auth"
+    category: "auth"
+    version: "latest"
+    parameters:
+      providers: ["github", "google"]
+      emailPassword: true
+  - id: "vitest"
+    category: "testing"
+    version: "latest"
+    parameters:
+      coverage: true
+      ui: true
+options:
+  skipInstall: false

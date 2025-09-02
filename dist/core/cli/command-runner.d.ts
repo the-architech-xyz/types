@@ -4,7 +4,6 @@
  * Validated in Phase 0 Research with 75% success rate across package managers.
  * Provides a unified interface for npm, yarn, pnpm, and bun.
  */
-/// <reference types="node" />
 export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun' | 'auto';
 export interface CommandRunnerOptions {
     verbose?: boolean;

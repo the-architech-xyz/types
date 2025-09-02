@@ -80,15 +80,18 @@ export class BlueprintExecutor {
     try {
       const targetPath = this.resolvePath(action.target, context);
       
+      // Process template variables in content
+      const processedContent = this.processTemplate(action.content, context);
+      
       // Intelligent file handling
       if (action.target === 'package.json') {
-        await this.mergePackageJson(targetPath, action.content);
-      } else if (action.target === '.env') {
-        await this.appendToEnv(targetPath, action.content);
+        await this.mergePackageJson(targetPath, processedContent);
+      } else if (action.target === '.env' || action.target === '.env.example') {
+        await this.appendToEnv(targetPath, processedContent);
       } else if (action.target === 'tsconfig.json') {
-        await this.mergeTsConfig(targetPath, action.content);
+        await this.mergeTsConfig(targetPath, processedContent);
       } else {
-        await this.createOrUpdateFile(targetPath, action.content);
+        await this.createOrUpdateFile(targetPath, processedContent);
       }
       
       return { success: true, filePath: targetPath };
@@ -199,7 +202,8 @@ export class BlueprintExecutor {
     const newContentObj = JSON.parse(newContent);
     const mergedContent = this.deepMerge(existingContent, newContentObj);
     
-    await fs.writeFile(filePath, JSON.stringify(mergedContent, null, 2));
+    // Ensure proper formatting with 2 spaces
+    await fs.writeFile(filePath, JSON.stringify(mergedContent, null, 2) + '\n');
   }
 
   /**

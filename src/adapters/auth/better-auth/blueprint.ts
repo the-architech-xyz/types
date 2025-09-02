@@ -19,11 +19,24 @@ export const betterAuthBlueprint: Blueprint = {
       target: 'src/lib/auth/config.ts',
       content: `import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "../db";
-import * as schema from "../db/schema";
+
+// Import database connection and schema
+// Note: Make sure to run the database module first
+let db: any;
+let schema: any;
+
+try {
+  db = require("../db").db;
+  schema = require("../db/schema");
+} catch (error) {
+  console.warn("Database not found. Please run the database module first.");
+  // Fallback to in-memory database for development
+  db = null;
+  schema = null;
+}
 
 export const auth = betterAuth({
-  database: drizzleAdapter(db, {
+  database: db && schema ? drizzleAdapter(db, {
     provider: "pg",
     schema: {
       users: schema.users,
@@ -31,7 +44,7 @@ export const auth = betterAuth({
       accounts: schema.accounts,
       verification: schema.verification,
     },
-  }),
+  }) : undefined,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,

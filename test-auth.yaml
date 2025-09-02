@@ -1,0 +1,26 @@
+version: "1.0"
+project:
+  name: "test-auth"
+  framework: "nextjs"
+  path: "./test-auth"
+modules:
+  - id: "nextjs"
+    category: "framework"
+    version: "latest"
+    parameters:
+      typescript: true
+      tailwind: true
+      appRouter: true
+  - id: "drizzle"
+    category: "database"
+    version: "latest"
+    parameters:
+      databaseType: "postgresql"
+  - id: "better-auth"
+    category: "auth"
+    version: "latest"
+    parameters:
+      providers: ["github", "google"]
+      emailPassword: true
+options:
+  skipInstall: false
