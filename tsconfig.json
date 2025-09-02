@@ -32,10 +32,10 @@
     "src/index.ts",
     "src/types/**/*",
     "src/utils/**/*",
-    "src/agents/base/**/*",
-    "src/agents/*.ts",
+    "src/agents/**/*",
     "src/commands/**/*",
     "src/core/**/*",
+    "src/adapters/**/*",
     "src/plugins/**/*"
   ],
   "exclude": [

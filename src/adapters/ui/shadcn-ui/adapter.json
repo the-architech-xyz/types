@@ -1,0 +1,8 @@
+{
+  "id": "shadcn-ui",
+  "name": "Shadcn/ui",
+  "description": "Beautifully designed components built with Radix UI and Tailwind CSS",
+  "category": "ui",
+  "version": "latest",
+  "blueprint": "blueprint.ts"
+}

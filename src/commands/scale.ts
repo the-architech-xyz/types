@@ -1,102 +1,65 @@
 /**
- * Scale Command - Transform Single App to Monorepo
+ * Scale Command
  * 
- * Transforms a single app project to a scalable monorepo structure.
- * This is the "killer feature" that allows users to scale their projects seamlessly.
+ * Scales a project to monorepo structure (V2 feature)
+ * Usage: architech scale [options]
  */
 
-import chalk from 'chalk';
-import inquirer from 'inquirer';
-import { structureService } from '../core/project/structure-service.js';
-import { ContextFactory } from '../core/project/context-factory.js';
-import { Logger } from '../types/agents.js';
+import { Command } from 'commander';
+import { AgentLogger as Logger } from '../core/cli/logger.js';
 
-interface ScaleOptions {
-  packageManager?: string;
-  yes?: boolean;
-}
-
-export async function scaleCommand(options: ScaleOptions = {}): Promise<void> {
-  const logger: Logger = {
-    info: (message: string) => console.log(`ℹ️  ${message}`),
-    success: (message: string) => console.log(`✅ ${message}`),
-    warn: (message: string) => console.log(`⚠️  ${message}`),
-    error: (message: string, error?: Error) => {
-      console.error(`❌ ${message}`);
-      if (error) {
-        console.error(error);
-      }
-    },
-    debug: (message: string) => {
-      if (options.yes) {
-        console.log(`🔍 ${message}`);
-      }
-    },
-    log: (level: any, message: string, context?: any) => {
-      console.log(`[${level.toUpperCase()}] ${message}`, context || '');
-    }
-  };
-
-  try {
-    const projectPath = process.cwd();
-    
-    logger.info('🔍 Analyzing current project structure...');
-    
-    // Detect current structure
-    const currentStructure = await structureService.detectStructure(projectPath);
-    
-    if (currentStructure.isMonorepo) {
-      logger.error('This project is already a monorepo. No transformation needed.');
-      return;
-    }
-    
-    logger.info(`Current structure: ${structureService.getStructureDescription(currentStructure)}`);
-    
-    // Confirm transformation
-    if (!options.yes) {
-      console.log(chalk.yellow('\n🚀 Ready to scale your project?'));
-      console.log(chalk.gray('This will transform your single app into a scalable monorepo structure.'));
-      console.log(chalk.gray('Your existing code will be preserved and reorganized.'));
+export function createScaleCommand(): Command {
+  const command = new Command('scale');
+  
+  command
+    .description('Scale a project to monorepo structure (V2 feature)')
+    .option('-p, --path <path>', 'Project path (default: current directory)', '.')
+    .option('-s, --strategy <strategy>', 'Scaling strategy (lerna, nx, rush, pnpm-workspaces)', 'pnpm-workspaces')
+    .option('-a, --apps <apps>', 'Comma-separated list of apps to create')
+    .option('-l, --libs <libs>', 'Comma-separated list of shared libraries to create')
+    .option('--dry-run', 'Show what would be scaled without executing', false)
+    .option('--verbose', 'Enable verbose logging', false)
+    .action(async (options: { 
+      path?: string; 
+      strategy?: string; 
+      apps?: string; 
+      libs?: string; 
+      dryRun?: boolean; 
+      verbose?: boolean; 
+    }) => {
+      const logger = new Logger(options.verbose);
       
-      const { confirm } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'confirm',
-          message: 'Proceed with transformation?',
-          default: true
+      try {
+        logger.info(`📈 Scaling project to monorepo structure`);
+        logger.warn('⚠️ This is a V2 feature - not yet implemented');
+        logger.info('📋 V2 scaling features will include:');
+        logger.info('  - Automatic monorepo structure generation');
+        logger.info('  - Multiple scaling strategies (Lerna, Nx, Rush, pnpm-workspaces)');
+        logger.info('  - Shared library management');
+        logger.info('  - Cross-package dependency resolution');
+        logger.info('  - Build and deployment orchestration');
+        
+        if (options.dryRun) {
+          logger.info('🔍 Dry run mode - showing what would be scaled:');
+          logger.info(`  Strategy: ${options.strategy || 'pnpm-workspaces'}`);
+          logger.info(`  Path: ${options.path || '.'}`);
+          if (options.apps) {
+            logger.info(`  Apps: ${options.apps}`);
+          }
+          if (options.libs) {
+            logger.info(`  Libraries: ${options.libs}`);
+          }
         }
-      ]);
-      
-      if (!confirm) {
-        logger.info('Transformation cancelled.');
-        return;
-      }
-    }
-    
-    logger.info('🔄 Starting transformation to monorepo structure...');
-    
-    // Transform the project
-    await structureService.transformToMonorepo(projectPath);
-    
-    logger.success('🎉 Project successfully transformed to monorepo structure!');
-    
-    // Display next steps
-    console.log(chalk.blue('\n📋 Next Steps:'));
-    console.log(chalk.gray('1. Review the new structure in apps/web/ and packages/'));
-    console.log(chalk.gray('2. Update any import paths that may have changed'));
-    console.log(chalk.gray('3. Run "npm install" to install dependencies'));
-    console.log(chalk.gray('4. Run "npm run dev" to start development'));
-    
-    console.log(chalk.blue('\n🏗️  New Structure:'));
-    console.log(chalk.gray('apps/web/     - Your main Next.js application'));
-    console.log(chalk.gray('packages/ui/  - Shared UI components'));
-    console.log(chalk.gray('packages/db/  - Database schemas and utilities'));
-    console.log(chalk.gray('packages/auth/ - Authentication logic'));
-    
-    logger.success('Your project is now ready for scale! 🚀');
+        
+        // TODO: Implement V2 scale functionality
+        logger.info('🚧 V2 implementation coming soon...');
     
   } catch (error) {
-    logger.error('Failed to scale project', error as Error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error(`💥 Failed to scale project: ${errorMessage}`);
     process.exit(1);
   }
+    });
+  
+  return command;
 } 

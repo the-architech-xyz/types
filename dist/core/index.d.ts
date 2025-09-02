@@ -1,13 +1,10 @@
 /**
  * Core Module - Main Entry Point
  *
- * Consolidated core functionality for The Architech CLI:
- * - Plugin system
- * - Project management
+ * Core functionality for The Architech CLI:
  * - CLI utilities
- * - Template system
+ * - Core services (orchestration, path, project management)
+ * - Adapter and blueprint systems
  */
-export * from './plugin/index.js';
-export * from './project/index.js';
 export * from './cli/index.js';
-export * from './templates/index.js';
+export * from './services/index.js';

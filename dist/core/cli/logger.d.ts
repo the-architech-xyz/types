@@ -4,7 +4,29 @@
  * Provides structured logging for agents with different verbosity levels
  * and context-aware formatting.
  */
-import { Logger, LogLevel, LogContext } from '../../types/agents.js';
+export declare enum LogLevel {
+    DEBUG = "debug",
+    INFO = "info",
+    WARN = "warn",
+    ERROR = "error",
+    SUCCESS = "success"
+}
+export interface LogContext {
+    agent?: string;
+    step?: string;
+    duration?: number;
+    data?: any;
+    error?: string;
+    stack?: string;
+}
+export interface Logger {
+    info(message: string, data?: any): void;
+    warn(message: string, data?: any): void;
+    error(message: string, error?: Error, data?: any): void;
+    debug(message: string, data?: any): void;
+    success(message: string, data?: any): void;
+    log(level: LogLevel, message: string, context?: LogContext): void;
+}
 export declare class AgentLogger implements Logger {
     private verbose;
     private agentName?;

@@ -5,7 +5,15 @@
  * and context-aware formatting.
  */
 import chalk from 'chalk';
-import { LogLevel } from '../../types/agents.js';
+// Simple logger types for V1
+export var LogLevel;
+(function (LogLevel) {
+    LogLevel["DEBUG"] = "debug";
+    LogLevel["INFO"] = "info";
+    LogLevel["WARN"] = "warn";
+    LogLevel["ERROR"] = "error";
+    LogLevel["SUCCESS"] = "success";
+})(LogLevel || (LogLevel = {}));
 export class AgentLogger {
     verbose;
     agentName;

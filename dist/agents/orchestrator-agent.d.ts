@@ -1,45 +1,34 @@
 /**
- * Orchestrator Agent - Main Project Generation Coordinator
+ * Orchestrator Agent
  *
- * Coordinates the entire project generation process by:
- * - Analyzing user requirements using intelligent question flow
- * - Selecting appropriate plugins based on recommendations
- * - Orchestrating agent execution
- * - Managing dependencies and conflicts
+ * Main orchestrator that coordinates all agents
+ * Reads YAML recipe and delegates to appropriate agents
  */
-import { IAgent, AgentMetadata, AgentContext, AgentResult } from '../types/agents.js';
-export declare class OrchestratorAgent implements IAgent {
-    private pluginSystem;
-    private logger;
-    private runner;
-    private progressiveFlow;
-    constructor();
-    getMetadata(): AgentMetadata;
-    getCapabilities(): never[];
-    execute(context: AgentContext): Promise<AgentResult>;
+import { Recipe, ExecutionResult } from '../types/recipe.js';
+import { ProjectManager } from '../core/services/project/project-manager.js';
+export declare class OrchestratorAgent {
+    private projectManager;
+    private pathHandler;
+    private agents;
+    constructor(projectManager: ProjectManager);
     /**
-     * Execute the question flow to gather user input and generate configuration
+     * Initialize all agents
      */
-    private executeQuestionFlow;
+    private initializeAgents;
     /**
-     * Convert flow result to project requirements
+     * Execute a complete recipe
      */
-    private convertFlowResultToRequirements;
-    private generateOrchestrationPlan;
-    private mapUIPluginToSystem;
+    executeRecipe(recipe: Recipe): Promise<ExecutionResult>;
     /**
-     * Get the appropriate question strategy based on project type
+     * Get available agents
      */
-    private getQuestionStrategy;
+    getAvailableAgents(): string[];
     /**
-     * Analyze user input to determine project context
+     * Get agent by category
      */
-    private analyzeProjectContext;
-    private validatePlan;
-    private detectPluginConflicts;
-    private executePlan;
-    private executePhase;
-    private getAgent;
-    private getPluginConfig;
-    private createErrorResult;
+    getAgent(category: string): any;
+    /**
+     * Install dependencies (delegated to project manager)
+     */
+    private installDependencies;
 }

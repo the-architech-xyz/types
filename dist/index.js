@@ -1,146 +1,79 @@
 #!/usr/bin/env node
 /**
- * The Architech CLI - Main Entry Point
+ * The Architech CLI V1 - Agent-Based Architecture
  *
- * Revolutionary AI-Powered Application Generator
- * Transforming weeks of work into minutes
+ * Agent-based project generation from YAML recipes
+ * Flow: architech.yaml → Orchestrator → Agents → Adapters → Blueprints
  */
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { newCommand } from './commands/new.js';
-import { scaleCommand } from './commands/scale.js';
+import { createNewCommand } from './commands/new.js';
+import { createAddCommand } from './commands/add.js';
+import { createScaleCommand } from './commands/scale.js';
 import { displayBanner } from './core/cli/banner.js';
-// Async IIFE to handle dynamic imports
-(async () => {
-    // Try to import plugins command with error handling
-    let pluginsCommand;
-    try {
-        const pluginsModule = await import('./commands/plugins.js');
-        pluginsCommand = pluginsModule.pluginsCommand;
-        console.log('Plugins command imported successfully');
-    }
-    catch (error) {
-        console.error('Failed to import plugins command:', error);
-        pluginsCommand = () => {
-            const { Command } = require('commander');
-            return new Command('plugins')
-                .description('Manage The Architech plugins (not available)')
-                .action(() => {
-                console.log('Plugins command is not available');
-            });
-        };
-    }
-    // Display banner for all commands
+const program = new Command();
+// ============================================================================
+// CLI CONFIGURATION
+// ============================================================================
+program
+    .name('architech')
+    .description('The fastest way to build production-ready applications')
+    .version('1.0.0');
+// ============================================================================
+// COMMAND DEFINITIONS
+// ============================================================================
+// Add all commands
+program.addCommand(createNewCommand());
+program.addCommand(createAddCommand());
+program.addCommand(createScaleCommand());
+// Default command (show help)
+program
+    .action(() => {
     displayBanner();
-    // Define CLI program
-    const program = new Command();
-    program
-        .name('architech')
-        .description('🚀 Revolutionary AI-Powered Application Generator')
-        .version('0.1.0', '-v, --version', 'Show The Architech version')
-        .helpOption('-h, --help', 'Show help information');
-    // New command - Unified project generation with guided decision making
-    program
-        .command('new')
-        .description('🎭 Create a new project with guided decision making')
-        .argument('[project-name]', 'Name of the project to create')
-        .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
-        .option('--project-type <type>', 'Project type (quick-prototype, scalable-monorepo)', 'quick-prototype')
-        .option('--template <template>', 'Template to use (quick-start, blog-platform, ecommerce, saas, enterprise, custom)')
-        .option('--no-git', 'Skip git repository initialization')
-        .option('--no-install', 'Skip dependency installation')
-        .option('-y, --yes', 'Skip interactive prompts and use defaults', false)
-        .action(newCommand);
-    // Scale command - Transform single app to monorepo (the killer feature)
-    program
-        .command('scale')
-        .description('🚀 Scale your single app to a scalable monorepo structure')
-        .option('-p, --package-manager <pm>', 'Package manager (npm, yarn, pnpm, bun)', 'auto')
-        .option('-y, --yes', 'Skip interactive prompts and use defaults')
-        .action(scaleCommand);
-    // Plugins command - Plugin management
-    console.log('Registering plugins command...');
-    const pluginsCmd = pluginsCommand();
-    console.log('Plugins command created:', pluginsCmd.name());
-    program.addCommand(pluginsCmd);
-    console.log('Plugins command registered');
-    // Add command - Future: Add modules to existing projects
-    program
-        .command('add')
-        .description('➕ Add modules to an existing project')
-        .argument('<module>', 'Module to add (auth, payments, admin, etc.)')
-        .option('-f, --force', 'Force installation even if conflicts exist')
-        .action((module, options) => {
-        console.log(chalk.yellow('🚧 The "add" command is coming soon!'));
-        console.log(chalk.gray(`Module: ${module}`));
-        if (options.force) {
-            console.log(chalk.gray('Force mode: enabled'));
-        }
-    });
-    // List command - Show available templates and modules
-    program
-        .command('list')
-        .alias('ls')
-        .description('📋 List available templates and modules')
-        .option('-t, --templates', 'Show available templates')
-        .option('-m, --modules', 'Show available modules')
-        .action((options) => {
-        console.log(chalk.yellow('🚧 The "list" command is coming soon!'));
-        if (options.templates) {
-            console.log(chalk.blue('\n📦 Available Templates:'));
-            console.log('  • nextjs-14     - Next.js 14 with App Router');
-            console.log('  • nextjs-13     - Next.js 13 with Pages Router');
-            console.log('  • react-18      - React 18 with Vite');
-            console.log('  • vue-3         - Vue 3 with Composition API');
-        }
-        else if (options.modules) {
-            console.log(chalk.blue('\n🔧 Available Modules:'));
-            console.log('  • auth          - Authentication (Better Auth)');
-            console.log('  • database      - Database (Drizzle ORM)');
-            console.log('  • ui            - UI Components (Shadcn/ui)');
-            console.log('  • payments      - Payment processing');
-            console.log('  • admin         - Admin dashboard');
-            console.log('  • email         - Email services');
-            console.log('  • monitoring    - Application monitoring');
-        }
-        else {
-            console.log(chalk.blue('\n🎯 Quick Start:'));
-            console.log('  architech new my-app          # Create a new project');
-            console.log('  architech scale               # Scale to monorepo');
-            console.log('  architech add auth            # Add authentication');
-            console.log('  architech list --templates    # Show templates');
-            console.log('  architech list --modules      # Show modules');
-        }
-    });
-    // Info command - Show project information
-    program
-        .command('info')
-        .description('ℹ️  Show project information and status')
-        .action(() => {
-        console.log(chalk.blue('\n📊 Project Information:'));
-        console.log(chalk.gray('This command will show:'));
-        console.log('  • Project structure (single-app vs monorepo)');
-        console.log('  • Installed modules and plugins');
-        console.log('  • Dependencies and versions');
-        console.log('  • Configuration status');
-        console.log(chalk.yellow('\n🚧 Coming soon!'));
-    });
-    // Update command - Update The Architech CLI
-    program
-        .command('update')
-        .description('🔄 Update The Architech CLI to the latest version')
-        .action(() => {
-        console.log(chalk.blue('\n🔄 Updating The Architech CLI...'));
-        console.log(chalk.gray('This will update the CLI to the latest version.'));
-        console.log(chalk.yellow('\n🚧 Coming soon!'));
-    });
-    // Parse command line arguments
-    try {
-        await program.parseAsync();
-    }
-    catch (error) {
-        console.error(chalk.red('❌ An error occurred:'), error);
+    console.log(chalk.blue.bold('🏗️ The Architech V1 - Agent-Based Architecture\n'));
+    console.log(chalk.gray('Available commands:'));
+    console.log(chalk.gray('  new     Create a new project from architech.yaml recipe'));
+    console.log(chalk.gray('  add     Add modules to existing project (V2)'));
+    console.log(chalk.gray('  scale   Scale project to monorepo (V2)\n'));
+    console.log(chalk.yellow('💡 Use "architech new <recipe.yaml>" to create a new project!'));
+    console.log(chalk.gray('Example: architech new my-saas.yaml\n'));
+});
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
+program.on('command:*', (operands) => {
+    console.error(chalk.red(`Error: Unknown command '${operands[0]}'`));
+    console.log(chalk.gray('Run --help for available commands.'));
+    process.exit(1);
+});
+// ============================================================================
+// HELP CUSTOMIZATION
+// ============================================================================
+program.addHelpText('after', `
+
+Examples:
+  $ architech new my-saas.yaml               # Create new project from recipe
+  $ architech add auth/better-auth           # Add auth module (V2)
+  $ architech scale --strategy nx            # Scale to monorepo (V2)
+
+Documentation: https://the-architech.dev
+GitHub: https://github.com/the-architech/cli
+`);
+// ============================================================================
+// CLI EXECUTION
+// ============================================================================
+/**
+ * Main execution function
+ */
+async function main() {
+    program.parse();
+}
+// Always parse if this is the main module or if called directly
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.includes('architech')) {
+    main().catch((error) => {
+        console.error(chalk.red('❌ Fatal error:'), error);
         process.exit(1);
-    }
-})();
+    });
+}
+export { program };
 //# sourceMappingURL=index.js.map

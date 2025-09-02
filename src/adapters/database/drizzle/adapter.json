@@ -1,0 +1,8 @@
+{
+  "id": "drizzle",
+  "name": "Drizzle ORM",
+  "description": "TypeScript ORM with excellent developer experience",
+  "category": "database",
+  "version": "0.29.0",
+  "blueprint": "blueprint.ts"
+}

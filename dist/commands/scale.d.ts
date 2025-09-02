@@ -1,12 +1,8 @@
 /**
- * Scale Command - Transform Single App to Monorepo
+ * Scale Command
  *
- * Transforms a single app project to a scalable monorepo structure.
- * This is the "killer feature" that allows users to scale their projects seamlessly.
+ * Scales a project to monorepo structure (V2 feature)
+ * Usage: architech scale [options]
  */
-interface ScaleOptions {
-    packageManager?: string;
-    yes?: boolean;
-}
-export declare function scaleCommand(options?: ScaleOptions): Promise<void>;
-export {};
+import { Command } from 'commander';
+export declare function createScaleCommand(): Command;

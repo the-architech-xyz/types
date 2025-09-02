@@ -6,7 +6,32 @@
  */
 
 import chalk from 'chalk';
-import { Logger, LogLevel, LogContext } from '../../types/agents.js';
+// Simple logger types for V1
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warn',
+  ERROR = 'error',
+  SUCCESS = 'success'
+}
+
+export interface LogContext {
+  agent?: string;
+  step?: string;
+  duration?: number;
+  data?: any;
+  error?: string;
+  stack?: string;
+}
+
+export interface Logger {
+  info(message: string, data?: any): void;
+  warn(message: string, data?: any): void;
+  error(message: string, error?: Error, data?: any): void;
+  debug(message: string, data?: any): void;
+  success(message: string, data?: any): void;
+  log(level: LogLevel, message: string, context?: LogContext): void;
+}
 
 export class AgentLogger implements Logger {
   private verbose: boolean;

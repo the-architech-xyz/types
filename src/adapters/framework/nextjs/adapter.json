@@ -1,0 +1,8 @@
+{
+  "id": "nextjs",
+  "name": "Next.js",
+  "description": "The React Framework for Production",
+  "category": "framework",
+  "version": "14.0.0",
+  "blueprint": "blueprint.ts"
+}

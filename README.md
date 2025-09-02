@@ -1,321 +1,288 @@
-# The Architech CLI
+# 🏗️ The Architech
 
-> Revolutionary AI-Powered Application Generator - Transforming weeks of work into minutes
+> **The fastest way to build production-ready applications**
 
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Package Manager](https://img.shields.io/badge/package%20manager-agnostic-blue)](https://www.npmjs.com/)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/the-architech/cli)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 
-The Architech CLI is a revolutionary command-line tool that automates the creation of production-ready applications through AI-powered specialized agents and a modular plugin architecture with unified interfaces. What traditionally takes weeks of manual setup is now accomplished in minutes.
+The Architech is a **Code Supply Chain** platform that elevates developers from "artisans" to "architects" by providing a declarative, agent-based approach to project generation and management.
+
+## 🎯 Mission
+
+Fix three critical problems in modern software development:
+
+- **🔧 Disposable Code Syndrome** - Projects that can't be maintained or extended
+- **🧠 Organizational Amnesia** - Loss of architectural knowledge over time  
+- **🤖 The AI-Assistant Paradox** - AI tools that create more problems than they solve
+
+## ✨ Features
+
+### V1: Agent-Based Recipe Executor
+- **📋 Declarative YAML Recipes** - Define your project in simple YAML files
+- **🤖 Specialized Agents** - Each agent handles their domain (framework, database, auth, UI, testing)
+- **🔌 Pure Adapters** - Isolated technology implementations with zero cross-knowledge
+- **⚡ CLI-First Approach** - Leverages existing tools like `create-next-app` and `shadcn init`
+- **🛡️ Type-Safe** - Built with TypeScript for reliability and developer experience
+
+### V2: Dynamic Module Management (Coming Soon)
+- **➕ Dynamic Module Addition** - Add features to existing projects
+- **📈 Monorepo Scaling** - Scale projects to monorepo structures
+- **🧠 AI-Powered Recommendations** - Intelligent suggestions for project improvements
+- **📊 Project State Management** - Track and manage project evolution
 
 ## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 16.0.0 or higher
-- Any package manager (npm, yarn, pnpm, bun)
 
 ### Installation
 
 ```bash
-# Install globally
-npm install -g the-architech
-
-# Or run directly with npx
-npx the-architech create my-app
+npm install -g @the-architech/cli
 ```
 
-### Basic Usage
+### Create Your First Project
+
+1. **Create a recipe file** (`my-saas.yaml`):
+
+```yaml
+version: "1.0"
+project:
+  name: "my-saas"
+  framework: "nextjs"
+  path: "./my-saas"
+modules:
+  - id: "nextjs"
+    category: "framework"
+    version: "latest"
+    parameters:
+      typescript: true
+      tailwind: true
+      appRouter: true
+  - id: "shadcn-ui"
+    category: "ui"
+    version: "latest"
+    parameters:
+      components: ["button", "input", "card", "dialog"]
+  - id: "drizzle"
+    category: "database"
+    version: "latest"
+    parameters:
+      databaseType: "postgresql"
+      includeMigrations: true
+  - id: "better-auth"
+    category: "auth"
+    version: "latest"
+    parameters:
+      providers: ["github", "google"]
+      sessionStrategy: "jwt"
+  - id: "vitest"
+    category: "testing"
+    version: "latest"
+    parameters:
+      coverage: true
+      ui: true
+options:
+  skipInstall: false
+```
+
+2. **Generate your project**:
 
 ```bash
-# Interactive mode (recommended)
-architech create
-
-# Quick generation with defaults
-architech create my-app --yes
-
-# Generate enterprise monorepo
-architech my-monorepo
+architech new my-saas.yaml
 ```
 
-## 🎯 Core Concept
+3. **Start developing**:
 
-The Architech CLI implements a **modern, intelligent architecture** with clean separation of concerns:
-
-### 🤖 **Agents (The "Brain")**
-AI-powered decision makers that handle user interaction and orchestration:
-- **Orchestrator Agent**: Main coordinator and project planning
-- **Question Strategies**: Project-specific intelligent question generation
-- **Progressive Flow**: Context-aware user interaction
-- **Recommendation Engine**: Smart technology suggestions
-
-### 🛠️ **Plugins (The "Hands")**
-Technology-specific implementations that provide data and execute functionality:
-- **Database Plugins**: Drizzle, Prisma, Mongoose
-- **Auth Plugins**: Better Auth, NextAuth, Clerk
-- **UI Plugins**: Shadcn UI, MUI, Tamagui
-- **Service Plugins**: Email, Payment, Monitoring
-
-### 🔄 **Unified Interface Files (The "Contract")**
-Generated files that provide consistent APIs across all technologies:
-- **UnifiedAuth**: Same API for all auth providers
-- **UnifiedUI**: Same API for all UI libraries
-- **UnifiedDatabase**: Same API for all databases
-
-## 🏗️ How It Works
-
-### 1. Intelligent Project Analysis
 ```bash
-architech create my-app
+cd my-saas
+npm run dev
 ```
 
-The CLI starts with AI-powered project analysis:
+## 🏗️ Architecture
 
-- **Context Analysis**: AI determines project type and requirements
-- **Path Selection**: Guided vs selective approach
-- **Recommendations**: Smart technology suggestions
-- **Progressive Questions**: Context-aware configuration
+### Flow Architecture
 
-### 2. Modern Question Generation
-
-The system uses intelligent, progressive question generation:
-
-```typescript
-// AI analyzes project context
-const context = strategy.analyzeContext(userInput);
-
-// Generates contextual questions
-const questions = strategy.generateQuestions(context);
-
-// Provides intelligent recommendations
-const recommendations = strategy.getRecommendations(context);
+```
+architech.yaml → Orchestrator → Agents → Adapters → Blueprints
 ```
 
-### 3. Clean Plugin Architecture
+### Core Components
 
-Each plugin provides data and executes functionality:
+- **📋 Recipe System** - Declarative YAML project definitions
+- **🎯 Orchestrator Agent** - Central coordinator for execution
+- **🤖 Specialized Agents** - Domain-specific execution engines
+- **🔌 Adapter System** - Pure technology implementations
+- **📝 Blueprint System** - Declarative action lists
 
-```typescript
-// Plugin provides parameter schema
-const schema = plugin.getParameterSchema();
+### Supported Technologies
 
-// Agent validates configuration
-const validation = plugin.validateConfiguration(config);
+#### Frameworks
+- **Next.js** - React framework with App Router
+- **React** - Component library
+- **Vue** - Progressive framework
+- **Svelte** - Compile-time framework
 
-// Plugin executes installation
-const result = await plugin.install(context);
-```
-
-### 4. Technology-Agnostic Output
-
-Generated projects use unified interfaces:
-
-```typescript
-// Same API regardless of underlying technology
-import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { ui } from '@/lib/ui';
-
-// Switch technologies without code changes
-await auth.signIn(email, password);
-const users = await db.query.users.findMany();
-const button = ui.Button({ children: 'Click me' });
-```
-
-## 🎨 Project Types
-
-### Supported Project Types
-
-| Type | Description | Best For |
-|------|-------------|----------|
-| **E-commerce** | Online stores and marketplaces | Retail, B2B, B2C |
-| **Blog** | Content management and publishing | Content creators, media |
-| **Dashboard** | Data visualization and analytics | Business intelligence, admin panels |
-| **API** | Backend services and APIs | Microservices, backend development |
-| **Fullstack** | Complete applications | Full-stack development |
-| **Custom** | Custom project configurations | Specialized requirements |
-
-### Technology Stack
-
-#### Database
-- **Drizzle ORM** - TypeScript-first ORM
-- **Prisma** - Database toolkit
-- **Mongoose** - MongoDB ODM
+#### Databases
+- **Drizzle** - Type-safe SQL ORM
+- **Prisma** - Next-generation ORM
+- **TypeORM** - TypeScript ORM
+- **Sequelize** - Promise-based ORM
 
 #### Authentication
 - **Better Auth** - Modern authentication library
-- **NextAuth.js** - Complete authentication solution
-- **Clerk** - User management platform
+- **NextAuth.js** - Authentication for Next.js
+- **Auth0** - Identity platform
+- **Firebase Auth** - Google's authentication service
 
 #### UI Libraries
-- **Shadcn UI** - Beautiful, accessible components
-- **Material-UI (MUI)** - Comprehensive component library
-- **Tamagui** - Universal UI kit
+- **Shadcn/ui** - Re-usable components
+- **Chakra UI** - Modular component library
+- **Material-UI** - React components
+- **Ant Design** - Enterprise-class UI design
 
-#### Deployment
-- **Vercel** - Next.js creator platform
-- **Railway** - Modern deployment platform
-- **Netlify** - Static site hosting
+#### Testing
+- **Vitest** - Fast unit test framework
+- **Jest** - JavaScript testing framework
+- **Cypress** - End-to-end testing
+- **Playwright** - Cross-browser testing
 
-## 🚀 Example Workflows
+## 📚 Documentation
 
-### E-commerce Store
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed architecture documentation
+- **[Design Choices](docs/CHOICES.md)** - Rationale behind design decisions
+- **[API Reference](docs/API.md)** - Complete API documentation
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to The Architech
+
+## 🛠️ CLI Commands
+
+### V1 Commands
+
 ```bash
-architech create my-store
-# Follows guided approach with recommendations:
-# - Database: Drizzle + Neon
-# - Auth: Better Auth
-# - UI: Shadcn UI
-# - Payments: Stripe
+# Create a new project from a recipe
+architech new <recipe.yaml>
+
+# Show help
+architech --help
+
+# Show version
+architech --version
 ```
 
-### Blog Platform
+### V2 Commands (Coming Soon)
+
 ```bash
-architech create my-blog
-# Follows guided approach with recommendations:
-# - Database: Drizzle + Neon
-# - Auth: Better Auth
-# - UI: Shadcn UI
-# - Email: Resend
+# Add modules to existing project
+architech add <module-id> [options]
+
+# Scale project to monorepo
+architech scale [options]
 ```
-
-### Dashboard Application
-```bash
-architech create my-dashboard
-# Follows guided approach with recommendations:
-# - Database: Prisma + Supabase
-# - Auth: Clerk
-# - UI: MUI
-# - Email: Resend
-```
-
-## 📊 Benefits
-
-### ✅ Advantages
-
-1. **85% Complexity Reduction**
-   - Simplified question generation
-   - Clean plugin architecture
-   - Better maintainability
-
-2. **Intelligent UX**
-   - Context-aware recommendations
-   - Progressive disclosure
-   - Expert mode support
-
-3. **Enterprise Ready**
-   - Monorepo support
-   - Scalable architecture
-   - Production-ready output
-
-4. **Developer Friendly**
-   - TypeScript support
-   - Clean code principles
-   - Comprehensive documentation
-
-5. **Technology Agnostic**
-   - No vendor lock-in
-   - Easy technology switching
-   - Consistent APIs
-
-### 📈 Performance
-
-| Metric | Old System | New System | Improvement |
-|--------|------------|------------|-------------|
-| Question Generation | 1,200+ lines | 400 lines | 67% |
-| Plugin Complexity | High | Low | 85% |
-| Maintainability | Difficult | Easy | 90% |
-| User Experience | Basic | Intelligent | 95% |
-| Technology Lock-in | High | None | 100% |
 
 ## 🔧 Development
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm, yarn, pnpm, or bun
+- TypeScript 5.0+
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/the-architech/cli.git
+cd cli
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+# Run tests
+npm test
+
+# Run in development mode
+npm run dev
+```
 
 ### Project Structure
 
 ```
-the-architech/
-├── src/
-│   ├── agents/           # AI-powered orchestration
-│   ├── plugins/          # Technology implementations
-│   ├── core/             # Core system components
-│   ├── types/            # TypeScript type definitions
-│   └── templates/        # Code generation templates
-├── docs/                 # Documentation
-├── bin/                  # CLI entry points
-└── package.json
+src/
+├── agents/                 # Agent system
+│   ├── base/              # Base agent class
+│   ├── core/              # Specialized agents
+│   └── orchestrator-agent.ts
+├── adapters/              # Technology adapters
+│   ├── framework/         # Framework adapters
+│   ├── database/          # Database adapters
+│   ├── auth/              # Auth adapters
+│   ├── ui/                # UI adapters
+│   └── testing/           # Testing adapters
+├── commands/              # CLI commands
+├── core/                  # Core services
+└── types/                 # Type definitions
 ```
 
-### Key Files
+## 🤝 Contributing
 
-- **`src/agents/orchestrator-agent.ts`** - Main orchestration logic
-- **`src/core/questions/`** - Question generation system
-- **`src/plugins/base/BasePlugin.ts`** - Plugin foundation
-- **`src/types/questions.ts`** - Question system types
+We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.md) for details.
 
-### Contributing
+### Adding New Adapters
 
-1. **Fork the repository**
-2. **Create a feature branch**
-3. **Follow the architecture principles**
-4. **Add tests for new functionality**
-5. **Update documentation**
-6. **Submit a pull request**
+1. Create adapter directory in `src/adapters/<category>/<id>/`
+2. Implement `adapter.json` and `blueprint.ts`
+3. Add validation to appropriate agent
+4. Test with sample recipe
 
-## 📚 Documentation
+### Adding New Agents
 
-For detailed information, see our comprehensive documentation:
+1. Extend `SimpleAgent` base class
+2. Implement domain-specific validation
+3. Register in `OrchestratorAgent`
+4. Add to agent exports
 
-- **[Architecture Overview](./docs/architecture-overview.md)** - System architecture and components
-- **[Question Generation System](./docs/question-generation-system.md)** - Intelligent user interaction
-- **[Plugin Architecture](./docs/plugin-architecture.md)** - Plugin development and integration
-- **[User Guide](./docs/user-guide.md)** - How to use The Architech CLI
-- **[Plugin Development](./docs/plugin-development.md)** - Creating custom plugins
+## 📈 Roadmap
 
-## 🆘 Support
+### V1 (Current)
+- ✅ Agent-based architecture
+- ✅ Declarative YAML recipes
+- ✅ Core technology adapters
+- ✅ CLI command structure
 
-### Getting Help
+### V2 (Q2 2024)
+- 🔄 Dynamic module addition
+- 🔄 Project state management
+- 🔄 AI-powered recommendations
+- 🔄 Intelligent dependency resolution
 
-1. **Documentation** - Start with this guide
-2. **Issues** - Check existing issues on GitHub
-3. **Discussions** - Join community discussions
-4. **Examples** - Look at example projects
+### V3 (Q4 2024)
+- 🔮 Full AI development assistant
+- 🔮 Natural language project generation
+- 🔮 Automated testing and deployment
+- 🔮 Cross-project knowledge sharing
 
-### Common Issues
+## 📄 License
 
-- **TypeScript Errors** - Ensure you're using the latest version
-- **Plugin Issues** - Check plugin compatibility
-- **Path Issues** - Verify project structure
+MIT License - see [LICENSE](LICENSE) for details.
 
-## 🚀 Roadmap
+## 🙏 Acknowledgments
 
-### Upcoming Features
+- **Next.js Team** - For the amazing framework
+- **Shadcn/ui** - For beautiful, accessible components
+- **Drizzle Team** - For type-safe database tools
+- **Better Auth** - For modern authentication
+- **Vitest Team** - For fast testing framework
 
-1. **AI-Powered Recommendations**
-   - Machine learning for better suggestions
-   - User behavior analysis
-   - Performance-based recommendations
+## 📞 Support
 
-2. **Advanced Conditional Logic**
-   - Complex dependency chains
-   - Multi-step validations
-   - Dynamic question ordering
-
-3. **Internationalization**
-   - Multi-language support
-   - Localized recommendations
-   - Cultural adaptations
-
-4. **Analytics Integration**
-   - Question performance tracking
-   - User satisfaction metrics
-   - A/B testing support
-
-5. **Advanced Unified Interfaces**
-   - Type-safe API generation
-   - Runtime validation
-   - Performance optimization
+- **Documentation**: [docs.the-architech.dev](https://docs.the-architech.dev)
+- **GitHub Issues**: [github.com/the-architech/cli/issues](https://github.com/the-architech/cli/issues)
+- **Discord**: [discord.gg/the-architech](https://discord.gg/the-architech)
+- **Twitter**: [@the_architech](https://twitter.com/the_architech)
 
 ---
 
-**The Architech** - Transforming weeks of work into minutes with intelligent application generation.
+**Built with ❤️ by The Architech Team**
 
-*For detailed information about specific components, see the [documentation](./docs/README.md).* 
+*Elevating developers from artisans to architects, one project at a time.*

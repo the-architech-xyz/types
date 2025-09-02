@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 /**
- * The Architech CLI - Main Entry Point
+ * The Architech CLI V1 - Agent-Based Architecture
  *
- * Revolutionary AI-Powered Application Generator
- * Transforming weeks of work into minutes
+ * Agent-based project generation from YAML recipes
+ * Flow: architech.yaml → Orchestrator → Agents → Adapters → Blueprints
  */
-export {};
+import { Command } from 'commander';
+declare const program: Command;
+export { program };

@@ -1,0 +1,8 @@
+{
+  "id": "vitest",
+  "name": "Vitest",
+  "description": "Fast unit test framework powered by Vite",
+  "category": "testing",
+  "version": "1.0.0",
+  "blueprint": "blueprint.ts"
+}
