@@ -7,7 +7,7 @@
 
 import { execSync, spawn, SpawnOptions, ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
-import path from 'path';
+import * as path from 'path';
 import chalk from 'chalk';
 import ora from 'ora';
 

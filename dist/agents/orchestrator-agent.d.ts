@@ -28,6 +28,10 @@ export declare class OrchestratorAgent {
      */
     getAgent(category: string): any;
     /**
+     * Create architech.json configuration file
+     */
+    private createArchitechConfig;
+    /**
      * Install dependencies (delegated to project manager)
      */
     private installDependencies;

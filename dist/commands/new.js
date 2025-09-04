@@ -6,24 +6,58 @@
  */
 import { Command } from 'commander';
 import { readFileSync } from 'fs';
+import { join } from 'path';
 import * as yaml from 'js-yaml';
 import { OrchestratorAgent } from '../agents/orchestrator-agent.js';
 import { ProjectManager } from '../core/services/project/project-manager.js';
 import { AgentLogger as Logger } from '../core/cli/logger.js';
+import { GenomeRegistry } from '../core/services/genome/genome-registry.js';
 export function createNewCommand() {
     const command = new Command('new');
     command
-        .description('Create a new project from an architech.yaml recipe')
-        .argument('<recipe-file>', 'Path to the architech.yaml recipe file')
+        .description('Create a new project from an architech.yaml recipe or genome')
+        .argument('<recipe-file-or-genome>', 'Path to recipe file or genome name')
         .option('-d, --dry-run', 'Show what would be created without executing', false)
         .option('-v, --verbose', 'Enable verbose logging', false)
-        .action(async (recipeFile, options) => {
+        .option('-g, --genome', 'Use genome template instead of recipe file', false)
+        .option('-n, --name <name>', 'Project name (required when using genome)')
+        .action(async (recipeFileOrGenome, options) => {
         const logger = new Logger(options.verbose);
         try {
-            logger.info(`🚀 Creating new project from recipe: ${recipeFile}`);
-            // Read and parse the recipe file
-            const recipeContent = readFileSync(recipeFile, 'utf8');
-            const recipe = yaml.load(recipeContent);
+            let recipe;
+            let projectName;
+            if (options.genome) {
+                // Using genome template
+                if (!options.name) {
+                    logger.error('❌ Project name is required when using genome template');
+                    logger.info('💡 Use: architech new --genome <genome-name> --name <project-name>');
+                    process.exit(1);
+                }
+                projectName = options.name;
+                logger.info(`🚀 Creating new project from genome: ${recipeFileOrGenome}`);
+                // Load genome
+                const genomeRegistry = new GenomeRegistry();
+                const genomeRecipe = genomeRegistry.createRecipe(recipeFileOrGenome, projectName);
+                if (!genomeRecipe) {
+                    logger.error(`❌ Genome '${recipeFileOrGenome}' not found`);
+                    logger.info('💡 Available genomes:');
+                    const genomes = genomeRegistry.getAllGenomes();
+                    genomes.forEach(genome => {
+                        logger.info(`   - ${genome.id}: ${genome.description}`);
+                    });
+                    process.exit(1);
+                }
+                recipe = genomeRecipe;
+            }
+            else {
+                // Using recipe file
+                logger.info(`🚀 Creating new project from recipe: ${recipeFileOrGenome}`);
+                // Read and parse recipe file
+                const recipePath = join(process.cwd(), recipeFileOrGenome);
+                const recipeContent = readFileSync(recipePath, 'utf-8');
+                recipe = yaml.load(recipeContent);
+                projectName = recipe.project.name;
+            }
             if (!recipe) {
                 logger.error('❌ Failed to parse recipe file');
                 process.exit(1);

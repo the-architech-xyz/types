@@ -53,7 +53,7 @@ export class UIAgent extends SimpleAgent {
     const errors: string[] = [];
     
     // Validate UI ID
-    const supportedUI = ['shadcn-ui', 'chakra-ui', 'mui', 'antd', 'tailwind-ui'];
+    const supportedUI = ['shadcn-ui', 'chakra-ui', 'mui', 'antd', 'tailwind-ui', 'tailwind-css'];
     if (!supportedUI.includes(module.id)) {
       errors.push(`Unsupported UI library: ${module.id}. Supported: ${supportedUI.join(', ')}`);
     }

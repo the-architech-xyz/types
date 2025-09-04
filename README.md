@@ -41,6 +41,27 @@ npm install -g @the-architech/cli
 
 ### Create Your First Project
 
+#### Option 1: Using Project Genomes (Recommended)
+
+```bash
+# List available genomes
+architech list-genomes
+
+# Create a SaaS application
+architech new --genome saas-boilerplate --name my-saas
+
+# Create a blog
+architech new --genome blog-pro --name my-blog
+
+# Create a marketplace
+architech new --genome marketplace --name my-marketplace
+
+# Create a dApp
+architech new --genome dapp --name my-dapp
+```
+
+#### Option 2: Using Custom Recipes
+
 1. **Create a recipe file** (`my-saas.yaml`):
 
 ```yaml

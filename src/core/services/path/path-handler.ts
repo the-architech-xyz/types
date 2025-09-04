@@ -80,6 +80,20 @@ export class PathHandler {
   }
 
   /**
+   * Get features directory path (for cross-adapter features)
+   */
+  getFeaturesPath(): string {
+    return path.join(process.cwd(), 'src', 'features');
+  }
+
+  /**
+   * Get adapters directory path
+   */
+  getAdaptersPath(): string {
+    return path.join(process.cwd(), 'src', 'adapters');
+  }
+
+  /**
    * Get test directory path
    */
   getTestPath(): string {

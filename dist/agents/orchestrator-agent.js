@@ -4,11 +4,19 @@
  * Main orchestrator that coordinates all agents
  * Reads YAML recipe and delegates to appropriate agents
  */
+import * as path from 'path';
 import { FrameworkAgent } from './core/framework-agent.js';
 import { DatabaseAgent } from './core/database-agent.js';
 import { AuthAgent } from './core/auth-agent.js';
 import { UIAgent } from './core/ui-agent.js';
 import { TestingAgent } from './core/testing-agent.js';
+import { DeploymentAgent } from './core/deployment-agent.js';
+import { StateAgent } from './core/state-agent.js';
+import { PaymentAgent } from './core/payment-agent.js';
+import { EmailAgent } from './core/email-agent.js';
+import { ObservabilityAgent } from './core/observability-agent.js';
+import { ContentAgent } from './core/content-agent.js';
+import { BlockchainAgent } from './core/blockchain-agent.js';
 export class OrchestratorAgent {
     projectManager;
     pathHandler;
@@ -29,6 +37,13 @@ export class OrchestratorAgent {
         this.agents.set('auth', new AuthAgent(this.pathHandler));
         this.agents.set('ui', new UIAgent(this.pathHandler));
         this.agents.set('testing', new TestingAgent(this.pathHandler));
+        this.agents.set('deployment', new DeploymentAgent(this.pathHandler));
+        this.agents.set('state', new StateAgent(this.pathHandler));
+        this.agents.set('payment', new PaymentAgent(this.pathHandler));
+        this.agents.set('email', new EmailAgent(this.pathHandler));
+        this.agents.set('observability', new ObservabilityAgent(this.pathHandler));
+        this.agents.set('content', new ContentAgent(this.pathHandler));
+        this.agents.set('blockchain', new BlockchainAgent(this.pathHandler));
     }
     /**
      * Execute a complete recipe
@@ -62,7 +77,10 @@ export class OrchestratorAgent {
                     }
                     // Create project context
                     const context = {
-                        project: recipe.project,
+                        project: {
+                            ...recipe.project,
+                            path: this.pathHandler.getProjectRoot()
+                        },
                         module: module
                     };
                     // Execute the module with the agent
@@ -90,6 +108,8 @@ export class OrchestratorAgent {
             const success = errors.length === 0;
             if (success) {
                 console.log(`🎉 Recipe orchestrated successfully! ${results.length} files created`);
+                // Create architech.json file
+                await this.createArchitechConfig(recipe);
                 // Final step: Install all dependencies
                 if (!recipe.options?.skipInstall) {
                     console.log('📦 Installing dependencies...');
@@ -128,6 +148,37 @@ export class OrchestratorAgent {
      */
     getAgent(category) {
         return this.agents.get(category);
+    }
+    /**
+     * Create architech.json configuration file
+     */
+    async createArchitechConfig(recipe) {
+        try {
+            const config = {
+                version: '1.0',
+                project: {
+                    name: recipe.project.name,
+                    framework: recipe.project.framework,
+                    description: recipe.project.description,
+                    path: recipe.project.path
+                },
+                modules: recipe.modules.map(module => ({
+                    id: module.id,
+                    category: module.category,
+                    version: module.version,
+                    parameters: module.parameters,
+                    features: module.features || []
+                })),
+                options: recipe.options || {}
+            };
+            const configPath = path.join(this.pathHandler.getProjectRoot(), 'architech.json');
+            const fs = await import('fs/promises');
+            await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+            console.log('📋 Created architech.json configuration file');
+        }
+        catch (error) {
+            console.error('❌ Failed to create architech.json:', error);
+        }
     }
     /**
      * Install dependencies (delegated to project manager)

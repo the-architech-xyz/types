@@ -15,6 +15,10 @@ export interface ProjectConfig {
   name: string;
   framework: string;
   path: string;
+  description?: string;
+  version?: string;
+  author?: string;
+  license?: string;
 }
 
 export interface Module {
@@ -22,6 +26,7 @@ export interface Module {
   category: string;
   version: string;
   parameters: Record<string, any>;
+  features?: string[]; // V2: Activated features for this module
 }
 
 export interface ExecutionOptions {

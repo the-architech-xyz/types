@@ -1,8 +1,0 @@
-{
-  "id": "simple-db",
-  "name": "Simple Database",
-  "description": "Simple database setup without npm install",
-  "category": "database",
-  "version": "1.0.0",
-  "blueprint": "blueprint.ts"
-}

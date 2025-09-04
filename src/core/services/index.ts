@@ -15,3 +15,6 @@ export * from './path/path-handler.js';
 
 // Project Management
 export * from './project/project-manager.js';
+
+// Genome System
+export * from './genome/genome-registry.js';

@@ -21,6 +21,10 @@ export interface ProjectContext {
     name: string;
     path: string;
     framework: string;
+    description?: string;
+    author?: string;
+    version?: string;
+    license?: string;
   };
   module: Module;
 }

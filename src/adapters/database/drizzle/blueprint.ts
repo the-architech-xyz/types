@@ -1,18 +1,19 @@
 /**
- * Drizzle ORM Blueprint
+ * Drizzle Base Blueprint
  * 
- * Sets up Drizzle ORM with PostgreSQL and migrations
+ * Sets up Drizzle ORM with minimal configuration
+ * Advanced features are available as separate features
  */
 
 import { Blueprint } from '../../../types/adapter.js';
 
 export const drizzleBlueprint: Blueprint = {
-  id: 'drizzle-setup',
-  name: 'Drizzle ORM Setup',
+  id: 'drizzle-base-setup',
+  name: 'Drizzle Base Setup',
   actions: [
     {
       type: 'RUN_COMMAND',
-      command: 'npm install drizzle-orm postgres'
+      command: 'npm install drizzle-orm {{module.parameters.databaseType}}'
     },
     {
       type: 'RUN_COMMAND',

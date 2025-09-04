@@ -177,13 +177,81 @@ export class BlueprintExecutor {
   }
 
   /**
-   * Process template variables
+   * Process template variables with enhanced support and conditional logic
    */
   private processTemplate(content: string, context: ProjectContext): string {
-    return content
+    let processed = content;
+    
+    // Process conditional blocks first
+    processed = this.processConditionals(processed, context);
+    
+    // Project variables
+    processed = processed
       .replace(/\{\{project\.name\}\}/g, context.project.name)
       .replace(/\{\{project\.path\}\}/g, context.project.path)
-      .replace(/\{\{project\.framework\}\}/g, context.project.framework);
+      .replace(/\{\{project\.framework\}\}/g, context.project.framework)
+      .replace(/\{\{project\.description\}\}/g, context.project.description || '')
+      .replace(/\{\{project\.author\}\}/g, context.project.author || '')
+      .replace(/\{\{project\.version\}\}/g, context.project.version || '0.1.0')
+      .replace(/\{\{project\.license\}\}/g, context.project.license || 'MIT');
+    
+    // Module variables
+    if (context.module?.parameters) {
+      Object.entries(context.module.parameters).forEach(([key, value]) => {
+        const regex = new RegExp(`\\{\\{module\\.parameters\\.${key}\\}\\}`, 'g');
+        processed = processed.replace(regex, String(value));
+      });
+    }
+    
+    // Module metadata
+    if (context.module) {
+      processed = processed
+        .replace(/\{\{module\.id\}\}/g, context.module.id)
+        .replace(/\{\{module\.category\}\}/g, context.module.category)
+        .replace(/\{\{module\.version\}\}/g, context.module.version);
+    }
+    
+    // Environment variables
+    processed = processed
+      .replace(/\{\{env\.NODE_ENV\}\}/g, process.env.NODE_ENV || 'development')
+      .replace(/\{\{env\.USER\}\}/g, process.env.USER || 'user');
+    
+    return processed;
+  }
+
+  /**
+   * Process conditional blocks in templates
+   */
+  private processConditionals(content: string, context: ProjectContext): string {
+    let processed = content;
+    
+    // Handle {{#if condition}}...{{/if}} blocks
+    const ifRegex = /\{\{#if\s+([^}]+)\}\}(.*?)\{\{\/if\}\}/g;
+    processed = processed.replace(ifRegex, (match, condition, block) => {
+      const shouldInclude = this.evaluateCondition(condition, context);
+      return shouldInclude ? block : '';
+    });
+    
+    return processed;
+  }
+
+  /**
+   * Evaluate a condition in template
+   */
+  private evaluateCondition(condition: string, context: ProjectContext): boolean {
+    // Handle module.parameters.paramName conditions
+    const paramMatch = condition.match(/module\.parameters\.(\w+)/);
+    if (paramMatch) {
+      const paramName = paramMatch[1];
+      const value = context.module?.parameters?.[paramName as string];
+      return Boolean(value);
+    }
+    
+    // Handle simple boolean conditions
+    if (condition === 'true') return true;
+    if (condition === 'false') return false;
+    
+    return false;
   }
 
   /**

@@ -1,14 +1,15 @@
 /**
- * Better Auth Blueprint
+ * Better Auth Base Blueprint
  * 
- * Sets up Better Auth with OAuth providers and JWT sessions
+ * Sets up Better Auth with minimal configuration (email/password only)
+ * Advanced features are available as separate features
  */
 
 import { Blueprint } from '../../../types/adapter.js';
 
 export const betterAuthBlueprint: Blueprint = {
-  id: 'better-auth-setup',
-  name: 'Better Auth Setup',
+  id: 'better-auth-base-setup',
+  name: 'Better Auth Base Setup',
   actions: [
     {
       type: 'RUN_COMMAND',
@@ -47,17 +48,7 @@ export const auth = betterAuth({
   }) : undefined,
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
-  },
-  socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    },
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    },
+    requireEmailVerification: false,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -104,16 +95,10 @@ export { GET, POST };`
     {
       type: 'ADD_CONTENT',
       target: '.env.example',
-      content: `# Better Auth
+      content: `# Better Auth Base Configuration
 AUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# OAuth Providers
-GITHUB_CLIENT_ID="your-github-client-id"
-GITHUB_CLIENT_SECRET="your-github-client-secret"
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
 # Database (if using Drizzle)
 DATABASE_URL="postgresql://username:password@localhost:5432/{{project.name}}"`

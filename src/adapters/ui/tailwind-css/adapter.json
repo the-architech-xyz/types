@@ -1,0 +1,47 @@
+{
+  "id": "tailwind-css",
+  "name": "Tailwind CSS",
+  "version": "3.4.0",
+  "description": "Utility-first CSS framework for rapid UI development",
+  "category": "ui",
+  "type": "styling",
+  "dependencies": [],
+  "capabilities": [
+    "Utility-first CSS",
+    "Responsive design",
+    "Dark mode support",
+    "Custom themes",
+    "Component styling"
+  ],
+  "limitations": [
+    "Learning curve for utility-first approach",
+    "Bundle size considerations",
+    "Custom CSS may conflict"
+  ],
+  "parameters": {
+    "theme": {
+      "type": "object",
+      "description": "Custom theme configuration",
+      "default": {}
+    },
+    "plugins": {
+      "type": "array",
+      "description": "Tailwind CSS plugins to include",
+      "default": []
+    }
+  },
+  "features": {
+    "dark-mode": {
+      "description": "Dark mode support with system preference detection",
+      "blueprint": "dark-mode.blueprint.ts"
+    },
+    "custom-theme": {
+      "description": "Custom theme configuration and design tokens",
+      "blueprint": "custom-theme.blueprint.ts"
+    },
+    "animations": {
+      "description": "Custom animations and transitions",
+      "blueprint": "animations.blueprint.ts"
+    }
+  }
+}

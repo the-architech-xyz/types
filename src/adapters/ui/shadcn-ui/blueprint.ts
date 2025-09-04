@@ -1,14 +1,15 @@
 /**
- * Shadcn/ui Blueprint
+ * Shadcn/ui Base Blueprint
  * 
- * Sets up Shadcn/ui components with CLI-first approach
+ * Sets up Shadcn/ui with minimal configuration
+ * Advanced features are available as separate features
  */
 
 import { Blueprint } from '../../../types/adapter.js';
 
 export const shadcnUiBlueprint: Blueprint = {
-  id: 'shadcn-ui-setup',
-  name: 'Shadcn/ui Setup',
+  id: 'shadcn-ui-base-setup',
+  name: 'Shadcn/ui Base Setup',
   actions: [
     {
       type: 'RUN_COMMAND',
@@ -16,7 +17,23 @@ export const shadcnUiBlueprint: Blueprint = {
     },
     {
       type: 'RUN_COMMAND',
-      command: 'npx shadcn@latest add button input card dialog'
+      command: 'npx shadcn@latest add form'
+    },
+    {
+      type: 'RUN_COMMAND',
+      command: 'npx shadcn@latest add input'
+    },
+    {
+      type: 'RUN_COMMAND',
+      command: 'npx shadcn@latest add card'
+    },
+    {
+      type: 'RUN_COMMAND',
+      command: 'npx shadcn@latest add dialog'
+    },
+    {
+      type: 'RUN_COMMAND',
+      command: 'npx shadcn@latest add table'
     }
   ]
 };

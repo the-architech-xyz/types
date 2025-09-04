@@ -7,8 +7,8 @@
 import { Blueprint } from '../../../types/adapter.js';
 
 export const vitestBlueprint: Blueprint = {
-  id: 'vitest-setup',
-  name: 'Vitest Testing Setup',
+  id: 'vitest-base-setup',
+  name: 'Vitest Base Setup',
   actions: [
     {
       type: 'RUN_COMMAND',
@@ -122,9 +122,7 @@ describe('Example Test', () => {
       content: `{
   "scripts": {
     "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:run": "vitest run"
   }
 }`
     }

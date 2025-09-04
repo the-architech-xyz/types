@@ -8,11 +8,19 @@
 import { Recipe, Module, ExecutionResult } from '../types/recipe.js';
 import { ProjectManager } from '../core/services/project/project-manager.js';
 import { PathHandler } from '../core/services/path/path-handler.js';
+import * as path from 'path';
 import { FrameworkAgent } from './core/framework-agent.js';
 import { DatabaseAgent } from './core/database-agent.js';
 import { AuthAgent } from './core/auth-agent.js';
 import { UIAgent } from './core/ui-agent.js';
 import { TestingAgent } from './core/testing-agent.js';
+import { DeploymentAgent } from './core/deployment-agent.js';
+import { StateAgent } from './core/state-agent.js';
+import { PaymentAgent } from './core/payment-agent.js';
+import { EmailAgent } from './core/email-agent.js';
+import { ObservabilityAgent } from './core/observability-agent.js';
+import { ContentAgent } from './core/content-agent.js';
+import { BlockchainAgent } from './core/blockchain-agent.js';
 
 export class OrchestratorAgent {
   private projectManager: ProjectManager;
@@ -37,6 +45,13 @@ export class OrchestratorAgent {
     this.agents.set('auth', new AuthAgent(this.pathHandler));
     this.agents.set('ui', new UIAgent(this.pathHandler));
     this.agents.set('testing', new TestingAgent(this.pathHandler));
+    this.agents.set('deployment', new DeploymentAgent(this.pathHandler));
+    this.agents.set('state', new StateAgent(this.pathHandler));
+    this.agents.set('payment', new PaymentAgent(this.pathHandler));
+    this.agents.set('email', new EmailAgent(this.pathHandler));
+    this.agents.set('observability', new ObservabilityAgent(this.pathHandler));
+    this.agents.set('content', new ContentAgent(this.pathHandler));
+    this.agents.set('blockchain', new BlockchainAgent(this.pathHandler));
   }
 
   /**
@@ -78,7 +93,10 @@ export class OrchestratorAgent {
           
           // Create project context
           const context = {
-            project: recipe.project,
+            project: {
+              ...recipe.project,
+              path: this.pathHandler.getProjectRoot()
+            },
             module: module
           };
           
@@ -109,6 +127,9 @@ export class OrchestratorAgent {
       
       if (success) {
         console.log(`🎉 Recipe orchestrated successfully! ${results.length} files created`);
+        
+        // Create architech.json file
+        await this.createArchitechConfig(recipe);
         
         // Final step: Install all dependencies
         if (!recipe.options?.skipInstall) {
@@ -151,6 +172,38 @@ export class OrchestratorAgent {
    */
   getAgent(category: string): any {
     return this.agents.get(category);
+  }
+
+  /**
+   * Create architech.json configuration file
+   */
+  private async createArchitechConfig(recipe: Recipe): Promise<void> {
+    try {
+      const config = {
+        version: '1.0',
+        project: {
+          name: recipe.project.name,
+          framework: recipe.project.framework,
+          description: recipe.project.description,
+          path: recipe.project.path
+        },
+        modules: recipe.modules.map(module => ({
+          id: module.id,
+          category: module.category,
+          version: module.version,
+          parameters: module.parameters,
+          features: module.features || []
+        })),
+        options: recipe.options || {}
+      };
+
+      const configPath = path.join(this.pathHandler.getProjectRoot(), 'architech.json');
+      const fs = await import('fs/promises');
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+      console.log('📋 Created architech.json configuration file');
+    } catch (error) {
+      console.error('❌ Failed to create architech.json:', error);
+    }
   }
 
   /**
