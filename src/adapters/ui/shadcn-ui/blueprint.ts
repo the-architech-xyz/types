@@ -17,23 +17,7 @@ export const shadcnUiBlueprint: Blueprint = {
     },
     {
       type: 'RUN_COMMAND',
-      command: 'npx shadcn@latest add form'
-    },
-    {
-      type: 'RUN_COMMAND',
-      command: 'npx shadcn@latest add input'
-    },
-    {
-      type: 'RUN_COMMAND',
-      command: 'npx shadcn@latest add card'
-    },
-    {
-      type: 'RUN_COMMAND',
-      command: 'npx shadcn@latest add dialog'
-    },
-    {
-      type: 'RUN_COMMAND',
-      command: 'npx shadcn@latest add table'
+      command: 'npx shadcn@latest add {{module.parameters.components}}'
     }
   ]
 };

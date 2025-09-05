@@ -17,7 +17,7 @@ export const nextjsBlueprint: Blueprint = {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/app/layout.tsx',
+      target: '{{paths.app_root}}layout.tsx',
       content: `import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -43,7 +43,7 @@ export default function RootLayout({
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/app/page.tsx',
+      target: '{{paths.app_root}}page.tsx',
       content: `export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">

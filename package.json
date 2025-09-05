@@ -14,7 +14,7 @@
     "compile": "tsc",
     "clean": "rm -rf dist",
     "copy-bin": "cp -r bin dist/",
-    "copy-adapters": "find src/adapters -name '*.json' -exec sh -c 'mkdir -p dist/adapters/$(dirname ${1#src/adapters/}) && cp $1 dist/adapters/${1#src/adapters/}' _ {} \\;",
+    "copy-adapters": "find src/adapters -name '*.json' -exec sh -c 'mkdir -p dist/adapters/$(dirname ${1#src/adapters/}) && cp $1 dist/adapters/${1#src/adapters/}' _ {} \\; && find src/adapters -name '*.ts' -exec sh -c 'mkdir -p dist/adapters/$(dirname ${1#src/adapters/}) && cp $1 dist/adapters/${1#src/adapters/}' _ {} \\;",
     "test": "echo 'Running tests...'",
     "start": "node bin/architech.js",
     "link": "npm link",

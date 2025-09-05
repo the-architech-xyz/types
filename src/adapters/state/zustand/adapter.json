@@ -5,7 +5,9 @@
   "category": "state",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": ["framework/nextjs"],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "state-management",
     "persistence",
@@ -31,10 +33,16 @@
     },
     "middleware": {
       "type": "array",
-      "default": ["persist"],
+      "default": [
+        "persist"
+      ],
       "description": "Middleware to use",
       "required": false,
-      "options": ["persist", "devtools", "subscribeWithSelector"]
+      "options": [
+        "persist",
+        "devtools",
+        "subscribeWithSelector"
+      ]
     }
   },
   "features": {
@@ -50,7 +58,12 @@
           "default": "localStorage",
           "description": "Storage type to use",
           "required": false,
-          "options": ["localStorage", "sessionStorage", "indexedDB", "custom"]
+          "options": [
+            "localStorage",
+            "sessionStorage",
+            "indexedDB",
+            "custom"
+          ]
         },
         "encryption": {
           "type": "boolean",
@@ -81,5 +94,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

@@ -6,6 +6,7 @@
  */
 
 import { Blueprint } from '../../../types/adapter.js';
+import { IntegrationGuideGenerator } from '../../../core/services/integration/integration-guide-generator.js';
 
 export const stripeBlueprint: Blueprint = {
   id: 'stripe-payment-setup',
@@ -17,12 +18,21 @@ export const stripeBlueprint: Blueprint = {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/stripe/config.ts',
+      target: 'package.json',
+      content: `{
+  "scripts": {
+    "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
+    "stripe:test": "stripe trigger payment_intent.succeeded"
+  }
+}`
+    },
+    {
+      type: 'ADD_CONTENT',
+      target: '{{paths.payment_config}}/stripe.ts',
       content: `import Stripe from 'stripe';
 
 // Initialize Stripe with your secret key
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
   appInfo: {
     name: '{{project.name}}',
     version: '1.0.0',
@@ -35,7 +45,7 @@ export const STRIPE_CONFIG = {
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
   successUrl: process.env.NEXT_PUBLIC_APP_URL + '/payment/success',
   cancelUrl: process.env.NEXT_PUBLIC_APP_URL + '/payment/cancel',
-  currency: 'usd',
+  currency: '{{module.parameters.currency}}',
   mode: 'payment' as const,
 };
 
@@ -70,7 +80,7 @@ export const PRODUCTS = {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/stripe/client.ts',
+      target: '{{paths.payment_config}}/client.ts',
       content: `import { loadStripe } from '@stripe/stripe-js';
 
 // Initialize Stripe on the client side
@@ -79,7 +89,7 @@ export const getStripe = () => {
 };
 
 // Payment intent creation
-export const createPaymentIntent = async (amount: number, currency = 'usd') => {
+export const createPaymentIntent = async (amount: number, currency = '{{module.parameters.currency}}') => {
   const response = await fetch('/api/stripe/create-payment-intent', {
     method: 'POST',
     headers: {
@@ -139,13 +149,13 @@ export const createCustomerPortalSession = async (customerId: string) => {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/create-payment-intent/route.ts',
+      target: '{{paths.api_routes}}/stripe/create-payment-intent/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
-import { stripe, STRIPE_CONFIG } from '@/lib/stripe/config';
+import { stripe, STRIPE_CONFIG } from '@/lib/payment/stripe';
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, currency = 'usd' } = await request.json();
+    const { amount, currency = '{{module.parameters.currency}}' } = await request.json();
 
     if (!amount || amount <= 0) {
       return NextResponse.json(
@@ -180,9 +190,9 @@ export async function POST(request: NextRequest) {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/create-subscription/route.ts',
+      target: '{{paths.api_routes}}/stripe/create-subscription/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
-import { stripe, STRIPE_CONFIG } from '@/lib/stripe/config';
+import { stripe, STRIPE_CONFIG } from '@/lib/payment/stripe';
 
 export async function POST(request: NextRequest) {
   try {
@@ -250,9 +260,9 @@ export async function POST(request: NextRequest) {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/webhook/route.ts',
+      target: '{{paths.api_routes}}/stripe/webhook/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
-import { stripe, STRIPE_CONFIG } from '@/lib/stripe/config';
+import { stripe, STRIPE_CONFIG } from '@/lib/payment/stripe';
 import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
@@ -335,8 +345,8 @@ export async function POST(request: NextRequest) {
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getStripe } from '@/lib/stripe/client';
-import { createPaymentIntent } from '@/lib/stripe/client';
+import { getStripe } from '@/lib/payment/client';
+import { createPaymentIntent } from '@/lib/payment/client';
 
 interface PaymentButtonProps {
   amount: number;
@@ -348,7 +358,7 @@ interface PaymentButtonProps {
 
 export function PaymentButton({
   amount,
-  currency = 'usd',
+  currency = '{{module.parameters.currency}}',
   description,
   onSuccess,
   onError,
@@ -424,8 +434,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PRODUCTS, PRICE_IDS } from '@/lib/stripe/config';
-import { createSubscription } from '@/lib/stripe/client';
+import { PRODUCTS, PRICE_IDS } from '@/lib/payment/stripe';
+import { createSubscription } from '@/lib/payment/client';
 
 interface SubscriptionPlansProps {
   onSuccess?: () => void;
@@ -526,6 +536,195 @@ STRIPE_ENTERPRISE_PRICE_ID="price_..."
 # App Configuration
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."`
+    },
+    {
+      type: 'ADD_CONTENT',
+      target: '{{paths.payment_config}}/INTEGRATION_GUIDE.md',
+      content: `# Stripe Payment Processing Integration Guide
+
+## Overview
+Stripe provides complete payment processing capabilities including one-time payments, subscriptions, and marketplace functionality.
+
+## Prerequisites
+No specific prerequisites required.
+
+## Manual Integration Steps
+
+### Stripe CLI Setup (Recommended for Development)
+1. **Install Stripe CLI**:
+   \`\`\`bash
+   # macOS
+   brew install stripe/stripe-cli/stripe
+   
+   # Windows
+   winget install stripe.stripe-cli
+   
+   # Linux
+   wget https://github.com/stripe/stripe-cli/releases/latest/download/stripe_X.X.X_linux_x86_64.tar.gz
+   tar -xvf stripe_X.X.X_linux_x86_64.tar.gz
+   sudo mv stripe /usr/local/bin
+   \`\`\`
+
+2. **Login to Stripe**:
+   \`\`\`bash
+   stripe login
+   \`\`\`
+
+3. **Start webhook forwarding** (for development):
+   \`\`\`bash
+   npm run stripe:listen
+   \`\`\`
+
+4. **Test webhooks**:
+   \`\`\`bash
+   npm run stripe:test
+   \`\`\`
+
+### Environment Setup
+1. **Add Stripe keys** to your environment variables:
+\`\`\`bash
+# .env.local
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+\`\`\`
+
+### Framework Integration
+1. **Create Stripe client** in your app:
+\`\`\`typescript
+// {{paths.payment_config}}/stripe.ts
+import Stripe from 'stripe';
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-06-20',
+  typescript: true,
+});
+\`\`\`
+
+2. **Add API routes** for payment processing:
+\`\`\`typescript
+// {{paths.api_routes}}/stripe/checkout/route.ts
+import { stripe } from '@/lib/payment/stripe';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(request: NextRequest) {
+  const { priceId, quantity = 1 } = await request.json();
+  
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price: priceId,
+        quantity,
+      },
+    ],
+    success_url: \`\${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}\`,
+    cancel_url: \`\${process.env.NEXT_PUBLIC_APP_URL}/cancel\`,
+  });
+
+  return NextResponse.json({ sessionId: session.id });
+}
+\`\`\`
+
+### Webhook Integration
+1. **Create webhook endpoint**:
+\`\`\`typescript
+// {{paths.api_routes}}/stripe/webhook/route.ts
+import { stripe } from '@/lib/payment/stripe';
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+
+export async function POST(request: NextRequest) {
+  const body = await request.text();
+  const signature = request.headers.get('stripe-signature')!;
+
+  let event: Stripe.Event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err);
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object as Stripe.Checkout.Session;
+      // Handle successful payment
+      console.log('Payment succeeded:', session.id);
+      break;
+    default:
+      console.log(\`Unhandled event type: \${event.type}\`);
+  }
+
+  return NextResponse.json({ received: true });
+}
+\`\`\`
+
+## Configuration Examples
+
+### Configuration Options
+
+#### currency
+- **Type**: select
+- **Required**: No
+- **Default**: \`"usd"\`
+- **Choices**: usd, eur, gbp, cad, aud, jpy
+- **Description**: Default currency for payments
+
+#### mode
+- **Type**: select
+- **Required**: No
+- **Default**: \`"test"\`
+- **Choices**: test, live
+- **Description**: Stripe mode (test or live)
+
+#### webhooks
+- **Type**: boolean
+- **Required**: No
+- **Default**: \`true\`
+- **Description**: Enable webhook handling
+
+#### dashboard
+- **Type**: boolean
+- **Required**: No
+- **Default**: \`true\`
+- **Description**: Enable Stripe Dashboard integration
+
+## Troubleshooting
+
+### Common Issues
+
+#### Configuration Errors
+- Ensure all required environment variables are set
+- Check that all dependencies are properly installed
+- Verify that the module is correctly imported
+
+#### Integration Issues
+- Make sure the module is compatible with your framework version
+- Check that all required adapters are installed first
+- Verify that the configuration matches the expected format
+
+#### Performance Issues
+- Check for memory leaks in long-running processes
+- Monitor resource usage during peak times
+- Consider implementing caching strategies
+
+### Getting Help
+- Check the [Stripe documentation](https://stripe.com/docs)
+- Search for existing issues in the project repository
+- Create a new issue with detailed error information
+
+## Support
+For more information, visit the [Stripe documentation](https://stripe.com/docs).
+`
     }
   ]
 };

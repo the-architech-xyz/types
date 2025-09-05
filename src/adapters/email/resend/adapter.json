@@ -5,7 +5,9 @@
   "category": "email",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": ["framework/nextjs"],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "transactional-emails",
     "templates",
@@ -55,7 +57,11 @@
           "default": "react-email",
           "description": "Template engine to use",
           "required": false,
-          "options": ["react-email", "handlebars", "mjml"]
+          "options": [
+            "react-email",
+            "handlebars",
+            "mjml"
+          ]
         },
         "preview-mode": {
           "type": "boolean",
@@ -119,5 +125,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

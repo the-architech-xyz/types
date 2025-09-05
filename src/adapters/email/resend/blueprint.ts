@@ -13,11 +13,11 @@ export const resendBlueprint: Blueprint = {
   actions: [
     {
       type: 'RUN_COMMAND',
-      command: 'npm install resend react-email'
+      command: 'npm install resend @react-email/components'
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/email/config.ts',
+      target: '{{paths.email_config}}/config.ts',
       content: `import { Resend } from 'resend';
 
 // Initialize Resend
@@ -74,14 +74,14 @@ export interface EmailResponse {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/email/sender.ts',
+      target: '{{paths.email_config}}/sender.ts',
       content: `import { resend, EMAIL_CONFIG, EMAIL_TEMPLATES, EmailData, EmailResponse } from './config';
-import { WelcomeEmail } from '../templates/welcome-email';
-import { PasswordResetEmail } from '../templates/password-reset-email';
-import { EmailVerificationEmail } from '../templates/email-verification-email';
-import { PaymentConfirmationEmail } from '../templates/payment-confirmation-email';
-import { SubscriptionCreatedEmail } from '../templates/subscription-created-email';
-import { SubscriptionCancelledEmail } from '../templates/subscription-cancelled-email';
+import { WelcomeEmail } from './templates/welcome-email';
+import { PasswordResetEmail } from './templates/password-reset-email';
+import { EmailVerificationEmail } from './templates/email-verification-email';
+import { PaymentConfirmationEmail } from './templates/payment-confirmation-email';
+import { SubscriptionCreatedEmail } from './templates/subscription-created-email';
+import { SubscriptionCancelledEmail } from './templates/subscription-cancelled-email';
 
 // Email template mapping
 const EMAIL_TEMPLATE_COMPONENTS = {
@@ -112,7 +112,7 @@ export async function sendEmail(emailData: EmailData): Promise<EmailResponse> {
       from: EMAIL_CONFIG.from,
       to: Array.isArray(to) ? to : [to],
       subject,
-      react: TemplateComponent(data),
+      react: TemplateComponent(data as any),
     });
 
     if (error) {
@@ -210,7 +210,7 @@ export async function sendSubscriptionCancelledEmail(to: string, planName: strin
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/templates/welcome-email.tsx',
+      target: '{{paths.email_config}}/templates/welcome-email.tsx',
       content: `import {
   Body,
   Container,
@@ -311,7 +311,7 @@ export default WelcomeEmail;`,
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/templates/password-reset-email.tsx',
+      target: '{{paths.email_config}}/templates/password-reset-email.tsx',
       content: `import {
   Body,
   Container,
@@ -412,7 +412,7 @@ export default PasswordResetEmail;`,
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/templates/email-verification-email.tsx',
+      target: '{{paths.email_config}}/templates/email-verification-email.tsx',
       content: `import {
   Body,
   Container,
@@ -513,7 +513,7 @@ export default EmailVerificationEmail;`,
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/templates/payment-confirmation-email.tsx',
+      target: '{{paths.email_config}}/templates/payment-confirmation-email.tsx',
       content: `import {
   Body,
   Container,
@@ -618,7 +618,7 @@ export default PaymentConfirmationEmail;`,
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/templates/subscription-created-email.tsx',
+      target: '{{paths.email_config}}/templates/subscription-created-email.tsx',
       content: `import {
   Body,
   Container,
@@ -719,7 +719,7 @@ export default SubscriptionCreatedEmail;`,
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/templates/subscription-cancelled-email.tsx',
+      target: '{{paths.email_config}}/templates/subscription-cancelled-email.tsx',
       content: `import {
   Body,
   Container,

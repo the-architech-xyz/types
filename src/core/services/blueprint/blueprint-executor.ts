@@ -6,12 +6,14 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { Blueprint, BlueprintAction, BlueprintExecutionResult } from '../../../types/adapter.js';
+import { Blueprint, BlueprintAction, BlueprintExecutionResult, AdapterConfig } from '../../../types/adapter.js';
 import { ProjectContext } from '../../../types/agent.js';
 import { CommandRunner } from '../../cli/command-runner.js';
+import { ParameterResolver } from '../../../types/parameter-schema.js';
 
 export class BlueprintExecutor {
   private commandRunner: CommandRunner;
+  private currentAction: BlueprintAction | null = null;
 
   constructor() {
     this.commandRunner = new CommandRunner();
@@ -36,6 +38,9 @@ export class BlueprintExecutor {
       }
       
       console.log(`  📋 [${i + 1}/${blueprint.actions.length}] ${action.type}`);
+      
+      // Set current action for context-aware processing
+      this.currentAction = action;
       
       try {
         if (action.type === 'ADD_CONTENT') {
@@ -78,7 +83,9 @@ export class BlueprintExecutor {
     }
     
     try {
-      const targetPath = this.resolvePath(action.target, context);
+      // Process template variables in target path FIRST
+      const processedTarget = this.processTemplate(action.target, context);
+      const targetPath = this.resolvePath(processedTarget, context);
       
       // Process template variables in content
       const processedContent = this.processTemplate(action.content, context);
@@ -111,6 +118,11 @@ export class BlueprintExecutor {
     try {
       // Replace variables in command
       const processedCommand = this.processTemplate(action.command, context);
+      
+      // Debug logging
+      console.log(`  🔍 Original command: ${action.command}`);
+      console.log(`  🔍 Processed command: ${processedCommand}`);
+      console.log(`  🔍 Module parameters:`, context.module?.parameters);
       
       // Execute command - split into command and args
       const commandParts = processedCommand.split(' ');
@@ -185,7 +197,12 @@ export class BlueprintExecutor {
     // Process conditional blocks first
     processed = this.processConditionals(processed, context);
     
-    // Project variables
+    // 1. Process path variables first (from decentralized path handler)
+    if (context.pathHandler && typeof context.pathHandler.resolveTemplate === 'function') {
+      processed = context.pathHandler.resolveTemplate(processed);
+    }
+    
+    // 2. Project variables
     processed = processed
       .replace(/\{\{project\.name\}\}/g, context.project.name)
       .replace(/\{\{project\.path\}\}/g, context.project.path)
@@ -195,15 +212,34 @@ export class BlueprintExecutor {
       .replace(/\{\{project\.version\}\}/g, context.project.version || '0.1.0')
       .replace(/\{\{project\.license\}\}/g, context.project.license || 'MIT');
     
-    // Module variables
+    // 3. Module parameters with defaults (enhanced)
     if (context.module?.parameters) {
-      Object.entries(context.module.parameters).forEach(([key, value]) => {
+      // Get adapter schema for defaults (if available)
+      const adapterSchema = (context as any).adapter?.parameters || {};
+      
+      console.log(`  🔍 Adapter schema:`, adapterSchema);
+      
+      // Resolve parameters with defaults
+      const resolvedParams = ParameterResolver.resolveParameters(
+        context.module.parameters,
+        adapterSchema
+      );
+      
+      console.log(`  🔍 Resolved parameters:`, resolvedParams);
+      
+      Object.entries(resolvedParams).forEach(([key, value]) => {
         const regex = new RegExp(`\\{\\{module\\.parameters\\.${key}\\}\\}`, 'g');
-        processed = processed.replace(regex, String(value));
+        const beforeReplace = processed;
+        // Context-aware array processing
+        const processedValue = this.processValueForContext(value, context);
+        processed = processed.replace(regex, processedValue);
+        if (beforeReplace !== processed) {
+          console.log(`  🔍 Replaced {{module.parameters.${key}}} with ${processedValue}`);
+        }
       });
     }
     
-    // Module metadata
+    // 4. Module metadata
     if (context.module) {
       processed = processed
         .replace(/\{\{module\.id\}\}/g, context.module.id)
@@ -211,12 +247,33 @@ export class BlueprintExecutor {
         .replace(/\{\{module\.version\}\}/g, context.module.version);
     }
     
-    // Environment variables
+    // 5. Environment variables
     processed = processed
       .replace(/\{\{env\.NODE_ENV\}\}/g, process.env.NODE_ENV || 'development')
       .replace(/\{\{env\.USER\}\}/g, process.env.USER || 'user');
     
     return processed;
+  }
+
+  /**
+   * Process value based on context (simple context-aware processing)
+   */
+  private processValueForContext(value: any, context: ProjectContext): string {
+    if (!Array.isArray(value)) return String(value);
+    
+    // For JavaScript/TypeScript files, keep array syntax
+    // We'll detect this from the current action being processed
+    if (this.currentAction?.target && (this.currentAction.target.endsWith('.ts') || this.currentAction.target.endsWith('.js'))) {
+      return `[${value.map(v => `'${v}'`).join(', ')}]`;
+    }
+    
+    // For command arguments, join with spaces
+    if (this.currentAction?.type === 'RUN_COMMAND') {
+      return value.join(' ');
+    }
+    
+    // Default to space-separated
+    return value.join(' ');
   }
 
   /**

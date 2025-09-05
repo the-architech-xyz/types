@@ -5,7 +5,9 @@
   "category": "blockchain",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": ["framework/nextjs"],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "wallet-connection",
     "contract-interaction",
@@ -20,10 +22,21 @@
   "parameters": {
     "networks": {
       "type": "array",
-      "default": ["mainnet", "polygon", "arbitrum"],
+      "default": [
+        "mainnet",
+        "polygon",
+        "arbitrum"
+      ],
       "description": "Supported blockchain networks",
       "required": true,
-      "options": ["mainnet", "sepolia", "goerli", "polygon", "bsc", "arbitrum"]
+      "options": [
+        "mainnet",
+        "sepolia",
+        "goerli",
+        "polygon",
+        "bsc",
+        "arbitrum"
+      ]
     },
     "walletConnect": {
       "type": "boolean",
@@ -48,10 +61,18 @@
       "parameters": {
         "contract-types": {
           "type": "array",
-          "default": ["erc20", "erc721"],
+          "default": [
+            "erc20",
+            "erc721"
+          ],
           "description": "Contract types to support",
           "required": false,
-          "options": ["erc20", "erc721", "erc1155", "custom"]
+          "options": [
+            "erc20",
+            "erc721",
+            "erc1155",
+            "custom"
+          ]
         },
         "deployment": {
           "type": "boolean",
@@ -70,10 +91,18 @@
       "parameters": {
         "wallets": {
           "type": "array",
-          "default": ["metamask", "walletconnect"],
+          "default": [
+            "metamask",
+            "walletconnect"
+          ],
           "description": "Supported wallets",
           "required": false,
-          "options": ["metamask", "walletconnect", "coinbase", "rainbow"]
+          "options": [
+            "metamask",
+            "walletconnect",
+            "coinbase",
+            "rainbow"
+          ]
         },
         "auto-connect": {
           "type": "boolean",
@@ -92,10 +121,15 @@
       "parameters": {
         "standards": {
           "type": "array",
-          "default": ["erc721"],
+          "default": [
+            "erc721"
+          ],
           "description": "NFT standards to support",
           "required": false,
-          "options": ["erc721", "erc1155"]
+          "options": [
+            "erc721",
+            "erc1155"
+          ]
         },
         "metadata": {
           "type": "boolean",
@@ -114,10 +148,18 @@
       "parameters": {
         "protocols": {
           "type": "array",
-          "default": ["uniswap"],
+          "default": [
+            "uniswap"
+          ],
           "description": "DeFi protocols to integrate",
           "required": false,
-          "options": ["uniswap", "aave", "compound", "curve", "balancer"]
+          "options": [
+            "uniswap",
+            "aave",
+            "compound",
+            "curve",
+            "balancer"
+          ]
         },
         "yield-farming": {
           "type": "boolean",
@@ -127,5 +169,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

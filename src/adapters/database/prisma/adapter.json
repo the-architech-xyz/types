@@ -18,19 +18,17 @@
   ],
   "limitations": "Requires a supported database (PostgreSQL, MySQL, SQLite, MongoDB)",
   "parameters": {
-    "database": {
-      "type": "string",
-      "default": "postgresql",
-      "description": "Database type",
-      "required": true,
-      "options": ["postgresql", "mysql", "sqlite", "mongodb"]
-    },
     "provider": {
       "type": "string",
       "default": "postgresql",
       "description": "Database provider",
       "required": true,
-      "options": ["postgresql", "mysql", "sqlite", "mongodb"]
+      "options": [
+        "postgresql",
+        "mysql",
+        "sqlite",
+        "mongodb"
+      ]
     },
     "studio": {
       "type": "boolean",
@@ -43,6 +41,18 @@
       "default": true,
       "description": "Enable database migrations",
       "required": false
+    },
+    "databaseType": {
+      "type": "string",
+      "default": "postgresql",
+      "description": "Database type",
+      "required": true,
+      "options": [
+        "postgresql",
+        "mysql",
+        "sqlite",
+        "mongodb"
+      ]
     }
   },
   "features": {
@@ -109,5 +119,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

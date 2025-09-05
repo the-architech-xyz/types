@@ -5,7 +5,9 @@
   "category": "observability",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": ["framework/nextjs"],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "error-monitoring",
     "performance-tracking",
@@ -124,5 +126,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

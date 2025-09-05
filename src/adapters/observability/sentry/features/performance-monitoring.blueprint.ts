@@ -21,11 +21,8 @@ const performanceMonitoringBlueprint: Blueprint = {
 
 // Performance monitoring utilities
 export class PerformanceTracker {
-  static startTransaction(name: string, op: string = 'custom') {
-    return Sentry.startTransaction({
-      name,
-      op,
-    });
+  static startSpan(name: string, op: string = 'custom') {
+    return Sentry.startSpan({ name, op }, () => {});
   }
 
   static startSpan(transaction: any, name: string, op: string = 'custom') {
@@ -116,7 +113,7 @@ export class PerformanceTracker {
   // API transaction tracking
   static trackApiCall(url: string, method: string, duration: number, status: number) {
     {{#if module.parameters.transactions}}
-    const transaction = this.startTransaction('API Call', 'http.client');
+    const span = this.startSpan('API Call', 'http.client');
     
     transaction.setData('url', url);
     transaction.setData('method', method);
@@ -130,7 +127,7 @@ export class PerformanceTracker {
   // Database query tracking
   static trackDatabaseQuery(query: string, duration: number, table?: string) {
     {{#if module.parameters.transactions}}
-    const transaction = this.startTransaction('Database Query', 'db');
+    const span = this.startSpan('Database Query', 'db');
     
     transaction.setData('query', query);
     transaction.setData('duration', duration);

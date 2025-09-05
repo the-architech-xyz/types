@@ -13,17 +13,17 @@ export const typeormBlueprint: Blueprint = {
   actions: [
     {
       type: 'RUN_COMMAND',
-      command: 'npm install typeorm reflect-metadata {{module.parameters.database}}'
+      command: 'npm install typeorm reflect-metadata {{module.parameters.databaseType}}'
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/db/typeorm.ts',
+      target: '{{paths.database_config}}/typeorm.ts',
       content: `import { DataSource } from 'typeorm';
 import 'reflect-metadata';
 
 // Database configuration
 const AppDataSource = new DataSource({
-  type: '{{module.parameters.database}}',
+  type: '{{module.parameters.databaseType}}',
   url: process.env.DATABASE_URL,
   synchronize: {{module.parameters.synchronize}},
   logging: {{module.parameters.logging}},
@@ -56,7 +56,7 @@ export default AppDataSource;`
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/db/entities/User.ts',
+      target: '{{paths.database_config}}/entities/User.ts',
       content: `import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('users')

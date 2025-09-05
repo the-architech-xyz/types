@@ -12,7 +12,7 @@ export const sequelizeBlueprint: Blueprint = {
   actions: [
     {
       type: 'RUN_COMMAND',
-      command: 'npm install sequelize {{module.parameters.database}}'
+      command: 'npm install sequelize {{module.parameters.databaseType}}'
     },
     {
       type: 'RUN_COMMAND',
@@ -20,7 +20,7 @@ export const sequelizeBlueprint: Blueprint = {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/database/config.ts',
+      target: '{{paths.database_config}}/sequelize.ts',
       content: `import { Sequelize } from 'sequelize';
 
 // Database configuration
@@ -31,7 +31,7 @@ const config = {
     database: '{{module.parameters.databaseName}}_dev',
     host: '{{module.parameters.host}}',
     port: {{module.parameters.port}},
-    dialect: '{{module.parameters.database}}',
+    dialect: '{{module.parameters.databaseType}}',
     logging: {{module.parameters.logging}},
     pool: {{#if module.parameters.pool}}{
       max: 5,
@@ -46,7 +46,7 @@ const config = {
     database: '{{module.parameters.databaseName}}_test',
     host: '{{module.parameters.host}}',
     port: {{module.parameters.port}},
-    dialect: '{{module.parameters.database}}',
+    dialect: '{{module.parameters.databaseType}}',
     logging: false,
     pool: false
   },
@@ -56,7 +56,7 @@ const config = {
     database: process.env.DB_NAME || '{{module.parameters.databaseName}}',
     host: process.env.DB_HOST || '{{module.parameters.host}}',
     port: parseInt(process.env.DB_PORT || '{{module.parameters.port}}'),
-    dialect: '{{module.parameters.database}}',
+    dialect: '{{module.parameters.databaseType}}',
     logging: false,
     pool: {
       max: 20,
@@ -77,7 +77,7 @@ export default sequelize;`
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/database/index.ts',
+      target: '{{paths.database_config}}/index.ts',
       content: `import sequelize from './config.js';
 
 // Test the connection

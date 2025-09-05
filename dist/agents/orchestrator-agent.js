@@ -4,6 +4,8 @@
  * Main orchestrator that coordinates all agents
  * Reads YAML recipe and delegates to appropriate agents
  */
+import { DecentralizedPathHandler } from '../core/services/path/decentralized-path-handler.js';
+import { AdapterLoader } from '../core/services/adapter/adapter-loader.js';
 import * as path from 'path';
 import { FrameworkAgent } from './core/framework-agent.js';
 import { DatabaseAgent } from './core/database-agent.js';
@@ -20,12 +22,15 @@ import { BlockchainAgent } from './core/blockchain-agent.js';
 export class OrchestratorAgent {
     projectManager;
     pathHandler;
+    decentralizedPathHandler = null;
+    adapterLoader;
     agents;
     constructor(projectManager) {
         this.projectManager = projectManager;
         this.pathHandler = projectManager.getPathHandler();
+        this.adapterLoader = new AdapterLoader();
         this.agents = new Map();
-        // Initialize agents
+        // Initialize agents (will be reconfigured with decentralized path handler)
         this.initializeAgents();
     }
     /**
@@ -46,6 +51,27 @@ export class OrchestratorAgent {
         this.agents.set('blockchain', new BlockchainAgent(this.pathHandler));
     }
     /**
+     * Reconfigure all agents with the decentralized path handler
+     */
+    reconfigureAgents() {
+        if (!this.decentralizedPathHandler) {
+            throw new Error('Decentralized path handler not initialized');
+        }
+        // Update all agents to use the decentralized path handler
+        this.agents.set('framework', new FrameworkAgent(this.decentralizedPathHandler));
+        this.agents.set('database', new DatabaseAgent(this.decentralizedPathHandler));
+        this.agents.set('auth', new AuthAgent(this.decentralizedPathHandler));
+        this.agents.set('ui', new UIAgent(this.decentralizedPathHandler));
+        this.agents.set('testing', new TestingAgent(this.decentralizedPathHandler));
+        this.agents.set('deployment', new DeploymentAgent(this.decentralizedPathHandler));
+        this.agents.set('state', new StateAgent(this.decentralizedPathHandler));
+        this.agents.set('payment', new PaymentAgent(this.decentralizedPathHandler));
+        this.agents.set('email', new EmailAgent(this.decentralizedPathHandler));
+        this.agents.set('observability', new ObservabilityAgent(this.decentralizedPathHandler));
+        this.agents.set('content', new ContentAgent(this.decentralizedPathHandler));
+        this.agents.set('blockchain', new BlockchainAgent(this.decentralizedPathHandler));
+    }
+    /**
      * Execute a complete recipe
      */
     async executeRecipe(recipe) {
@@ -54,7 +80,19 @@ export class OrchestratorAgent {
         const errors = [];
         const warnings = [];
         try {
-            // 1. Only create the project directory structure
+            // 1. Identify framework adapter and create decentralized path handler
+            const frameworkModule = recipe.modules.find(m => m.category === 'framework');
+            if (!frameworkModule) {
+                throw new Error('No framework module found in recipe. Framework adapter is required.');
+            }
+            console.log(`🏗️ Loading framework adapter: ${frameworkModule.id}`);
+            const frameworkAdapter = await this.adapterLoader.loadAdapter(frameworkModule.category, frameworkModule.id);
+            // 2. Create decentralized path handler with framework's path declarations
+            this.decentralizedPathHandler = new DecentralizedPathHandler(frameworkAdapter.config, this.pathHandler.getProjectRoot());
+            console.log(`📁 Framework paths configured:`, this.decentralizedPathHandler.getAllPaths());
+            // 3. Reconfigure all agents with the new path handler
+            this.reconfigureAgents();
+            // 4. Only create the project directory structure
             // Framework modules will handle all project setup
             await this.projectManager.initializeProject();
             console.log('📋 Project directory created - framework modules will handle setup');
@@ -75,13 +113,17 @@ export class OrchestratorAgent {
                         console.error(`❌ ${error}`);
                         break;
                     }
-                    // Create project context
+                    // Load adapter for this module
+                    const adapter = await this.adapterLoader.loadAdapter(module.category, module.id);
+                    // Create project context with decentralized path handler and adapter
                     const context = {
                         project: {
                             ...recipe.project,
                             path: this.pathHandler.getProjectRoot()
                         },
-                        module: module
+                        module: module,
+                        pathHandler: this.decentralizedPathHandler,
+                        adapter: adapter.config
                     };
                     // Execute the module with the agent
                     const moduleResult = await agent.execute(module, context);

@@ -5,7 +5,9 @@
   "category": "payment",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": ["framework/nextjs"],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "one-time-payments",
     "subscriptions",
@@ -20,24 +22,41 @@
   ],
   "limitations": "Requires Stripe account and API keys",
   "parameters": {
+    "currency": {
+      "type": "select",
+      "choices": [
+        "usd",
+        "eur",
+        "gbp",
+        "cad",
+        "aud",
+        "jpy"
+      ],
+      "required": false,
+      "default": "usd",
+      "description": "Default currency for payments"
+    },
     "mode": {
-      "type": "string",
+      "type": "select",
+      "choices": [
+        "test",
+        "live"
+      ],
+      "required": false,
       "default": "test",
-      "description": "Stripe mode (test or live)",
-      "required": true,
-      "options": ["test", "live"]
+      "description": "Stripe mode (test or live)"
     },
     "webhooks": {
       "type": "boolean",
+      "required": false,
       "default": true,
-      "description": "Enable webhook handling",
-      "required": false
+      "description": "Enable webhook handling"
     },
     "dashboard": {
       "type": "boolean",
+      "required": false,
       "default": true,
-      "description": "Enable Stripe Dashboard integration",
-      "required": false
+      "description": "Enable Stripe Dashboard integration"
     }
   },
   "features": {
@@ -125,5 +144,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

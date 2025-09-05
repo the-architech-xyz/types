@@ -17,10 +17,10 @@ export const zustandBlueprint: Blueprint = {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/stores/use-app-store.ts',
+      target: '{{paths.state_config}}/use-app-store.ts',
       content: `import { create } from 'zustand';
 
-interface AppState {
+export interface AppState {
   // User state
   user: {
     id: string | null;
@@ -59,26 +59,26 @@ const initialState = {
 };
 
 export const useAppStore = create<AppState>((set) => ({
-  ...initialState,
-  
-  setUser: (user) =>
+        ...initialState,
+        
+        setUser: (user) =>
     set((state) => ({
-      user: { ...state.user, ...user },
+              user: { ...state.user, ...user },
     })),
-  
-  setTheme: (theme) =>
+        
+        setTheme: (theme) =>
     set((state) => ({
-      ui: { ...state.ui, theme },
+              ui: { ...state.ui, theme },
     })),
-  
-  setSidebarOpen: (sidebarOpen) =>
+        
+        setSidebarOpen: (sidebarOpen) =>
     set((state) => ({
-      ui: { ...state.ui, sidebarOpen },
+              ui: { ...state.ui, sidebarOpen },
     })),
-  
-  setLoading: (loading) =>
+        
+        setLoading: (loading) =>
     set((state) => ({
-      ui: { ...state.ui, loading },
+              ui: { ...state.ui, loading },
     })),
   
   reset: () => set(initialState),
@@ -102,7 +102,7 @@ export const useAppActions = () => useAppStore((state) => ({
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/stores/index.ts',
+      target: '{{paths.state_config}}/index.ts',
       content: `/**
  * State Management Exports
  * 

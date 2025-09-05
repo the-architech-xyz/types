@@ -17,7 +17,7 @@ export const prismaBlueprint: Blueprint = {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/db/prisma.ts',
+      target: '{{paths.database_config}}/prisma.ts',
       content: `import { PrismaClient } from '@prisma/client';
 
 // Prisma client instance

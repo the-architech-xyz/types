@@ -5,7 +5,9 @@
   "category": "deployment",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": ["framework/nextjs"],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "containerization",
     "multi-stage-builds",
@@ -45,10 +47,20 @@
       "parameters": {
         "stages": {
           "type": "array",
-          "default": ["deps", "builder", "runner"],
+          "default": [
+            "deps",
+            "builder",
+            "runner"
+          ],
           "description": "Build stages to include",
           "required": false,
-          "options": ["deps", "builder", "runner", "test", "lint"]
+          "options": [
+            "deps",
+            "builder",
+            "runner",
+            "test",
+            "lint"
+          ]
         },
         "optimization": {
           "type": "boolean",
@@ -79,5 +91,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

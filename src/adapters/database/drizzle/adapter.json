@@ -20,19 +20,17 @@
   ],
   "limitations": "Requires a supported database (PostgreSQL, MySQL, SQLite)",
   "parameters": {
-    "database": {
-      "type": "string",
-      "default": "postgresql",
-      "description": "Database type to use",
-      "required": true,
-      "options": ["postgresql", "mysql", "sqlite"]
-    },
     "provider": {
       "type": "string",
       "default": "neon",
       "description": "Database provider",
       "required": false,
-      "options": ["neon", "planetscale", "supabase", "local"]
+      "options": [
+        "neon",
+        "planetscale",
+        "supabase",
+        "local"
+      ]
     },
     "migrations": {
       "type": "boolean",
@@ -45,6 +43,17 @@
       "default": true,
       "description": "Enable Drizzle Studio",
       "required": false
+    },
+    "databaseType": {
+      "type": "string",
+      "default": "postgresql",
+      "description": "Database type to use",
+      "required": true,
+      "options": [
+        "postgresql",
+        "mysql",
+        "sqlite"
+      ]
     }
   },
   "features": {
@@ -99,10 +108,18 @@
       "parameters": {
         "types": {
           "type": "array",
-          "default": ["one-to-many", "many-to-many"],
+          "default": [
+            "one-to-many",
+            "many-to-many"
+          ],
           "description": "Relation types to enable",
           "required": false,
-          "options": ["one-to-one", "one-to-many", "many-to-many", "self-referencing"]
+          "options": [
+            "one-to-one",
+            "one-to-many",
+            "many-to-many",
+            "self-referencing"
+          ]
         }
       }
     },
@@ -127,5 +144,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

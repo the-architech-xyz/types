@@ -27,6 +27,8 @@ export interface ProjectContext {
     license?: string;
   };
   module: Module;
+  pathHandler?: any; // DecentralizedPathHandler - will be properly typed later
+  adapter?: any; // AdapterConfig - will be properly typed later
 }
 
 export interface AgentResult {

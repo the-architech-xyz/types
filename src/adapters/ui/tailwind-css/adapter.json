@@ -43,5 +43,8 @@
       "description": "Custom animations and transitions",
       "blueprint": "animations.blueprint.ts"
     }
+  },
+  "constraints": {
+    "excludeFrameworks": ["nextjs"]
   }
 }

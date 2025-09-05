@@ -5,7 +5,9 @@
   "category": "auth",
   "version": "0.18.0",
   "blueprint": "blueprint.ts",
-  "dependencies": ["database/drizzle"],
+  "dependencies": [
+    "database/drizzle"
+  ],
   "capabilities": [
     "email-password",
     "oauth",
@@ -22,30 +24,27 @@
   "parameters": {
     "providers": {
       "type": "array",
-      "default": ["email"],
-      "description": "Authentication providers to enable",
       "required": false,
-      "options": ["email", "google", "github", "discord", "twitter"]
-    },
-    "database": {
-      "type": "string",
-      "default": "drizzle",
-      "description": "Database adapter to use",
-      "required": true,
-      "options": ["drizzle", "prisma"]
+      "default": [
+        "email"
+      ],
+      "description": "Authentication providers to enable"
     },
     "session": {
-      "type": "string",
-      "default": "jwt",
-      "description": "Session management strategy",
+      "type": "select",
+      "choices": [
+        "jwt",
+        "database"
+      ],
       "required": false,
-      "options": ["jwt", "database"]
+      "default": "jwt",
+      "description": "Session management strategy"
     },
     "csrf": {
       "type": "boolean",
+      "required": false,
       "default": true,
-      "description": "Enable CSRF protection",
-      "required": false
+      "description": "Enable CSRF protection"
     },
     "rateLimit": {
       "type": "boolean",
@@ -64,10 +63,18 @@
       "parameters": {
         "providers": {
           "type": "array",
-          "default": ["google", "github"],
+          "default": [
+            "google",
+            "github"
+          ],
           "description": "OAuth providers to enable",
           "required": true,
-          "options": ["google", "github", "discord", "twitter"]
+          "options": [
+            "google",
+            "github",
+            "discord",
+            "twitter"
+          ]
         }
       }
     },
@@ -83,7 +90,11 @@
           "default": "jwt",
           "description": "Session management strategy",
           "required": true,
-          "options": ["jwt", "database", "hybrid"]
+          "options": [
+            "jwt",
+            "database",
+            "hybrid"
+          ]
         }
       }
     },
@@ -126,10 +137,16 @@
       "parameters": {
         "methods": {
           "type": "array",
-          "default": ["totp"],
+          "default": [
+            "totp"
+          ],
           "description": "MFA methods to enable",
           "required": true,
-          "options": ["totp", "sms", "email"]
+          "options": [
+            "totp",
+            "sms",
+            "email"
+          ]
         }
       }
     },
@@ -145,9 +162,14 @@
           "default": "shadcn",
           "description": "UI framework for admin panel",
           "required": false,
-          "options": ["shadcn", "chakra", "mui"]
+          "options": [
+            "shadcn",
+            "chakra",
+            "mui"
+          ]
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

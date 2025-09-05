@@ -197,7 +197,7 @@ export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);`,
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/config.ts',
+      target: '{{paths.observability_config}}/sentry.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 // Sentry configuration
@@ -227,8 +227,8 @@ export const reportMessage = (message: string, level: 'info' | 'warning' | 'erro
 };
 
 // Performance monitoring
-export const startTransaction = (name: string, op: string) => {
-  return Sentry.startTransaction({ name, op });
+export const startSpan = (name: string, op: string) => {
+  return Sentry.startSpan({ name, op }, () => {});
 };
 
 // User context
@@ -306,6 +306,7 @@ export function SentryProvider({ children }: SentryProviderProps) {
       beforeCapture={(scope, error, errorInfo) => {
         scope.setTag('errorBoundary', true);
         scope.setContext('errorInfo', errorInfo);
+        return scope;
       }}
     >
       {children}
@@ -315,7 +316,7 @@ export function SentryProvider({ children }: SentryProviderProps) {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/performance.ts',
+      target: '{{paths.observability_config}}/performance.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 // Performance monitoring utilities
@@ -325,15 +326,8 @@ export class PerformanceMonitor {
   /**
    * Start a performance transaction
    */
-  static startTransaction(name: string, op: string, description?: string) {
-    const transaction = Sentry.startTransaction({
-      name,
-      op,
-      description,
-    });
-    
-    this.transactions.set(name, transaction);
-    return transaction;
+  static startSpan(name: string, op: string, description?: string) {
+    return Sentry.startSpan({ name, op }, () => {});
   }
 
   /**
@@ -368,14 +362,14 @@ export class PerformanceMonitor {
     apiName: string,
     apiCall: () => Promise<T>
   ): Promise<T> {
-    const transaction = this.startTransaction(\`api.\${apiName}\`, 'http.client');
+    const span = this.startSpan(\`api.\${apiName}\`, 'http.client');
     
     try {
       const result = await apiCall();
-      transaction.setStatus('ok');
+      // Span automatically handles status
       return result;
     } catch (error) {
-      transaction.setStatus('internal_error');
+      // Span automatically handles error status
       throw error;
     } finally {
       this.finishTransaction(\`api.\${apiName}\`);
@@ -389,14 +383,14 @@ export class PerformanceMonitor {
     functionName: string,
     fn: () => Promise<T>
   ): Promise<T> {
-    const transaction = this.startTransaction(\`function.\${functionName}\`, 'function');
+    const span = this.startSpan(\`function.\${functionName}\`, 'function');
     
     try {
       const result = await fn();
-      transaction.setStatus('ok');
+      // Span automatically handles status
       return result;
     } catch (error) {
-      transaction.setStatus('internal_error');
+      // Span automatically handles error status
       throw error;
     } finally {
       this.finishTransaction(\`function.\${functionName}\`);
@@ -406,8 +400,8 @@ export class PerformanceMonitor {
 
 // React hook for performance monitoring
 export function usePerformanceMonitor() {
-  const startTransaction = (name: string, op: string) => {
-    return PerformanceMonitor.startTransaction(name, op);
+  const startSpan = (name: string, op: string) => {
+    return PerformanceMonitor.startSpan(name, op);
   };
 
   const finishTransaction = (name: string) => {
@@ -423,7 +417,7 @@ export function usePerformanceMonitor() {
   };
 
   return {
-    startTransaction,
+    startSpan,
     finishTransaction,
     monitorApiCall,
     monitorFunction,
@@ -432,7 +426,7 @@ export function usePerformanceMonitor() {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/analytics.ts',
+      target: '{{paths.observability_config}}/analytics.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 // Analytics and event tracking

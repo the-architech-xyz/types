@@ -19,13 +19,6 @@
   ],
   "limitations": "Requires a supported database (PostgreSQL, MySQL, SQLite, MariaDB, MSSQL)",
   "parameters": {
-    "database": {
-      "type": "string",
-      "default": "postgresql",
-      "description": "Database type",
-      "required": true,
-      "options": ["postgresql", "mysql", "sqlite", "mariadb", "mssql"]
-    },
     "host": {
       "type": "string",
       "default": "localhost",
@@ -67,6 +60,19 @@
       "default": true,
       "description": "Enable connection pooling",
       "required": false
+    },
+    "databaseType": {
+      "type": "string",
+      "default": "postgresql",
+      "description": "Database type",
+      "required": true,
+      "options": [
+        "postgresql",
+        "mysql",
+        "sqlite",
+        "mariadb",
+        "mssql"
+      ]
     }
   },
   "features": {
@@ -100,10 +106,21 @@
       "parameters": {
         "types": {
           "type": "array",
-          "default": ["hasMany", "belongsTo", "belongsToMany"],
+          "default": [
+            "hasMany",
+            "belongsTo",
+            "belongsToMany"
+          ],
           "description": "Association types to enable",
           "required": false,
-          "options": ["hasOne", "hasMany", "belongsTo", "belongsToMany", "hasOneThrough", "hasManyThrough"]
+          "options": [
+            "hasOne",
+            "hasMany",
+            "belongsTo",
+            "belongsToMany",
+            "hasOneThrough",
+            "hasManyThrough"
+          ]
         },
         "eager-loading": {
           "type": "boolean",
@@ -134,5 +151,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

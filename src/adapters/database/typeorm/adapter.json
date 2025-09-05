@@ -18,13 +18,6 @@
   ],
   "limitations": "Requires a supported database (PostgreSQL, MySQL, SQLite, MongoDB)",
   "parameters": {
-    "database": {
-      "type": "string",
-      "default": "postgresql",
-      "description": "Database type",
-      "required": true,
-      "options": ["postgresql", "mysql", "sqlite", "mongodb"]
-    },
     "synchronize": {
       "type": "boolean",
       "default": false,
@@ -36,6 +29,18 @@
       "default": true,
       "description": "Enable query logging",
       "required": false
+    },
+    "databaseType": {
+      "type": "string",
+      "default": "postgresql",
+      "description": "Database type",
+      "required": true,
+      "options": [
+        "postgresql",
+        "mysql",
+        "sqlite",
+        "mongodb"
+      ]
     }
   },
   "features": {
@@ -102,5 +107,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

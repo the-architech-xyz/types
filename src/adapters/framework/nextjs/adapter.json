@@ -19,6 +19,23 @@
     "import-alias"
   ],
   "limitations": "Requires Node.js 18+ and npm/yarn/pnpm/bun",
+  "paths": {
+    "source_root": "src/",
+    "app_root": "src/app/",
+    "shared_library": "src/lib/",
+    "ui_components": "src/components/ui/",
+    "api_routes": "src/app/api/",
+    "database_config": "src/lib/db",
+    "auth_config": "src/lib/auth",
+    "payment_config": "src/lib/payment",
+    "email_config": "src/lib/email",
+    "observability_config": "src/lib/observability",
+    "state_config": "src/lib/state",
+    "testing_config": "src/lib/testing",
+    "deployment_config": "src/lib/deployment",
+    "content_config": "src/lib/content",
+    "blockchain_config": "src/lib/blockchain"
+  },
   "parameters": {
     "typescript": {
       "type": "boolean",
@@ -154,9 +171,15 @@
           "default": "vercel",
           "description": "Deployment platform",
           "required": false,
-          "options": ["vercel", "docker", "aws", "netlify"]
+          "options": [
+            "vercel",
+            "docker",
+            "aws",
+            "netlify"
+          ]
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

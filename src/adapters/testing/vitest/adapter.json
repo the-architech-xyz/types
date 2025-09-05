@@ -49,7 +49,11 @@
       "default": "jsdom",
       "description": "Test environment",
       "required": false,
-      "options": ["jsdom", "node", "happy-dom"]
+      "options": [
+        "jsdom",
+        "node",
+        "happy-dom"
+      ]
     }
   },
   "features": {
@@ -68,10 +72,18 @@
         },
         "reports": {
           "type": "array",
-          "default": ["text", "html"],
+          "default": [
+            "text",
+            "html"
+          ],
           "description": "Coverage report formats",
           "required": false,
-          "options": ["text", "html", "lcov", "json"]
+          "options": [
+            "text",
+            "html",
+            "lcov",
+            "json"
+          ]
         }
       }
     },
@@ -96,5 +108,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

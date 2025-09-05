@@ -5,7 +5,9 @@
   "category": "content",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": ["framework/nextjs"],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "internationalization",
     "localization",
@@ -19,7 +21,10 @@
   "parameters": {
     "locales": {
       "type": "array",
-      "default": ["en", "fr"],
+      "default": [
+        "en",
+        "fr"
+      ],
       "description": "Supported locales",
       "required": true
     },
@@ -61,7 +66,11 @@
           "default": "always",
           "description": "Locale prefix strategy",
           "required": false,
-          "options": ["always", "as-needed", "never"]
+          "options": [
+            "always",
+            "as-needed",
+            "never"
+          ]
         }
       }
     },
@@ -107,5 +116,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

@@ -5,7 +5,9 @@
   "category": "ui",
   "version": "latest",
   "blueprint": "blueprint.ts",
-  "dependencies": ["framework/nextjs"],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "components",
     "tailwind",
@@ -20,17 +22,38 @@
   "parameters": {
     "components": {
       "type": "array",
-      "default": ["button", "input", "card"],
+      "default": [
+        "button",
+        "input",
+        "card"
+      ],
       "description": "Components to install",
       "required": false,
-      "options": ["button", "input", "card", "dialog", "form", "table", "badge", "avatar", "dropdown-menu", "toast"]
+      "options": [
+        "button",
+        "input",
+        "card",
+        "dialog",
+        "form",
+        "table",
+        "badge",
+        "avatar",
+        "dropdown-menu",
+        "toast"
+      ]
     },
     "theme": {
       "type": "string",
       "default": "default",
       "description": "Color theme to use",
       "required": false,
-      "options": ["default", "dark", "blue", "green", "purple"]
+      "options": [
+        "default",
+        "dark",
+        "blue",
+        "green",
+        "purple"
+      ]
     },
     "darkMode": {
       "type": "boolean",
@@ -55,10 +78,26 @@
       "parameters": {
         "components": {
           "type": "array",
-          "default": ["table", "form", "dialog", "dropdown-menu"],
+          "default": [
+            "table",
+            "form",
+            "dialog",
+            "dropdown-menu"
+          ],
           "description": "Advanced components to install",
           "required": false,
-          "options": ["table", "form", "dialog", "dropdown-menu", "sheet", "tabs", "accordion", "carousel", "calendar", "date-picker"]
+          "options": [
+            "table",
+            "form",
+            "dialog",
+            "dropdown-menu",
+            "sheet",
+            "tabs",
+            "accordion",
+            "carousel",
+            "calendar",
+            "date-picker"
+          ]
         }
       }
     },
@@ -71,10 +110,21 @@
       "parameters": {
         "themes": {
           "type": "array",
-          "default": ["default", "dark"],
+          "default": [
+            "default",
+            "dark"
+          ],
           "description": "Themes to include",
           "required": false,
-          "options": ["default", "dark", "blue", "green", "purple", "orange", "red"]
+          "options": [
+            "default",
+            "dark",
+            "blue",
+            "green",
+            "purple",
+            "orange",
+            "red"
+          ]
         },
         "custom-colors": {
           "type": "boolean",
@@ -111,5 +161,6 @@
         }
       }
     }
-  }
+  },
+  "constraints": {}
 }

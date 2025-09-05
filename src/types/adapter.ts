@@ -21,14 +21,16 @@ export interface AdapterConfig {
   limitations?: string; // Textual description of limitations
   parameters?: Record<string, ParameterDefinition>; // Parameter definitions
   features?: Record<string, FeatureDefinition>; // V2: Modular features
+  paths?: Record<string, string>; // V1: Framework-specific path declarations
 }
 
 export interface ParameterDefinition {
-  type: 'boolean' | 'string' | 'number' | 'array' | 'object';
+  type: 'string' | 'boolean' | 'number' | 'select' | 'array' | 'object';
+  required: boolean;
   default?: any;
+  choices?: string[];
   description: string;
-  required?: boolean;
-  options?: any[]; // For enum-like parameters
+  validation?: (value: any) => boolean;
 }
 
 export interface FeatureDefinition {

@@ -9,12 +9,18 @@ import { ProjectManager } from '../core/services/project/project-manager.js';
 export declare class OrchestratorAgent {
     private projectManager;
     private pathHandler;
+    private decentralizedPathHandler;
+    private adapterLoader;
     private agents;
     constructor(projectManager: ProjectManager);
     /**
      * Initialize all agents
      */
     private initializeAgents;
+    /**
+     * Reconfigure all agents with the decentralized path handler
+     */
+    private reconfigureAgents;
     /**
      * Execute a complete recipe
      */
