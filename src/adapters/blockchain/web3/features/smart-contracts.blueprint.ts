@@ -11,8 +11,8 @@ const smartContractsBlueprint: Blueprint = {
   name: 'Smart Contracts Integration',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/contracts.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/contracts.ts',
       content: `import Web3 from 'web3';
 import { createWeb3Instance } from './config.js';
 
@@ -262,8 +262,8 @@ export class ContractManager {
 export const contractManager = new ContractManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/ContractInteraction.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/ContractInteraction.tsx',
       content: `import React, { useState } from 'react';
 import { useWallet } from '../../hooks/web3/useWallet.js';
 import { contractManager } from '../../lib/web3/contracts.js';

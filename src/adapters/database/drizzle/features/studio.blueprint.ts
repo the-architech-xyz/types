@@ -11,12 +11,13 @@ const studioBlueprint: Blueprint = {
   name: 'Drizzle Studio',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D drizzle-kit'
+      type: 'INSTALL_PACKAGES',
+      packages: ['drizzle-kit'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/studio/studio-config.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/studio/studio-config.ts',
       content: `// Drizzle Studio Configuration
 export const studioConfig = {
   host: '{{module.parameters.host}}',
@@ -73,8 +74,8 @@ export class StudioManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/studio.js',
+      type: 'CREATE_FILE',
+      path: 'scripts/studio.js',
       content: `#!/usr/bin/env node
 
 /**

@@ -11,12 +11,13 @@ const schemaManagementBlueprint: Blueprint = {
   name: 'Prisma Schema Management',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D prisma'
+      type: 'INSTALL_PACKAGES',
+      packages: ['prisma'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/schema-manager.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/schema-manager.ts',
       content: `import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -204,8 +205,8 @@ export class SchemaManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/database/schema-manager.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/database/schema-manager.tsx',
       content: `'use client';
 
 import React, { useState } from 'react';

@@ -11,8 +11,8 @@ const adminPanelBlueprint: Blueprint = {
   name: 'Better Auth Admin Panel',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/admin.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/admin.ts',
       content: `import { auth } from './config';
 
 // Admin utilities for Better Auth
@@ -247,8 +247,8 @@ export class AuditLogger {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docs/integrations/better-auth-admin-panel.md',
+      type: 'CREATE_FILE',
+      path: 'docs/integrations/better-auth-admin-panel.md',
       content: `# Better Auth Admin Panel Integration Guide
 
 ## Overview

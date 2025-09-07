@@ -6,17 +6,21 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { Blueprint, BlueprintAction, BlueprintExecutionResult, AdapterConfig } from '../../../types/adapter.js';
+import { Blueprint, BlueprintAction, BlueprintExecutionResult, AdapterConfig, ImportDefinition } from '../../../types/adapter.js';
 import { ProjectContext } from '../../../types/agent.js';
 import { CommandRunner } from '../../cli/command-runner.js';
 import { ParameterResolver } from '../../../types/parameter-schema.js';
+import { logger } from '../../utils/logger.js';
+import { SemanticActionHandler } from '../semantic-actions/semantic-action-handler.js';
 
 export class BlueprintExecutor {
   private commandRunner: CommandRunner;
+  private semanticActionHandler: SemanticActionHandler;
   private currentAction: BlueprintAction | null = null;
 
   constructor() {
     this.commandRunner = new CommandRunner();
+    this.semanticActionHandler = new SemanticActionHandler();
   }
 
   /**
@@ -38,12 +42,33 @@ export class BlueprintExecutor {
       }
       
       console.log(`  📋 [${i + 1}/${blueprint.actions.length}] ${action.type}`);
+      console.log(`  🔍 Action target: ${action.target}`);
+      console.log(`  🔍 Action condition: ${action.condition}`);
+      
+      // Check action condition before processing
+      if (action.condition) {
+        const shouldExecute = this.evaluateCondition(action.condition, context);
+        console.log(`  🔍 Action condition evaluation: ${action.condition} = ${shouldExecute}`);
+        if (!shouldExecute) {
+          console.log(`  ⏭️ Skipping action due to condition: ${action.condition}`);
+          continue;
+        }
+      }
       
       // Set current action for context-aware processing
       this.currentAction = action;
       
       try {
-        if (action.type === 'ADD_CONTENT') {
+        if (SemanticActionHandler.isSemanticAction(action)) {
+          // Handle semantic actions (recommended approach)
+          await this.semanticActionHandler.handleSemanticAction(action, context);
+          if (action.path) {
+            files.push(action.path);
+          } else if (action.target) {
+            files.push(action.target);
+          }
+        } else if (action.type === 'ADD_CONTENT') {
+          // Handle legacy ADD_CONTENT actions
           const result = await this.handleAddContent(action, context);
           if (result.success && result.filePath) {
             files.push(result.filePath);
@@ -51,6 +76,7 @@ export class BlueprintExecutor {
             errors.push(result.error);
           }
         } else if (action.type === 'RUN_COMMAND') {
+          // Handle RUN_COMMAND actions
           const result = await this.handleRunCommand(action, context);
           if (!result.success && result.error) {
             errors.push(result.error);
@@ -90,8 +116,24 @@ export class BlueprintExecutor {
       // Process template variables in content
       const processedContent = this.processTemplate(action.content, context);
       
-      // Intelligent file handling
-      if (action.target === 'package.json') {
+      // Strategy-based file handling
+      const strategy = action.strategy || 'replace';
+      const fileType = action.fileType || this.detectFileType(action.target);
+      
+      // Enhanced strategy handling
+      if (strategy === 'merge-imports') {
+        await this.mergeImportsToFile(targetPath, action.imports || []);
+      } else if (strategy === 'merge-config') {
+        await this.mergeConfigObject(targetPath, action.configObjectName || 'config', action.payload || {});
+      } else if (strategy === 'merge-schema') {
+        await this.mergeSchema(targetPath, action.schema || {}, action.dialect || 'drizzle');
+      } else if (strategy === 'merge' && (fileType === 'typescript' || fileType === 'javascript')) {
+        await this.mergeTypeScriptFile(targetPath, processedContent);
+      } else if (strategy === 'append') {
+        await this.appendToFile(targetPath, processedContent);
+      } else if (strategy === 'prepend') {
+        await this.prependToFile(targetPath, processedContent);
+      } else if (action.target === 'package.json') {
         await this.mergePackageJson(targetPath, processedContent);
       } else if (action.target === '.env' || action.target === '.env.example') {
         await this.appendToEnv(targetPath, processedContent);
@@ -108,6 +150,17 @@ export class BlueprintExecutor {
   }
 
   /**
+   * Detect file type from target path
+   */
+  private detectFileType(target: string): 'typescript' | 'javascript' | 'json' | 'env' | 'auto' {
+    if (target.endsWith('.ts') || target.endsWith('.tsx')) return 'typescript';
+    if (target.endsWith('.js') || target.endsWith('.jsx')) return 'javascript';
+    if (target.endsWith('.json')) return 'json';
+    if (target.endsWith('.env') || target.endsWith('.env.example')) return 'env';
+    return 'auto';
+  }
+
+  /**
    * Handle RUN_COMMAND action
    */
   private async handleRunCommand(action: BlueprintAction, context: ProjectContext): Promise<{ success: boolean; error?: string }> {
@@ -120,9 +173,9 @@ export class BlueprintExecutor {
       const processedCommand = this.processTemplate(action.command, context);
       
       // Debug logging
-      console.log(`  🔍 Original command: ${action.command}`);
-      console.log(`  🔍 Processed command: ${processedCommand}`);
-      console.log(`  🔍 Module parameters:`, context.module?.parameters);
+      logger.debug(`Original command: ${action.command}`);
+      logger.debug(`Processed command: ${processedCommand}`);
+      logger.debug(`Module parameters:`, context.module?.parameters);
       
       // Execute command - split into command and args
       const commandParts = processedCommand.split(' ');
@@ -217,7 +270,7 @@ export class BlueprintExecutor {
       // Get adapter schema for defaults (if available)
       const adapterSchema = (context as any).adapter?.parameters || {};
       
-      console.log(`  🔍 Adapter schema:`, adapterSchema);
+      logger.debug(`Adapter schema:`, adapterSchema);
       
       // Resolve parameters with defaults
       const resolvedParams = ParameterResolver.resolveParameters(
@@ -225,7 +278,7 @@ export class BlueprintExecutor {
         adapterSchema
       );
       
-      console.log(`  🔍 Resolved parameters:`, resolvedParams);
+      logger.debug(`Resolved parameters:`, resolvedParams);
       
       Object.entries(resolvedParams).forEach(([key, value]) => {
         const regex = new RegExp(`\\{\\{module\\.parameters\\.${key}\\}\\}`, 'g');
@@ -234,7 +287,7 @@ export class BlueprintExecutor {
         const processedValue = this.processValueForContext(value, context);
         processed = processed.replace(regex, processedValue);
         if (beforeReplace !== processed) {
-          console.log(`  🔍 Replaced {{module.parameters.${key}}} with ${processedValue}`);
+          logger.debug(`Replaced {{module.parameters.${key}}} with ${processedValue}`);
         }
       });
     }
@@ -247,7 +300,12 @@ export class BlueprintExecutor {
         .replace(/\{\{module\.version\}\}/g, context.module.version);
     }
     
-    // 5. Environment variables
+    // 5. Framework variable
+    if (context.framework) {
+      processed = processed.replace(/\{\{framework\}\}/g, context.framework);
+    }
+    
+    // 6. Environment variables
     processed = processed
       .replace(/\{\{env\.NODE_ENV\}\}/g, process.env.NODE_ENV || 'development')
       .replace(/\{\{env\.USER\}\}/g, process.env.USER || 'user');
@@ -286,6 +344,9 @@ export class BlueprintExecutor {
     const ifRegex = /\{\{#if\s+([^}]+)\}\}(.*?)\{\{\/if\}\}/g;
     processed = processed.replace(ifRegex, (match, condition, block) => {
       const shouldInclude = this.evaluateCondition(condition, context);
+      console.log(`🔍 Conditional: ${condition}, shouldInclude: ${shouldInclude}, framework: ${context.framework}`);
+      console.log(`🔍 Context integration:`, (context as any).integration);
+      console.log(`🔍 Block length: ${block.length}, will include: ${shouldInclude}`);
       return shouldInclude ? block : '';
     });
     
@@ -296,12 +357,29 @@ export class BlueprintExecutor {
    * Evaluate a condition in template
    */
   private evaluateCondition(condition: string, context: ProjectContext): boolean {
+    // Handle integration.features.paramName conditions
+    const integrationMatch = condition.match(/integration\.features\.(\w+)/);
+    if (integrationMatch) {
+      const featureName = integrationMatch[1];
+      const integration = (context as any).integration;
+      if (integration?.features && featureName) {
+        const value = integration.features[featureName];
+        return Boolean(value);
+      }
+      return false;
+    }
+    
     // Handle module.parameters.paramName conditions
     const paramMatch = condition.match(/module\.parameters\.(\w+)/);
     if (paramMatch) {
       const paramName = paramMatch[1];
       const value = context.module?.parameters?.[paramName as string];
       return Boolean(value);
+    }
+    
+    // Handle framework conditions
+    if (condition === 'framework') {
+      return Boolean(context.framework);
     }
     
     // Handle simple boolean conditions
@@ -402,5 +480,230 @@ export class BlueprintExecutor {
     }
     
     return result;
+  }
+
+  /**
+   * Merge TypeScript/JavaScript files intelligently
+   */
+  private async mergeTypeScriptFile(filePath: string, newContent: string): Promise<void> {
+    let existingContent = '';
+    
+    try {
+      existingContent = await fs.readFile(filePath, 'utf-8');
+    } catch {
+      // File doesn't exist, create new
+      await fs.writeFile(filePath, newContent);
+      return;
+    }
+    
+    // Simple merge: add imports, add exports, add functions
+    const mergedContent = this.mergeTypeScriptContent(existingContent, newContent);
+    await fs.writeFile(filePath, mergedContent);
+  }
+
+  /**
+   * Merge TypeScript content intelligently
+   */
+  private mergeTypeScriptContent(existing: string, newContent: string): string {
+    // Extract imports from new content
+    const newImports = this.extractImports(newContent);
+    const existingImports = this.extractImports(existing);
+    
+    // Extract exports from new content
+    const newExports = this.extractExports(newContent);
+    const existingExports = this.extractExports(existing);
+    
+    // Extract functions from new content
+    const newFunctions = this.extractFunctions(newContent);
+    
+    // Remove imports and exports from existing content
+    let result = existing
+      .replace(/import\s+.*?from\s+['"][^'"]+['"];?\n?/g, '')
+      .replace(/export\s+.*?;?\n?/g, '');
+    
+    // Add merged imports
+    const mergedImports = this.mergeImports(existingImports, newImports);
+    const importStrings = mergedImports.map(imp => {
+      if (imp.type === 'default') {
+        return `import ${imp.imports[0]} from '${imp.source}';`;
+      } else {
+        return `import { ${imp.imports.join(', ')} } from '${imp.source}';`;
+      }
+    });
+    
+    // Add merged exports
+    const mergedExports = [...existingExports, ...newExports.filter(exp => 
+      !existingExports.some(existing => existing.name === exp.name)
+    )];
+    const exportStrings = mergedExports.map(exp => {
+      if (exp.type === 'default') {
+        return `export default ${exp.name};`;
+      } else {
+        return `export { ${exp.name} };`;
+      }
+    });
+    
+    // Combine everything
+    const imports = importStrings.length > 0 ? importStrings.join('\n') + '\n\n' : '';
+    const exports = exportStrings.length > 0 ? '\n\n' + exportStrings.join('\n') : '';
+    const functions = newFunctions.length > 0 ? '\n\n' + newFunctions.join('\n\n') : '';
+    
+    return imports + result.trim() + functions + exports;
+  }
+
+  /**
+   * Extract imports from content
+   */
+  private extractImports(content: string): Array<{ type: 'default' | 'named'; source: string; imports: string[] }> {
+    const imports: Array<{ type: 'default' | 'named'; source: string; imports: string[] }> = [];
+    const importRegex = /import\s+(?:(\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
+    let match;
+
+    while ((match = importRegex.exec(content)) !== null) {
+      const importName = match[1];
+      const source = match[2];
+      if (!source) continue; // Skip invalid matches
+      
+      imports.push({
+        type: importName ? 'default' : 'named',
+        source,
+        imports: importName ? [importName] : []
+      });
+    }
+
+    return imports;
+  }
+
+  /**
+   * Extract exports from content
+   */
+  private extractExports(content: string): Array<{ type: 'default' | 'named'; name: string }> {
+    const exports: Array<{ type: 'default' | 'named'; name: string }> = [];
+    const exportRegex = /export\s+(?:(\w+)\s+)?(?:const|let|var|function|class|interface|type)\s+(\w+)/g;
+    let match;
+
+    while ((match = exportRegex.exec(content)) !== null) {
+      const exportType = match[1];
+      const name = match[2];
+      if (!name) continue; // Skip invalid matches
+      
+      exports.push({
+        type: exportType === 'default' ? 'default' : 'named',
+        name
+      });
+    }
+
+    return exports;
+  }
+
+  /**
+   * Extract functions from content
+   */
+  private extractFunctions(content: string): string[] {
+    const functions: string[] = [];
+    const functionRegex = /(?:export\s+)?(?:async\s+)?(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s+)?\([^)]*\)\s*=>)/g;
+    let match;
+
+    while ((match = functionRegex.exec(content)) !== null) {
+      functions.push(match[0]);
+    }
+
+    return functions;
+  }
+
+  /**
+   * Merge imports intelligently
+   */
+  private mergeImports(existing: Array<{ type: 'default' | 'named'; source: string; imports: string[] }>, newImports: Array<{ type: 'default' | 'named'; source: string; imports: string[] }>): Array<{ type: 'default' | 'named'; source: string; imports: string[] }> {
+    const merged = [...existing];
+    
+    for (const newImport of newImports) {
+      const existingImport = merged.find(imp => imp.source === newImport.source);
+      if (existingImport) {
+        // Merge imports from same source
+        existingImport.imports = [...new Set([...existingImport.imports, ...newImport.imports])];
+      } else {
+        // Add new import source
+        merged.push(newImport);
+      }
+    }
+
+    return merged;
+  }
+
+  /**
+   * Append content to file
+   */
+  private async appendToFile(filePath: string, content: string): Promise<void> {
+    let existingContent = '';
+    
+    try {
+      existingContent = await fs.readFile(filePath, 'utf-8');
+    } catch {
+      // File doesn't exist, create new
+      await fs.writeFile(filePath, content);
+      return;
+    }
+    
+    const finalContent = existingContent + (existingContent.endsWith('\n') ? '' : '\n') + content;
+    await fs.writeFile(filePath, finalContent);
+  }
+
+  /**
+   * Prepend content to file
+   */
+  private async prependToFile(filePath: string, content: string): Promise<void> {
+    let existingContent = '';
+    
+    try {
+      existingContent = await fs.readFile(filePath, 'utf-8');
+    } catch {
+      // File doesn't exist, create new
+      await fs.writeFile(filePath, content);
+      return;
+    }
+    
+    const finalContent = content + '\n' + existingContent;
+    await fs.writeFile(filePath, finalContent);
+  }
+
+  /**
+   * Merge imports into TypeScript file
+   */
+  private async mergeImportsToFile(filePath: string, imports: ImportDefinition[]): Promise<void> {
+    // This would use ts-morph for robust import merging
+    // For now, we'll use the existing TypeScript merging logic
+    const importContent = imports.map(imp => {
+      if (imp.namedImports) {
+        return `import { ${imp.namedImports.join(', ')} } from '${imp.moduleSpecifier}';`;
+      } else if (imp.defaultImport) {
+        return `import ${imp.defaultImport} from '${imp.moduleSpecifier}';`;
+      } else if (imp.namespaceImport) {
+        return `import * as ${imp.namespaceImport} from '${imp.moduleSpecifier}';`;
+      }
+      return '';
+    }).join('\n');
+
+    await this.mergeTypeScriptFile(filePath, importContent);
+  }
+
+  /**
+   * Merge configuration object
+   */
+  private async mergeConfigObject(filePath: string, configObjectName: string, payload: Record<string, any>): Promise<void> {
+    // This would use ts-morph for robust config merging
+    // For now, we'll use simple string replacement
+    const configContent = `export const ${configObjectName} = ${JSON.stringify(payload, null, 2)};`;
+    await this.mergeTypeScriptFile(filePath, configContent);
+  }
+
+  /**
+   * Merge database schema
+   */
+  private async mergeSchema(filePath: string, schema: Record<string, any>, dialect: string): Promise<void> {
+    // This would use dialect-specific schema merging
+    // For now, we'll use simple string replacement
+    const schemaContent = `export const schema = ${JSON.stringify(schema, null, 2)};`;
+    await this.mergeTypeScriptFile(filePath, schemaContent);
   }
 }

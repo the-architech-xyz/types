@@ -12,16 +12,17 @@ export const drizzleBlueprint: Blueprint = {
   name: 'Drizzle Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install drizzle-orm {{module.parameters.databaseType}}'
+      type: 'INSTALL_PACKAGES',
+      packages: ['drizzle-orm', '{{module.parameters.databaseType}}']
     },
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D drizzle-kit @types/pg'
+      type: 'INSTALL_PACKAGES',
+      packages: ['drizzle-kit', '@types/pg'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/index.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/index.ts',
       content: `import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
@@ -90,6 +91,8 @@ export default {
     {
       type: 'ADD_CONTENT',
       target: '.env.example',
+      strategy: 'append',
+      fileType: 'env',
       content: `# Database
 DATABASE_URL="postgresql://username:password@localhost:5432/{{project.name}}"
 
@@ -98,6 +101,8 @@ DATABASE_URL="postgresql://username:password@localhost:5432/{{project.name}}"
     {
       type: 'ADD_CONTENT',
       target: 'package.json',
+      strategy: 'merge',
+      fileType: 'json',
       content: `{
   "scripts": {
     "db:generate": "drizzle-kit generate",

@@ -11,8 +11,8 @@ const associationsBlueprint: Blueprint = {
   name: 'Model Associations',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/database/associations.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/database/associations.ts',
       content: `import { Model, DataTypes, Association } from 'sequelize';
 import sequelize from '../config.js';
 
@@ -462,8 +462,8 @@ export const models = {
 export default models;`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/database/query-helpers.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/database/query-helpers.ts',
       content: `import { Op, WhereOptions, Order } from 'sequelize';
 import { User, Post, Comment, Profile, Tag } from './associations.js';
 

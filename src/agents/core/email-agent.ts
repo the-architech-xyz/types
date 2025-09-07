@@ -25,9 +25,10 @@ export class EmailAgent extends SimpleAgent {
     console.log(`📧 Email Agent executing: ${module.id}`);
     
     try {
-      // Load adapter
+      // Load adapter - extract adapter ID from module ID
       const adapterLoader = new AdapterLoader();
-      const adapter = await adapterLoader.loadAdapter(this.category, module.id);
+      const adapterId = module.id.split('/').pop() || module.id;
+      const adapter = await adapterLoader.loadAdapter(this.category, adapterId);
       
       if (!adapter) {
         return {

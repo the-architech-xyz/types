@@ -34,23 +34,45 @@
 - TypeScript config: Rejected as too complex for V1
 - Interactive CLI: Rejected as not reproducible
 
-### 3. Adapter Isolation
+### 3. Three-Tier Adapter System
 
-**Decision**: Each adapter is completely isolated with zero cross-knowledge.
+**Decision**: Use three types of adapters: Agnostic, Dependent, and Integration.
 
 **Rationale**:
-- **Simplicity**: Each adapter only knows about its technology
-- **Maintainability**: Changes to one adapter don't affect others
-- **Reliability**: Reduces cascading failures
-- **Community**: Easy for community to contribute adapters
-- **Testing**: Each adapter can be tested in isolation
+- **Agnostic Adapters**: Technology-agnostic, can work with any framework
+- **Dependent Adapters**: Framework-specific, inherently tied to specific technologies
+- **Integration Adapters**: Cross-adapter integrations using "Requester-Provider" pattern
+- **Clear Separation**: Each type has distinct responsibilities and naming conventions
+- **Maintainability**: Changes to one adapter type don't affect others
+- **Community**: Easy for community to contribute all types of adapters
 
 **Alternatives Considered**:
-- Shared adapter utilities: Rejected due to coupling
-- Adapter inheritance: Rejected as over-engineering
-- Cross-adapter communication: Rejected for V1 simplicity
+- Single adapter type: Rejected due to complexity in handling framework-specific vs agnostic
+- Two-tier system: Rejected as insufficient for cross-adapter integrations
+- Plugin system: Rejected as overkill for V1
 
-### 4. CLI-First Blueprint Approach
+### 4. Requester-Provider Naming Convention
+
+**Decision**: Use "Requester-Provider" pattern for integration naming.
+
+**Rationale**:
+- **Clear Intent**: Immediately understand what the integration does
+- **Logical Grouping**: Related integrations are grouped together
+- **Discoverability**: Easy to find integrations for specific adapters
+- **Consistency**: Same pattern across all integrations
+- **User Mental Model**: Matches how developers think about integrations
+
+**Examples**:
+- `stripe-nextjs-integration` - Stripe needs Next.js integration
+- `web3-shadcn-integration` - Web3 needs Shadcn UI integration
+- `drizzle-nextjs-integration` - Drizzle needs Next.js integration
+
+**Alternatives Considered**:
+- Alphabetical ordering: Rejected as less logical
+- Provider-Requester: Rejected as less intuitive
+- Generic naming: Rejected as unclear
+
+### 5. CLI-First Blueprint Approach
 
 **Decision**: Prioritize CLI commands over custom file operations in blueprints.
 
@@ -66,7 +88,7 @@
 - Hybrid approach: Chosen for V1, may evolve in V2
 - Custom setup scripts: Rejected as too complex
 
-### 5. Orchestrator Pattern
+### 6. Orchestrator Pattern
 
 **Decision**: Use a central orchestrator to coordinate agent execution.
 

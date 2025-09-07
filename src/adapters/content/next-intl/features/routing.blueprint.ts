@@ -11,8 +11,8 @@ const routingBlueprint: Blueprint = {
   name: 'Internationalized Routing',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/i18n/routing.ts',
+      type: 'CREATE_FILE',
+      path: 'src/i18n/routing.ts',
       content: `import {defineRouting} from 'next-intl/routing';
 import {createNavigation} from 'next-intl/navigation';
 
@@ -72,8 +72,8 @@ export const {Link, redirect, usePathname, useRouter} =
   createNavigation(routing);`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'middleware.ts',
+      type: 'CREATE_FILE',
+      path: 'middleware.ts',
       content: `import createMiddleware from 'next-intl/middleware';
 import {routing} from './src/i18n/routing';
 
@@ -84,8 +84,8 @@ export const config = {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/i18n/language-switcher.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/i18n/language-switcher.tsx',
       content: `'use client';
 
 import { useLocale } from 'next-intl';

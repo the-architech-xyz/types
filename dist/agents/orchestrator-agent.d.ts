@@ -12,6 +12,8 @@ export declare class OrchestratorAgent {
     private decentralizedPathHandler;
     private adapterLoader;
     private agents;
+    private integrationRegistry;
+    private integrationExecutor;
     constructor(projectManager: ProjectManager);
     /**
      * Initialize all agents
@@ -37,6 +39,10 @@ export declare class OrchestratorAgent {
      * Create architech.json configuration file
      */
     private createArchitechConfig;
+    /**
+     * Execute integration features
+     */
+    private executeIntegrationAdapters;
     /**
      * Install dependencies (delegated to project manager)
      */

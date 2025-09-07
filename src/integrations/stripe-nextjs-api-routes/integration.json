@@ -1,0 +1,24 @@
+{
+  "id": "stripe-nextjs-api-routes",
+  "name": "Stripe Next.js API Routes",
+  "description": "Next.js API routes for Stripe payment processing including payment intents, subscriptions, and webhooks",
+  "category": "integration",
+  "tech_stack": {
+    "framework": "nextjs",
+    "adapters": ["stripe"]
+  },
+  "requirements": {
+    "modules": ["stripe", "nextjs"],
+    "dependencies": []
+  },
+  "provides": {
+    "files": [
+      "src/app/api/stripe/create-payment-intent/route.ts",
+      "src/app/api/stripe/create-subscription/route.ts",
+      "src/app/api/stripe/webhook/route.ts"
+    ],
+    "components": [],
+    "pages": []
+  },
+  "blueprint": "blueprint.ts"
+}

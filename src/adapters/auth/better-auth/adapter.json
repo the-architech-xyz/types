@@ -5,9 +5,7 @@
   "category": "auth",
   "version": "0.18.0",
   "blueprint": "blueprint.ts",
-  "dependencies": [
-    "database/drizzle"
-  ],
+  "dependencies": [],
   "capabilities": [
     "email-password",
     "oauth",

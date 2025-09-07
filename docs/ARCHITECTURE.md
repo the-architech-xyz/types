@@ -65,14 +65,22 @@ Each agent is a "Chef de Partie" responsible for their domain:
 - **UIAgent** - Configures UI libraries (Shadcn/ui, Chakra UI)
 - **TestingAgent** - Sets up testing frameworks (Vitest, Jest)
 
-#### 4. Adapter System
-- **Pure Technology Implementations** with zero cross-knowledge
+#### 4. Three-Tier Adapter System
+- **Agnostic Adapters** - Technology-agnostic implementations (e.g., Stripe, Drizzle)
+- **Dependent Adapters** - Framework-specific implementations (e.g., next-intl, vitest)
+- **Integration Adapters** - Cross-adapter integrations using "Requester-Provider" pattern
 - Each adapter contains:
-  - `adapter.json` - Metadata and configuration
+  - `adapter.json`/`integration.json` - Metadata and configuration
   - `blueprint.ts` - Declarative action list
   - `main.ts` - Implementation logic (V2)
 
-#### 5. Blueprint System
+#### 5. Integration System
+- **Integration Registry** - Manages cross-adapter integrations
+- **Requester-Provider Pattern** - Clear naming convention (e.g., `stripe-nextjs-integration`)
+- **Sub-Features** - Configurable integration features
+- **Framework, UI, Database Integrations** - Organized by integration type
+
+#### 6. Blueprint System
 - **Declarative Action Lists** using standardized actions:
   - `ADD_CONTENT` - Add or merge file content
   - `RUN_COMMAND` - Execute CLI commands
@@ -113,10 +121,11 @@ Each agent is a "Chef de Partie" responsible for their domain:
 - Agents don't know about other agents
 - Orchestrator coordinates without implementing
 
-### 3. Adapter Isolation
-- Pure technology implementations
-- Zero cross-knowledge between adapters
-- Easy to add new technologies
+### 3. Three-Tier Adapter System
+- **Agnostic Adapters**: Technology-agnostic, can work with any framework
+- **Dependent Adapters**: Framework-specific, inherently tied to specific technologies  
+- **Integration Adapters**: Cross-adapter integrations using "Requester-Provider" pattern
+- Clear separation of concerns and naming conventions
 
 ### 4. CLI-First Approach
 - Blueprints prioritize CLI commands over file operations
@@ -142,6 +151,10 @@ src/
 │   ├── auth/              # Auth adapters
 │   ├── ui/                # UI adapters
 │   └── testing/           # Testing adapters
+├── integrations/          # Integration adapters
+│   ├── stripe-nextjs-integration/
+│   ├── drizzle-nextjs-integration/
+│   └── web3-shadcn-integration/
 ├── commands/              # CLI commands
 │   ├── new.ts             # Project creation
 │   ├── add.ts             # Module addition (V2)

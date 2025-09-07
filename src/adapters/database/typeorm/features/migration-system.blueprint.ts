@@ -11,12 +11,13 @@ const migrationSystemBlueprint: Blueprint = {
   name: 'TypeORM Migration System',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D typeorm'
+      type: 'INSTALL_PACKAGES',
+      packages: ['typeorm'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/migration-manager.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/migration-manager.ts',
       content: `import { DataSource } from 'typeorm';
 import { execSync } from 'child_process';
 

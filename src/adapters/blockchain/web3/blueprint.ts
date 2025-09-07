@@ -12,16 +12,17 @@ export const web3Blueprint: Blueprint = {
   name: 'Web3.js Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install web3'
+      type: 'INSTALL_PACKAGES',
+      packages: ['web3']
     },
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D @types/web3'
+      type: 'INSTALL_PACKAGES',
+      packages: ['@types/web3'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/config.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/config.ts',
       content: `import Web3 from 'web3';
 
 // Network configurations
@@ -67,6 +68,8 @@ export const createWeb3Instance = (rpcUrl?: string) => {
     {
       type: 'ADD_CONTENT',
       target: '.env.example',
+      strategy: 'append',
+      fileType: 'env',
       content: `# Web3 Blockchain Configuration
 NEXT_PUBLIC_RPC_URL="https://mainnet.infura.io/v3/YOUR_PROJECT_ID"
 NEXT_PUBLIC_CHAIN_ID="1"

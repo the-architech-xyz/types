@@ -11,8 +11,8 @@ const alertsDashboardBlueprint: Blueprint = {
   name: 'Sentry Alerts & Dashboard',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/monitoring/alert-manager.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/monitoring/alert-manager.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 // Alert configuration interfaces
@@ -268,8 +268,8 @@ export class AlertManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/monitoring/alerts-dashboard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/monitoring/alerts-dashboard.tsx',
       content: `{{#if module.parameters.dashboard}}
 'use client';
 

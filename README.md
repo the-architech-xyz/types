@@ -21,7 +21,8 @@ Fix three critical problems in modern software development:
 ### V1: Agent-Based Recipe Executor
 - **📋 Declarative YAML Recipes** - Define your project in simple YAML files
 - **🤖 Specialized Agents** - Each agent handles their domain (framework, database, auth, UI, testing)
-- **🔌 Pure Adapters** - Isolated technology implementations with zero cross-knowledge
+- **🔌 Three-Tier Adapter System** - Agnostic Adapters, Dependent Adapters, and Integration Adapters
+- **🔗 Integration System** - Cross-adapter integrations using "Requester-Provider" pattern
 - **⚡ CLI-First Approach** - Leverages existing tools like `create-next-app` and `shadcn init`
 - **🛡️ Type-Safe** - Built with TypeScript for reliability and developer experience
 
@@ -128,10 +129,11 @@ architech.yaml → Orchestrator → Agents → Adapters → Blueprints
 
 ### Core Components
 
-- **📋 Recipe System** - Declarative YAML project definitions
+- **📋 Recipe System** - Declarative YAML project definitions with integrations
 - **🎯 Orchestrator Agent** - Central coordinator for execution
 - **🤖 Specialized Agents** - Domain-specific execution engines
-- **🔌 Adapter System** - Pure technology implementations
+- **🔌 Three-Tier Adapter System** - Agnostic, Dependent, and Integration adapters
+- **🔗 Integration Registry** - Cross-adapter integration management
 - **📝 Blueprint System** - Declarative action lists
 
 ### Supported Technologies
@@ -169,9 +171,14 @@ architech.yaml → Orchestrator → Agents → Adapters → Blueprints
 ## 📚 Documentation
 
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed architecture documentation
+- **[Adapter Development Guide](docs/ADAPTER_DEVELOPMENT_GUIDE.md)** - Creating custom adapters
+- **[Integration Development Guide](docs/INTEGRATION_DEVELOPMENT_GUIDE.md)** - Creating custom integrations
+- **[Semantic Actions Guide](docs/SEMANTIC_ACTIONS_GUIDE.md)** - High-level AST-based operations
+- **[File Update Strategies](docs/FILE_UPDATE_STRATEGIES.md)** - Intelligent file merging system
+- **[AST Migration Roadmap](docs/AST_MIGRATION_ROADMAP.md)** - Future AST-based system roadmap
+- **[Recipe Format](docs/RECIPE_FORMAT.md)** - Complete recipe file reference
 - **[Design Choices](docs/CHOICES.md)** - Rationale behind design decisions
-- **[API Reference](docs/API.md)** - Complete API documentation
-- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to The Architech
+- **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete CLI command reference
 
 ## 🛠️ CLI Commands
 
@@ -251,10 +258,12 @@ We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.
 
 ### Adding New Adapters
 
-1. Create adapter directory in `src/adapters/<category>/<id>/`
-2. Implement `adapter.json` and `blueprint.ts`
-3. Add validation to appropriate agent
-4. Test with sample recipe
+1. **Agnostic Adapters**: Create in `src/adapters/<category>/<id>/` (tech-agnostic)
+2. **Dependent Adapters**: Create in `src/adapters/<category>/<id>/` (framework-specific)
+3. **Integration Adapters**: Create in `src/integrations/<requester>-<provider>-integration/`
+4. Implement `adapter.json`/`integration.json` and `blueprint.ts`
+5. Add validation to appropriate agent
+6. Test with sample recipe
 
 ### Adding New Agents
 

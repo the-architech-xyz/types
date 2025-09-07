@@ -11,8 +11,8 @@ const queryOptimizationBlueprint: Blueprint = {
   name: 'Query Optimization',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/database/query-optimizer.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/database/query-optimizer.ts',
       content: `import { Sequelize, QueryTypes, Transaction } from 'sequelize';
 import sequelize from '../config.js';
 
@@ -365,8 +365,8 @@ export class QueryOptimizer {
 export const queryOptimizer = new QueryOptimizer();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/database/cache.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/database/cache.ts',
       content: `import { Model, ModelCtor } from 'sequelize';
 
 export interface CacheOptions {

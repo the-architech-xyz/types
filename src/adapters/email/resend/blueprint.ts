@@ -12,12 +12,12 @@ export const resendBlueprint: Blueprint = {
   name: 'Resend Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install resend @react-email/components'
+      type: 'INSTALL_PACKAGES',
+      packages: ['resend', '@react-email/components']
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.email_config}}/config.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.email_config}}/config.ts',
       content: `import { Resend } from 'resend';
 
 // Initialize Resend
@@ -63,7 +63,7 @@ export interface EmailData {
   to: string | string[];
   subject: string;
   template: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface EmailResponse {
@@ -239,7 +239,7 @@ export const WelcomeEmail = ({ name, baseUrl }: WelcomeEmailProps) => (
             Hi {name},
           </Text>
           <Text style={text}>
-            Welcome to {{project.name}}! We're excited to have you on board.
+            Welcome to {{project.name}}! We&apos;re excited to have you on board.
           </Text>
           <Text style={text}>
             You can now start using all the features of our platform. If you have any questions, feel free to reach out to our support team.
@@ -348,7 +348,7 @@ export const PasswordResetEmail = ({ resetUrl, baseUrl }: PasswordResetEmailProp
             </a>
           </Section>
           <Text style={text}>
-            If you didn't request this password reset, you can safely ignore this email.
+            If you didn&apos;t request this password reset, you can safely ignore this email.
           </Text>
           <Text style={text}>
             Best regards,<br />
@@ -449,7 +449,7 @@ export const EmailVerificationEmail = ({ verificationUrl, baseUrl }: EmailVerifi
             </a>
           </Section>
           <Text style={text}>
-            If you didn't create an account with us, you can safely ignore this email.
+            If you didn&apos;t create an account with us, you can safely ignore this email.
           </Text>
           <Text style={text}>
             Best regards,<br />
@@ -759,7 +759,7 @@ export const SubscriptionCancelledEmail = ({ planName, baseUrl }: SubscriptionCa
             </a>
           </Section>
           <Text style={text}>
-            We're sorry to see you go! If you have any feedback or questions, please don't hesitate to contact our support team.
+            We&apos;re sorry to see you go! If you have any feedback or questions, please don&apos;t hesitate to contact our support team.
           </Text>
           <Text style={text}>
             Best regards,<br />
@@ -823,51 +823,9 @@ export default SubscriptionCancelledEmail;`,
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/app/api/email/send/route.ts',
-      content: `import { NextRequest, NextResponse } from 'next/server';
-import { sendEmail } from '@/lib/email/sender';
-
-export async function POST(request: NextRequest) {
-  try {
-    const { to, subject, template, data } = await request.json();
-
-    if (!to || !subject || !template) {
-      return NextResponse.json(
-        { error: 'Missing required fields: to, subject, template' },
-        { status: 400 }
-      );
-    }
-
-    const result = await sendEmail({
-      to,
-      subject,
-      template,
-      data: data || {},
-    });
-
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      messageId: result.messageId,
-    });
-  } catch (error) {
-    console.error('Email API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to send email' },
-      { status: 500 }
-    );
-  }
-}`,
-    },
-    {
-      type: 'ADD_CONTENT',
       target: '.env.example',
+      strategy: 'append',
+      fileType: 'env',
       content: `# Resend Email Configuration
 RESEND_API_KEY="re_..."
 EMAIL_FROM="{{module.parameters.fromEmail}}"

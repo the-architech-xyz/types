@@ -16,8 +16,8 @@ export const nextjsBlueprint: Blueprint = {
       command: 'npx create-next-app@latest . --typescript{{#if module.parameters.tailwind}} --tailwind{{/if}} --eslint --app --src-dir --import-alias "{{module.parameters.importAlias}}" --yes'
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.app_root}}layout.tsx',
+      type: 'CREATE_FILE',
+      path: '{{paths.app_root}}layout.tsx',
       content: `import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'

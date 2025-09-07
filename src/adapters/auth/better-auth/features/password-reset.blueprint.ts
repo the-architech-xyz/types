@@ -11,8 +11,8 @@ const passwordResetBlueprint: Blueprint = {
   name: 'Better Auth Password Reset',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/password-reset.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/password-reset.ts',
       content: `import { auth } from './config';
 
 // Password reset utilities
@@ -124,8 +124,8 @@ export class PasswordResetManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/request-password-reset/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/request-password-reset/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { PasswordResetManager } from '@/lib/auth/password-reset';
 
@@ -151,8 +151,8 @@ export async function POST(req: NextRequest) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/reset-password/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/reset-password/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { PasswordResetManager } from '@/lib/auth/password-reset';
 
@@ -202,8 +202,8 @@ export async function GET(req: NextRequest) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/auth/forgot-password/page.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/auth/forgot-password/page.tsx',
       content: `'use client';
 
 import { useState } from 'react';
@@ -296,8 +296,8 @@ export default function ForgotPassword() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/auth/reset-password/page.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/auth/reset-password/page.tsx',
       content: `'use client';
 
 import { useState, useEffect } from 'react';

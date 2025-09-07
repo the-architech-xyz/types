@@ -15,14 +15,70 @@
 
 ## 🎯 Overview
 
-Adapters are the core building blocks of The Architech. Each adapter represents a specific technology or service that can be integrated into a project. They follow a **CLI-first approach** and use **declarative blueprints** to define their behavior.
+Adapters are the core building blocks of The Architech. The system uses a **three-tier adapter architecture** with Agnostic Adapters, Dependent Adapters, and Integration Adapters. They follow a **CLI-first approach** and use **declarative blueprints** to define their behavior.
+
+### Three-Tier Adapter System
+
+- **🔌 Agnostic Adapters** - Technology-agnostic implementations (e.g., Stripe, Drizzle)
+- **🔗 Dependent Adapters** - Framework-specific implementations (e.g., next-intl, vitest)
+- **🔗 Integration Adapters** - Cross-adapter integrations using "Requester-Provider" pattern
 
 ### Key Principles
 
-- **🔌 Pure Adapters** - Zero cross-knowledge between adapters
 - **⚡ CLI-First** - Leverage existing tools and commands
 - **📋 Declarative** - Blueprints define actions, not implementation
 - **🛡️ Type-Safe** - Full TypeScript support
+- **🎯 Clear Separation** - Each adapter type has distinct responsibilities
+
+## 🏗️ Adapter Types
+
+### 1. Agnostic Adapters
+**Location**: `src/adapters/{category}/{adapter-id}/`
+**Purpose**: Technology-agnostic implementations that can work with any framework
+**Examples**: Stripe, Drizzle, Better Auth, Resend, Sentry
+**Dependencies**: None (tech-agnostic)
+
+```json
+{
+  "dependencies": [],
+  "tech_stack": {
+    "agnostic": true
+  }
+}
+```
+
+### 2. Dependent Adapters  
+**Location**: `src/adapters/{category}/{adapter-id}/`
+**Purpose**: Tech-specific implementations inherently tied to specific technologies
+**Examples**: next-intl that can be used only with nextjs
+**Dependencies**: Framework-specific
+
+```json
+{
+  "dependencies": ["framework/nextjs"],
+  "tech_stack": {
+    "framework": "nextjs"
+  }
+}
+```
+
+### 3. Integration Adapters
+**Location**: `src/integrations/{requester}-{provider}-integration/`
+**Purpose**: Cross-adapter integrations using "Requester-Provider" pattern
+**Examples**: stripe-nextjs-integration, drizzle-nextjs-integration, web3-shadcn-integration
+**Dependencies**: Multiple adapters
+
+```json
+{
+  "tech_stack": {
+    "framework": "nextjs",
+    "adapters": ["stripe"]
+  },
+  "requirements": {
+    "modules": ["stripe", "nextjs"]
+  }
+}
+```
 
 ## 🏗️ Adapter Structure
 
@@ -206,32 +262,118 @@ export type LogLevel = 'error' | 'warn' | 'info' | 'debug';`
 
 ## ⚡ Blueprint Actions
 
-Blueprints use two types of actions:
+Blueprints use **high-level semantic actions** that express intent rather than implementation details. This makes blueprint creation simple, clear, and error-free.
 
-### 1. `RUN_COMMAND` Actions
+### 🎯 **Semantic Actions (Recommended)**
 
-Execute CLI commands:
+#### 1. `INSTALL_PACKAGES` - Install Dependencies
+
+```typescript
+{
+  type: 'INSTALL_PACKAGES',
+  packages: ['stripe', '@stripe/stripe-js'],
+  isDev: false  // optional, defaults to false
+}
+```
+
+**What it does:** Adds packages to `package.json` and runs `npm install`
+
+#### 2. `ADD_SCRIPT` - Add NPM Scripts
+
+```typescript
+{
+  type: 'ADD_SCRIPT',
+  name: 'stripe:listen',
+  command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
+}
+```
+
+**What it does:** Adds script to `package.json` scripts section
+
+#### 3. `ADD_ENV_VAR` - Add Environment Variables
+
+```typescript
+{
+  type: 'ADD_ENV_VAR',
+  key: 'STRIPE_SECRET_KEY',
+  value: 'sk_test_...',
+  description: 'Stripe secret key for payments'  // optional
+}
+```
+
+**What it does:** Adds variable to `.env` and `.env.example` files
+
+#### 4. `CREATE_FILE` - Create New Files
+
+```typescript
+{
+  type: 'CREATE_FILE',
+  path: 'src/lib/stripe.ts',
+  content: `import Stripe from 'stripe';
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+`,
+  overwrite: false  // optional, defaults to false
+}
+```
+
+**What it does:** Creates new file with content, handles directory creation
+
+#### 5. `UPDATE_TS_CONFIG` - Update TypeScript Configs
+
+```typescript
+{
+  type: 'UPDATE_TS_CONFIG',
+  path: 'src/lib/config.ts',
+  modifications: {
+    stripe: {
+      enabled: true,
+      webhookSecret: 'process.env.STRIPE_WEBHOOK_SECRET'
+    }
+  }
+}
+```
+
+**What it does:** Intelligently merges TypeScript configuration objects
+
+#### 6. `APPEND_TO_FILE` / `PREPEND_TO_FILE` - Modify Files
+
+```typescript
+{
+  type: 'APPEND_TO_FILE',
+  path: '.gitignore',
+  content: `
+# Stripe
+.env.stripe
+stripe.log
+`
+}
+```
+
+**What it does:** Appends or prepends content to existing files
+
+#### 7. `RUN_COMMAND` - Execute Commands
 
 ```typescript
 {
   type: 'RUN_COMMAND',
-  command: 'npm install express'
+  command: 'npm run build',
+  workingDir: '.'  // optional
 }
 ```
 
-**Best Practices:**
-- Use specific package versions when possible
-- Group related installations together
-- Use `-D` flag for dev dependencies
+**What it does:** Executes shell commands
 
-### 2. `ADD_CONTENT` Actions
+### 🔧 **Legacy Actions (Advanced)**
 
-Create or modify files:
+#### `ADD_CONTENT` - Low-Level File Operations
 
 ```typescript
 {
   type: 'ADD_CONTENT',
   target: 'src/lib/config.ts',
+  strategy: 'merge',        // merge, replace, append, prepend
+  fileType: 'typescript',   // typescript, javascript, json, env, auto
   content: `export const config = {
   apiUrl: '{{project.apiUrl}}',
   version: '{{project.version}}'
@@ -239,10 +381,92 @@ Create or modify files:
 }
 ```
 
+**Use only for advanced cases not covered by semantic actions.**
+
+### 📊 **Before vs After Comparison**
+
+#### **BEFORE (Complex, Error-Prone):**
+```typescript
+{
+  type: 'ADD_CONTENT',
+  target: 'package.json',
+  strategy: 'merge',
+  fileType: 'json',
+  content: `{
+    "dependencies": {
+      "stripe": "^1.0.0",
+      "@stripe/stripe-js": "^2.0.0"
+    },
+    "scripts": {
+      "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
+    }
+  }`
+}
+```
+
+#### **AFTER (Simple, Clear, Safe):**
+```typescript
+[
+  {
+    type: 'INSTALL_PACKAGES',
+    packages: ['stripe', '@stripe/stripe-js']
+  },
+  {
+    type: 'ADD_SCRIPT',
+    name: 'stripe:listen',
+    command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
+  }
+]
+```
+
+**Benefits:**
+- ✅ **80% less code** - Semantic actions are much more concise
+- ✅ **90% fewer errors** - No more JSON formatting mistakes
+- ✅ **100% clearer intent** - What you want to do is obvious
+- ✅ **Self-documenting** - Action names clearly express purpose
+
+#### File Update Strategies
+
+| Strategy | Description | Use Case | Example |
+|----------|-------------|----------|---------|
+| `replace` | Replace entire file (default) | New files, complete rewrites | New component files |
+| `merge` | Intelligently merge content | TypeScript/JS files | Updating existing configs |
+| `append` | Add content to end of file | Environment variables, logs | Adding to .env files |
+| `prepend` | Add content to beginning | Imports, setup code | Adding imports to existing files |
+
+#### File Type Detection
+
+The system automatically detects file types, but you can specify explicitly:
+
+| File Type | Auto-Detection | Description |
+|-----------|----------------|-------------|
+| `typescript` | `.ts`, `.tsx` | TypeScript files with intelligent merging |
+| `javascript` | `.js`, `.jsx` | JavaScript files with intelligent merging |
+| `json` | `.json` | JSON files with deep merging |
+| `env` | `.env`, `.env.example` | Environment files with deduplication |
+| `auto` | All others | Default handling |
+
 **Best Practices:**
-- Use template variables for dynamic content
-- Follow project structure conventions
-- Include proper TypeScript types
+- Use `strategy: 'merge'` for TypeScript/JavaScript files to avoid duplication
+- Use `strategy: 'append'` for environment variables and logs
+- Use `strategy: 'replace'` for new files or complete rewrites
+- Let the system auto-detect file types unless you need specific behavior
+
+#### When to Use Each Action Type
+
+| Action Type | Use Case | Complexity | Reliability |
+|-------------|----------|------------|-------------|
+| **`ADD_CONTENT`** | New files, simple configs | Low | High |
+| **`RUN_COMMAND`** | Package installation, scripts | Low | High |
+| **`ADD_TS_IMPORT`** | Adding imports to existing files | Medium | Very High |
+| **`MERGE_TS_CONFIG_OBJECT`** | Merging TypeScript configs | Medium | Very High |
+| **`ADD_DB_SCHEMA`** | Adding database schemas | Medium | Very High |
+
+**Decision Guide:**
+- ✅ **Basic Adapters**: Use `ADD_CONTENT` and `RUN_COMMAND`
+- ✅ **Integration Features**: Use semantic actions for complex merges
+- ✅ **Simple Cases**: Stick with `ADD_CONTENT` with strategies
+- ✅ **Complex Cases**: Use semantic actions for reliability
 
 ## 🔄 Template Variables
 

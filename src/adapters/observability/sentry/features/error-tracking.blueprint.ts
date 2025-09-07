@@ -5,8 +5,8 @@ const errorTrackingBlueprint: Blueprint = {
   name: "Sentry Error Tracking",
   actions: [
     {
-      type: "ADD_CONTENT",
-      target: "src/lib/monitoring/error-tracker.ts",
+      type: "CREATE_FILE",
+      path: "src/lib/monitoring/error-tracker.ts",
       content: "// Error tracking and performance monitoring utilities"
     }
   ]

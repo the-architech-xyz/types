@@ -42,8 +42,9 @@ export abstract class SimpleAgent implements Agent {
     try {
       console.log(`  🔧 Loading adapter: ${module.category}/${module.id}`);
       
-      // Load the adapter
-      const adapter = await this.adapterLoader.loadAdapter(module.category, module.id);
+      // Load the adapter - extract adapter ID from module ID
+      const adapterId = module.id.split('/').pop() || module.id;
+      const adapter = await this.adapterLoader.loadAdapter(module.category, adapterId);
       
       console.log(`  📋 Executing blueprint: ${adapter.blueprint.name}`);
       

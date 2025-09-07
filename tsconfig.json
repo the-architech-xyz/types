@@ -36,7 +36,8 @@
     "src/commands/**/*",
     "src/core/**/*",
     "src/adapters/**/*",
-    "src/plugins/**/*"
+    "src/plugins/**/*",
+    "src/integrations/**/*"
   ],
   "exclude": [
     "node_modules",

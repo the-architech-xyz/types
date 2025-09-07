@@ -11,8 +11,8 @@ const seoOptimizationBlueprint: Blueprint = {
   name: 'SEO Optimization',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/seo.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/seo.ts',
       content: `import { Metadata } from 'next';
 import { routing } from '../i18n/routing';
 
@@ -145,8 +145,8 @@ export function generateStructuredData(
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/seo/SEOHead.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/seo/SEOHead.tsx',
       content: `import React from 'react';
 import { generateHreflangTags, generateStructuredData, SEOConfig } from '../../lib/seo.js';
 
@@ -184,8 +184,8 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ config, locale, currentPath })
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/hooks/useSEO.ts',
+      type: 'CREATE_FILE',
+      path: 'src/hooks/useSEO.ts',
       content: `import { useLocale } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { generateMetadata, generateHreflangTags, SEOConfig } from '../lib/seo.js';

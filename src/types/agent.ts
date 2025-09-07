@@ -29,6 +29,7 @@ export interface ProjectContext {
   module: Module;
   pathHandler?: any; // DecentralizedPathHandler - will be properly typed later
   adapter?: any; // AdapterConfig - will be properly typed later
+  framework: string; // Framework being used (e.g., 'nextjs', 'react', 'vue')
 }
 
 export interface AgentResult {

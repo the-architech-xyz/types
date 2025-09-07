@@ -12,12 +12,12 @@ export const nextIntlBlueprint: Blueprint = {
   name: 'Next.js Internationalization Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install next-intl'
+      type: 'INSTALL_PACKAGES',
+      packages: ['next-intl']
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/i18n/request.ts',
+      type: 'CREATE_FILE',
+      path: 'src/i18n/request.ts',
       content: `import {getRequestConfig} from 'next-intl/server';
 
 export default getRequestConfig(async ({requestLocale}) => {
@@ -28,7 +28,7 @@ export default getRequestConfig(async ({requestLocale}) => {
   const supportedLocales = {{module.parameters.locales}};
   const defaultLocale = '{{module.parameters.defaultLocale}}';
   
-  if (!locale || !supportedLocales.includes(locale as any)) {
+  if (!locale || !supportedLocales.includes(locale as string)) {
     locale = defaultLocale;
   }
 

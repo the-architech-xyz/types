@@ -11,8 +11,8 @@ const batchSendingBlueprint: Blueprint = {
   name: 'Resend Batch Sending',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/email/batch/batch-manager.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/email/batch/batch-manager.ts',
       content: `import { Resend } from 'resend';
 
 // Batch sending interfaces
@@ -345,8 +345,8 @@ export class BatchManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/campaign-manager.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/campaign-manager.tsx',
       content: `{{#if module.parameters.campaigns}}
 'use client';
 
@@ -635,8 +635,8 @@ export function CampaignManager({ batchManager }: CampaignManagerProps) {
 {{/if}}`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/list-manager.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/list-manager.tsx',
       content: `{{#if module.parameters.list-management}}
 'use client';
 

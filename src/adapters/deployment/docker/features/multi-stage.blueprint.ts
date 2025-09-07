@@ -11,8 +11,8 @@ const multiStageBlueprint: Blueprint = {
   name: 'Multi-Stage Builds',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'Dockerfile.optimized',
+      type: 'CREATE_FILE',
+      path: 'Dockerfile.optimized',
       content: `# Multi-stage Dockerfile for {{project.name}}
 # Optimized for production with multiple build stages
 
@@ -124,8 +124,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
 CMD ["node", "server.js"]`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docker-compose.optimized.yml',
+      type: 'CREATE_FILE',
+      path: 'docker-compose.optimized.yml',
       content: `version: '3.8'
 
 services:
@@ -194,8 +194,8 @@ volumes:
   redis_data:`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/docker-optimized.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/docker-optimized.sh',
       content: `#!/bin/bash
 
 # Optimized Docker build script for {{project.name}}
@@ -233,16 +233,24 @@ echo "To run the container: docker run -p 3000:3000 --env-file .env.local {{proj
 echo "To run with compose: docker-compose -f docker-compose.optimized.yml up --build"`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'package.json',
-      content: `{
-  "scripts": {
-    "docker:build:optimized": "docker build -f Dockerfile.optimized -t {{project.name}}:optimized .",
-    "docker:run:optimized": "docker run -p 3000:3000 --env-file .env.local {{project.name}}:optimized",
-    "docker:compose:optimized": "docker-compose -f docker-compose.optimized.yml up --build",
-    "docker:stop:optimized": "docker-compose -f docker-compose.optimized.yml down"
-  }
-}`
+      type: 'ADD_SCRIPT',
+      name: 'docker:build:optimized',
+      command: 'docker build -f Dockerfile.optimized -t {{project.name}}:optimized .'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'docker:run:optimized',
+      command: 'docker run -p 3000:3000 --env-file .env.local {{project.name}}:optimized'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'docker:compose:optimized',
+      command: 'docker-compose -f docker-compose.optimized.yml up --build'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'docker:stop:optimized',
+      command: 'docker-compose -f docker-compose.optimized.yml down'
     }
   ]
 };

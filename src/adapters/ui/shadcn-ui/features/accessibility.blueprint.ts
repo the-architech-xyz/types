@@ -11,8 +11,8 @@ const accessibilityBlueprint: Blueprint = {
   name: 'Shadcn/ui Accessibility',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/accessibility/accessibility-manager.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/accessibility/accessibility-manager.ts',
       content: `import { useEffect, useState } from 'react';
 
 // Accessibility utilities and hooks
@@ -197,8 +197,8 @@ export function useFocusManagement() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/accessibility/screen-reader-only.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/accessibility/screen-reader-only.tsx',
       content: `{{#if module.parameters.screen-reader}}
 import React from 'react';
 
@@ -248,8 +248,8 @@ export function SkipLink({ href, children }: { href: string; children: React.Rea
 {{/if}}`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/accessibility/focus-trap.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/accessibility/focus-trap.tsx',
       content: `{{#if module.parameters.focus-management}}
 import React, { useEffect, useRef } from 'react';
 import { AccessibilityManager } from '@/lib/accessibility/accessibility-manager';
@@ -312,8 +312,8 @@ export function useFocusRestoration() {
 {{/if}}`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/accessibility/keyboard-navigation.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/accessibility/keyboard-navigation.tsx',
       content: `{{#if module.parameters.keyboard-navigation}}
 import React, { useEffect, useRef } from 'react';
 import { AccessibilityManager } from '@/lib/accessibility/accessibility-manager';
@@ -439,8 +439,8 @@ export function useArrowNavigation(
 {{/if}}`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/accessibility/accessibility-audit.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/accessibility/accessibility-audit.tsx',
       content: `'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -573,8 +573,8 @@ export function AccessibilityAudit() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/accessibility/page.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/accessibility/page.tsx',
       content: `import { AccessibilityAudit } from '@/components/accessibility/accessibility-audit';
 import { ScreenReaderOnly } from '@/components/accessibility/screen-reader-only';
 import { FocusTrap } from '@/components/accessibility/focus-trap';

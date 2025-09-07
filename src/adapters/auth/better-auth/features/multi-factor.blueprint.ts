@@ -11,12 +11,12 @@ const multiFactorBlueprint: Blueprint = {
   name: 'Better Auth Multi-Factor Authentication',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install speakeasy qrcode'
+      type: 'INSTALL_PACKAGES',
+      packages: ['speakeasy', 'qrcode']
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/mfa.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/mfa.ts',
       content: `import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import { auth } from './config';
@@ -179,8 +179,8 @@ declare global {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/mfa/setup/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/mfa/setup/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { MFAManager } from '@/lib/auth/mfa';
 import { withSession } from '@/lib/auth/session-utils';
@@ -210,8 +210,8 @@ export const POST = withSession(async (req: any, res: any) => {
 });`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/mfa/enable/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/mfa/enable/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { MFAManager } from '@/lib/auth/mfa';
 import { withSession } from '@/lib/auth/session-utils';
@@ -247,8 +247,8 @@ export const POST = withSession(async (req: any, res: any) => {
 });`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/mfa/disable/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/mfa/disable/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { MFAManager } from '@/lib/auth/mfa';
 import { withSession } from '@/lib/auth/session-utils';
@@ -275,8 +275,8 @@ export const POST = withSession(async (req: any, res: any) => {
 });`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/mfa/verify/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/mfa/verify/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { MFAManager } from '@/lib/auth/mfa';
 
@@ -301,8 +301,8 @@ export async function POST(req: NextRequest) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/auth/MFASetup.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/auth/MFASetup.tsx',
       content: `'use client';
 
 import { useState } from 'react';
@@ -490,8 +490,8 @@ export function MFASetup({ onComplete, onCancel }: MFASetupProps) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/auth/MFAVerification.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/auth/MFAVerification.tsx',
       content: `'use client';
 
 import { useState } from 'react';

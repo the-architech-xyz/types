@@ -5,9 +5,9 @@
   "category": "ui",
   "version": "latest",
   "blueprint": "blueprint.ts",
-  "dependencies": [
-    "framework/nextjs"
-  ],
+  "requirements": {
+    "capabilities": ["react-framework"]
+  },
   "capabilities": [
     "components",
     "tailwind",
@@ -18,7 +18,7 @@
     "responsive",
     "typescript"
   ],
-  "limitations": "Requires Next.js framework and Tailwind CSS",
+  "limitations": "Requires React framework and Tailwind CSS",
   "parameters": {
     "components": {
       "type": "array",

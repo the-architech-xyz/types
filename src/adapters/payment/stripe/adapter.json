@@ -5,9 +5,7 @@
   "category": "payment",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": [
-    "framework/nextjs"
-  ],
+  "dependencies": [],
   "capabilities": [
     "one-time-payments",
     "subscriptions",

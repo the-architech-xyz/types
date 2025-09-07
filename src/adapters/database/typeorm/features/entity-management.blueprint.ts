@@ -11,8 +11,8 @@ const entityManagementBlueprint: Blueprint = {
   name: 'TypeORM Entity Management',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/entities/BaseEntity.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/entities/BaseEntity.ts',
       content: `import { PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Column } from 'typeorm';
 
 export abstract class BaseEntity {
@@ -30,8 +30,8 @@ export abstract class BaseEntity {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/entities/Product.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/entities/Product.ts',
       content: `{{#if module.parameters.relationships}}
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { BaseEntity } from './BaseEntity';
@@ -95,8 +95,8 @@ export class Product extends BaseEntity {
 {{/if}}`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/repositories/BaseRepository.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/repositories/BaseRepository.ts',
       content: `import { Repository, FindOptionsWhere, FindManyOptions } from 'typeorm';
 import { BaseEntity } from '../entities/BaseEntity';
 

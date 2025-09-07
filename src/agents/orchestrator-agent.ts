@@ -11,6 +11,9 @@ import { PathHandler } from '../core/services/path/path-handler.js';
 import { DecentralizedPathHandler } from '../core/services/path/decentralized-path-handler.js';
 import { AdapterLoader } from '../core/services/adapter/adapter-loader.js';
 import { AdapterConfig } from '../types/adapter.js';
+import { IntegrationRegistry } from '../core/services/integration/integration-registry.js';
+import { IntegrationExecutor } from '../core/services/integration/integration-executor.js';
+import { BlueprintExecutor } from '../core/services/blueprint/blueprint-executor.js';
 import * as path from 'path';
 import { FrameworkAgent } from './core/framework-agent.js';
 import { DatabaseAgent } from './core/database-agent.js';
@@ -31,12 +34,19 @@ export class OrchestratorAgent {
   private decentralizedPathHandler: DecentralizedPathHandler | null = null;
   private adapterLoader: AdapterLoader;
   private agents: Map<string, any>;
+  private integrationRegistry: IntegrationRegistry;
+  private integrationExecutor: IntegrationExecutor;
 
   constructor(projectManager: ProjectManager) {
     this.projectManager = projectManager;
     this.pathHandler = projectManager.getPathHandler();
     this.adapterLoader = new AdapterLoader();
     this.agents = new Map();
+    
+    // Initialize integration services
+    this.integrationRegistry = new IntegrationRegistry();
+    const blueprintExecutor = new BlueprintExecutor();
+    this.integrationExecutor = new IntegrationExecutor(blueprintExecutor);
     
     // Initialize agents (will be reconfigured with decentralized path handler)
     this.initializeAgents();
@@ -101,7 +111,9 @@ export class OrchestratorAgent {
       }
       
       console.log(`🏗️ Loading framework adapter: ${frameworkModule.id}`);
-      const frameworkAdapter = await this.adapterLoader.loadAdapter(frameworkModule.category, frameworkModule.id);
+      // Extract adapter ID from module ID (e.g., "framework/nextjs" -> "nextjs")
+      const adapterId = frameworkModule.id.split('/').pop() || frameworkModule.id;
+      const frameworkAdapter = await this.adapterLoader.loadAdapter(frameworkModule.category, adapterId);
       
       // 2. Create decentralized path handler with framework's path declarations
       this.decentralizedPathHandler = new DecentralizedPathHandler(
@@ -141,7 +153,9 @@ export class OrchestratorAgent {
           }
           
           // Load adapter for this module
-          const adapter = await this.adapterLoader.loadAdapter(module.category, module.id);
+          // Extract adapter ID from module ID (e.g., "auth/better-auth" -> "better-auth")
+          const moduleAdapterId = module.id.split('/').pop() || module.id;
+          const adapter = await this.adapterLoader.loadAdapter(module.category, moduleAdapterId);
           
           // Create project context with decentralized path handler and adapter
           const context = {
@@ -151,7 +165,8 @@ export class OrchestratorAgent {
             },
             module: module,
             pathHandler: this.decentralizedPathHandler,
-            adapter: adapter.config
+            adapter: adapter.config,
+            framework: recipe.project.framework
           };
           
           // Execute the module with the agent
@@ -181,6 +196,12 @@ export class OrchestratorAgent {
       
       if (success) {
         console.log(`🎉 Recipe orchestrated successfully! ${results.length} files created`);
+        
+        // Execute integration adapters if any are specified
+        if (recipe.integrations && recipe.integrations.length > 0) {
+          console.log(`🔗 Executing ${recipe.integrations.length} integration adapters...`);
+          await this.executeIntegrationAdapters(recipe, results, errors, warnings);
+        }
         
         // Create architech.json file
         await this.createArchitechConfig(recipe);
@@ -261,11 +282,100 @@ export class OrchestratorAgent {
   }
 
   /**
+   * Execute integration features
+   */
+  private async executeIntegrationAdapters(
+    recipe: Recipe,
+    results: string[],
+    errors: string[],
+    warnings: string[]
+  ): Promise<void> {
+    try {
+      // Get available modules for validation (extract adapter IDs)
+      const availableModules = recipe.modules.map(m => m.id.split('/').pop() || m.id);
+
+      for (const integrationConfig of recipe.integrations!) {
+        console.log(`🔗 Executing integration adapter: ${integrationConfig.name}`);
+
+        // Load integration adapter
+        const integration = await this.integrationRegistry.get(integrationConfig.name);
+        if (!integration) {
+          const error = `Integration adapter not found: ${integrationConfig.name}`;
+          errors.push(error);
+          console.error(`❌ ${error}`);
+          continue;
+        }
+
+        // Validate requirements
+        if (!this.integrationExecutor.validateRequirements(integration, availableModules)) {
+          const error = `Integration ${integrationConfig.name} requirements not met`;
+          errors.push(error);
+          console.error(`❌ ${error}`);
+          continue;
+        }
+
+        // Validate features
+        if (!this.integrationExecutor.validateFeatures(integration, integrationConfig.features)) {
+          const error = `Integration ${integrationConfig.name} features validation failed`;
+          errors.push(error);
+          console.error(`❌ ${error}`);
+          continue;
+        }
+
+        // Create context for integration
+        const context = {
+          project: {
+            ...recipe.project,
+            path: this.pathHandler.getProjectRoot()
+          },
+          module: { 
+            id: integrationConfig.name, 
+            category: 'integration',
+            version: '1.0.0',
+            parameters: {}
+          },
+          pathHandler: this.decentralizedPathHandler,
+          adapter: { id: integrationConfig.name },
+          framework: recipe.project.framework
+        };
+
+        // Execute integration with sub-features
+        await this.integrationExecutor.executeIntegration(
+          integration, 
+          context, 
+          integrationConfig.features
+        );
+
+        // Add created files to results
+        results.push(...integration.provides.files);
+
+        console.log(`✅ Integration adapter ${integrationConfig.name} completed successfully`);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      errors.push(`Integration execution failed: ${errorMessage}`);
+      console.error(`❌ Integration execution failed: ${errorMessage}`);
+    }
+  }
+
+  /**
    * Install dependencies (delegated to project manager)
    */
   private async installDependencies(): Promise<void> {
-    // This will be implemented by the project manager
-    // For now, we'll just log that it would happen
-    console.log('📦 Dependencies installation would happen here');
+    try {
+      console.log('📦 Installing dependencies...');
+      const { exec } = await import('child_process');
+      const { promisify } = await import('util');
+      const execAsync = promisify(exec);
+      
+      await execAsync('npm install', { 
+        cwd: this.pathHandler.getProjectRoot()
+      });
+      
+      console.log('✅ Dependencies installed successfully');
+    } catch (error) {
+      console.warn('⚠️ Failed to install dependencies automatically. Please run "npm install" manually.');
+      console.warn(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }

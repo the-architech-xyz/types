@@ -263,7 +263,8 @@ export class FeatureManager {
         category: featureSpec.type === 'adapter-feature' ? featureSpec.adapterId! : 'cross-adapter',
         version: 'latest',
         parameters: {} // Feature parameters would be loaded here
-      }
+      },
+      framework: projectConfig.project?.framework || 'unknown'
     };
   }
 

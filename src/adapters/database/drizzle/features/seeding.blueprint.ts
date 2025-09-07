@@ -11,12 +11,19 @@ const seedingBlueprint: Blueprint = {
   name: 'Drizzle Seeding',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D drizzle-kit{{#if module.parameters.faker}} @faker-js/faker{{/if}}'
+      type: 'INSTALL_PACKAGES',
+      packages: ['drizzle-kit'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/seeds/seed-manager.ts',
+      type: 'INSTALL_PACKAGES',
+      packages: ['@faker-js/faker'],
+      isDev: true,
+      condition: '{{#if module.parameters.faker}}'
+    },
+    {
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/seeds/seed-manager.ts',
       content: `import { db } from '../index';
 import { users, posts, comments, categories, postCategories } from '../schema';
 import { eq } from 'drizzle-orm';
@@ -239,8 +246,8 @@ export class SeedManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/seed.js',
+      type: 'CREATE_FILE',
+      path: 'scripts/seed.js',
       content: `#!/usr/bin/env node
 
 /**

@@ -11,8 +11,8 @@ const emailVerificationBlueprint: Blueprint = {
   name: 'Better Auth Email Verification',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/email-verification.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/email-verification.ts',
       content: `import { auth } from './config';
 
 // Email verification utilities for Better Auth
@@ -208,8 +208,8 @@ export class EmailTemplateManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docs/integrations/better-auth-email-verification.md',
+      type: 'CREATE_FILE',
+      path: 'docs/integrations/better-auth-email-verification.md',
       content: `# Better Auth Email Verification Integration Guide
 
 ## Overview

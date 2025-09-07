@@ -12,12 +12,12 @@ export const typeormBlueprint: Blueprint = {
   name: 'TypeORM Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install typeorm reflect-metadata {{module.parameters.databaseType}}'
+      type: 'INSTALL_PACKAGES',
+      packages: ['typeorm', 'reflect-metadata', '{{module.parameters.databaseType}}']
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.database_config}}/typeorm.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.database_config}}/typeorm.ts',
       content: `import { DataSource } from 'typeorm';
 import 'reflect-metadata';
 

@@ -11,12 +11,12 @@ const performanceMonitoringBlueprint: Blueprint = {
   name: 'Sentry Performance Monitoring',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install @sentry/nextjs @sentry/profiling-node'
+      type: 'INSTALL_PACKAGES',
+      packages: ['@sentry/nextjs', '@sentry/profiling-node']
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/monitoring/performance-tracker.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/monitoring/performance-tracker.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 // Performance monitoring utilities
@@ -172,8 +172,8 @@ export class PerformanceTracker {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/monitoring/performance-dashboard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/monitoring/performance-dashboard.tsx',
       content: `'use client';
 
 import React, { useState, useEffect } from 'react';

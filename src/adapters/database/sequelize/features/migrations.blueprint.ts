@@ -11,8 +11,8 @@ const migrationsBlueprint: Blueprint = {
   name: 'Database Migrations',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/database/migrations.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/database/migrations.ts',
       content: `import { Sequelize } from 'sequelize';
 import { execSync } from 'child_process';
 import { promises as fs } from 'fs';
@@ -203,8 +203,8 @@ export class MigrationManager {
 export const migrationManager = new MigrationManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/scripts/migrate.ts',
+      type: 'CREATE_FILE',
+      path: 'src/scripts/migrate.ts',
       content: `#!/usr/bin/env node
 
 import { migrationManager } from '../lib/database/migrations.js';
@@ -279,19 +279,39 @@ async function main() {
 main();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'package.json',
-      content: `{
-  "scripts": {
-    "migrate:generate": "tsx src/scripts/migrate.ts generate",
-    "migrate:up": "tsx src/scripts/migrate.ts up",
-    "migrate:down": "tsx src/scripts/migrate.ts down",
-    "migrate:down:all": "tsx src/scripts/migrate.ts down:all",
-    "migrate:status": "tsx src/scripts/migrate.ts status",
-    "migrate:backup": "tsx src/scripts/migrate.ts backup",
-    "migrate:restore": "tsx src/scripts/migrate.ts restore"
-  }
-}`
+      type: 'ADD_SCRIPT',
+      name: 'migrate:generate',
+      command: 'tsx src/scripts/migrate.ts generate'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'migrate:up',
+      command: 'tsx src/scripts/migrate.ts up'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'migrate:down',
+      command: 'tsx src/scripts/migrate.ts down'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'migrate:down:all',
+      command: 'tsx src/scripts/migrate.ts down:all'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'migrate:status',
+      command: 'tsx src/scripts/migrate.ts status'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'migrate:backup',
+      command: 'tsx src/scripts/migrate.ts backup'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'migrate:restore',
+      command: 'tsx src/scripts/migrate.ts restore'
     }
   ]
 };

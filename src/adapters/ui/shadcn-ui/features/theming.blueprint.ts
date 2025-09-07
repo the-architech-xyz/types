@@ -11,8 +11,8 @@ const themingBlueprint: Blueprint = {
   name: 'Shadcn/ui Theming',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/themes/theme-manager.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/themes/theme-manager.ts',
       content: `import { createContext, useContext, useEffect, useState } from 'react';
 
 // Theme configuration
@@ -233,8 +233,8 @@ export class ThemeManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/theme/theme-selector.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/theme/theme-selector.tsx',
       content: `'use client';
 
 import { useTheme } from '@/lib/themes/theme-manager';
@@ -280,8 +280,8 @@ export function ThemeSelector() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/theme/theme-preview.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/theme/theme-preview.tsx',
       content: `'use client';
 
 import { useTheme } from '@/lib/themes/theme-manager';
@@ -381,8 +381,8 @@ export function ThemePreview() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/theme/page.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/theme/page.tsx',
       content: `import { ThemeProvider } from '@/lib/themes/theme-manager';
 import { ThemeSelector } from '@/components/theme/theme-selector';
 import { ThemePreview } from '@/components/theme/theme-preview';
@@ -410,8 +410,8 @@ export default function ThemePage() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/themes/tailwind-config.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/themes/tailwind-config.ts',
       content: `import { ThemeConfig } from './theme-manager';
 
 // Generate Tailwind config from theme

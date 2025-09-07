@@ -5,9 +5,9 @@
   "category": "state",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": [
-    "framework/nextjs"
-  ],
+  "requirements": {
+    "capabilities": ["react-framework"]
+  },
   "capabilities": [
     "state-management",
     "persistence",
@@ -17,7 +17,7 @@
     "typescript",
     "lightweight"
   ],
-  "limitations": "Requires React framework",
+  "limitations": "Requires React framework for state management",
   "parameters": {
     "persistence": {
       "type": "boolean",

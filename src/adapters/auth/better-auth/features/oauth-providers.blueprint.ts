@@ -11,8 +11,8 @@ const oauthProvidersBlueprint: Blueprint = {
   name: 'Better Auth OAuth Providers',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/oauth-config.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/oauth-config.ts',
       content: `// OAuth Providers Configuration
 export const oauthProviders = {
   {{#each module.parameters.providers}}
@@ -24,8 +24,8 @@ export const oauthProviders = {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/oauth-setup.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/oauth-setup.ts',
       content: `import { oauthProviders } from './oauth-config';
 
 // OAuth setup instructions
@@ -40,8 +40,8 @@ export const oauthSetupInstructions = {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/auth/OAuthButtons.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/auth/OAuthButtons.tsx',
       content: `import { authClient } from '@/lib/auth/client';
 
 interface OAuthButtonsProps {
@@ -85,13 +85,22 @@ export function OAuthButtons({ mode }: OAuthButtonsProps) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      content: `# OAuth Providers
-{{#each module.parameters.providers}}
-{{toUpperCase this}}_CLIENT_ID="your-{{this}}-client-id"
-{{toUpperCase this}}_CLIENT_SECRET="your-{{this}}-client-secret"
-{{/each}}`
+      type: 'ADD_ENV_VAR',
+      key: 'OAUTH_PROVIDERS',
+      value: '{{#each module.parameters.providers}}{{toUpperCase this}},{{/each}}',
+      description: 'Comma-separated list of OAuth providers'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'OAUTH_CLIENT_IDS',
+      value: '{{#each module.parameters.providers}}{{toUpperCase this}}_CLIENT_ID="your-{{this}}-client-id",{{/each}}',
+      description: 'OAuth client IDs for each provider'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'OAUTH_CLIENT_SECRETS',
+      value: '{{#each module.parameters.providers}}{{toUpperCase this}}_CLIENT_SECRET="your-{{this}}-client-secret",{{/each}}',
+      description: 'OAuth client secrets for each provider'
     }
   ]
 };

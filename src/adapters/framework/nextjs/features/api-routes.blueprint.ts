@@ -5,8 +5,8 @@ const apiRoutesBlueprint: Blueprint = {
   name: "Next.js API Routes",
   actions: [
     {
-      type: "ADD_CONTENT",
-      target: "src/lib/api/middleware.ts",
+      type: "CREATE_FILE",
+      path: "src/lib/api/middleware.ts",
       content: "// API middleware and utilities"
     }
   ]

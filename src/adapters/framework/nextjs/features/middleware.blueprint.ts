@@ -11,8 +11,8 @@ const middlewareBlueprint: Blueprint = {
   name: 'Next.js Middleware',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'middleware.ts',
+      type: 'CREATE_FILE',
+      path: 'middleware.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
@@ -200,8 +200,8 @@ function logRequest(request: NextRequest, response: NextResponse): void {
 export { config };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/middleware/auth.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/middleware/auth.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
@@ -298,8 +298,8 @@ export class AuthMiddleware {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/middleware/redirects.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/middleware/redirects.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 
 // Redirect configuration
@@ -423,8 +423,8 @@ export class RedirectMiddleware {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/middleware/security.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/middleware/security.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 
 // Security headers configuration
@@ -561,8 +561,8 @@ export class SecurityMiddleware {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/unauthorized/page.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/unauthorized/page.tsx',
       content: `export default function UnauthorizedPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

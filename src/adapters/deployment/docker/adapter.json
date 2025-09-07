@@ -5,9 +5,7 @@
   "category": "deployment",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": [
-    "framework/nextjs"
-  ],
+  "dependencies": [],
   "capabilities": [
     "containerization",
     "multi-stage-builds",

@@ -11,8 +11,8 @@ const ssrOptimizationBlueprint: Blueprint = {
   name: 'Next.js SSR Optimization',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/ssr/cache.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/ssr/cache.ts',
       content: `import { unstable_cache } from 'next/cache';
 
 // Cache configuration
@@ -99,8 +99,8 @@ export async function revalidatePath(path: string) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/ssr/streaming.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/ssr/streaming.ts',
       content: `import { Suspense } from 'react';
 
 // Streaming components
@@ -165,8 +165,8 @@ export function ProgressiveLoader({
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/ssr/performance.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/ssr/performance.ts',
       content: `// Performance monitoring utilities
 export class PerformanceMonitor {
   private static metrics: Map<string, number> = new Map();
@@ -268,8 +268,8 @@ export function getMemoryUsage() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/ssr/CachedData.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/ssr/CachedData.tsx',
       content: `import { Suspense } from 'react';
 import { fetchWithCache } from '@/lib/ssr/cache';
 import { StreamingFallback } from '@/lib/ssr/streaming';
@@ -315,8 +315,8 @@ export function CachedDataWrapper({
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/ssr/StreamingList.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/ssr/StreamingList.tsx',
       content: `import { Suspense } from 'react';
 import { StreamingWrapper, StreamingFallback } from '@/lib/ssr/streaming';
 
@@ -398,8 +398,8 @@ export function ProgressiveList<T>({
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/performance/page.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/performance/page.tsx',
       content: `import { PerformanceMonitor, getMemoryUsage } from '@/lib/ssr/performance';
 import { revalidateCache, revalidatePath } from '@/lib/ssr/cache';
 

@@ -47,14 +47,63 @@ export interface FeatureDefinition {
 export interface Blueprint {
   id: string;
   name: string;
+  description?: string;
+  version?: string;
   actions: BlueprintAction[];
 }
 
 export interface BlueprintAction {
-  type: 'ADD_CONTENT' | 'RUN_COMMAND';
-  target?: string;
-  content?: string;
-  command?: string;
+  // High-level semantic actions (recommended)
+  type: 'INSTALL_PACKAGES' | 'ADD_SCRIPT' | 'ADD_ENV_VAR' | 'CREATE_FILE' | 'UPDATE_TS_CONFIG' | 'APPEND_TO_FILE' | 'PREPEND_TO_FILE' | 'RUN_COMMAND' | 'ADD_CONTENT';
+  
+  // Common properties
+  condition?: string; // Template condition for conditional execution
+  
+  // INSTALL_PACKAGES parameters
+  packages?: string[]; // Array of package names
+  isDev?: boolean; // Whether to install as dev dependencies
+  
+  // ADD_SCRIPT parameters
+  name?: string; // Script name
+  command?: string; // Script command
+  
+  // ADD_ENV_VAR parameters
+  key?: string; // Environment variable key
+  value?: string; // Environment variable value
+  description?: string; // Optional description
+  
+  // CREATE_FILE parameters
+  path?: string; // File path
+  content?: string; // File content
+  overwrite?: boolean; // Whether to overwrite existing files
+  
+  // UPDATE_TS_CONFIG parameters
+  modifications?: Record<string, any>; // Configuration modifications
+  
+  // APPEND_TO_FILE / PREPEND_TO_FILE parameters
+  // (uses path and content from above)
+  
+  // RUN_COMMAND parameters
+  workingDir?: string; // Working directory for command
+  
+  // ADD_CONTENT parameters (legacy/advanced)
+  target?: string; // File target (legacy)
+  strategy?: 'merge' | 'replace' | 'append' | 'prepend' | 'merge-imports' | 'merge-config' | 'merge-schema';
+  fileType?: 'typescript' | 'javascript' | 'json' | 'env' | 'auto';
+  
+  // Legacy merge parameters
+  configObjectName?: string;
+  payload?: Record<string, any>;
+  imports?: ImportDefinition[];
+  schema?: Record<string, any>;
+  dialect?: 'drizzle' | 'prisma' | 'sequelize' | 'typeorm';
+}
+
+export interface ImportDefinition {
+  moduleSpecifier: string;
+  namedImports?: string[];
+  defaultImport?: string;
+  namespaceImport?: string;
 }
 
 export interface BlueprintExecutionResult {

@@ -11,8 +11,8 @@ const dynamicImportsBlueprint: Blueprint = {
   name: 'Dynamic Imports',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/dynamic-translations.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/dynamic-translations.ts',
       content: `import { routing } from '../i18n/routing';
 
 export interface TranslationCache {
@@ -134,8 +134,8 @@ class DynamicTranslationManager {
 export const dynamicTranslationManager = new DynamicTranslationManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/hooks/useDynamicTranslations.ts',
+      type: 'CREATE_FILE',
+      path: 'src/hooks/useDynamicTranslations.ts',
       content: `import { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { dynamicTranslationManager } from '../lib/dynamic-translations.js';
@@ -219,8 +219,8 @@ export function usePreloadTranslations() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/i18n/DynamicTranslationProvider.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/i18n/DynamicTranslationProvider.tsx',
       content: `import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { dynamicTranslationManager } from '../../lib/dynamic-translations.js';
@@ -338,8 +338,8 @@ export const useDynamicT = (namespace: string) => {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/translations/[locale]/[namespace]/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/translations/[locale]/[namespace]/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { routing } from '../../../../i18n/routing';
 

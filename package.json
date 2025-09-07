@@ -10,11 +10,12 @@
   },
   "scripts": {
     "dev": "node bin/architech.js",
-    "build": "npm run clean && npm run compile && npm run copy-bin && npm run copy-adapters",
+    "build": "npm run clean && npm run compile && npm run copy-bin && npm run copy-adapters && npm run copy-integrations",
     "compile": "tsc",
     "clean": "rm -rf dist",
     "copy-bin": "cp -r bin dist/",
     "copy-adapters": "find src/adapters -name '*.json' -exec sh -c 'mkdir -p dist/adapters/$(dirname ${1#src/adapters/}) && cp $1 dist/adapters/${1#src/adapters/}' _ {} \\; && find src/adapters -name '*.ts' -exec sh -c 'mkdir -p dist/adapters/$(dirname ${1#src/adapters/}) && cp $1 dist/adapters/${1#src/adapters/}' _ {} \\;",
+    "copy-integrations": "find src/integrations -name '*.json' -exec sh -c 'mkdir -p dist/integrations/$(dirname ${1#src/integrations/}) && cp $1 dist/integrations/${1#src/integrations/}' _ {} \\; && find src/integrations -name '*.ts' -exec sh -c 'mkdir -p dist/integrations/$(dirname ${1#src/integrations/}) && cp $1 dist/integrations/${1#src/integrations/}' _ {} \\;",
     "test": "echo 'Running tests...'",
     "start": "node bin/architech.js",
     "link": "npm link",

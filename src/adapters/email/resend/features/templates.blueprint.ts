@@ -11,12 +11,22 @@ const templatesBlueprint: Blueprint = {
   name: 'Resend Templates',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install react-email{{#if (eq module.parameters.template-engine "handlebars")}} handlebars{{else if (eq module.parameters.template-engine "mjml")}} mjml{{/if}}'
+      type: 'INSTALL_PACKAGES',
+      packages: ['react-email']
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/email/templates/template-manager.ts',
+      type: 'INSTALL_PACKAGES',
+      packages: ['handlebars'],
+      condition: '{{#if (eq module.parameters.template-engine "handlebars")}}'
+    },
+    {
+      type: 'INSTALL_PACKAGES',
+      packages: ['mjml'],
+      condition: '{{#if (eq module.parameters.template-engine "mjml")}}'
+    },
+    {
+      type: 'CREATE_FILE',
+      path: 'src/lib/email/templates/template-manager.ts',
       content: `import { Resend } from 'resend';
 import { render } from 'react-email';
 {{#if (eq module.parameters.template-engine "handlebars")}}
@@ -229,8 +239,8 @@ export class TemplateUtils {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/email/templates/base-template.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/email/templates/base-template.ts',
       content: `// Base template configuration
 export interface BaseTemplateConfig {
   name: string;
@@ -294,8 +304,8 @@ export interface TemplateMetadata {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docs/integrations/resend-templates.md',
+      type: 'CREATE_FILE',
+      path: 'docs/integrations/resend-templates.md',
       content: `# Resend Templates Integration Guide
 
 ## Overview

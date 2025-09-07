@@ -11,12 +11,13 @@ const coverageBlueprint: Blueprint = {
   name: 'Vitest Code Coverage',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D @vitest/coverage-v8 @vitest/coverage-c8'
+      type: 'INSTALL_PACKAGES',
+      packages: ['@vitest/coverage-v8', '@vitest/coverage-c8'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'vitest.config.ts',
+      type: 'CREATE_FILE',
+      path: 'vitest.config.ts',
       content: `/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -62,16 +63,16 @@ export default defineConfig({
 })`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.gitignore',
+      type: 'CREATE_FILE',
+      path: '.gitignore',
       content: `# Coverage reports
 coverage/
 *.lcov
 .nyc_output/`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/__tests__/coverage.test.ts',
+      type: 'CREATE_FILE',
+      path: 'src/__tests__/coverage.test.ts',
       content: `import { describe, it, expect } from 'vitest'
 
 describe('Coverage Example', () => {

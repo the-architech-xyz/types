@@ -39,6 +39,11 @@ modules:
     parameters:
       typescript: true
       tailwind: true
+integrations:
+  - id: "stripe-nextjs-integration"
+    sub_features:
+      apiRoutes: true
+      webhooks: true
 options:
   skipInstall: false
   verbose: true
@@ -111,6 +116,50 @@ modules:
 | `state` | State management | `zustand`, `redux`, `jotai` |
 | `content` | Content management | `next-intl`, `strapi`, `sanity` |
 | `blockchain` | Blockchain integration | `web3`, `ethers`, `wagmi` |
+
+## 🔗 Integration Configuration
+
+The `integrations` section defines cross-adapter integrations:
+
+```yaml
+integrations:
+  - id: "stripe-nextjs-integration"    # Integration ID (required)
+    sub_features:                      # Configurable features (optional)
+      apiRoutes: true
+      webhooks: true
+      components: false
+  - id: "web3-shadcn-integration"
+    sub_features:
+      walletButton: true
+      transactionForm: true
+```
+
+### Integration Fields
+
+| Field | Type | Required | Description | Example |
+|-------|------|----------|-------------|---------|
+| `id` | string | ✅ | Integration identifier | `stripe-nextjs-integration` |
+| `sub_features` | object | ❌ | Configurable features | `{apiRoutes: true}` |
+
+### Integration Naming Convention
+
+Integrations follow the "Requester-Provider" pattern:
+- **Format**: `{requester}-{provider}-integration`
+- **Requester**: The adapter that needs integration (e.g., `stripe`, `web3`)
+- **Provider**: The technology being integrated with (e.g., `nextjs`, `shadcn`)
+
+### Examples
+
+```yaml
+# Stripe needs Next.js integration
+stripe-nextjs-integration
+
+# Web3 needs Shadcn UI integration
+web3-shadcn-integration
+
+# Drizzle needs Next.js integration
+drizzle-nextjs-integration
+```
 
 ## ⚙️ Options
 
@@ -221,6 +270,33 @@ modules:
     version: "latest"
     parameters:
       features: ["errors", "performance"]
+
+integrations:
+  # Stripe + Next.js integration
+  - id: "stripe-nextjs-integration"
+    sub_features:
+      apiRoutes: true
+      webhooks: true
+      components: true
+
+  # Drizzle + Next.js integration
+  - id: "drizzle-nextjs-integration"
+    sub_features:
+      apiRoutes: true
+      middleware: true
+
+  # Better Auth + Drizzle integration
+  - id: "better-auth-drizzle-integration"
+    sub_features:
+      userSchema: true
+      sessionSchema: true
+
+  # Stripe + Shadcn UI integration
+  - id: "stripe-shadcn-integration"
+    sub_features:
+      paymentButton: true
+      pricingCard: true
+      subscriptionForm: true
 
 options:
   verbose: true

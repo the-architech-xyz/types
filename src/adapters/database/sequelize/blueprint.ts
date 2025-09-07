@@ -11,16 +11,17 @@ export const sequelizeBlueprint: Blueprint = {
   name: 'Sequelize Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install sequelize {{module.parameters.databaseType}}'
+      type: 'INSTALL_PACKAGES',
+      packages: ['sequelize', '{{module.parameters.databaseType}}']
     },
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D sequelize-cli @types/sequelize'
+      type: 'INSTALL_PACKAGES',
+      packages: ['sequelize-cli', '@types/sequelize'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.database_config}}/sequelize.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.database_config}}/sequelize.ts',
       content: `import { Sequelize } from 'sequelize';
 
 // Database configuration
@@ -120,6 +121,8 @@ module.exports = {
     {
       type: 'ADD_CONTENT',
       target: '.env.example',
+      strategy: 'append',
+      fileType: 'env',
       content: `# Database Configuration
 DB_HOST={{module.parameters.host}}
 DB_PORT={{module.parameters.port}}

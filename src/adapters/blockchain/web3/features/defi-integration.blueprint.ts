@@ -11,12 +11,12 @@ const defiIntegrationBlueprint: Blueprint = {
   name: 'DeFi Integration',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install @uniswap/sdk-core @uniswap/v3-sdk @uniswap/smart-order-router'
+      type: 'INSTALL_PACKAGES',
+      packages: ['@uniswap/sdk-core', '@uniswap/v3-sdk', '@uniswap/smart-order-router']
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/defi.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/defi.ts',
       content: `import Web3 from 'web3';
 import { contractManager } from './contracts.js';
 
@@ -265,8 +265,8 @@ export class DeFiManager {
 export const defiManager = new DeFiManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/DeFiDashboard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/DeFiDashboard.tsx',
       content: `import React, { useState, useEffect } from 'react';
 import { useWallet } from '../../hooks/web3/useWallet.js';
 import { defiManager, TokenInfo, SwapQuote, LiquidityPool } from '../../lib/web3/defi.js';

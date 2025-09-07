@@ -4,10 +4,18 @@
  * The architech.yaml file schema for declarative project generation
  */
 
+export interface IntegrationConfig {
+  name: string;
+  features?: {
+    [key: string]: boolean | string | string[];
+  };
+}
+
 export interface Recipe {
   version: string;
   project: ProjectConfig;
   modules: Module[];
+  integrations?: IntegrationConfig[]; // Integration adapters with sub-features
   options?: ExecutionOptions;
 }
 

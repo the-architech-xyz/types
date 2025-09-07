@@ -12,12 +12,12 @@ export const prismaBlueprint: Blueprint = {
   name: 'Prisma Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install prisma @prisma/client'
+      type: 'INSTALL_PACKAGES',
+      packages: ['prisma', '@prisma/client']
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.database_config}}/prisma.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.database_config}}/prisma.ts',
       content: `import { PrismaClient } from '@prisma/client';
 
 // Prisma client instance

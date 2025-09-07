@@ -12,12 +12,12 @@ export const sentryBlueprint: Blueprint = {
   name: 'Sentry Error Monitoring Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install @sentry/nextjs'
+      type: 'INSTALL_PACKAGES',
+      packages: ['@sentry/nextjs']
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'instrumentation-client.ts',
+      type: 'CREATE_FILE',
+      path: 'instrumentation-client.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
@@ -29,11 +29,10 @@ Sentry.init({
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: process.env.NODE_ENV === 'development',
   
-  replaysOnErrorSampleRate: 1.0,
-  
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
   replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0.1,
+  replaysOnErrorSampleRate: 1.0,
   
   // You can remove this option if you're not planning to use the Sentry Session Replay feature:
   integrations: [
@@ -47,12 +46,12 @@ Sentry.init({
   // Set tracesSampleRate to 1.0 to capture 100%
   // of the transactions for performance monitoring.
   // We recommend adjusting this value in production
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  // tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
   
   // Capture Replay for 10% of all sessions,
   // plus for 100% of sessions with an error
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
+  // replaysSessionSampleRate: 0.1,
+  // replaysOnErrorSampleRate: 1.0,
 });`,
     },
     {
@@ -75,7 +74,11 @@ export function onRequestError(err: unknown, request: {
   method: string;
   headers: Record<string, string | string[] | undefined>;
 }) {
-  Sentry.captureRequestError(err, request);
+  Sentry.captureException(err, {
+    contexts: {
+      request: request,
+    },
+  });
 }`,
     },
     {
@@ -155,7 +158,7 @@ export default function GlobalError({
                 Something went wrong
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                We're sorry, but something unexpected happened. Our team has been notified.
+                We&apos;re sorry, but something unexpected happened. Our team has been notified.
               </p>
               <div className="mt-4">
                 <button
@@ -210,7 +213,7 @@ export const SENTRY_CONFIG = {
 };
 
 // Custom error reporting
-export const reportError = (error: Error, context?: Record<string, any>) => {
+export const reportError = (error: Error, context?: Record<string, unknown>) => {
   Sentry.withScope((scope) => {
     if (context) {
       Object.keys(context).forEach((key) => {
@@ -289,7 +292,7 @@ export function SentryProvider({ children }: SentryProviderProps) {
                 Something went wrong
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                We're sorry, but something unexpected happened. Our team has been notified.
+                We&apos;re sorry, but something unexpected happened. Our team has been notified.
               </p>
               <div className="mt-4">
                 <button
@@ -305,7 +308,7 @@ export function SentryProvider({ children }: SentryProviderProps) {
       )}
       beforeCapture={(scope, error, errorInfo) => {
         scope.setTag('errorBoundary', true);
-        scope.setContext('errorInfo', errorInfo);
+        scope.setContext('errorInfo', { errorInfo });
         return scope;
       }}
     >
@@ -321,7 +324,7 @@ export function SentryProvider({ children }: SentryProviderProps) {
 
 // Performance monitoring utilities
 export class PerformanceMonitor {
-  private static transactions: Map<string, any> = new Map();
+  private static transactions: Map<string, unknown> = new Map();
 
   /**
    * Start a performance transaction
@@ -434,7 +437,7 @@ export class Analytics {
   /**
    * Track user events
    */
-  static trackEvent(eventName: string, properties?: Record<string, any>) {
+  static trackEvent(eventName: string, properties?: Record<string, unknown>) {
     Sentry.addBreadcrumb({
       message: eventName,
       category: 'user-action',
@@ -449,7 +452,7 @@ export class Analytics {
   /**
    * Track page views
    */
-  static trackPageView(page: string, properties?: Record<string, any>) {
+  static trackPageView(page: string, properties?: Record<string, unknown>) {
     Sentry.addBreadcrumb({
       message: 'page-view',
       category: 'navigation',
@@ -463,7 +466,7 @@ export class Analytics {
   /**
    * Track user interactions
    */
-  static trackInteraction(element: string, action: string, properties?: Record<string, any>) {
+  static trackInteraction(element: string, action: string, properties?: Record<string, unknown>) {
     Sentry.addBreadcrumb({
       message: \`\${element}.\${action}\`,
       category: 'user-interaction',
@@ -477,7 +480,7 @@ export class Analytics {
   /**
    * Track errors with context
    */
-  static trackError(error: Error, context?: Record<string, any>) {
+  static trackError(error: Error, context?: Record<string, unknown>) {
     Sentry.withScope((scope) => {
       if (context) {
         Object.keys(context).forEach((key) => {
@@ -496,7 +499,7 @@ export class Analytics {
     id: string;
     email?: string;
     username?: string;
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
   }) {
     Sentry.setUser({
       id: user.id,
@@ -512,19 +515,19 @@ export class Analytics {
 
 // React hook for analytics
 export function useAnalytics() {
-  const trackEvent = (eventName: string, properties?: Record<string, any>) => {
+  const trackEvent = (eventName: string, properties?: Record<string, unknown>) => {
     Analytics.trackEvent(eventName, properties);
   };
 
-  const trackPageView = (page: string, properties?: Record<string, any>) => {
+  const trackPageView = (page: string, properties?: Record<string, unknown>) => {
     Analytics.trackPageView(page, properties);
   };
 
-  const trackInteraction = (element: string, action: string, properties?: Record<string, any>) => {
+  const trackInteraction = (element: string, action: string, properties?: Record<string, unknown>) => {
     Analytics.trackInteraction(element, action, properties);
   };
 
-  const trackError = (error: Error, context?: Record<string, any>) => {
+  const trackError = (error: Error, context?: Record<string, unknown>) => {
     Analytics.trackError(error, context);
   };
 
@@ -532,7 +535,7 @@ export function useAnalytics() {
     id: string;
     email?: string;
     username?: string;
-    properties?: Record<string, any>;
+    properties?: Record<string, unknown>;
   }) => {
     Analytics.setUserProperties(user);
   };
@@ -548,43 +551,9 @@ export function useAnalytics() {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/app/api/sentry-test/route.ts',
-      content: `import { NextRequest, NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
-
-export async function GET(request: NextRequest) {
-  try {
-    // Test Sentry integration
-    Sentry.addBreadcrumb({
-      message: 'Sentry test endpoint called',
-      category: 'test',
-      level: 'info',
-    });
-
-    // Test error capture
-    const testError = new Error('This is a test error from Sentry integration');
-    Sentry.captureException(testError);
-
-    // Test message capture
-    Sentry.captureMessage('Sentry integration test message', 'info');
-
-    return NextResponse.json({
-      success: true,
-      message: 'Sentry test completed successfully',
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error('Sentry test error:', error);
-    return NextResponse.json(
-      { error: 'Sentry test failed' },
-      { status: 500 }
-    );
-  }
-}`,
-    },
-    {
-      type: 'ADD_CONTENT',
       target: '.env.example',
+      strategy: 'append',
+      fileType: 'env',
       content: `# Sentry Configuration
 SENTRY_DSN="https://..."
 NEXT_PUBLIC_SENTRY_DSN="https://..."

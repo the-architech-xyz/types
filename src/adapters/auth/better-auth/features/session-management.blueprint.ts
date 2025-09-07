@@ -11,8 +11,8 @@ const sessionManagementBlueprint: Blueprint = {
   name: 'Better Auth Session Management',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/session-config.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/session-config.ts',
       content: `// Advanced Session Management Configuration
 export const sessionConfig = {
   strategy: '{{module.parameters.strategy}}',
@@ -54,8 +54,8 @@ export const sessionConfig = {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/session-utils.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/session-utils.ts',
       content: `import { auth } from './config';
 import { sessionConfig } from './session-config';
 
@@ -134,8 +134,8 @@ export function withSession(handler: any) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/session-middleware.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/session-middleware.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from './session-utils';
 
@@ -184,8 +184,8 @@ export function sessionMiddleware(req: NextRequest) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/session/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/session/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { SessionManager } from '@/lib/auth/session-utils';
 import { rateLimitMiddleware } from '@/lib/auth/session-middleware';

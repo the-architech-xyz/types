@@ -12,12 +12,12 @@ export const zustandBlueprint: Blueprint = {
   name: 'Zustand Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install zustand'
+      type: 'INSTALL_PACKAGES',
+      packages: ['zustand']
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.state_config}}/use-app-store.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.state_config}}/use-app-store.ts',
       content: `import { create } from 'zustand';
 
 export interface AppState {

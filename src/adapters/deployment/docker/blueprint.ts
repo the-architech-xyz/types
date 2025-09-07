@@ -12,8 +12,8 @@ export const dockerBlueprint: Blueprint = {
   name: 'Docker Base Setup',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'Dockerfile',
+      type: 'CREATE_FILE',
+      path: 'Dockerfile',
       content: `# Use the official Node.js image as base
 FROM node:{{module.parameters.nodeVersion}} AS base
 
@@ -111,6 +111,8 @@ docker-compose.yml
     {
       type: 'ADD_CONTENT',
       target: 'package.json',
+      strategy: 'merge',
+      fileType: 'json',
       content: `{
   "scripts": {
     "docker:build": "docker build -t {{project.name}}:latest .",

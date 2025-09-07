@@ -11,12 +11,12 @@ const walletIntegrationBlueprint: Blueprint = {
   name: 'Wallet Integration',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install @walletconnect/web3-provider @walletconnect/modal'
+      type: 'INSTALL_PACKAGES',
+      packages: ['@walletconnect/web3-provider', '@walletconnect/modal']
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/wallet.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/wallet.ts',
       content: `import Web3 from 'web3';
 import { createWeb3Instance, getCurrentNetwork } from './config.js';
 
@@ -146,8 +146,8 @@ export class WalletManager {
 export const walletManager = new WalletManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/hooks/web3/useWallet.ts',
+      type: 'CREATE_FILE',
+      path: 'src/hooks/web3/useWallet.ts',
       content: `import { useState, useEffect, useCallback } from 'react';
 import { walletManager, WalletState } from '../../lib/web3/wallet.js';
 
@@ -242,8 +242,8 @@ export const useWallet = () => {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/WalletConnect.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/WalletConnect.tsx',
       content: `import React from 'react';
 import { useWallet } from '../../hooks/web3/useWallet.js';
 import { Button } from '../ui/button.js';

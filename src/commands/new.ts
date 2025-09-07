@@ -24,9 +24,10 @@ export function createNewCommand(): Command {
     .argument('<recipe-file-or-genome>', 'Path to recipe file or genome name')
     .option('-d, --dry-run', 'Show what would be created without executing', false)
     .option('-v, --verbose', 'Enable verbose logging', false)
+    .option('-q, --quiet', 'Suppress all output except errors', false)
     .option('-g, --genome', 'Use genome template instead of recipe file', false)
     .option('-n, --name <name>', 'Project name (required when using genome)')
-    .action(async (recipeFileOrGenome: string, options: { dryRun?: boolean; verbose?: boolean; genome?: boolean; name?: string }) => {
+    .action(async (recipeFileOrGenome: string, options: { dryRun?: boolean; verbose?: boolean; quiet?: boolean; genome?: boolean; name?: string }) => {
       const logger = new Logger(options.verbose);
       
       try {

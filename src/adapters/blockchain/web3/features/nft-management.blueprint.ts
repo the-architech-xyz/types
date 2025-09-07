@@ -11,8 +11,8 @@ const nftManagementBlueprint: Blueprint = {
   name: 'NFT Management',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/nft.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/nft.ts',
       content: `import Web3 from 'web3';
 import { contractManager } from './contracts.js';
 
@@ -226,8 +226,8 @@ export class NFTManager {
 export const nftManager = new NFTManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/NFTGallery.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/NFTGallery.tsx',
       content: `import React, { useState, useEffect } from 'react';
 import { useWallet } from '../../hooks/web3/useWallet.js';
 import { nftManager, NFTToken } from '../../lib/web3/nft.js';

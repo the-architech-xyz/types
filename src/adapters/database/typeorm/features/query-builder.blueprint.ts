@@ -11,8 +11,8 @@ const queryBuilderBlueprint: Blueprint = {
   name: 'TypeORM Query Builder',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/query-builder.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/query-builder.ts',
       content: `import { DataSource, SelectQueryBuilder, QueryRunner } from 'typeorm';
 
 // Query builder utilities

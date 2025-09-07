@@ -11,8 +11,8 @@ const productionReadyBlueprint: Blueprint = {
   name: 'Production Ready',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'Dockerfile.production',
+      type: 'CREATE_FILE',
+      path: 'Dockerfile.production',
       content: `# Production-ready Dockerfile for {{project.name}}
 # Optimized for security, performance, and monitoring
 
@@ -65,8 +65,8 @@ ENV HOSTNAME "0.0.0.0"
 CMD ["server.js"]`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docker-compose.production.yml',
+      type: 'CREATE_FILE',
+      path: 'docker-compose.production.yml',
       content: `version: '3.8'
 
 services:
@@ -204,8 +204,8 @@ volumes:
   {{/if}}`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'nginx.conf',
+      type: 'CREATE_FILE',
+      path: 'nginx.conf',
       content: `events {
     worker_connections 1024;
 }
@@ -284,8 +284,8 @@ http {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'prometheus.yml',
+      type: 'CREATE_FILE',
+      path: 'prometheus.yml',
       content: `global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -321,8 +321,8 @@ scrape_configs:
     scrape_interval: 10s`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/deploy-production.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/deploy-production.sh',
       content: `#!/bin/bash
 
 # Production deployment script for {{project.name}}
@@ -373,17 +373,29 @@ echo "📈 Grafana: http://localhost:3001 (admin/\$GRAFANA_PASSWORD)"
 echo "🔍 Prometheus: http://localhost:9090"`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'package.json',
-      content: `{
-  "scripts": {
-    "docker:build:production": "docker build -f Dockerfile.production -t {{project.name}}:production .",
-    "docker:deploy:production": "bash scripts/deploy-production.sh",
-    "docker:compose:production": "docker-compose -f docker-compose.production.yml up -d",
-    "docker:stop:production": "docker-compose -f docker-compose.production.yml down",
-    "docker:logs:production": "docker-compose -f docker-compose.production.yml logs -f"
-  }
-}`
+      type: 'ADD_SCRIPT',
+      name: 'docker:build:production',
+      command: 'docker build -f Dockerfile.production -t {{project.name}}:production .'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'docker:deploy:production',
+      command: 'bash scripts/deploy-production.sh'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'docker:compose:production',
+      command: 'docker-compose -f docker-compose.production.yml up -d'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'docker:stop:production',
+      command: 'docker-compose -f docker-compose.production.yml down'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'docker:logs:production',
+      command: 'docker-compose -f docker-compose.production.yml logs -f'
     }
   ]
 };

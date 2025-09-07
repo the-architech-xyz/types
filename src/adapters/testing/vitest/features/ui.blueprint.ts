@@ -11,12 +11,13 @@ const uiBlueprint: Blueprint = {
   name: 'Vitest UI',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D @vitest/ui'
+      type: 'INSTALL_PACKAGES',
+      packages: ['@vitest/ui'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'vitest.config.ts',
+      type: 'CREATE_FILE',
+      path: 'vitest.config.ts',
       content: `/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -58,20 +59,29 @@ export default defineConfig({
 })`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'package.json',
-      content: `{
-  "scripts": {
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:ui": "vitest --ui --port {{module.parameters.port}}"{{#if module.parameters.coverage}},
-    "test:coverage": "vitest run --coverage"{{/if}}
-  }
-}`
+      type: 'ADD_SCRIPT',
+      name: 'test',
+      command: 'vitest'
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/__tests__/ui-demo.test.tsx',
+      type: 'ADD_SCRIPT',
+      name: 'test:run',
+      command: 'vitest run'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'test:ui',
+      command: 'vitest --ui --port {{module.parameters.port}}'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'test:coverage',
+      command: 'vitest run --coverage',
+      condition: '{{#if module.parameters.coverage}}'
+    },
+    {
+      type: 'CREATE_FILE',
+      path: 'src/__tests__/ui-demo.test.tsx',
       content: `import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '../test/utils'
 

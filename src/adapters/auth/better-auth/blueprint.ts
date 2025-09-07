@@ -13,40 +13,17 @@ export const betterAuthBlueprint: Blueprint = {
   name: 'Better Auth Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install better-auth'
+      type: 'INSTALL_PACKAGES',
+      packages: ['better-auth']
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.auth_config}}/config.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.auth_config}}/config.ts',
       content: `import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
-// Import database connection and schema
-// Note: Make sure to run the database module first
-let db: any;
-let schema: any;
-
-try {
-  db = require("../db").db;
-  schema = require("../db/schema");
-} catch (error) {
-  console.warn("Database not found. Please run the database module first.");
-  // Fallback to in-memory database for development
-  db = null;
-  schema = null;
-}
-
+// Framework-agnostic Better Auth configuration
+// Database integration will be handled by V2 AI or manual integration
 export const auth = betterAuth({
-  database: db && schema ? drizzleAdapter(db, {
-    provider: "pg",
-    schema: {
-      users: schema.users,
-      sessions: schema.sessions,
-      accounts: schema.accounts,
-      verification: schema.verification,
-    },
-  }) : undefined,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
@@ -60,14 +37,30 @@ export const auth = betterAuth({
   ],
 });
 
-export type Session = typeof auth.$Infer.Session;`
+export type Session = typeof auth.$Infer.Session;
+
+// Export auth handler for framework integration
+export const authHandler = auth.handler;`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.auth_config}}/api.ts',
-      content: `import { auth } from "./config";
+      type: 'CREATE_FILE',
+      path: '{{paths.auth_config}}/api.ts',
+      content: `import { auth, authHandler } from "./config";
 
-export const { GET, POST } = auth.handler;`
+// Framework-agnostic auth API
+// Framework-specific integration will be handled by V2 AI or manual integration
+export { auth, authHandler };
+
+// Example integrations:
+// 
+// For Next.js:
+// import { toNextJsHandler } from "better-auth/next-js";
+// export const { GET, POST } = toNextJsHandler(authHandler);
+//
+// For Express:
+// app.use('/api/auth', authHandler);
+//
+// For other frameworks, see Better Auth documentation`
     },
     {
       type: 'ADD_CONTENT',
@@ -88,14 +81,9 @@ export const {
     },
     {
       type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/[...all]/route.ts',
-      content: `import { GET, POST } from "../../../../lib/auth/api";
-
-export { GET, POST };`
-    },
-    {
-      type: 'ADD_CONTENT',
       target: '.env.example',
+      strategy: 'append',
+      fileType: 'env',
       content: `# Better Auth Base Configuration
 AUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
@@ -113,10 +101,10 @@ DATABASE_URL="postgresql://username:password@localhost:5432/{{project.name}}"`
 Better Auth provides a modern, secure authentication system with support for multiple providers and database adapters.
 
 ## Prerequisites
-This adapter requires the following modules to be installed first:
+This adapter works standalone but can be integrated with:
 
-- **database/drizzle**: Required for database sessions
-- **database/prisma**: Alternative database adapter
+- **Database adapters**: For database sessions (optional)
+- **Email adapters**: For email verification (optional)
 
 ## Manual Integration Steps
 

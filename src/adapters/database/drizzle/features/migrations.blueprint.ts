@@ -11,12 +11,13 @@ const migrationsBlueprint: Blueprint = {
   name: 'Drizzle Migrations',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D drizzle-kit'
+      type: 'INSTALL_PACKAGES',
+      packages: ['drizzle-kit'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'drizzle.config.ts',
+      type: 'CREATE_FILE',
+      path: 'drizzle.config.ts',
       content: `import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
@@ -37,8 +38,8 @@ export default defineConfig({
 });`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/migrations/migration-manager.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/migrations/migration-manager.ts',
       content: `import { migrate } from 'drizzle-orm/{{module.parameters.database}}-migrator';
 import { db } from '../index';
 import path from 'path';
@@ -131,8 +132,8 @@ export class MigrationManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/migrate.js',
+      type: 'CREATE_FILE',
+      path: 'scripts/migrate.js',
       content: `#!/usr/bin/env node
 
 /**

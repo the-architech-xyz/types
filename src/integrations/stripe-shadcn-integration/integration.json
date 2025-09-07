@@ -1,0 +1,73 @@
+{
+  "id": "stripe-shadcn-integration",
+  "name": "Stripe Shadcn Integration",
+  "description": "Complete Shadcn/ui integration for Stripe with payment forms, subscription cards, and admin interfaces",
+  "category": "integration",
+  "tech_stack": {
+    "framework": "agnostic",
+    "adapters": ["stripe", "shadcn-ui"]
+  },
+  "requirements": {
+    "modules": ["stripe", "shadcn-ui"],
+    "dependencies": []
+  },
+  "provides": {
+    "files": [
+      "src/components/stripe/payment-form.tsx",
+      "src/components/stripe/subscription-card.tsx",
+      "src/components/stripe/invoice-table.tsx",
+      "src/components/stripe/payment-button.tsx",
+      "src/components/stripe/admin-panel.tsx",
+      "src/components/stripe/checkout-button.tsx",
+      "src/components/stripe/pricing-card.tsx"
+    ],
+    "components": [
+      "payment-form",
+      "subscription-card",
+      "invoice-table",
+      "payment-button",
+      "admin-panel",
+      "checkout-button",
+      "pricing-card"
+    ],
+    "pages": []
+  },
+  "sub_features": {
+    "paymentForms": {
+      "name": "Payment Forms",
+      "description": "Payment form components with validation",
+      "type": "boolean",
+      "default": true
+    },
+    "subscriptionCards": {
+      "name": "Subscription Cards",
+      "description": "Subscription management UI components",
+      "type": "boolean",
+      "default": false
+    },
+    "invoiceTables": {
+      "name": "Invoice Tables",
+      "description": "Invoice display and management components",
+      "type": "boolean",
+      "default": false
+    },
+    "paymentButtons": {
+      "name": "Payment Buttons",
+      "description": "Payment action buttons and CTAs",
+      "type": "boolean",
+      "default": true
+    },
+    "adminPanels": {
+      "name": "Admin Panels",
+      "description": "Payment admin interfaces and dashboards",
+      "type": "boolean",
+      "default": false
+    },
+    "pricingCards": {
+      "name": "Pricing Cards",
+      "description": "Pricing display and selection components",
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

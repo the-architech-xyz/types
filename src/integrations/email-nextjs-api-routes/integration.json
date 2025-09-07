@@ -1,0 +1,22 @@
+{
+  "id": "email-nextjs-api-routes",
+  "name": "Email Next.js API Routes",
+  "description": "Next.js API route for email sending using Resend",
+  "category": "integration",
+  "tech_stack": {
+    "framework": "nextjs",
+    "adapters": ["email/resend"]
+  },
+  "requirements": {
+    "modules": ["email/resend", "nextjs"],
+    "dependencies": []
+  },
+  "provides": {
+    "files": [
+      "src/app/api/email/send/route.ts"
+    ],
+    "components": [],
+    "pages": []
+  },
+  "blueprint": "blueprint.ts"
+}

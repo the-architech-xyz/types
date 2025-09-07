@@ -11,8 +11,8 @@ const relationsBlueprint: Blueprint = {
   name: 'Drizzle Relations',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/relations.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/relations.ts',
       content: `import { relations } from 'drizzle-orm';
 import { users, posts, comments, categories, postCategories } from './schema';
 
@@ -71,8 +71,8 @@ export const allRelations = {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/query-builders.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/query-builders.ts',
       content: `import { db } from './index';
 import { users, posts, comments, categories, postCategories } from './schema';
 import { eq, and, or, desc, asc, count, like, inArray } from 'drizzle-orm';
@@ -327,8 +327,8 @@ export class RelationshipQueries {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docs/integrations/drizzle-relations.md',
+      type: 'CREATE_FILE',
+      path: 'docs/integrations/drizzle-relations.md',
       content: `# Drizzle Relations Integration Guide
 
 ## Overview

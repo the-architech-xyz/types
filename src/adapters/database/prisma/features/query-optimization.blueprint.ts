@@ -11,8 +11,8 @@ const queryOptimizationBlueprint: Blueprint = {
   name: 'Prisma Query Optimization',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/query-optimizer.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/query-optimizer.ts',
       content: `import { PrismaClient } from '@prisma/client';
 
 // Query optimization utilities
@@ -259,8 +259,8 @@ export class QueryOptimizer {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/database/query-dashboard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/database/query-dashboard.tsx',
       content: `'use client';
 
 import React, { useState, useEffect } from 'react';

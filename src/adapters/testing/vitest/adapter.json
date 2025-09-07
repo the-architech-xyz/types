@@ -5,7 +5,9 @@
   "category": "testing",
   "version": "1.0.0",
   "blueprint": "blueprint.ts",
-  "dependencies": [],
+  "dependencies": [
+    "framework/nextjs"
+  ],
   "capabilities": [
     "unit-testing",
     "integration-testing",
@@ -18,7 +20,7 @@
     "snapshots",
     "parallel"
   ],
-  "limitations": "Requires Node.js 16+ and a modern bundler",
+  "limitations": "Requires Node.js 16+ and Next.js framework",
   "parameters": {
     "coverage": {
       "type": "boolean",

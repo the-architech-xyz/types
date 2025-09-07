@@ -11,12 +11,13 @@ export const vitestBlueprint: Blueprint = {
   name: 'Vitest Base Setup',
   actions: [
     {
-      type: 'RUN_COMMAND',
-      command: 'npm install -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/jest-dom @testing-library/user-event @types/react @types/react-dom'
+      type: 'INSTALL_PACKAGES',
+      packages: ['vitest', '@vitejs/plugin-react', 'jsdom', '@testing-library/react', '@testing-library/jest-dom', '@testing-library/user-event', '@types/react', '@types/react-dom'],
+      isDev: true
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'vitest.config.ts',
+      type: 'CREATE_FILE',
+      path: 'vitest.config.ts',
       content: `/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -37,8 +38,8 @@ export default defineConfig({
 })`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/test/setup.ts',
+      type: 'CREATE_FILE',
+      path: 'src/test/setup.ts',
       content: `import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
@@ -120,6 +121,8 @@ describe('Example Test', () => {
     {
       type: 'ADD_CONTENT',
       target: 'package.json',
+      strategy: 'merge',
+      fileType: 'json',
       content: `{
   "scripts": {
     "test": "vitest",

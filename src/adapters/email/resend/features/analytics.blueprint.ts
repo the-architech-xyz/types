@@ -11,8 +11,8 @@ const analyticsBlueprint: Blueprint = {
   name: 'Resend Analytics',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/email/analytics/analytics-manager.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/email/analytics/analytics-manager.ts',
       content: `import { Resend } from 'resend';
 
 // Analytics data interfaces
@@ -228,8 +228,8 @@ export class AnalyticsManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/analytics-dashboard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/analytics-dashboard.tsx',
       content: `{{#if module.parameters.dashboard}}
 'use client';
 
@@ -490,8 +490,8 @@ export function AnalyticsDashboard({ analyticsManager }: AnalyticsDashboardProps
 {{/if}}`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/email/track/opened/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/email/track/opened/route.ts',
       content: `{{#if module.parameters.track-opens}}
 import { NextRequest, NextResponse } from 'next/server';
 import { AnalyticsManager } from '@/lib/email/analytics/analytics-manager';
@@ -534,8 +534,8 @@ export async function GET(request: NextRequest) {
 {{/if}}`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/email/track/clicked/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/email/track/clicked/route.ts',
       content: `{{#if module.parameters.track-clicks}}
 import { NextRequest, NextResponse } from 'next/server';
 import { AnalyticsManager } from '@/lib/email/analytics/analytics-manager';

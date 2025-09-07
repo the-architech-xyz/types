@@ -11,8 +11,8 @@ const devtoolsBlueprint: Blueprint = {
   name: 'Redux DevTools',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stores/use-app-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stores/use-app-store.ts',
       content: `import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
@@ -126,8 +126,8 @@ export const useAppActions = () => useAppStore((state) => ({
 }));`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/devtools/devtools-utils.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/devtools/devtools-utils.ts',
       content: `import { StateCreator } from 'zustand';
 
 /**
@@ -327,8 +327,8 @@ export function createPerformanceMonitor(storeName: string) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/devtools/DevToolsPanel.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/devtools/DevToolsPanel.tsx',
       content: `'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -528,8 +528,8 @@ export const DevToolsPanel: React.FC<DevToolsPanelProps> = ({ isOpen, onClose })
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/hooks/useDevTools.ts',
+      type: 'CREATE_FILE',
+      path: 'src/hooks/useDevTools.ts',
       content: `import { useState, useEffect } from 'react';
 import { useAppStore } from '../lib/stores/use-app-store.js';
 import { createStoreInspector, createPerformanceMonitor } from '../lib/devtools/devtools-utils.js';

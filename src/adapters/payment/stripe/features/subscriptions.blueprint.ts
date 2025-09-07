@@ -12,8 +12,8 @@ const subscriptionsFeatureBlueprint: Blueprint = {
   name: 'Stripe Subscriptions Feature',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stripe/subscriptions.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stripe/subscriptions.ts',
       content: `import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -137,8 +137,8 @@ export class SubscriptionWebhooks {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stripe/billing-portal.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stripe/billing-portal.ts',
       content: `import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -212,8 +212,8 @@ export class BillingPortalManager {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docs/integrations/stripe-subscriptions.md',
+      type: 'CREATE_FILE',
+      path: 'docs/integrations/stripe-subscriptions.md',
       content: `# Stripe Subscriptions Integration Guide
 
 ## Overview
@@ -465,17 +465,40 @@ export function requireSubscription(handler: Function) {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      content: `# Stripe Subscriptions
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_PUBLISHABLE_KEY="pk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-
-# Subscription Plans (create these in Stripe Dashboard)
-STRIPE_BASIC_PLAN_PRICE_ID="price_..."
-STRIPE_PRO_PLAN_PRICE_ID="price_..."
-STRIPE_ENTERPRISE_PLAN_PRICE_ID="price_..."`
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_SECRET_KEY',
+      value: 'sk_test_...',
+      description: 'Stripe secret key for subscriptions'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_PUBLISHABLE_KEY',
+      value: 'pk_test_...',
+      description: 'Stripe publishable key for client-side'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_WEBHOOK_SECRET',
+      value: 'whsec_...',
+      description: 'Stripe webhook secret for verification'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_BASIC_PLAN_PRICE_ID',
+      value: 'price_...',
+      description: 'Stripe price ID for basic plan (create in Stripe Dashboard)'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_PRO_PLAN_PRICE_ID',
+      value: 'price_...',
+      description: 'Stripe price ID for pro plan (create in Stripe Dashboard)'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_ENTERPRISE_PLAN_PRICE_ID',
+      value: 'price_...',
+      description: 'Stripe price ID for enterprise plan (create in Stripe Dashboard)'
     }
   ]
 };

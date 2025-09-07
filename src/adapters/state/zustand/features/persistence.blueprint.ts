@@ -11,8 +11,8 @@ const persistenceBlueprint: Blueprint = {
   name: 'State Persistence',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stores/use-app-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stores/use-app-store.ts',
       content: `import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -114,8 +114,8 @@ export const useAppActions = () => useAppStore((state) => ({
 }));`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/storage/custom-storage.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/storage/custom-storage.ts',
       content: `import { StateStorage } from 'zustand/middleware';
 
 /**
@@ -286,8 +286,8 @@ export function createStorage(type: string, options?: any): StateStorage {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stores/use-persisted-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stores/use-persisted-store.ts',
       content: `import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createStorage } from '../storage/custom-storage.js';
@@ -375,8 +375,8 @@ export const useOfflineStore = createPersistedStore(
 );`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/hooks/use-persistence.ts',
+      type: 'CREATE_FILE',
+      path: 'src/hooks/use-persistence.ts',
       content: `import { useEffect, useState } from 'react';
 import { useAppStore } from '../stores/use-app-store.js';
 
