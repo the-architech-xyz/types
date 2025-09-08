@@ -13,7 +13,7 @@ export declare class OrchestratorAgent {
     private adapterLoader;
     private agents;
     private integrationRegistry;
-    private integrationExecutor;
+    private integrationExecutor?;
     constructor(projectManager: ProjectManager);
     /**
      * Initialize all agents

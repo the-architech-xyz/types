@@ -30,13 +30,12 @@ export interface AddFeatureOptions {
 
 export class FeatureManager {
   private pathHandler: PathHandler;
-  private blueprintExecutor: BlueprintExecutor;
+  private blueprintExecutor?: BlueprintExecutor;
   private adapterLoader: AdapterLoader;
   private logger: AgentLogger;
 
   constructor(pathHandler: PathHandler) {
     this.pathHandler = pathHandler;
-    this.blueprintExecutor = new BlueprintExecutor();
     this.adapterLoader = new AdapterLoader();
     this.logger = new AgentLogger();
   }
@@ -86,8 +85,11 @@ export class FeatureManager {
       // Create project context
       const context = await this.createProjectContext(featureSpec, projectConfig);
 
+      // Initialize BlueprintExecutor with project root
+      this.blueprintExecutor = new BlueprintExecutor(context.project.path || '.');
+
       // Execute feature blueprint
-      const result = await this.blueprintExecutor.executeBlueprint(featureBlueprint, context);
+      const result = await this.blueprintExecutor!.executeBlueprint(featureBlueprint, context);
 
       if (result.success) {
         // Update project configuration

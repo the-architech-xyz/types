@@ -35,7 +35,7 @@ export class OrchestratorAgent {
   private adapterLoader: AdapterLoader;
   private agents: Map<string, any>;
   private integrationRegistry: IntegrationRegistry;
-  private integrationExecutor: IntegrationExecutor;
+  private integrationExecutor?: IntegrationExecutor;
 
   constructor(projectManager: ProjectManager) {
     this.projectManager = projectManager;
@@ -45,8 +45,6 @@ export class OrchestratorAgent {
     
     // Initialize integration services
     this.integrationRegistry = new IntegrationRegistry();
-    const blueprintExecutor = new BlueprintExecutor();
-    this.integrationExecutor = new IntegrationExecutor(blueprintExecutor);
     
     // Initialize agents (will be reconfigured with decentralized path handler)
     this.initializeAgents();
@@ -291,6 +289,10 @@ export class OrchestratorAgent {
     warnings: string[]
   ): Promise<void> {
     try {
+      // Initialize integration executor with project root
+      const blueprintExecutor = new BlueprintExecutor(recipe.project.path || '.');
+      this.integrationExecutor = new IntegrationExecutor(blueprintExecutor);
+      
       // Get available modules for validation (extract adapter IDs)
       const availableModules = recipe.modules.map(m => m.id.split('/').pop() || m.id);
 
@@ -307,7 +309,7 @@ export class OrchestratorAgent {
         }
 
         // Validate requirements
-        if (!this.integrationExecutor.validateRequirements(integration, availableModules)) {
+        if (!this.integrationExecutor!.validateRequirements(integration, availableModules)) {
           const error = `Integration ${integrationConfig.name} requirements not met`;
           errors.push(error);
           console.error(`❌ ${error}`);
@@ -315,7 +317,7 @@ export class OrchestratorAgent {
         }
 
         // Validate features
-        if (!this.integrationExecutor.validateFeatures(integration, integrationConfig.features)) {
+        if (!this.integrationExecutor!.validateFeatures(integration, integrationConfig.features)) {
           const error = `Integration ${integrationConfig.name} features validation failed`;
           errors.push(error);
           console.error(`❌ ${error}`);
@@ -340,7 +342,7 @@ export class OrchestratorAgent {
         };
 
         // Execute integration with sub-features
-        await this.integrationExecutor.executeIntegration(
+        await this.integrationExecutor!.executeIntegration(
           integration, 
           context, 
           integrationConfig.features

@@ -87,8 +87,8 @@ vi.mock('next/navigation', () => ({
 }))`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/test/utils.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/test/utils.tsx',
       content: `import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 
@@ -106,8 +106,8 @@ export * from '@testing-library/react'
 export { customRender as render }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/__tests__/example.test.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/__tests__/example.test.tsx',
       content: `import { describe, it, expect } from 'vitest'
 import { render, screen } from '../test/utils'
 
@@ -119,16 +119,14 @@ describe('Example Test', () => {
 })`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'package.json',
-      strategy: 'merge',
-      fileType: 'json',
-      content: `{
-  "scripts": {
-    "test": "vitest",
-    "test:run": "vitest run"
-  }
-}`
+      type: 'ADD_SCRIPT',
+      name: 'test',
+      command: 'vitest'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'test:run',
+      command: 'vitest run'
     }
   ]
 };

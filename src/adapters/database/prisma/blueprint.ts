@@ -32,8 +32,8 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'prisma/schema.prisma',
+      type: 'CREATE_FILE',
+      path: 'prisma/schema.prisma',
       content: `// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 

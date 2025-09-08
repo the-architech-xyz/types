@@ -16,8 +16,8 @@ export const betterAuthNextjsApiRoutesBlueprint: Blueprint = {
       command: 'npm install better-auth/next-js'
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/[...all]/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/[...all]/route.ts',
       content: `import { toNextJsHandler } from "better-auth/next-js";
 import { authHandler } from "@/lib/auth/api";
 

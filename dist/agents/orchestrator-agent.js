@@ -37,8 +37,6 @@ export class OrchestratorAgent {
         this.agents = new Map();
         // Initialize integration services
         this.integrationRegistry = new IntegrationRegistry();
-        const blueprintExecutor = new BlueprintExecutor();
-        this.integrationExecutor = new IntegrationExecutor(blueprintExecutor);
         // Initialize agents (will be reconfigured with decentralized path handler)
         this.initializeAgents();
     }
@@ -246,6 +244,9 @@ export class OrchestratorAgent {
      */
     async executeIntegrationAdapters(recipe, results, errors, warnings) {
         try {
+            // Initialize integration executor with project root
+            const blueprintExecutor = new BlueprintExecutor(recipe.project.path || '.');
+            this.integrationExecutor = new IntegrationExecutor(blueprintExecutor);
             // Get available modules for validation (extract adapter IDs)
             const availableModules = recipe.modules.map(m => m.id.split('/').pop() || m.id);
             for (const integrationConfig of recipe.integrations) {

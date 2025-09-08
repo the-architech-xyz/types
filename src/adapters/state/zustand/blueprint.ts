@@ -101,8 +101,8 @@ export const useAppActions = () => useAppStore((state) => ({
 }));`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.state_config}}/index.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.state_config}}/index.ts',
       content: `/**
  * State Management Exports
  * 

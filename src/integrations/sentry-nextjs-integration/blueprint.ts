@@ -6,10 +6,58 @@ const sentryNextjsIntegrationBlueprint: Blueprint = {
   description: 'Complete error monitoring and performance tracking for Next.js',
   version: '1.0.0',
   actions: [
+    // Install Sentry packages
+    {
+      type: 'INSTALL_PACKAGES',
+      packages: ['@sentry/nextjs'],
+      isDev: false
+    },
+    // Add environment variables
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_SENTRY_DSN',
+      value: 'https://...@sentry.io/...',
+      description: 'Sentry DSN for error tracking'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'SENTRY_ORG',
+      value: 'your-org',
+      description: 'Sentry organization slug'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'SENTRY_PROJECT',
+      value: 'your-project',
+      description: 'Sentry project name'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'SENTRY_AUTH_TOKEN',
+      value: 'sntrys_...',
+      description: 'Sentry auth token for releases'
+    },
+    // Update Next.js config
+    {
+      type: 'WRAP_CONFIG',
+      path: 'next.config.js',
+      condition: '{{#if integration.features.errorTracking}}',
+      wrapper: 'withSentryConfig',
+      options: {
+        org: 'process.env.SENTRY_ORG',
+        project: 'process.env.SENTRY_PROJECT',
+        authToken: 'process.env.SENTRY_AUTH_TOKEN',
+        silent: true,
+        widenClientFileUpload: true,
+        hideSourceMaps: true,
+        disableLogger: true,
+        automaticVercelMonitors: true,
+      }
+    },
     // Sentry Configuration Files
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/sentry.client.config.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/sentry.client.config.ts',
       condition: '{{#if integration.features.errorTracking}}',
       content: `import * as Sentry from '@sentry/nextjs';
 
@@ -37,8 +85,8 @@ Sentry.init({
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/sentry.server.config.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/sentry.server.config.ts',
       condition: '{{#if integration.features.errorTracking}}',
       content: `import * as Sentry from '@sentry/nextjs';
 
@@ -64,8 +112,8 @@ Sentry.init({
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/sentry.edge.config.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/sentry.edge.config.ts',
       condition: '{{#if integration.features.errorTracking}}',
       content: `import * as Sentry from '@sentry/nextjs';
 
@@ -89,8 +137,8 @@ Sentry.init({
     },
     // Middleware
     {
-      type: 'ADD_CONTENT',
-      target: 'src/middleware.ts',
+      type: 'CREATE_FILE',
+      path: 'src/middleware.ts',
       condition: '{{#if integration.features.middleware}}',
       content: `import * as Sentry from '@sentry/nextjs';
 import { NextRequest } from 'next/server';
@@ -119,8 +167,8 @@ export const config = {
     },
     // Client-side utilities
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/client.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/client.ts',
       condition: '{{#if integration.features.errorTracking}}',
       content: `import * as Sentry from '@sentry/nextjs';
 
@@ -204,8 +252,8 @@ export { Sentry };
     },
     // Server-side utilities
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/server.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/server.ts',
       condition: '{{#if integration.features.errorTracking}}',
       content: `import * as Sentry from '@sentry/nextjs';
 
@@ -282,8 +330,8 @@ export { Sentry };
     },
     // Performance monitoring
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/performance.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/performance.ts',
       condition: '{{#if integration.features.performanceMonitoring}}',
       content: `import { SentryClient } from './client';
 
@@ -401,8 +449,8 @@ export class PerformanceMonitor {
     },
     // Error handling utilities
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/errors.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/errors.ts',
       condition: '{{#if integration.features.errorTracking}}',
       content: `import { SentryClient } from './client';
 
@@ -535,8 +583,8 @@ export class ErrorHandler {
     },
     // User feedback
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/user-feedback.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/user-feedback.ts',
       condition: '{{#if integration.features.userFeedback}}',
       content: `import { SentryClient } from './client';
 
@@ -656,8 +704,8 @@ export class UserFeedbackHandler {
     },
     // React Components
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/sentry/ErrorBoundary.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/sentry/ErrorBoundary.tsx',
       condition: '{{#if integration.features.errorTracking}}',
       content: `'use client';
 
@@ -785,8 +833,8 @@ export function withErrorBoundary<P extends object>(
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/sentry/UserFeedback.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/sentry/UserFeedback.tsx',
       condition: '{{#if integration.features.userFeedback}}',
       content: `'use client';
 
@@ -946,8 +994,8 @@ export function UserFeedbackComponent({ eventId, onSuccess, onError }: UserFeedb
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/sentry/PerformanceMonitor.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/sentry/PerformanceMonitor.tsx',
       condition: '{{#if integration.features.performanceMonitoring}}',
       content: `'use client';
 
@@ -1133,8 +1181,8 @@ export function PerformanceMonitorComponent() {
     },
     // Admin Pages
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/admin/sentry/page.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/admin/sentry/page.tsx',
       condition: '{{#if integration.features.alerts}}',
       content: `import { PerformanceMonitorComponent } from '@/components/sentry/PerformanceMonitor';
 import { UserFeedbackComponent } from '@/components/sentry/UserFeedback';

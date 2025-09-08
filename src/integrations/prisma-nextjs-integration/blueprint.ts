@@ -8,8 +8,8 @@ const prismaNextjsIntegrationBlueprint: Blueprint = {
   actions: [
     // Core Database Files
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/index.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/index.ts',
       condition: '{{#if integration.features.apiRoutes}}',
       content: `// Prisma Database Configuration
 export { prisma } from './client';
@@ -43,8 +43,8 @@ export type { DatabaseConfig, QueryOptions, TransactionOptions } from './types';
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/client.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/client.ts',
       condition: '{{#if integration.features.connectionPooling}}',
       content: `import { PrismaClient } from '@prisma/client';
 
@@ -108,8 +108,8 @@ export const connectionConfig = {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/schema.prisma',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/schema.prisma',
       condition: '{{#if integration.features.validators}}',
       content: `// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -181,8 +181,8 @@ model Comment {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/queries.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/queries.ts',
       condition: '{{#if integration.features.queries}}',
       content: `import { prisma } from './client';
 import { Prisma } from '@prisma/client';
@@ -359,8 +359,8 @@ export async function findUsersWithPostCount() {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/transactions.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/transactions.ts',
       condition: '{{#if integration.features.transactions}}',
       content: `import { prisma } from './client';
 
@@ -462,8 +462,8 @@ export async function createPostWithTags(postData: any, tagIds: number[]) {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/db/health/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/db/health/route.ts',
       condition: '{{#if integration.features.healthChecks}}',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { checkDatabaseHealth } from '@/lib/db/client';

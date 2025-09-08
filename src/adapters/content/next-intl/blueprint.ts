@@ -39,8 +39,8 @@ export default getRequestConfig(async ({requestLocale}) => {
 });`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/messages/en.json',
+      type: 'CREATE_FILE',
+      path: 'src/messages/en.json',
       content: `{
   "common": {
     "welcome": "Welcome to {{project.name}}",
@@ -85,8 +85,8 @@ export default getRequestConfig(async ({requestLocale}) => {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/messages/fr.json',
+      type: 'CREATE_FILE',
+      path: 'src/messages/fr.json',
       content: `{
   "common": {
     "welcome": "Bienvenue sur {{project.name}}",
@@ -131,8 +131,8 @@ export default getRequestConfig(async ({requestLocale}) => {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'next.config.ts',
+      type: 'CREATE_FILE',
+      path: 'next.config.ts',
       content: `import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');

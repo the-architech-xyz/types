@@ -8,8 +8,8 @@ const dockerDrizzleIntegrationBlueprint: Blueprint = {
   actions: [
     // Database Docker Compose
     {
-      type: 'ADD_CONTENT',
-      target: 'docker-compose.database.yml',
+      type: 'CREATE_FILE',
+      path: 'docker-compose.database.yml',
       condition: '{{#if integration.features.postgresService}}',
       content: `version: '3.8'
 
@@ -59,8 +59,8 @@ networks:
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'database/Dockerfile.postgres',
+      type: 'CREATE_FILE',
+      path: 'database/Dockerfile.postgres',
       condition: '{{#if integration.features.postgresService}}',
       content: `FROM postgres:15-alpine
 
@@ -82,8 +82,8 @@ CMD ["postgres"]
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'database/Dockerfile.migration',
+      type: 'CREATE_FILE',
+      path: 'database/Dockerfile.migration',
       condition: '{{#if integration.features.migrationService}}',
       content: `FROM node:18-alpine
 
@@ -110,8 +110,8 @@ CMD ["npm", "run", "db:migrate"]
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'database/init.sql',
+      type: 'CREATE_FILE',
+      path: 'database/init.sql',
       condition: '{{#if integration.features.postgresService}}',
       content: `-- Database initialization script
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -139,8 +139,8 @@ SELECT pg_reload_conf();
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'database/seed.sql',
+      type: 'CREATE_FILE',
+      path: 'database/seed.sql',
       condition: '{{#if integration.features.seedData}}',
       content: `-- Database seed data
 INSERT INTO users (id, email, name, role, is_active, created_at, updated_at) VALUES
@@ -153,8 +153,8 @@ SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/db-setup.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/db-setup.sh',
       condition: '{{#if integration.features.postgresService}}',
       content: `#!/bin/bash
 set -e
@@ -177,8 +177,8 @@ echo "Database setup completed successfully!"
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/db-migrate.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/db-migrate.sh',
       condition: '{{#if integration.features.migrationService}}',
       content: `#!/bin/bash
 set -e
@@ -195,8 +195,8 @@ echo "Migration completed successfully!"
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/db-backup.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/db-backup.sh',
       condition: '{{#if integration.features.backupService}}',
       content: `#!/bin/bash
 set -e
@@ -213,8 +213,8 @@ echo "Backup completed successfully!"
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/db-health.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/db-health.sh',
       condition: '{{#if integration.features.postgresService}}',
       content: `#!/bin/bash
 set -e

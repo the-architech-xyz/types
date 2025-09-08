@@ -6,6 +6,31 @@ export const blueprint: Blueprint = {
   description: 'Complete Next.js integration for Stripe',
   version: '1.0.0',
   actions: [
+    // Install Stripe packages
+    {
+      type: 'INSTALL_PACKAGES',
+      packages: ['stripe', '@stripe/stripe-js'],
+      isDev: false
+    },
+    // Add environment variables
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_SECRET_KEY',
+      value: 'sk_test_...',
+      description: 'Stripe secret key for server-side operations'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_PUBLISHABLE_KEY',
+      value: 'pk_test_...',
+      description: 'Stripe publishable key for client-side operations'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_WEBHOOK_SECRET',
+      value: 'whsec_...',
+      description: 'Stripe webhook secret for verifying webhook signatures'
+    },
     // Webhook Handler
     {
       type: 'CREATE_FILE',
@@ -36,8 +61,8 @@ export async function POST(request: NextRequest) {
 
     // Checkout API Route
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/checkout/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/stripe/checkout/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { createCheckoutSession } from '@/lib/payment/checkout';
 
@@ -68,8 +93,8 @@ export async function POST(request: NextRequest) {
 
     // Subscriptions API Route
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/subscriptions/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/stripe/subscriptions/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/payment/stripe';
 
@@ -122,8 +147,8 @@ export async function POST(request: NextRequest) {
 
     // Invoices API Route
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/invoices/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/stripe/invoices/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/payment/stripe';
 
@@ -177,8 +202,8 @@ export async function POST(request: NextRequest) {
 
     // Refunds API Route
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/refunds/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/stripe/refunds/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/payment/stripe';
 
@@ -208,8 +233,8 @@ export async function POST(request: NextRequest) {
 
     // Stripe Webhook Handler
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/payment/webhooks.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/payment/webhooks.ts',
       content: `import { stripe } from './stripe';
 import Stripe from 'stripe';
 
@@ -269,8 +294,8 @@ export async function stripeWebhookHandler(body: string, signature: string): Pro
 
     // Stripe Checkout Helper
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/payment/checkout.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/payment/checkout.ts',
       content: `import { stripe } from './stripe';
 
 interface CreateCheckoutSessionParams {
@@ -345,8 +370,8 @@ export async function createSubscriptionCheckoutSession({
 
     // Stripe Subscriptions Helper
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/payment/subscriptions.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/payment/subscriptions.ts',
       content: `import { stripe } from './stripe';
 
 export async function createSubscription(customerId: string, priceId: string) {

@@ -6,6 +6,25 @@ export const blueprint: Blueprint = {
   description: 'Complete Next.js integration for Better Auth',
   version: '1.0.0',
   actions: [
+    // Install Better Auth packages
+    {
+      type: 'INSTALL_PACKAGES',
+      packages: ['better-auth'],
+      isDev: false
+    },
+    // Add environment variables
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'BETTER_AUTH_SECRET',
+      value: 'your-secret-key',
+      description: 'Better Auth secret key for JWT signing'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'BETTER_AUTH_URL',
+      value: 'http://localhost:3000',
+      description: 'Better Auth base URL'
+    },
     // API Routes
     {
       type: 'CREATE_FILE',
@@ -38,8 +57,8 @@ export async function PATCH(request: NextRequest) {
 
     // Next.js Handler
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/nextjs-handler.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/nextjs-handler.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { auth } from './config';
 
@@ -61,8 +80,8 @@ export async function authHandler(request: NextRequest) {
 
     // Middleware
     {
-      type: 'ADD_CONTENT',
-      target: 'src/middleware.ts',
+      type: 'CREATE_FILE',
+      path: 'src/middleware.ts',
       content: `import { NextRequest } from 'next/server';
 import { authMiddleware } from '@/lib/auth/middleware';
 
@@ -81,8 +100,8 @@ export const config = {
 
     // Auth Middleware
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/auth/middleware.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/auth/middleware.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 
 export function authMiddleware(request: NextRequest) {
@@ -112,8 +131,8 @@ export function authMiddleware(request: NextRequest) {
 
     // Auth Provider Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/auth/auth-provider.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/auth/auth-provider.tsx',
       content: `'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -229,8 +248,8 @@ export function useAuth() {
 
     // Login Form Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/auth/login-form.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/auth/login-form.tsx',
       content: `'use client';
 
 import { useState } from 'react';
@@ -315,8 +334,8 @@ export function LoginForm() {
 
     // Register Form Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/auth/register-form.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/auth/register-form.tsx',
       content: `'use client';
 
 import { useState } from 'react';
@@ -416,8 +435,8 @@ export function RegisterForm() {
 
     // User Menu Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/auth/user-menu.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/auth/user-menu.tsx',
       content: `'use client';
 
 import { useAuth } from './auth-provider';
@@ -475,8 +494,8 @@ export function UserMenu() {
 
     // Admin Panel API Routes
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/admin/users/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/admin/users/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 
@@ -506,8 +525,8 @@ export async function GET(request: NextRequest) {
 
     // Email Verification API Routes
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/verify-email/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/verify-email/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 
@@ -541,8 +560,8 @@ export async function GET(request: NextRequest) {
 
     // MFA API Routes
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/mfa/setup/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/mfa/setup/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 
@@ -573,8 +592,8 @@ export async function POST(request: NextRequest) {
 
     // Password Reset API Routes
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/auth/reset-password/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/auth/reset-password/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 

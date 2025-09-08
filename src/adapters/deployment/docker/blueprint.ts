@@ -61,8 +61,8 @@ ENV HOSTNAME "0.0.0.0"
 CMD ["node", "server.js"]`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.dockerignore',
+      type: 'CREATE_FILE',
+      path: '.dockerignore',
       content: `# Dependencies
 node_modules
 npm-debug.log*
@@ -109,16 +109,14 @@ docker-compose.yml
 .dockerignore`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'package.json',
-      strategy: 'merge',
-      fileType: 'json',
-      content: `{
-  "scripts": {
-    "docker:build": "docker build -t {{project.name}}:latest .",
-    "docker:run": "docker run -p 3000:3000 --env-file .env.local {{project.name}}:latest"
-  }
-}`
+      type: 'ADD_SCRIPT',
+      name: 'docker:build',
+      command: 'docker build -t {{project.name}}:latest .'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'docker:run',
+      command: 'docker run -p 3000:3000 --env-file .env.local {{project.name}}:latest'
     }
   ]
 };

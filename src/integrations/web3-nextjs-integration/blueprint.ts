@@ -7,8 +7,8 @@ export const blueprint: Blueprint = {
   version: '1.0.0',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/wallet.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/wallet.ts',
       content: `import { ethers } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
 
@@ -82,8 +82,8 @@ export class WalletManager {
 export const walletManager = new WalletManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/contracts.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/contracts.ts',
       content: `import { ethers, Contract } from 'ethers';
 import { walletManager } from './wallet.js';
 
@@ -170,8 +170,8 @@ export class ContractManager {
 export const contractManager = new ContractManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/transactions.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/transactions.ts',
       content: `import { ethers } from 'ethers';
 import { walletManager } from './wallet.js';
 
@@ -264,8 +264,8 @@ export class TransactionManager {
 export const transactionManager = new TransactionManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/web3/network.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/web3/network.ts',
       content: `import { ethers } from 'ethers';
 
 export interface NetworkConfig {
@@ -399,8 +399,8 @@ export class NetworkManager {
 export const networkManager = new NetworkManager();`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/hooks/useWallet.ts',
+      type: 'CREATE_FILE',
+      path: 'src/hooks/useWallet.ts',
       content: `import { useState, useEffect, useCallback } from 'react';
 import { walletManager, WalletState } from '@/lib/web3/wallet.js';
 
@@ -501,8 +501,8 @@ export function useWallet() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/WalletProvider.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/WalletProvider.tsx',
       content: `import React, { createContext, useContext, ReactNode } from 'react';
 import { useWallet } from '@/hooks/useWallet.js';
 import { WalletState } from '@/lib/web3/wallet.js';
@@ -540,8 +540,8 @@ export function useWalletContext() {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/WalletButton.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/WalletButton.tsx',
       content: `import React from 'react';
 import { useWalletContext } from './WalletProvider.js';
 

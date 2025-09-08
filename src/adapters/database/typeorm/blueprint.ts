@@ -55,8 +55,8 @@ export const getDataSource = () => {
 export default AppDataSource;`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.database_config}}/entities/User.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.database_config}}/entities/User.ts',
       content: `import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('users')

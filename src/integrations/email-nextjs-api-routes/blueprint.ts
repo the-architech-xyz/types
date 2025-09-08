@@ -12,8 +12,8 @@ export const emailNextjsApiRoutesBlueprint: Blueprint = {
   name: 'Email Next.js API Routes',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/email/send/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/email/send/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email/sender';
 

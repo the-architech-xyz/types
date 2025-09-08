@@ -43,7 +43,7 @@ export class ObservabilityAgent extends SimpleAgent {
       console.log(`  📋 Executing blueprint: ${adapter.blueprint.name}`);
 
       // Execute blueprint
-      const blueprintExecutor = new BlueprintExecutor();
+      const blueprintExecutor = new BlueprintExecutor(context.project.path || '.');
       const result = await blueprintExecutor.executeBlueprint(adapter.blueprint, context);
 
       if (result.success) {

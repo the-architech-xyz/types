@@ -7,8 +7,8 @@ const vitestNextjsIntegrationBlueprint: Blueprint = {
   version: '1.0.0',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'vitest.config.ts',
+      type: 'CREATE_FILE',
+      path: 'vitest.config.ts',
       condition: '{{#if integration.features.unitTesting}}',
       content: `import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
@@ -58,8 +58,8 @@ export default defineConfig({
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'vitest.setup.ts',
+      type: 'CREATE_FILE',
+      path: 'vitest.setup.ts',
       condition: '{{#if integration.features.unitTesting}}',
       content: `import '@testing-library/jest-dom'
 import { vi } from 'vitest'
@@ -133,8 +133,8 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'test-utils/test-utils.tsx',
+      type: 'CREATE_FILE',
+      path: 'test-utils/test-utils.tsx',
       condition: '{{#if integration.features.unitTesting}}',
       content: `import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
@@ -158,8 +158,8 @@ export { customRender as render }
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'test-utils/mock-next-router.ts',
+      type: 'CREATE_FILE',
+      path: 'test-utils/mock-next-router.ts',
       condition: '{{#if integration.features.mocking}}',
       content: `import { vi } from 'vitest'
 
@@ -185,8 +185,8 @@ export const mockUseRouter = () => mockRouter
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'test-utils/mock-fetch.ts',
+      type: 'CREATE_FILE',
+      path: 'test-utils/mock-fetch.ts',
       condition: '{{#if integration.features.mocking}}',
       content: `import { vi } from 'vitest'
 
@@ -210,8 +210,8 @@ export const resetFetch = () => {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'tests/unit/components/Button.test.tsx',
+      type: 'CREATE_FILE',
+      path: 'tests/unit/components/Button.test.tsx',
       condition: '{{#if integration.features.unitTesting}}',
       content: `import { render, screen, fireEvent } from '@/test-utils/test-utils'
 import { Button } from '@/components/ui/button'
@@ -251,8 +251,8 @@ describe('Button', () => {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'tests/integration/pages/home.test.tsx',
+      type: 'CREATE_FILE',
+      path: 'tests/integration/pages/home.test.tsx',
       condition: '{{#if integration.features.integrationTesting}}',
       content: `import { render, screen } from '@/test-utils/test-utils'
 import HomePage from '@/app/page'
@@ -279,8 +279,8 @@ describe('Home Page', () => {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'tests/e2e/auth.spec.ts',
+      type: 'CREATE_FILE',
+      path: 'tests/e2e/auth.spec.ts',
       condition: '{{#if integration.features.e2eTesting}}',
       content: `import { test, expect } from '@playwright/test'
 

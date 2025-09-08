@@ -66,21 +66,40 @@ export const createWeb3Instance = (rpcUrl?: string) => {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      strategy: 'append',
-      fileType: 'env',
-      content: `# Web3 Blockchain Configuration
-NEXT_PUBLIC_RPC_URL="https://mainnet.infura.io/v3/YOUR_PROJECT_ID"
-NEXT_PUBLIC_CHAIN_ID="1"
-
-# Network RPC URLs
-NEXT_PUBLIC_MAINNET_RPC_URL="https://mainnet.infura.io/v3/YOUR_PROJECT_ID"
-NEXT_PUBLIC_SEPOLIA_RPC_URL="https://sepolia.infura.io/v3/YOUR_PROJECT_ID"
-NEXT_PUBLIC_POLYGON_RPC_URL="https://polygon-rpc.com"
-NEXT_PUBLIC_BSC_RPC_URL="https://bsc-dataseed.binance.org"
-
-# Add your environment variables here`
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_RPC_URL',
+      value: 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID',
+      description: 'Primary RPC URL for Web3 connection'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_CHAIN_ID',
+      value: '1',
+      description: 'Default chain ID (1 for Ethereum mainnet)'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_MAINNET_RPC_URL',
+      value: 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID',
+      description: 'Ethereum mainnet RPC URL'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_SEPOLIA_RPC_URL',
+      value: 'https://sepolia.infura.io/v3/YOUR_PROJECT_ID',
+      description: 'Ethereum Sepolia testnet RPC URL'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_POLYGON_RPC_URL',
+      value: 'https://polygon-rpc.com',
+      description: 'Polygon network RPC URL'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_BSC_RPC_URL',
+      value: 'https://bsc-dataseed.binance.org',
+      description: 'Binance Smart Chain RPC URL'
     }
   ]
 };

@@ -1,189 +1,285 @@
 /**
- * Semantic Actions Example Blueprint
+ * Semantic Actions Example
  * 
- * Demonstrates the new high-level semantic actions approach
- * This is how contributors should write blueprints going forward
+ * Comprehensive examples of all semantic actions available in The Architech.
+ * This demonstrates the new three-layer architecture in action.
  */
 
 import { Blueprint } from '../src/types/adapter.js';
 
 export const semanticActionsExample: Blueprint = {
-  id: 'semantic-actions-example',
   name: 'Semantic Actions Example',
-  description: 'Example blueprint using high-level semantic actions',
+  description: 'Comprehensive example of all semantic actions',
   version: '1.0.0',
   actions: [
-    // 1. INSTALL_PACKAGES - Install dependencies
+    // 1. CREATE_FILE - Create new files
+    {
+      type: 'CREATE_FILE',
+      path: 'src/components/Button.tsx',
+      content: `import React from 'react';
+
+interface ButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary';
+}
+
+export const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  onClick, 
+  variant = 'primary' 
+}) => {
+  return (
+    <button 
+      className={\`btn btn-\${variant}\`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+};`
+    },
+
+    // 2. INSTALL_PACKAGES - Add dependencies
     {
       type: 'INSTALL_PACKAGES',
-      packages: ['stripe', '@stripe/stripe-js'],
+      packages: ['react', 'react-dom', '@types/react', '@types/react-dom'],
       isDev: false
     },
     {
       type: 'INSTALL_PACKAGES',
-      packages: ['vitest', '@testing-library/react'],
+      packages: ['typescript', '@types/node', 'ts-node'],
       isDev: true
     },
 
-    // 2. ADD_SCRIPT - Add npm scripts
+    // 3. ADD_SCRIPT - Add npm scripts
     {
       type: 'ADD_SCRIPT',
-      name: 'stripe:listen',
-      command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
+      name: 'build',
+      command: 'tsc && next build'
+    },
+    {
+      type: 'ADD_SCRIPT',
+      name: 'dev',
+      command: 'next dev'
     },
     {
       type: 'ADD_SCRIPT',
       name: 'test',
-      command: 'vitest'
+      command: 'vitest run'
     },
 
-    // 3. ADD_ENV_VAR - Add environment variables
+    // 4. ADD_ENV_VAR - Add environment variables
     {
       type: 'ADD_ENV_VAR',
-      key: 'STRIPE_SECRET_KEY',
-      value: 'sk_test_...',
-      description: 'Stripe secret key for payment processing'
+      key: 'DATABASE_URL',
+      value: 'postgresql://localhost:5432/mydb',
+      description: 'Database connection string'
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'STRIPE_PUBLISHABLE_KEY',
-      value: 'pk_test_...',
-      description: 'Stripe publishable key for client-side'
-    },
-
-    // 4. CREATE_FILE - Create new files
-    {
-      type: 'CREATE_FILE',
-      path: 'src/lib/stripe.ts',
-      content: `import Stripe from 'stripe';
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
-
-export const stripeClient = new Stripe(process.env.STRIPE_PUBLISHABLE_KEY!);
-`
+      key: 'NEXTAUTH_SECRET',
+      value: 'your-secret-key-here',
+      description: 'NextAuth.js secret key'
     },
     {
-      type: 'CREATE_FILE',
-      path: 'src/lib/payments.ts',
-      content: `import { stripe } from './stripe';
-
-export async function createPaymentIntent(amount: number, currency: string = 'usd') {
-  return await stripe.paymentIntents.create({
-    amount,
-    currency,
-  });
-}
-`
+      type: 'ADD_ENV_VAR',
+      key: 'NODE_ENV',
+      value: 'development',
+      description: 'Application environment'
     },
 
-    // 5. UPDATE_TS_CONFIG - Update TypeScript configuration
+    // 5. ADD_TS_IMPORT - Add TypeScript imports
     {
-      type: 'UPDATE_TS_CONFIG',
-      path: 'src/lib/config.ts',
-      modifications: {
-        stripe: {
-          enabled: true,
-          webhookSecret: 'process.env.STRIPE_WEBHOOK_SECRET'
+      type: 'ADD_TS_IMPORT',
+      path: 'src/lib/auth.ts',
+      imports: [
+        {
+          moduleSpecifier: 'next-auth',
+          namedImports: ['NextAuthOptions', 'NextAuth']
+        },
+        {
+          moduleSpecifier: 'next-auth/providers/credentials',
+          defaultImport: 'CredentialsProvider'
+        }
+      ]
+    },
+
+    // 6. MERGE_JSON - Merge JSON configuration files
+    {
+      type: 'MERGE_JSON',
+      path: 'tsconfig.json',
+      content: {
+        compilerOptions: {
+          strict: true,
+          target: 'ES2020',
+          lib: ['dom', 'dom.iterable', 'es6'],
+          allowJs: true,
+          skipLibCheck: true,
+          esModuleInterop: true,
+          allowSyntheticDefaultImports: true,
+          forceConsistentCasingInFileNames: true,
+          moduleResolution: 'node',
+          resolveJsonModule: true,
+          isolatedModules: true,
+          noEmit: true,
+          jsx: 'preserve'
+        },
+        include: ['next-env.d.ts', '**/*.ts', '**/*.tsx'],
+        exclude: ['node_modules']
+      }
+    },
+    {
+      type: 'MERGE_JSON',
+      path: 'next.config.js',
+      content: {
+        experimental: {
+          appDir: true
+        },
+        images: {
+          domains: ['example.com']
         }
       }
     },
 
-    // 6. APPEND_TO_FILE - Append to existing files
+    // 7. APPEND_TO_FILE - Append content to existing files
     {
       type: 'APPEND_TO_FILE',
-      path: '.gitignore',
+      path: 'README.md',
       content: `
-# Stripe
-.env.stripe
-stripe.log
+
+## Getting Started
+
+1. Install dependencies:
+   \`\`\`bash
+   npm install
+   \`\`\`
+
+2. Run the development server:
+   \`\`\`bash
+   npm run dev
+   \`\`\`
+
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Available Scripts
+
+- \`npm run dev\` - Start development server
+- \`npm run build\` - Build for production
+- \`npm run test\` - Run tests
 `
     },
 
-    // 7. PREPEND_TO_FILE - Prepend to existing files
+    // 8. PREPEND_TO_FILE - Prepend content to existing files
     {
       type: 'PREPEND_TO_FILE',
-      path: 'src/lib/index.ts',
-      content: `// Payment utilities
-export * from './stripe';
-export * from './payments';
+      path: 'src/index.ts',
+      content: `// Generated by The Architech
+// This file was automatically created and should not be edited manually
+
 `
     },
 
-    // 8. RUN_COMMAND - Execute commands
+    // 9. ENHANCE_FILE - Complex file modifications
+    {
+      type: 'ENHANCE_FILE',
+      path: 'next.config.js',
+      modifier: 'nextjs-config-wrapper',
+      params: {
+        withSentry: true,
+        withAnalytics: false,
+        withBundleAnalyzer: true
+      },
+      fallback: 'skip'
+    },
+
+    // 10. RUN_COMMAND - Execute CLI commands
     {
       type: 'RUN_COMMAND',
-      command: 'npm run build',
-      workingDir: '.'
+      command: 'npx shadcn-ui@latest init',
+      workingDir: './src'
+    },
+    {
+      type: 'RUN_COMMAND',
+      command: 'npx shadcn-ui@latest add button card input',
+      workingDir: './src'
     }
   ]
 };
 
-// Comparison: Before vs After
-
-// BEFORE (Complex, Error-Prone):
-const oldWay: Blueprint = {
-  id: 'old-complex-way',
-  name: 'Old Complex Way',
+// Example with template variables
+export const templateExample: Blueprint = {
+  name: 'Template Variables Example',
+  description: 'Shows how to use template variables in actions',
+  version: '1.0.0',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'package.json',
-      strategy: 'merge',
-      fileType: 'json',
-      content: `{
-        "dependencies": {
-          "stripe": "^1.0.0",
-          "@stripe/stripe-js": "^2.0.0"
-        },
-        "scripts": {
-          "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
-        }
-      }`
+      type: 'CREATE_FILE',
+      path: 'src/components/{{componentName}}.tsx',
+      content: `import React from 'react';
+
+interface {{componentName}}Props {
+  // Props for {{componentName}}
+}
+
+export const {{componentName}}: React.FC<{{componentName}}Props> = () => {
+  return (
+    <div>
+      <h1>{{componentName}} Component</h1>
+      <p>This component was generated for project: {{project.name}}</p>
+    </div>
+  );
+};`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      strategy: 'append',
-      fileType: 'env',
-      content: `STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PUBLISHABLE_KEY=pk_test_...`
-    },
-    {
-      type: 'RUN_COMMAND',
-      command: 'npm install stripe @stripe/stripe-js'
+      type: 'INSTALL_PACKAGES',
+      packages: ['{{packageName}}@latest'],
+      condition: '{{module.parameters.includePackage}}'
     }
   ]
 };
 
-// AFTER (Simple, Clear, Safe):
-const newWay: Blueprint = {
-  id: 'new-semantic-way',
-  name: 'New Semantic Way',
+// Example with conditional execution
+export const conditionalExample: Blueprint = {
+  name: 'Conditional Execution Example',
+  description: 'Shows how to use conditional execution',
+  version: '1.0.0',
   actions: [
     {
       type: 'INSTALL_PACKAGES',
-      packages: ['stripe', '@stripe/stripe-js']
+      packages: ['@types/node'],
+      condition: '{{module.parameters.typescript}}'
     },
     {
-      type: 'ADD_SCRIPT',
-      name: 'stripe:listen',
-      command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
-    },
-    {
-      type: 'ADD_ENV_VAR',
-      key: 'STRIPE_SECRET_KEY',
-      value: 'sk_test_...',
-      description: 'Stripe secret key'
+      type: 'CREATE_FILE',
+      path: 'src/lib/database.ts',
+      content: 'export const db = "database connection";',
+      condition: '{{module.parameters.database}}'
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'STRIPE_PUBLISHABLE_KEY',
-      value: 'pk_test_...',
-      description: 'Stripe publishable key'
+      key: 'API_KEY',
+      value: 'your-api-key',
+      condition: '{{module.parameters.api}}'
     }
   ]
 };
 
-export { oldWay, newWay };
+// Migration example: Before vs After
+export const migrationExample = {
+  // ❌ OLD WAY (ADD_CONTENT)
+  old: {
+    type: 'ADD_CONTENT',
+    target: 'package.json',
+    content: '{"dependencies": {"react": "^18.0.0", "next": "^13.0.0"}}',
+    strategy: 'merge'
+  },
+
+  // ✅ NEW WAY (Semantic Actions)
+  new: [
+    {
+      type: 'INSTALL_PACKAGES',
+      packages: ['react@^18.0.0', 'next@^13.0.0']
+    }
+  ]
+};

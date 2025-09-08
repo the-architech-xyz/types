@@ -7,8 +7,8 @@ export const blueprint: Blueprint = {
   version: '1.0.0',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/WalletCard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/WalletCard.tsx',
       content: `import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -107,8 +107,8 @@ export function WalletCard({
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/TransactionCard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/TransactionCard.tsx',
       content: `import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -268,8 +268,8 @@ export function TransactionCard({
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/NetworkSwitcher.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/NetworkSwitcher.tsx',
       content: `import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -324,8 +324,8 @@ export function NetworkSwitcher({
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/BalanceCard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/BalanceCard.tsx',
       content: `import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -418,8 +418,8 @@ export function BalanceCard({
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/web3/Web3Dashboard.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/web3/Web3Dashboard.tsx',
       content: `import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

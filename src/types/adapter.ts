@@ -53,8 +53,8 @@ export interface Blueprint {
 }
 
 export interface BlueprintAction {
-  // High-level semantic actions (recommended)
-  type: 'INSTALL_PACKAGES' | 'ADD_SCRIPT' | 'ADD_ENV_VAR' | 'CREATE_FILE' | 'UPDATE_TS_CONFIG' | 'APPEND_TO_FILE' | 'PREPEND_TO_FILE' | 'RUN_COMMAND' | 'ADD_CONTENT';
+  // High-level semantic actions
+  type: 'INSTALL_PACKAGES' | 'ADD_SCRIPT' | 'ADD_ENV_VAR' | 'CREATE_FILE' | 'APPEND_TO_FILE' | 'PREPEND_TO_FILE' | 'RUN_COMMAND' | 'MERGE_JSON' | 'ADD_TS_IMPORT' | 'ENHANCE_FILE' | 'MERGE_CONFIG' | 'WRAP_CONFIG' | 'EXTEND_SCHEMA';
   
   // Common properties
   condition?: string; // Template condition for conditional execution
@@ -77,26 +77,40 @@ export interface BlueprintAction {
   content?: string; // File content
   overwrite?: boolean; // Whether to overwrite existing files
   
-  // UPDATE_TS_CONFIG parameters
-  modifications?: Record<string, any>; // Configuration modifications
-  
   // APPEND_TO_FILE / PREPEND_TO_FILE parameters
   // (uses path and content from above)
   
   // RUN_COMMAND parameters
   workingDir?: string; // Working directory for command
   
-  // ADD_CONTENT parameters (legacy/advanced)
-  target?: string; // File target (legacy)
-  strategy?: 'merge' | 'replace' | 'append' | 'prepend' | 'merge-imports' | 'merge-config' | 'merge-schema';
-  fileType?: 'typescript' | 'javascript' | 'json' | 'env' | 'auto';
+  // MERGE_JSON parameters
+  // (uses path from CREATE_FILE and content as object)
   
-  // Legacy merge parameters
-  configObjectName?: string;
-  payload?: Record<string, any>;
+  // ADD_TS_IMPORT parameters
   imports?: ImportDefinition[];
-  schema?: Record<string, any>;
-  dialect?: 'drizzle' | 'prisma' | 'sequelize' | 'typeorm';
+  
+  // ENHANCE_FILE parameters
+  modifier?: string; // Modifier function name
+  params?: Record<string, any>; // Parameters for modifier function
+  fallback?: 'skip' | 'error' | 'create'; // Fallback strategy
+  
+  // MERGE_CONFIG parameters
+  strategy?: 'deep-merge' | 'shallow-merge' | 'replace'; // Merge strategy
+  config?: Record<string, any>; // Configuration object to merge
+  
+  // WRAP_CONFIG parameters
+  wrapper?: string; // Wrapper function name
+  options?: Record<string, any>; // Options for wrapper function
+  
+  // EXTEND_SCHEMA parameters
+  tables?: SchemaTable[]; // Tables to add to schema
+  additionalImports?: string[]; // Additional imports needed (if any)
+  
+}
+
+export interface SchemaTable {
+  name: string; // Table name
+  definition: string; // Table definition code
 }
 
 export interface ImportDefinition {
@@ -104,6 +118,18 @@ export interface ImportDefinition {
   namedImports?: string[];
   defaultImport?: string;
   namespaceImport?: string;
+}
+
+// Modifier system types
+export interface ModifierDefinition {
+  handler: (filePath: string, params: any, context: any) => Promise<void>; // ProjectContext will be imported
+  paramsSchema: any; // JSONSchema for validation
+  description: string;
+  supportedFileTypes: string[];
+}
+
+export interface ModifierRegistry {
+  [key: string]: ModifierDefinition;
 }
 
 export interface BlueprintExecutionResult {

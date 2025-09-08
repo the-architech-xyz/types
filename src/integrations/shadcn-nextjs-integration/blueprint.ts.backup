@@ -203,11 +203,12 @@ export function truncate(str: string, length: number) {
         "slide-in-from-bottom": "slide-in-from-bottom 0.2s ease-out",
         "slide-in-from-left": "slide-in-from-left 0.2s ease-out",
         "slide-in-from-right": "slide-in-from-right 0.2s ease-out",
-            },
-          },
-        },
-        plugins: ["tailwindcss-animate"],
-      }
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+}
+`
     },
     {
       type: 'APPEND_TO_FILE',

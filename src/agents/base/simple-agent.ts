@@ -13,14 +13,13 @@ import { PathHandler } from '../../core/services/path/path-handler.js';
 export abstract class SimpleAgent implements Agent {
   public category: string;
   protected adapterLoader: AdapterLoader;
-  protected blueprintExecutor: BlueprintExecutor;
+  protected blueprintExecutor?: BlueprintExecutor;
   protected pathHandler: PathHandler;
 
   constructor(category: string, pathHandler: PathHandler) {
     this.category = category;
     this.pathHandler = pathHandler;
     this.adapterLoader = new AdapterLoader();
-    this.blueprintExecutor = new BlueprintExecutor();
   }
 
   /**
@@ -48,8 +47,11 @@ export abstract class SimpleAgent implements Agent {
       
       console.log(`  📋 Executing blueprint: ${adapter.blueprint.name}`);
       
+      // Initialize BlueprintExecutor with project root
+      this.blueprintExecutor = new BlueprintExecutor(context.project.path || '.');
+      
       // Execute the blueprint
-      const result = await this.blueprintExecutor.executeBlueprint(adapter.blueprint, context);
+      const result = await this.blueprintExecutor!.executeBlueprint(adapter.blueprint, context);
       
       if (result.success) {
         console.log(`  ✅ Adapter ${module.id} completed successfully`);

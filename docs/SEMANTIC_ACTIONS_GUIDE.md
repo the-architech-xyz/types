@@ -1,500 +1,222 @@
-# 🎯 Semantic Actions Guide
+# Semantic Actions Guide
 
-> **High-level, intent-based blueprint actions that make adapter creation simple and error-free**
+## Overview
 
-## 🎯 Overview
+The Architech uses **Semantic Actions** - high-level, intent-driven actions that abstract away implementation complexity. Instead of writing low-level file manipulation code, blueprint authors express their intent, and the system handles the implementation details.
 
-Semantic Actions are **high-level blueprint actions** that express **what you want to do** rather than **how to do it**. They abstract away implementation complexity, making blueprint creation simple, clear, and error-free.
+## Architecture
 
-## 🚀 **Why Semantic Actions?**
+```
+Blueprint Author → Semantic Actions → Blueprint Orchestrator → File Modification Engine → File System
+     (Intent)           (Translation)           (Primitives)           (Disk)
+```
 
-### **The Problem with Low-Level Actions**
+### Three-Layer System
 
-**Before (Complex & Error-Prone):**
+1. **Layer 3: Blueprint Executor** - Orchestrates blueprint execution
+2. **Layer 2: Blueprint Orchestrator** - Translates semantic actions to primitives  
+3. **Layer 1: File Modification Engine** - Core file operations with VFS
+
+## Available Semantic Actions
+
+### 1. CREATE_FILE
+Creates new files with content.
+
 ```typescript
 {
-  type: 'ADD_CONTENT',
-  target: 'package.json',
-  strategy: 'merge',
-  fileType: 'json',
-  content: `{
-    "dependencies": {
-      "stripe": "^1.0.0",
-      "@stripe/stripe-js": "^2.0.0"
-    },
-    "scripts": {
-      "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
-    }
-  }`
+  type: 'CREATE_FILE',
+  path: 'src/components/Button.tsx',
+  content: 'export const Button = () => { return <button>Click me</button>; };'
 }
 ```
 
-**Problems:**
-- ❌ **Complex JSON formatting** - Easy to make syntax errors
-- ❌ **Implementation details** - Must know about strategies and file types
-- ❌ **Error-prone** - Manual JSON construction is fragile
-- ❌ **Hard to read** - Intent is buried in implementation details
-
-### **The Solution: Semantic Actions**
-
-**After (Simple & Clear):**
-```typescript
-[
-  {
-    type: 'INSTALL_PACKAGES',
-    packages: ['stripe', '@stripe/stripe-js']
-  },
-  {
-    type: 'ADD_SCRIPT',
-    name: 'stripe:listen',
-    command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
-  }
-]
-```
-
-**Benefits:**
-- ✅ **Clear intent** - What you want to do is obvious
-- ✅ **No implementation details** - CLI handles complexity
-- ✅ **Error-free** - No manual JSON formatting
-- ✅ **Self-documenting** - Action names express purpose
-
-## 🎯 **Available Semantic Actions**
-
-### **1. `INSTALL_PACKAGES` - Install Dependencies**
-
-**Purpose:** Install npm packages and add them to package.json
+### 2. INSTALL_PACKAGES
+Adds dependencies to package.json.
 
 ```typescript
 {
   type: 'INSTALL_PACKAGES',
-  packages: ['stripe', '@stripe/stripe-js'],
+  packages: ['react', 'react-dom', '@types/react'],
   isDev: false  // optional, defaults to false
 }
 ```
 
-**What it does:**
-- ✅ Adds packages to `package.json` dependencies or devDependencies
-- ✅ Runs `npm install` to install packages
-- ✅ Handles package.json creation if it doesn't exist
-
-**Examples:**
-```typescript
-// Install production dependencies
-{
-  type: 'INSTALL_PACKAGES',
-  packages: ['stripe', '@stripe/stripe-js']
-}
-
-// Install dev dependencies
-{
-  type: 'INSTALL_PACKAGES',
-  packages: ['vitest', '@testing-library/react'],
-  isDev: true
-}
-```
-
-### **2. `ADD_SCRIPT` - Add NPM Scripts**
-
-**Purpose:** Add scripts to package.json
+### 3. ADD_SCRIPT
+Adds npm scripts to package.json.
 
 ```typescript
-{
-  type: 'ADD_SCRIPT',
-  name: 'stripe:listen',
-  command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
-}
-```
-
-**What it does:**
-- ✅ Adds script to `package.json` scripts section
-- ✅ Handles scripts section creation if it doesn't exist
-- ✅ Preserves existing scripts
-
-**Examples:**
-```typescript
-{
-  type: 'ADD_SCRIPT',
-  name: 'test',
-  command: 'vitest'
-}
-
 {
   type: 'ADD_SCRIPT',
   name: 'build',
-  command: 'next build'
+  command: 'tsc && next build'
 }
 ```
 
-### **3. `ADD_ENV_VAR` - Add Environment Variables**
+### 4. ADD_ENV_VAR
+Adds environment variables to .env files.
 
-**Purpose:** Add environment variables to .env files
-
-```typescript
-{
-  type: 'ADD_ENV_VAR',
-  key: 'STRIPE_SECRET_KEY',
-  value: 'sk_test_...',
-  description: 'Stripe secret key for payments'  // optional
-}
-```
-
-**What it does:**
-- ✅ Adds variable to `.env.example` file
-- ✅ Adds variable to `.env` file if it exists
-- ✅ Prevents duplicate variables
-- ✅ Adds optional description as comment
-
-**Examples:**
 ```typescript
 {
   type: 'ADD_ENV_VAR',
   key: 'DATABASE_URL',
-  value: 'postgresql://...',
+  value: 'postgresql://localhost:5432/mydb',
   description: 'Database connection string'
 }
-
-{
-  type: 'ADD_ENV_VAR',
-  key: 'NODE_ENV',
-  value: 'development'
-}
 ```
 
-### **4. `CREATE_FILE` - Create New Files**
-
-**Purpose:** Create new files with content
+### 5. ADD_TS_IMPORT
+Adds TypeScript imports to existing files.
 
 ```typescript
 {
-  type: 'CREATE_FILE',
-  path: 'src/lib/stripe.ts',
-  content: `import Stripe from 'stripe';
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-`,
-  overwrite: false  // optional, defaults to false
+  type: 'ADD_TS_IMPORT',
+  path: 'src/lib/auth.ts',
+  imports: [
+    {
+      moduleSpecifier: 'next-auth',
+      namedImports: ['NextAuthOptions', 'NextAuth']
+    }
+  ]
 }
 ```
 
-**What it does:**
-- ✅ Creates new file with content
-- ✅ Creates parent directories if they don't exist
-- ✅ Prevents overwriting existing files by default
-- ✅ Provides clear error if file exists and overwrite is false
-
-**Examples:**
-```typescript
-{
-  type: 'CREATE_FILE',
-  path: 'src/lib/payments.ts',
-  content: `export function createPayment() {
-  // Payment logic
-}`
-}
-
-{
-  type: 'CREATE_FILE',
-  path: 'src/components/Button.tsx',
-  content: `export function Button() {
-  return <button>Click me</button>
-}`,
-  overwrite: true  // Force overwrite existing file
-}
-```
-
-### **5. `UPDATE_TS_CONFIG` - Update TypeScript Configs**
-
-**Purpose:** Intelligently merge TypeScript configuration objects
+### 6. MERGE_JSON
+Merges JSON configuration files.
 
 ```typescript
 {
-  type: 'UPDATE_TS_CONFIG',
-  path: 'src/lib/config.ts',
-  modifications: {
-    stripe: {
-      enabled: true,
-      webhookSecret: 'process.env.STRIPE_WEBHOOK_SECRET'
+  type: 'MERGE_JSON',
+  path: 'tsconfig.json',
+  content: {
+    compilerOptions: {
+      strict: true,
+      target: 'ES2020'
     }
   }
 }
 ```
 
-**What it does:**
-- ✅ Finds TypeScript configuration objects
-- ✅ Intelligently merges new properties
-- ✅ Preserves existing configuration
-- ✅ Handles nested objects
-
-**Examples:**
-```typescript
-{
-  type: 'UPDATE_TS_CONFIG',
-  path: 'src/lib/auth/config.ts',
-  modifications: {
-    database: 'drizzleAdapter',
-    emailAndPassword: {
-      enabled: true,
-      requireEmailVerification: true
-    }
-  }
-}
-```
-
-### **6. `APPEND_TO_FILE` / `PREPEND_TO_FILE` - Modify Files**
-
-**Purpose:** Append or prepend content to existing files
+### 7. APPEND_TO_FILE
+Appends content to existing files.
 
 ```typescript
 {
   type: 'APPEND_TO_FILE',
-  path: '.gitignore',
-  content: `
-# Stripe
-.env.stripe
-stripe.log
-`
+  path: 'README.md',
+  content: '\n## Installation\n\nRun `npm install` to install dependencies.'
 }
 ```
 
-**What it does:**
-- ✅ Appends content to end of file
-- ✅ Prepends content to beginning of file
-- ✅ Creates file if it doesn't exist
-- ✅ Handles newlines properly
+### 8. PREPEND_TO_FILE
+Prepends content to existing files.
 
-**Examples:**
 ```typescript
-{
-  type: 'APPEND_TO_FILE',
-  path: '.gitignore',
-  content: `
-# Dependencies
-node_modules/
-.env
-`
-}
-
 {
   type: 'PREPEND_TO_FILE',
-  path: 'src/lib/index.ts',
-  content: `// Payment utilities
-export * from './stripe';
-export * from './payments';
-`
+  path: 'src/index.ts',
+  content: '// Generated by The Architech\n'
 }
 ```
 
-### **7. `RUN_COMMAND` - Execute Commands**
+### 9. ENHANCE_FILE
+Performs complex file modifications using registered modifiers.
 
-**Purpose:** Execute shell commands
+```typescript
+{
+  type: 'ENHANCE_FILE',
+  path: 'next.config.js',
+  modifier: 'nextjs-config-wrapper',
+  params: {
+    withSentry: true,
+    withAnalytics: false
+  },
+  fallback: 'skip'  // optional: 'skip' | 'error' | 'create'
+}
+```
+
+### 10. RUN_COMMAND
+Executes CLI commands.
 
 ```typescript
 {
   type: 'RUN_COMMAND',
-  command: 'npm run build',
-  workingDir: '.'  // optional
+  command: 'npx shadcn-ui@latest init',
+  workingDir: './src'  // optional
 }
 ```
 
-**What it does:**
-- ✅ Executes shell commands
-- ✅ Sets working directory
-- ✅ Handles command errors
-- ✅ Provides command output
+## Template Variables
 
-**Examples:**
+All actions support template variables using `{{variable}}` syntax:
+
 ```typescript
 {
-  type: 'RUN_COMMAND',
-  command: 'drizzle-kit generate:pg'
-}
-
-{
-  type: 'RUN_COMMAND',
-  command: 'npm run test',
-  workingDir: './src'
+  type: 'CREATE_FILE',
+  path: 'src/components/{{componentName}}.tsx',
+  content: 'export const {{componentName}} = () => { ... };'
 }
 ```
 
-## 📊 **Complete Example: Stripe Adapter**
+Available variables:
+- `{{project.name}}` - Project name
+- `{{project.path}}` - Project path
+- `{{module.id}}` - Module ID
+- `{{module.parameters.paramName}}` - Module parameters
 
-### **Before (Complex):**
+## Conditional Execution
+
+Actions can be conditionally executed:
+
 ```typescript
-const oldStripeBlueprint: Blueprint = {
-  id: 'stripe-old',
-  name: 'Stripe Integration (Old Way)',
-  actions: [
-    {
-      type: 'ADD_CONTENT',
-      target: 'package.json',
-      strategy: 'merge',
-      fileType: 'json',
-      content: `{
-        "dependencies": {
-          "stripe": "^1.0.0",
-          "@stripe/stripe-js": "^2.0.0"
-        },
-        "scripts": {
-          "stripe:listen": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
-        }
-      }`
-    },
-    {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      strategy: 'append',
-      fileType: 'env',
-      content: `STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PUBLISHABLE_KEY=pk_test_...`
-    },
-    {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stripe.ts',
-      content: `import Stripe from 'stripe';
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-`
-    },
-    {
-      type: 'RUN_COMMAND',
-      command: 'npm install stripe @stripe/stripe-js'
-    }
-  ]
-};
-```
-
-### **After (Simple):**
-```typescript
-const newStripeBlueprint: Blueprint = {
-  id: 'stripe-new',
-  name: 'Stripe Integration (New Way)',
-  actions: [
-    {
-      type: 'INSTALL_PACKAGES',
-      packages: ['stripe', '@stripe/stripe-js']
-    },
-    {
-      type: 'ADD_SCRIPT',
-      name: 'stripe:listen',
-      command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
-    },
-    {
-      type: 'ADD_ENV_VAR',
-      key: 'STRIPE_SECRET_KEY',
-      value: 'sk_test_...',
-      description: 'Stripe secret key for payments'
-    },
-    {
-      type: 'ADD_ENV_VAR',
-      key: 'STRIPE_PUBLISHABLE_KEY',
-      value: 'pk_test_...',
-      description: 'Stripe publishable key for client-side'
-    },
-    {
-      type: 'CREATE_FILE',
-      path: 'src/lib/stripe.ts',
-      content: `import Stripe from 'stripe';
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-`
-    }
-  ]
-};
-```
-
-**Improvement:**
-- ✅ **80% less code** - From 4 complex actions to 5 simple ones
-- ✅ **90% fewer errors** - No manual JSON formatting
-- ✅ **100% clearer intent** - Each action clearly expresses its purpose
-- ✅ **Self-documenting** - No need to understand implementation details
-
-## 🎯 **Best Practices**
-
-### **1. Use Semantic Actions First**
-- ✅ **Start with semantic actions** for common operations
-- ✅ **Use `ADD_CONTENT` only** for advanced cases not covered
-- ✅ **Prefer clarity over complexity**
-
-### **2. Group Related Actions**
-```typescript
-// Good: Group related operations
-[
-  { type: 'INSTALL_PACKAGES', packages: ['stripe'] },
-  { type: 'ADD_SCRIPT', name: 'stripe:listen', command: '...' },
-  { type: 'ADD_ENV_VAR', key: 'STRIPE_SECRET_KEY', value: '...' }
-]
-
-// Avoid: Mixing unrelated operations
-[
-  { type: 'INSTALL_PACKAGES', packages: ['stripe'] },
-  { type: 'CREATE_FILE', path: 'unrelated.ts', content: '...' },
-  { type: 'ADD_SCRIPT', name: 'stripe:listen', command: '...' }
-]
-```
-
-### **3. Use Descriptive Names**
-```typescript
-// Good: Clear, descriptive names
 {
-  type: 'ADD_SCRIPT',
-  name: 'stripe:listen',
-  command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
-}
-
-// Avoid: Generic names
-{
-  type: 'ADD_SCRIPT',
-  name: 'listen',
-  command: 'stripe listen'
+  type: 'INSTALL_PACKAGES',
+  packages: ['@types/node'],
+  condition: '{{module.parameters.typescript}}'
 }
 ```
 
-### **4. Add Descriptions for Environment Variables**
-```typescript
-// Good: Clear descriptions
-{
-  type: 'ADD_ENV_VAR',
-  key: 'STRIPE_SECRET_KEY',
-  value: 'sk_test_...',
-  description: 'Stripe secret key for payment processing'
-}
+## Migration from ADD_CONTENT
 
-// Avoid: No descriptions
+### Before (Legacy)
+```typescript
 {
-  type: 'ADD_ENV_VAR',
-  key: 'STRIPE_SECRET_KEY',
-  value: 'sk_test_...'
+  type: 'ADD_CONTENT',
+  target: 'package.json',
+  content: '{"dependencies": {"react": "^18.0.0"}}',
+  strategy: 'merge'
 }
 ```
 
-## 🚀 **Migration Guide**
+### After (Semantic)
+```typescript
+{
+  type: 'INSTALL_PACKAGES',
+  packages: ['react@^18.0.0']
+}
+```
 
-### **From `ADD_CONTENT` to Semantic Actions**
+## Benefits
 
-| Old `ADD_CONTENT` | New Semantic Action |
-|-------------------|-------------------|
-| `target: 'package.json'` + `strategy: 'merge'` | `INSTALL_PACKAGES` or `ADD_SCRIPT` |
-| `target: '.env.example'` + `strategy: 'append'` | `ADD_ENV_VAR` |
-| `strategy: 'replace'` | `CREATE_FILE` |
-| `strategy: 'append'` | `APPEND_TO_FILE` |
-| `strategy: 'prepend'` | `PREPEND_TO_FILE` |
+### For Blueprint Authors
+- **Simpler Syntax** - 50% fewer lines per action
+- **Clear Intent** - Action names match purpose
+- **Better Error Messages** - Specific validation per action
+- **Type Safety** - Compile-time validation
 
-### **Migration Steps**
+### For System Maintainability
+- **Reduced Complexity** - 600+ lines of legacy code removed
+- **Better Testing** - Each action can be tested independently
+- **Easier Debugging** - Clear action-to-primitive mapping
+- **Future-Proof** - Easy to add new semantic actions
 
-1. **Identify the intent** - What are you trying to accomplish?
-2. **Choose the semantic action** - Which action best expresses your intent?
-3. **Extract parameters** - What data does the action need?
-4. **Test the result** - Does it work as expected?
+## Best Practices
 
-## 🎉 **Conclusion**
+1. **Use the most specific action** for your use case
+2. **Prefer semantic actions** over generic ADD_CONTENT
+3. **Use ENHANCE_FILE** only for complex, technology-specific modifications
+4. **Test your blueprints** after migration
+5. **Use template variables** for dynamic content
 
-Semantic Actions make blueprint creation **simple, clear, and error-free**. They express **intent** rather than **implementation**, making adapters easier to create, understand, and maintain.
+## Examples
 
-**Key Benefits:**
-- ✅ **80% less code** - Semantic actions are much more concise
-- ✅ **90% fewer errors** - No manual JSON formatting or strategy selection
-- ✅ **100% clearer intent** - What you want to do is obvious
-- ✅ **Self-documenting** - Action names clearly express purpose
-- ✅ **Future-proof** - Easy to add new semantic actions
-
-**Start using semantic actions today and experience the difference!** 🚀
+See `examples/semantic-actions-example.ts` for comprehensive examples of all semantic actions.

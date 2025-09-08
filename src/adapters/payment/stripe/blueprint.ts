@@ -79,8 +79,8 @@ export const PRODUCTS = {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.payment_config}}/client.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.payment_config}}/client.ts',
       content: `import { loadStripe } from '@stripe/stripe-js';
 
 // Initialize Stripe on the client side
@@ -148,27 +148,56 @@ export const createCustomerPortalSession = async (customerId: string) => {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      strategy: 'append',
-      fileType: 'env',
-      content: `# Stripe Configuration
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_PUBLISHABLE_KEY="pk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-
-# Stripe Price IDs (create these in your Stripe dashboard)
-STRIPE_BASIC_PRICE_ID="price_..."
-STRIPE_PRO_PRICE_ID="price_..."
-STRIPE_ENTERPRISE_PRICE_ID="price_..."
-
-# App Configuration
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."`
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_SECRET_KEY',
+      value: 'sk_test_...',
+      description: 'Stripe secret key for server-side operations'
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.payment_config}}/INTEGRATION_GUIDE.md',
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_PUBLISHABLE_KEY',
+      value: 'pk_test_...',
+      description: 'Stripe publishable key for client-side operations'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_WEBHOOK_SECRET',
+      value: 'whsec_...',
+      description: 'Stripe webhook secret for webhook verification'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_BASIC_PRICE_ID',
+      value: 'price_...',
+      description: 'Stripe price ID for basic plan'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_PRO_PRICE_ID',
+      value: 'price_...',
+      description: 'Stripe price ID for pro plan'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'STRIPE_ENTERPRISE_PRICE_ID',
+      value: 'price_...',
+      description: 'Stripe price ID for enterprise plan'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_APP_URL',
+      value: 'http://localhost:3000',
+      description: 'Public app URL for Stripe redirects'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+      value: 'pk_test_...',
+      description: 'Public Stripe publishable key for client-side'
+    },
+    {
+      type: 'CREATE_FILE',
+      path: '{{paths.payment_config}}/INTEGRATION_GUIDE.md',
       content: `# Stripe Payment Processing Integration Guide
 
 ## Overview

@@ -8,8 +8,8 @@ const resendShadcnIntegrationBlueprint: Blueprint = {
   actions: [
     // Email Form Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/EmailForm.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/EmailForm.tsx',
       condition: '{{#if integration.features.emailForm}}',
       content: `'use client';
 
@@ -263,8 +263,8 @@ export function EmailForm({ onSuccess, onError, defaultValues }: EmailFormProps)
     },
     // Email Templates Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/EmailTemplates.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/EmailTemplates.tsx',
       condition: '{{#if integration.features.emailTemplates}}',
       content: `'use client';
 
@@ -496,8 +496,8 @@ export function EmailTemplates() {
     },
     // Email Composer Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/EmailComposer.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/EmailComposer.tsx',
       condition: '{{#if integration.features.emailComposer}}',
       content: `'use client';
 
@@ -732,8 +732,8 @@ export function EmailComposer({ onSend, onSave }: EmailComposerProps) {
     },
     // Email Settings Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/EmailSettings.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/EmailSettings.tsx',
       condition: '{{#if integration.features.emailSettings}}',
       content: `'use client';
 

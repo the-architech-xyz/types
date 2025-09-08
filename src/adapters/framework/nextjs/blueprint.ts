@@ -42,8 +42,8 @@ export default function RootLayout({
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.app_root}}page.tsx',
+      type: 'CREATE_FILE',
+      path: '{{paths.app_root}}page.tsx',
       content: `export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">

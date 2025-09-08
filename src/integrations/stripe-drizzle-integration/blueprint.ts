@@ -8,8 +8,8 @@ export const blueprint: Blueprint = {
   actions: [
     // Stripe Database Schema
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/schema/stripe.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/schema/stripe.ts',
       content: `import { pgTable, text, timestamp, decimal, boolean, jsonb, varchar, integer } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 
@@ -122,8 +122,8 @@ export type NewRefund = typeof refunds.$inferInsert;
 
     // Database Migrations
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/migrations/stripe.sql',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/migrations/stripe.sql',
       content: `-- Stripe Integration Database Migrations
 
 -- Create customers table
@@ -239,8 +239,8 @@ CREATE INDEX IF NOT EXISTS idx_refunds_stripe_payment_intent_id ON refunds(strip
 
     // Stripe Drizzle Adapter
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stripe/drizzle-adapter.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stripe/drizzle-adapter.ts',
       content: `import { db } from '@/lib/db';
 import { 
   customers, 
@@ -445,8 +445,8 @@ export const stripeDrizzleAdapter = new StripeDrizzleAdapter();
 
     // Webhook Logger
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stripe/webhook-logger.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stripe/webhook-logger.ts',
       content: `import { db } from '@/lib/db';
 import { webhookEvents, type NewWebhookEvent } from '@/lib/db/schema/stripe';
 import { eq } from 'drizzle-orm';
@@ -557,8 +557,8 @@ export const stripeWebhookLogger = new StripeWebhookLogger();
 
     // Payment Tracker
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stripe/payment-tracker.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stripe/payment-tracker.ts',
       content: `import { stripeDrizzleAdapter } from './drizzle-adapter';
 import { stripeWebhookLogger } from './webhook-logger';
 import Stripe from 'stripe';

@@ -73,8 +73,8 @@ export interface EmailResponse {
 }`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.email_config}}/sender.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.email_config}}/sender.ts',
       content: `import { resend, EMAIL_CONFIG, EMAIL_TEMPLATES, EmailData, EmailResponse } from './config';
 import { WelcomeEmail } from './templates/welcome-email';
 import { PasswordResetEmail } from './templates/password-reset-email';
@@ -209,8 +209,8 @@ export async function sendSubscriptionCancelledEmail(to: string, planName: strin
 }`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.email_config}}/templates/welcome-email.tsx',
+      type: 'CREATE_FILE',
+      path: '{{paths.email_config}}/templates/welcome-email.tsx',
       content: `import {
   Body,
   Container,
@@ -310,8 +310,8 @@ const button = {
 export default WelcomeEmail;`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.email_config}}/templates/password-reset-email.tsx',
+      type: 'CREATE_FILE',
+      path: '{{paths.email_config}}/templates/password-reset-email.tsx',
       content: `import {
   Body,
   Container,
@@ -411,8 +411,8 @@ const button = {
 export default PasswordResetEmail;`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.email_config}}/templates/email-verification-email.tsx',
+      type: 'CREATE_FILE',
+      path: '{{paths.email_config}}/templates/email-verification-email.tsx',
       content: `import {
   Body,
   Container,
@@ -512,8 +512,8 @@ const button = {
 export default EmailVerificationEmail;`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.email_config}}/templates/payment-confirmation-email.tsx',
+      type: 'CREATE_FILE',
+      path: '{{paths.email_config}}/templates/payment-confirmation-email.tsx',
       content: `import {
   Body,
   Container,
@@ -617,8 +617,8 @@ const button = {
 export default PaymentConfirmationEmail;`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.email_config}}/templates/subscription-created-email.tsx',
+      type: 'CREATE_FILE',
+      path: '{{paths.email_config}}/templates/subscription-created-email.tsx',
       content: `import {
   Body,
   Container,
@@ -718,8 +718,8 @@ const button = {
 export default SubscriptionCreatedEmail;`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.email_config}}/templates/subscription-cancelled-email.tsx',
+      type: 'CREATE_FILE',
+      path: '{{paths.email_config}}/templates/subscription-cancelled-email.tsx',
       content: `import {
   Body,
   Container,
@@ -822,17 +822,28 @@ const button = {
 export default SubscriptionCancelledEmail;`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      strategy: 'append',
-      fileType: 'env',
-      content: `# Resend Email Configuration
-RESEND_API_KEY="re_..."
-EMAIL_FROM="{{module.parameters.fromEmail}}"
-EMAIL_REPLY_TO="support@{{project.name}}.com"
-
-# App Configuration
-NEXT_PUBLIC_APP_URL="http://localhost:3000"`
+      type: 'ADD_ENV_VAR',
+      key: 'RESEND_API_KEY',
+      value: 're_...',
+      description: 'Resend API key for sending emails'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'EMAIL_FROM',
+      value: '{{module.parameters.fromEmail}}',
+      description: 'Default sender email address'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'EMAIL_REPLY_TO',
+      value: 'support@{{project.name}}.com',
+      description: 'Reply-to email address'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_APP_URL',
+      value: 'http://localhost:3000',
+      description: 'Public app URL for email links'
     }
   ]
 };

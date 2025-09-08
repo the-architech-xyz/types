@@ -63,8 +63,8 @@ export { auth, authHandler };
 // For other frameworks, see Better Auth documentation`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.auth_config}}/client.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.auth_config}}/client.ts',
       content: `import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
@@ -80,21 +80,32 @@ export const {
 } = authClient;`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      strategy: 'append',
-      fileType: 'env',
-      content: `# Better Auth Base Configuration
-AUTH_SECRET="your-secret-key-here"
-NEXTAUTH_URL="http://localhost:3000"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# Database (if using Drizzle)
-DATABASE_URL="postgresql://username:password@localhost:5432/{{project.name}}"`
+      type: 'ADD_ENV_VAR',
+      key: 'AUTH_SECRET',
+      value: 'your-secret-key-here',
+      description: 'Better Auth secret key'
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.auth_config}}/INTEGRATION_GUIDE.md',
+      type: 'ADD_ENV_VAR',
+      key: 'NEXTAUTH_URL',
+      value: 'http://localhost:3000',
+      description: 'NextAuth.js URL'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_APP_URL',
+      value: 'http://localhost:3000',
+      description: 'Public app URL'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'DATABASE_URL',
+      value: 'postgresql://username:password@localhost:5432/{{project.name}}',
+      description: 'Database connection string (if using Drizzle)'
+    },
+    {
+      type: 'CREATE_FILE',
+      path: '{{paths.auth_config}}/INTEGRATION_GUIDE.md',
       content: `# Better Auth Integration Guide
 
 ## Overview

@@ -77,8 +77,8 @@ export { sequelize, config };
 export default sequelize;`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.database_config}}/index.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.database_config}}/index.ts',
       content: `import sequelize from './config.js';
 
 // Test the connection
@@ -107,8 +107,8 @@ export { sequelize };
 export default sequelize;`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.sequelizerc',
+      type: 'CREATE_FILE',
+      path: '.sequelizerc',
       content: `const path = require('path');
 
 module.exports = {
@@ -119,22 +119,46 @@ module.exports = {
 };`
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      strategy: 'append',
-      fileType: 'env',
-      content: `# Database Configuration
-DB_HOST={{module.parameters.host}}
-DB_PORT={{module.parameters.port}}
-DB_USERNAME={{module.parameters.username}}
-DB_PASSWORD={{module.parameters.password}}
-DB_NAME={{module.parameters.databaseName}}
-
-# Sequelize Configuration
-DB_LOGGING={{module.parameters.logging}}
-DB_POOL={{module.parameters.pool}}
-
-# Add your environment variables here`
+      type: 'ADD_ENV_VAR',
+      key: 'DB_HOST',
+      value: '{{module.parameters.host}}',
+      description: 'Database host'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'DB_PORT',
+      value: '{{module.parameters.port}}',
+      description: 'Database port'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'DB_USERNAME',
+      value: '{{module.parameters.username}}',
+      description: 'Database username'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'DB_PASSWORD',
+      value: '{{module.parameters.password}}',
+      description: 'Database password'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'DB_NAME',
+      value: '{{module.parameters.databaseName}}',
+      description: 'Database name'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'DB_LOGGING',
+      value: '{{module.parameters.logging}}',
+      description: 'Sequelize logging'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'DB_POOL',
+      value: '{{module.parameters.pool}}',
+      description: 'Sequelize connection pool'
     }
   ]
 };

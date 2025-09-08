@@ -8,8 +8,8 @@ const zustandNextjsIntegrationBlueprint: Blueprint = {
   actions: [
     // Core Store Files
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stores/index.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stores/index.ts',
       condition: '{{#if integration.features.authStore}}',
       content: `// Zustand Store Exports
 export { useAuthStore } from './auth-store';
@@ -36,8 +36,8 @@ export { initializeStores, getServerState } from './ssr';
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stores/auth-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stores/auth-store.ts',
       condition: '{{#if integration.features.authStore}}',
       content: `import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -128,8 +128,8 @@ export const useAuthStore = create<AuthState>()(
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stores/ui-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stores/ui-store.ts',
       condition: '{{#if integration.features.uiStore}}',
       content: `import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -229,8 +229,8 @@ export const useUIStore = create<UIState>()(
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stores/theme-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stores/theme-store.ts',
       condition: '{{#if integration.features.themeStore}}',
       content: `import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -304,8 +304,8 @@ if (typeof window !== 'undefined') {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/stores/notification-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/stores/notification-store.ts',
       condition: '{{#if integration.features.notificationStore}}',
       content: `import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';

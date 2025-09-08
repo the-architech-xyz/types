@@ -8,8 +8,8 @@ const dockerNextjsIntegrationBlueprint: Blueprint = {
   actions: [
     // Main Dockerfile
     {
-      type: 'ADD_CONTENT',
-      target: 'Dockerfile',
+      type: 'CREATE_FILE',
+      path: 'Dockerfile',
       condition: '{{#if integration.features.multiStageBuild}}',
       content: `# Multi-stage Dockerfile for Next.js application
 FROM node:18-alpine AS base
@@ -76,8 +76,8 @@ CMD ["node", "server.js"]
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'Dockerfile.dev',
+      type: 'CREATE_FILE',
+      path: 'Dockerfile.dev',
       condition: '{{#if integration.features.developmentMode}}',
       content: `# Development Dockerfile for Next.js application
 FROM node:18-alpine
@@ -109,8 +109,8 @@ CMD \\
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.dockerignore',
+      type: 'CREATE_FILE',
+      path: '.dockerignore',
       condition: '{{#if integration.features.multiStageBuild}}',
       content: `# Dependencies
 node_modules
@@ -229,8 +229,8 @@ temp/
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docker-compose.yml',
+      type: 'CREATE_FILE',
+      path: 'docker-compose.yml',
       condition: '{{#if integration.features.networking}}',
       content: `version: '3.8'
 
@@ -281,8 +281,8 @@ volumes:
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'docker-compose.dev.yml',
+      type: 'CREATE_FILE',
+      path: 'docker-compose.dev.yml',
       condition: '{{#if integration.features.developmentMode}}',
       content: `version: '3.8'
 
@@ -325,8 +325,8 @@ networks:
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'nginx/nginx.conf',
+      type: 'CREATE_FILE',
+      path: 'nginx/nginx.conf',
       condition: '{{#if integration.features.nginxReverseProxy}}',
       content: `user nginx;
 worker_processes auto;
@@ -391,8 +391,8 @@ http {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'nginx/nextjs.conf',
+      type: 'CREATE_FILE',
+      path: 'nginx/nextjs.conf',
       condition: '{{#if integration.features.nginxReverseProxy}}',
       content: `upstream nextjs_backend {
     server app:3000;
@@ -486,8 +486,8 @@ server {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/docker-build.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/docker-build.sh',
       condition: '{{#if integration.features.multiStageBuild}}',
       content: `#!/bin/bash
 
@@ -586,8 +586,8 @@ echo "Docker build process completed successfully!"
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/docker-run.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/docker-run.sh',
       condition: '{{#if integration.features.productionMode}}',
       content: `#!/bin/bash
 
@@ -667,8 +667,8 @@ fi
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'scripts/healthcheck.sh',
+      type: 'CREATE_FILE',
+      path: 'scripts/healthcheck.sh',
       condition: '{{#if integration.features.healthChecks}}',
       content: `#!/bin/bash
 

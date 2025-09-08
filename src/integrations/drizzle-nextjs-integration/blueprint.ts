@@ -8,8 +8,8 @@ const drizzleNextjsIntegrationBlueprint: Blueprint = {
   actions: [
     // Core Database Files
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/index.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/index.ts',
       condition: '{{#if integration.features.apiRoutes}}',
       content: `// Drizzle Database Configuration
 export { db } from './connection';
@@ -44,8 +44,8 @@ export type { DatabaseConfig, QueryOptions, TransactionOptions } from './types';
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/connection.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/connection.ts',
       condition: '{{#if integration.features.connectionPooling}}',
       content: `import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -96,7 +96,7 @@ export async function closeDatabaseConnection(): Promise<void> {
 `
     },
     {
-      type: 'CREATE_FILE',
+      type: 'APPEND_TO_FILE',
       path: 'src/lib/db/schema.ts',
       condition: '{{#if integration.features.validators}}',
       content: `import { pgTable, serial, text, timestamp, boolean, integer, jsonb } from 'drizzle-orm/pg-core';
@@ -180,8 +180,8 @@ export const schema = {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/queries.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/queries.ts',
       condition: '{{#if integration.features.queries}}',
       content: `import { eq, and, desc, asc, like, sql } from 'drizzle-orm';
 import { db } from './connection';
@@ -312,8 +312,8 @@ export async function deleteRecord(table: any, id: number) {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/transactions.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/transactions.ts',
       condition: '{{#if integration.features.transactions}}',
       content: `import { db } from './connection';
 
@@ -392,8 +392,8 @@ export async function incrementPostViewCount(postId: number) {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/db/health/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/db/health/route.ts',
       condition: '{{#if integration.features.healthChecks}}',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { checkDatabaseHealth } from '@/lib/db/connection';

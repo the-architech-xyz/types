@@ -8,8 +8,8 @@ export const blueprint: Blueprint = {
   actions: [
     // Payment Form Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/stripe/payment-form.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/stripe/payment-form.tsx',
       content: `'use client';
 
 import { useState } from 'react';
@@ -154,8 +154,8 @@ export function PaymentForm({ amount, currency = 'usd', onSuccess, onError }: Pa
 
     // Subscription Card Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/stripe/subscription-card.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/stripe/subscription-card.tsx',
       content: `'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -271,8 +271,8 @@ export function SubscriptionCard({ subscription, onCancel, onUpdate }: Subscript
 
     // Invoice Table Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/stripe/invoice-table.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/stripe/invoice-table.tsx',
       content: `'use client';
 
 import { useState, useEffect } from 'react';
@@ -421,8 +421,8 @@ export function InvoiceTable({ customerId, invoices: initialInvoices }: InvoiceT
 
     // Payment Button Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/stripe/payment-button.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/stripe/payment-button.tsx',
       content: `'use client';
 
 import { useState } from 'react';
@@ -524,8 +524,8 @@ export function PaymentButton({
 
     // Pricing Card Component
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/stripe/pricing-card.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/stripe/pricing-card.tsx',
       content: `'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

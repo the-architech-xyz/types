@@ -8,8 +8,8 @@ const shadcnZustandIntegrationBlueprint: Blueprint = {
   actions: [
     // Form Store
     {
-      type: 'ADD_CONTENT',
-      target: 'src/stores/form-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/stores/form-store.ts',
       condition: '{{#if integration.features.formComponents}}',
       content: `import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -142,8 +142,8 @@ export const useFormStore = create<FormState>()(
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/stores/modal-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/stores/modal-store.ts',
       condition: '{{#if integration.features.modalComponents}}',
       content: `import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -238,8 +238,8 @@ export const useModalStore = create<ModalState>()(
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/stores/toast-store.ts',
+      type: 'CREATE_FILE',
+      path: 'src/stores/toast-store.ts',
       condition: '{{#if integration.features.toastComponents}}',
       content: `import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -355,8 +355,8 @@ export const useToastStore = create<ToastState>()(
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/forms/FormProvider.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/forms/FormProvider.tsx',
       condition: '{{#if integration.features.formComponents}}',
       content: `'use client';
 
@@ -408,8 +408,8 @@ export function useFormContext() {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/forms/FormField.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/forms/FormField.tsx',
       condition: '{{#if integration.features.formComponents}}',
       content: `'use client';
 
@@ -455,8 +455,8 @@ export function FormField({
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/forms/FormInput.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/forms/FormInput.tsx',
       condition: '{{#if integration.features.formComponents}}',
       content: `'use client';
 
@@ -523,8 +523,8 @@ export function FormInput({
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/modals/ModalProvider.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/modals/ModalProvider.tsx',
       condition: '{{#if integration.features.modalComponents}}',
       content: `'use client';
 
@@ -572,8 +572,8 @@ export function useModalContext() {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/modals/Modal.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/modals/Modal.tsx',
       condition: '{{#if integration.features.modalComponents}}',
       content: `'use client';
 
@@ -612,8 +612,8 @@ export function Modal({
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/toasts/ToastProvider.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/toasts/ToastProvider.tsx',
       condition: '{{#if integration.features.toastComponents}}',
       content: `'use client';
 
@@ -664,8 +664,8 @@ export function useToastContext() {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/toasts/Toast.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/toasts/Toast.tsx',
       condition: '{{#if integration.features.toastComponents}}',
       content: `'use client';
 

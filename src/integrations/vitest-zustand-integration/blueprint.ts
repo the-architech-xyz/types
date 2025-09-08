@@ -7,8 +7,8 @@ const vitestZustandIntegrationBlueprint: Blueprint = {
   version: '1.0.0',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'vitest.config.zustand.ts',
+      type: 'CREATE_FILE',
+      path: 'vitest.config.zustand.ts',
       condition: '{{#if integration.features.storeTesting}}',
       content: `import { defineConfig } from 'vitest/config'
 import path from 'path'
@@ -53,8 +53,8 @@ export default defineConfig({
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'vitest.setup.zustand.ts',
+      type: 'CREATE_FILE',
+      path: 'vitest.setup.zustand.ts',
       condition: '{{#if integration.features.storeTesting}}',
       content: `import { vi } from 'vitest'
 
@@ -121,8 +121,8 @@ beforeEach(() => {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'test-utils/store-test-utils.ts',
+      type: 'CREATE_FILE',
+      path: 'test-utils/store-test-utils.ts',
       condition: '{{#if integration.features.storeTesting}}',
       content: `import { act, renderHook } from '@testing-library/react'
 import { vi } from 'vitest'
@@ -170,8 +170,8 @@ export const mockStoreActions = (actions: Record<string, any>) => {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'test-utils/mock-storage.ts',
+      type: 'CREATE_FILE',
+      path: 'test-utils/mock-storage.ts',
       condition: '{{#if integration.features.mocking}}',
       content: `import { vi } from 'vitest'
 
@@ -211,8 +211,8 @@ export const resetStorageMocks = () => {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'tests/stores/auth-store.test.ts',
+      type: 'CREATE_FILE',
+      path: 'tests/stores/auth-store.test.ts',
       condition: '{{#if integration.features.storeTesting}}',
       content: `import { renderStoreHook, actAndWait } from '@/test-utils/store-test-utils'
 import { useAuthStore } from '@/stores/auth-store'
@@ -289,8 +289,8 @@ describe('Auth Store', () => {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'tests/middleware/persist.test.ts',
+      type: 'CREATE_FILE',
+      path: 'tests/middleware/persist.test.ts',
       condition: '{{#if integration.features.middlewareTesting}}',
       content: `import { vi } from 'vitest'
 import { create } from 'zustand'
@@ -358,8 +358,8 @@ describe('Persist Middleware', () => {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'tests/persistence/localStorage.test.ts',
+      type: 'CREATE_FILE',
+      path: 'tests/persistence/localStorage.test.ts',
       condition: '{{#if integration.features.persistenceTesting}}',
       content: `import { vi } from 'vitest'
 import { create } from 'zustand'

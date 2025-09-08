@@ -8,8 +8,8 @@ const sentryDrizzleIntegrationBlueprint: Blueprint = {
   actions: [
     // Database Schema
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/schema/sentry.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/schema/sentry.ts',
       condition: '{{#if integration.features.errorLogging}}',
       content: `import { pgTable, text, timestamp, integer, boolean, jsonb, uuid, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
@@ -49,6 +49,9 @@ export const sentryEvents = pgTable('sentry_events', {
   createdAtIdx: index('sentry_events_created_at_idx').on(table.createdAt),
   isResolvedIdx: index('sentry_events_is_resolved_idx').on(table.isResolved),
 }));
+
+export type SentryEvent = typeof sentryEvents.$inferSelect;
+export type NewSentryEvent = typeof sentryEvents.$inferInsert;
 
 // Performance Transactions Table
 export const sentryTransactions = pgTable('sentry_transactions', {
@@ -154,8 +157,6 @@ export const sentryUserFeedbackRelations = relations(sentryUserFeedback, ({ one 
 }));
 
 // Types
-export type SentryEvent = typeof sentryEvents.$inferSelect;
-export type NewSentryEvent = typeof sentryEvents.$inferInsert;
 export type SentryTransaction = typeof sentryTransactions.$inferSelect;
 export type NewSentryTransaction = typeof sentryTransactions.$inferInsert;
 export type SentryUserFeedback = typeof sentryUserFeedback.$inferSelect;
@@ -166,8 +167,8 @@ export type NewSentryQueryPerformance = typeof sentryQueryPerformance.$inferInse
     },
     // Database Migrations
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/db/migrations/sentry.sql',
+      type: 'CREATE_FILE',
+      path: 'src/lib/db/migrations/sentry.sql',
       condition: '{{#if integration.features.migrations}}',
       content: `-- Sentry Events Table
 CREATE TABLE IF NOT EXISTS sentry_events (
@@ -308,8 +309,8 @@ FOREIGN KEY (event_id) REFERENCES sentry_events(event_id) ON DELETE SET NULL;
     },
     // Drizzle Adapter
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/drizzle-adapter.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/drizzle-adapter.ts',
       condition: '{{#if integration.features.errorLogging}}',
       content: `import { db } from '@/lib/db';
 import { 
@@ -598,8 +599,8 @@ export class SentryDrizzleAdapter {
     },
     // Error Logger
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/error-logger.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/error-logger.ts',
       condition: '{{#if integration.features.errorLogging}}',
       content: `import * as Sentry from '@sentry/nextjs';
 import { SentryDrizzleAdapter } from './drizzle-adapter';
@@ -771,8 +772,8 @@ export class SentryErrorLogger {
     },
     // Performance Tracker
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/performance-tracker.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/performance-tracker.ts',
       condition: '{{#if integration.features.performanceTracking}}',
       content: `import * as Sentry from '@sentry/nextjs';
 import { SentryDrizzleAdapter } from './drizzle-adapter';
@@ -1006,8 +1007,8 @@ export class SentryPerformanceTracker {
     },
     // Query Monitor
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/sentry/query-monitor.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/sentry/query-monitor.ts',
       condition: '{{#if integration.features.queryMonitoring}}',
       content: `import { SentryDrizzleAdapter } from './drizzle-adapter';
 import { type NewSentryQueryPerformance } from '@/lib/db/schema/sentry';

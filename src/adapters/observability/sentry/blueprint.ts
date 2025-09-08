@@ -55,8 +55,8 @@ Sentry.init({
 });`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'instrumentation.ts',
+      type: 'CREATE_FILE',
+      path: 'instrumentation.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 export async function register() {
@@ -82,8 +82,8 @@ export function onRequestError(err: unknown, request: {
 }`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'sentry.server.config.ts',
+      type: 'CREATE_FILE',
+      path: 'sentry.server.config.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
@@ -100,8 +100,8 @@ Sentry.init({
 });`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'sentry.edge.config.ts',
+      type: 'CREATE_FILE',
+      path: 'sentry.edge.config.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
@@ -115,8 +115,8 @@ Sentry.init({
 });`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/global-error.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/global-error.tsx',
       content: `'use client';
 
 import * as Sentry from '@sentry/nextjs';
@@ -177,8 +177,8 @@ export default function GlobalError({
 }`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'next.config.ts',
+      type: 'CREATE_FILE',
+      path: 'next.config.ts',
       content: `import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
@@ -199,8 +199,8 @@ const sentryWebpackPluginOptions = {
 export default withSentryConfig(nextConfig, sentryWebpackPluginOptions);`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.observability_config}}/sentry.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.observability_config}}/sentry.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 // Sentry configuration
@@ -249,8 +249,8 @@ export const addBreadcrumb = (message: string, category?: string, level?: 'info'
 };`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/providers/sentry-provider.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/providers/sentry-provider.tsx',
       content: `'use client';
 
 import { ReactNode } from 'react';
@@ -318,8 +318,8 @@ export function SentryProvider({ children }: SentryProviderProps) {
 }`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.observability_config}}/performance.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.observability_config}}/performance.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 // Performance monitoring utilities
@@ -428,8 +428,8 @@ export function usePerformanceMonitor() {
 }`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '{{paths.observability_config}}/analytics.ts',
+      type: 'CREATE_FILE',
+      path: '{{paths.observability_config}}/analytics.ts',
       content: `import * as Sentry from '@sentry/nextjs';
 
 // Analytics and event tracking
@@ -550,19 +550,34 @@ export function useAnalytics() {
 }`,
     },
     {
-      type: 'ADD_CONTENT',
-      target: '.env.example',
-      strategy: 'append',
-      fileType: 'env',
-      content: `# Sentry Configuration
-SENTRY_DSN="https://..."
-NEXT_PUBLIC_SENTRY_DSN="https://..."
-SENTRY_ORG="your-org"
-SENTRY_PROJECT="your-project"
-SENTRY_RELEASE="1.0.0"
-
-# App Configuration
-NODE_ENV="development"`,
+      type: 'ADD_ENV_VAR',
+      key: 'SENTRY_DSN',
+      value: 'https://...',
+      description: 'Sentry DSN for server-side error reporting'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'NEXT_PUBLIC_SENTRY_DSN',
+      value: 'https://...',
+      description: 'Sentry DSN for client-side error reporting'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'SENTRY_ORG',
+      value: 'your-org',
+      description: 'Sentry organization slug'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'SENTRY_PROJECT',
+      value: 'your-project',
+      description: 'Sentry project slug'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'SENTRY_RELEASE',
+      value: '1.0.0',
+      description: 'Sentry release version'
     }
   ]
 };

@@ -24,6 +24,8 @@ Fix three critical problems in modern software development:
 - **🔌 Three-Tier Adapter System** - Agnostic Adapters, Dependent Adapters, and Integration Adapters
 - **🔗 Integration System** - Cross-adapter integrations using "Requester-Provider" pattern
 - **⚡ CLI-First Approach** - Leverages existing tools like `create-next-app` and `shadcn init`
+- **🏗️ Three-Layer Architecture** - Clean separation of concerns with File Engine, Orchestrator, and Executor
+- **🎯 Semantic Actions** - High-level, intent-driven actions that abstract implementation complexity
 - **🛡️ Type-Safe** - Built with TypeScript for reliability and developer experience
 
 ### V2: Dynamic Module Management (Coming Soon)
@@ -121,10 +123,23 @@ npm run dev
 
 ## 🏗️ Architecture
 
-### Flow Architecture
+### Three-Layer System
 
 ```
-architech.yaml → Orchestrator → Agents → Adapters → Blueprints
+┌─────────────────────────────────────────────────────────────┐
+│                    Layer 3: Blueprint Executor              │
+│                   (Orchestration & Coordination)            │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                Layer 2: Blueprint Orchestrator              │
+│              (Semantic Action Translation)                  │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│              Layer 1: File Modification Engine              │
+│                (Primitive File Operations)                  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Core Components
@@ -134,7 +149,9 @@ architech.yaml → Orchestrator → Agents → Adapters → Blueprints
 - **🤖 Specialized Agents** - Domain-specific execution engines
 - **🔌 Three-Tier Adapter System** - Agnostic, Dependent, and Integration adapters
 - **🔗 Integration Registry** - Cross-adapter integration management
-- **📝 Blueprint System** - Declarative action lists
+- **📝 Blueprint System** - Declarative action lists with semantic actions
+- **🎯 Semantic Actions** - High-level, intent-driven actions (CREATE_FILE, INSTALL_PACKAGES, etc.)
+- **🏗️ File Modification Engine** - Core file operations with Virtual File System
 
 ### Supported Technologies
 

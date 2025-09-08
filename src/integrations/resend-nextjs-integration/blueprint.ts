@@ -6,10 +6,29 @@ const resendNextjsIntegrationBlueprint: Blueprint = {
   description: 'Complete email integration for Next.js applications',
   version: '1.0.0',
   actions: [
+    // Install Resend packages
+    {
+      type: 'INSTALL_PACKAGES',
+      packages: ['resend'],
+      isDev: false
+    },
+    // Add environment variables
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'RESEND_API_KEY',
+      value: 're_...',
+      description: 'Resend API key for sending emails'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'RESEND_FROM_EMAIL',
+      value: 'noreply@yourdomain.com',
+      description: 'Default from email address'
+    },
     // API Routes
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/email/send/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/email/send/route.ts',
       condition: '{{#if integration.features.apiRoutes}}',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
@@ -51,8 +70,8 @@ export async function POST(request: NextRequest) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/email/webhooks/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/email/webhooks/route.ts',
       condition: '{{#if integration.features.webhooks}}',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { handleWebhook } from '@/lib/email/webhooks';
@@ -89,8 +108,8 @@ export async function POST(request: NextRequest) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/email/templates/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/email/templates/route.ts',
       condition: '{{#if integration.features.templates}}',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { getEmailTemplates, createEmailTemplate } from '@/lib/email/templates';
@@ -142,8 +161,8 @@ export async function POST(request: NextRequest) {
     },
     // Server-side utilities
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/email/server.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/email/server.ts',
       condition: '{{#if integration.features.apiRoutes}}',
       content: `import { Resend } from 'resend';
 
@@ -200,8 +219,8 @@ export { resend };
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/email/client.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/email/client.ts',
       condition: '{{#if integration.features.apiRoutes}}',
       content: `// Client-side email utilities
 
@@ -278,8 +297,8 @@ export async function createEmailTemplate(template: {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/email/templates.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/email/templates.ts',
       condition: '{{#if integration.features.templates}}',
       content: `// Email template management
 
@@ -369,8 +388,8 @@ export const defaultTemplates = {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/lib/email/webhooks.ts',
+      type: 'CREATE_FILE',
+      path: 'src/lib/email/webhooks.ts',
       condition: '{{#if integration.features.webhooks}}',
       content: `import crypto from 'crypto';
 
@@ -477,8 +496,8 @@ async function handleEmailClicked(data: any) {
     },
     // Middleware
     {
-      type: 'ADD_CONTENT',
-      target: 'src/middleware.ts',
+      type: 'CREATE_FILE',
+      path: 'src/middleware.ts',
       condition: '{{#if integration.features.middleware}}',
       content: `import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -522,8 +541,8 @@ export const config = {
     },
     // Admin Panel Components
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/EmailPreview.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/EmailPreview.tsx',
       condition: '{{#if integration.features.adminPanel}}',
       content: `'use client';
 
@@ -637,8 +656,8 @@ export function EmailPreview({ template, onSend }: EmailPreviewProps) {
 `
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/components/email/EmailAnalytics.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/components/email/EmailAnalytics.tsx',
       condition: '{{#if integration.features.analytics}}',
       content: `'use client';
 
@@ -741,8 +760,8 @@ export function EmailAnalytics({ stats }: EmailAnalyticsProps) {
     },
     // Admin Pages
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/admin/emails/page.tsx',
+      type: 'CREATE_FILE',
+      path: 'src/app/admin/emails/page.tsx',
       condition: '{{#if integration.features.adminPanel}}',
       content: `import { EmailPreview } from '@/components/email/EmailPreview';
 import { EmailAnalytics } from '@/components/email/EmailAnalytics';

@@ -12,8 +12,8 @@ export const stripeNextjsApiRoutesBlueprint: Blueprint = {
   name: 'Stripe Next.js API Routes',
   actions: [
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/create-payment-intent/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/stripe/create-payment-intent/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { stripe, STRIPE_CONFIG } from '@/lib/payment/stripe';
 
@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/create-subscription/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/stripe/create-subscription/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { stripe, STRIPE_CONFIG } from '@/lib/payment/stripe';
 
@@ -123,8 +123,8 @@ export async function POST(request: NextRequest) {
 }`
     },
     {
-      type: 'ADD_CONTENT',
-      target: 'src/app/api/stripe/webhook/route.ts',
+      type: 'CREATE_FILE',
+      path: 'src/app/api/stripe/webhook/route.ts',
       content: `import { NextRequest, NextResponse } from 'next/server';
 import { stripe, STRIPE_CONFIG } from '@/lib/payment/stripe';
 import Stripe from 'stripe';
