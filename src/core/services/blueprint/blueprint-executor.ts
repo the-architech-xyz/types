@@ -12,15 +12,16 @@ import { ProjectContext } from '../../../types/agent.js';
 import { CommandRunner } from '../../cli/command-runner.js';
 import { logger } from '../../utils/logger.js';
 import { BlueprintOrchestrator } from '../blueprint-orchestrator/index.js';
+import { FileModificationEngine } from '../file-engine/file-modification-engine.js';
 
 export class BlueprintExecutor {
   private commandRunner: CommandRunner;
   private orchestrator: BlueprintOrchestrator;
   private currentAction: BlueprintAction | null = null;
 
-  constructor(projectRoot: string) {
+  constructor(projectRoot: string, engine?: FileModificationEngine) {
     this.commandRunner = new CommandRunner();
-    this.orchestrator = new BlueprintOrchestrator(projectRoot);
+    this.orchestrator = new BlueprintOrchestrator(projectRoot, engine);
   }
 
   /**

@@ -10,12 +10,13 @@ import { ProjectContext, AgentResult } from '../../types/agent.js';
 import { Module } from '../../types/recipe.js';
 import { AdapterLoader } from '../../core/services/adapter/adapter-loader.js';
 import { BlueprintExecutor } from '../../core/services/blueprint/blueprint-executor.js';
+import { VFSManager } from '../../core/services/file-engine/vfs-manager.js';
 
 export class EmailAgent extends SimpleAgent {
   public category = 'email';
 
-  constructor(pathHandler: any) {
-    super('email', pathHandler);
+  constructor(pathHandler: any, vfsManager?: VFSManager) {
+    super('email', pathHandler, vfsManager);
   }
 
   /**

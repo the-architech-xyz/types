@@ -27,6 +27,7 @@ import { EmailAgent } from './core/email-agent.js';
 import { ObservabilityAgent } from './core/observability-agent.js';
 import { ContentAgent } from './core/content-agent.js';
 import { BlockchainAgent } from './core/blockchain-agent.js';
+import { VFSManager } from '../core/services/file-engine/vfs-manager.js';
 
 export class OrchestratorAgent {
   private projectManager: ProjectManager;
@@ -36,6 +37,7 @@ export class OrchestratorAgent {
   private agents: Map<string, any>;
   private integrationRegistry: IntegrationRegistry;
   private integrationExecutor?: IntegrationExecutor;
+  private vfsManager: VFSManager | null = null;
 
   constructor(projectManager: ProjectManager) {
     this.projectManager = projectManager;
@@ -69,26 +71,30 @@ export class OrchestratorAgent {
   }
 
   /**
-   * Reconfigure all agents with the decentralized path handler
+   * Reconfigure all agents with the decentralized path handler and shared VFS
    */
   private reconfigureAgents(): void {
     if (!this.decentralizedPathHandler) {
       throw new Error('Decentralized path handler not initialized');
     }
 
-    // Update all agents to use the decentralized path handler
-    this.agents.set('framework', new FrameworkAgent(this.decentralizedPathHandler));
-    this.agents.set('database', new DatabaseAgent(this.decentralizedPathHandler));
-    this.agents.set('auth', new AuthAgent(this.decentralizedPathHandler));
-    this.agents.set('ui', new UIAgent(this.decentralizedPathHandler));
-    this.agents.set('testing', new TestingAgent(this.decentralizedPathHandler));
-    this.agents.set('deployment', new DeploymentAgent(this.decentralizedPathHandler));
-    this.agents.set('state', new StateAgent(this.decentralizedPathHandler));
-    this.agents.set('payment', new PaymentAgent(this.decentralizedPathHandler));
-    this.agents.set('email', new EmailAgent(this.decentralizedPathHandler));
-    this.agents.set('observability', new ObservabilityAgent(this.decentralizedPathHandler));
-    this.agents.set('content', new ContentAgent(this.decentralizedPathHandler));
-    this.agents.set('blockchain', new BlockchainAgent(this.decentralizedPathHandler));
+    if (!this.vfsManager) {
+      throw new Error('VFS manager not initialized');
+    }
+
+    // Update all agents to use the decentralized path handler and shared VFS
+    this.agents.set('framework', new FrameworkAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('database', new DatabaseAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('auth', new AuthAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('ui', new UIAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('testing', new TestingAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('deployment', new DeploymentAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('state', new StateAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('payment', new PaymentAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('email', new EmailAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('observability', new ObservabilityAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('content', new ContentAgent(this.decentralizedPathHandler, this.vfsManager));
+    this.agents.set('blockchain', new BlockchainAgent(this.decentralizedPathHandler, this.vfsManager));
   }
 
   /**
@@ -102,7 +108,11 @@ export class OrchestratorAgent {
     const warnings: string[] = [];
 
     try {
-      // 1. Identify framework adapter and create decentralized path handler
+      // 1. Initialize shared VFS manager
+      this.vfsManager = VFSManager.getInstance(this.pathHandler.getProjectRoot());
+      console.log(`🗂️ Shared VFS initialized for project: ${this.pathHandler.getProjectRoot()}`);
+      
+      // 2. Identify framework adapter and create decentralized path handler
       const frameworkModule = recipe.modules.find(m => m.category === 'framework');
       if (!frameworkModule) {
         throw new Error('No framework module found in recipe. Framework adapter is required.');
@@ -113,7 +123,7 @@ export class OrchestratorAgent {
       const adapterId = frameworkModule.id.split('/').pop() || frameworkModule.id;
       const frameworkAdapter = await this.adapterLoader.loadAdapter(frameworkModule.category, adapterId);
       
-      // 2. Create decentralized path handler with framework's path declarations
+      // 3. Create decentralized path handler with framework's path declarations
       this.decentralizedPathHandler = new DecentralizedPathHandler(
         frameworkAdapter.config, 
         this.pathHandler.getProjectRoot()
@@ -121,7 +131,7 @@ export class OrchestratorAgent {
       
       console.log(`📁 Framework paths configured:`, this.decentralizedPathHandler.getAllPaths());
       
-      // 3. Reconfigure all agents with the new path handler
+      // 4. Reconfigure all agents with the new path handler and shared VFS
       this.reconfigureAgents();
       
       // 4. Only create the project directory structure
@@ -203,6 +213,11 @@ export class OrchestratorAgent {
         
         // Create architech.json file
         await this.createArchitechConfig(recipe);
+        
+        // Flush all VFS changes to disk
+        console.log('💾 Flushing all changes to disk...');
+        await this.vfsManager!.flushToDisk();
+        console.log('✅ All files written to disk successfully');
         
         // Final step: Install all dependencies
         if (!recipe.options?.skipInstall) {
@@ -289,8 +304,8 @@ export class OrchestratorAgent {
     warnings: string[]
   ): Promise<void> {
     try {
-      // Initialize integration executor with project root
-      const blueprintExecutor = new BlueprintExecutor(recipe.project.path || '.');
+      // Initialize integration executor with shared VFS
+      const blueprintExecutor = new BlueprintExecutor(recipe.project.path || '.', this.vfsManager!.getEngine());
       this.integrationExecutor = new IntegrationExecutor(blueprintExecutor);
       
       // Get available modules for validation (extract adapter IDs)

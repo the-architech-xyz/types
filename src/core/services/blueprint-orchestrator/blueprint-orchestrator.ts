@@ -19,8 +19,8 @@ export interface OrchestrationResult {
 export class BlueprintOrchestrator {
   private engine: FileModificationEngine;
 
-  constructor(projectRoot: string) {
-    this.engine = new FileModificationEngine(projectRoot);
+  constructor(projectRoot: string, engine?: FileModificationEngine) {
+    this.engine = engine || new FileModificationEngine(projectRoot);
   }
 
   /**
@@ -132,6 +132,12 @@ export class BlueprintOrchestrator {
 
     const processedPath = this.processTemplate(action.path, context);
     const processedContent = this.processTemplate(action.content, context);
+    
+    // Check if file already exists in VFS
+    if (this.engine.fileExists(processedPath)) {
+      console.log(`  ⚠️  File already exists: ${processedPath} - skipping creation`);
+      return;
+    }
     
     const result = await this.engine.createFile(processedPath, processedContent);
     if (result.success) {

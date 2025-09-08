@@ -9,16 +9,19 @@ import { Agent, Module, ProjectContext, AgentResult } from '../../types/agent.js
 import { AdapterLoader } from '../../core/services/adapter/adapter-loader.js';
 import { BlueprintExecutor } from '../../core/services/blueprint/blueprint-executor.js';
 import { PathHandler } from '../../core/services/path/path-handler.js';
+import { VFSManager } from '../../core/services/file-engine/vfs-manager.js';
 
 export abstract class SimpleAgent implements Agent {
   public category: string;
   protected adapterLoader: AdapterLoader;
   protected blueprintExecutor?: BlueprintExecutor;
   protected pathHandler: PathHandler;
+  protected vfsManager: VFSManager | undefined;
 
-  constructor(category: string, pathHandler: PathHandler) {
+  constructor(category: string, pathHandler: PathHandler, vfsManager?: VFSManager) {
     this.category = category;
     this.pathHandler = pathHandler;
+    this.vfsManager = vfsManager;
     this.adapterLoader = new AdapterLoader();
   }
 
@@ -47,8 +50,12 @@ export abstract class SimpleAgent implements Agent {
       
       console.log(`  📋 Executing blueprint: ${adapter.blueprint.name}`);
       
-      // Initialize BlueprintExecutor with project root
-      this.blueprintExecutor = new BlueprintExecutor(context.project.path || '.');
+      // Use shared VFS if available, otherwise create new one
+      if (this.vfsManager) {
+        this.blueprintExecutor = new BlueprintExecutor(context.project.path || '.', this.vfsManager.getEngine());
+      } else {
+        this.blueprintExecutor = new BlueprintExecutor(context.project.path || '.');
+      }
       
       // Execute the blueprint
       const result = await this.blueprintExecutor!.executeBlueprint(adapter.blueprint, context);

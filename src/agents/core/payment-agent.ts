@@ -10,12 +10,13 @@ import { ProjectContext, AgentResult } from '../../types/agent.js';
 import { Module } from '../../types/recipe.js';
 import { AdapterLoader } from '../../core/services/adapter/adapter-loader.js';
 import { BlueprintExecutor } from '../../core/services/blueprint/blueprint-executor.js';
+import { VFSManager } from '../../core/services/file-engine/vfs-manager.js';
 
 export class PaymentAgent extends SimpleAgent {
   public category = 'payment';
 
-  constructor(pathHandler: any) {
-    super('payment', pathHandler);
+  constructor(pathHandler: any, vfsManager?: VFSManager) {
+    super('payment', pathHandler, vfsManager);
   }
 
   /**

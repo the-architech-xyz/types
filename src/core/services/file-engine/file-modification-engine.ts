@@ -21,8 +21,8 @@ export class FileModificationEngine {
   private vfs: VirtualFileSystem;
   private projectRoot: string;
 
-  constructor(projectRoot: string) {
-    this.vfs = new VirtualFileSystem();
+  constructor(projectRoot: string, vfs?: VirtualFileSystem) {
+    this.vfs = vfs || new VirtualFileSystem();
     this.projectRoot = projectRoot;
   }
 
@@ -247,5 +247,12 @@ export class FileModificationEngine {
       return filePath;
     }
     return path.resolve(this.projectRoot, filePath);
+  }
+
+  /**
+   * Check if file exists in VFS
+   */
+  fileExists(filePath: string): boolean {
+    return this.vfs.fileExists(filePath);
   }
 }

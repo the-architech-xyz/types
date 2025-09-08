@@ -8,10 +8,11 @@
 import { SimpleAgent } from '../base/simple-agent.js';
 import { Module, ProjectContext, AgentResult } from '../../types/agent.js';
 import { PathHandler } from '../../core/services/path/path-handler.js';
+import { VFSManager } from '../../core/services/file-engine/vfs-manager.js';
 
 export class UIAgent extends SimpleAgent {
-  constructor(pathHandler: PathHandler) {
-    super('ui', pathHandler);
+  constructor(pathHandler: PathHandler, vfsManager?: VFSManager) {
+    super('ui', pathHandler, vfsManager);
   }
 
   /**

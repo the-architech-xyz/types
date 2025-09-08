@@ -14,13 +14,14 @@ export declare class OrchestratorAgent {
     private agents;
     private integrationRegistry;
     private integrationExecutor?;
+    private vfsManager;
     constructor(projectManager: ProjectManager);
     /**
      * Initialize all agents
      */
     private initializeAgents;
     /**
-     * Reconfigure all agents with the decentralized path handler
+     * Reconfigure all agents with the decentralized path handler and shared VFS
      */
     private reconfigureAgents;
     /**
