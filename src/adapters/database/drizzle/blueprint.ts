@@ -13,7 +13,7 @@ export const drizzleBlueprint: Blueprint = {
   actions: [
     {
       type: 'INSTALL_PACKAGES',
-      packages: ['drizzle-orm', '{{module.parameters.databaseType}}']
+      packages: ['drizzle-orm', 'pg']
     },
     {
       type: 'INSTALL_PACKAGES',

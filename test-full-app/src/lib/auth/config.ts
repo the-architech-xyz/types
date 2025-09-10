@@ -1,5 +1,4 @@
 import { betterAuth } from "better-auth";
-import { drizzleAdapterConfig } from "./drizzle-adapter";
 
 // Framework-agnostic Better Auth configuration
 // Database integration will be handled by V2 AI or manual integration

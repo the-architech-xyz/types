@@ -1,71 +1,17 @@
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from '@sentry/node';
 
-export class SentryServer {
-  /**
-   * Capture an exception on the server
-   */
-  static captureException(error: Error, context?: Record<string, any>) {
-    Sentry.withScope((scope) => {
-      if (context) {
-        Object.keys(context).forEach((key) => {
-          scope.setContext(key, context[key]);
-        });
-      }
-      Sentry.captureException(error);
-    });
-  }
-
-  /**
-   * Capture a message on the server
-   */
-  static captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info') {
-    Sentry.captureMessage(message, level);
-  }
-
-  /**
-   * Add breadcrumb on the server
-   */
-  static addBreadcrumb(breadcrumb: {
-    message: string;
-    category?: string;
-    level?: 'info' | 'warning' | 'error' | 'debug';
-    data?: Record<string, any>;
-  }) {
-    Sentry.addBreadcrumb(breadcrumb);
-  }
-
-  /**
-   * Set user context on the server
-   */
-  static setUser(user: {
-    id?: string;
-    email?: string;
-    username?: string;
-    [key: string]: any;
-  }) {
-    Sentry.setUser(user);
-  }
-
-  /**
-   * Wrap API route with Sentry
-   */
-  static withSentry(handler: Function) {
-    return Sentry.withSentry(handler);
-  }
-
-  /**
-   * Start a server transaction
-   */
-  static startTransaction(name: string, op: string) {
-    return Sentry.startTransaction({ name, op });
-  }
-
-  /**
-   * Capture performance data
-   */
-  static capturePerformance(transaction: any) {
-    transaction.finish();
-  }
-}
+// Initialize Sentry for server-side
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  
+  // Adjust this value in production, or use tracesSampler for greater control
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  
+  // Setting this option to true will print useful information to the console while you're setting up Sentry.
+  debug: process.env.NODE_ENV === 'development',
+  
+  // Uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: process.env.NODE_ENV === 'development',
+});
 
 export { Sentry };

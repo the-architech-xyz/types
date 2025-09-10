@@ -35,6 +35,7 @@ export interface Module {
   version: string;
   parameters: Record<string, any>;
   features?: string[]; // V2: Activated features for this module
+  externalFiles?: string[]; // Files to pre-load into VFS
 }
 
 export interface ExecutionOptions {

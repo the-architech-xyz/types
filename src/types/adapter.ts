@@ -122,7 +122,7 @@ export interface ImportDefinition {
 
 // Modifier system types
 export interface ModifierDefinition {
-  handler: (filePath: string, params: any, context: any) => Promise<void>; // ProjectContext will be imported
+  handler: (filePath: string, params: any, context: any) => Promise<any>; // ProjectContext will be imported
   paramsSchema: any; // JSONSchema for validation
   description: string;
   supportedFileTypes: string[];

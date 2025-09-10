@@ -269,20 +269,29 @@ export class CommandRunner {
             console.log(chalk.blue(`🔧 Executing non-interactive: ${execCmd.join(' ')}`));
         }
         return new Promise((resolve, reject) => {
-            const { spawn } = require('child_process');
-            const child = spawn(execCmd[0], execCmd.slice(1), {
+            const command = execCmd[0];
+            const args = execCmd.slice(1);
+            if (!command) {
+                reject(new Error('Command cannot be undefined or empty'));
+                return;
+            }
+            const child = spawn(command, args, {
                 cwd,
                 stdio: ['pipe', 'pipe', 'pipe'],
                 shell: true
             });
             let stdout = '';
             let stderr = '';
-            child.stdout.on('data', (data) => {
-                stdout += data.toString();
-            });
-            child.stderr.on('data', (data) => {
-                stderr += data.toString();
-            });
+            if (child.stdout) {
+                child.stdout.on('data', (data) => {
+                    stdout += data.toString();
+                });
+            }
+            if (child.stderr) {
+                child.stderr.on('data', (data) => {
+                    stderr += data.toString();
+                });
+            }
             child.on('error', (error) => {
                 reject(error);
             });
@@ -294,7 +303,7 @@ export class CommandRunner {
                 });
             });
             // Send input to stdin
-            if (input.length > 0) {
+            if (input.length > 0 && child.stdin) {
                 child.stdin.write(input.join('\n') + '\n');
                 child.stdin.end();
             }

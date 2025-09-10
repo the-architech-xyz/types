@@ -4,7 +4,7 @@
  * Manages integration features that connect adapters with frameworks
  */
 
-import { IntegrationAdapter, IntegrationFeature } from '@/types/integration.js';
+import { IntegrationAdapter } from '@/types/integration.js';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 

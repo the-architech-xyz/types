@@ -21,8 +21,11 @@ export class FileModificationEngine {
   private vfs: VirtualFileSystem;
   private projectRoot: string;
 
-  constructor(projectRoot: string, vfs?: VirtualFileSystem) {
-    this.vfs = vfs || new VirtualFileSystem();
+  constructor(vfs: VirtualFileSystem, projectRoot: string) {
+    if (!vfs) {
+      throw new Error("FileModificationEngine must be initialized with a VFS instance.");
+    }
+    this.vfs = vfs;
     this.projectRoot = projectRoot;
   }
 
@@ -132,11 +135,22 @@ export class FileModificationEngine {
     try {
       const fullPath = this.resolvePath(filePath);
       
-      // Read existing content
+      // Read existing content - first from VFS, then from disk if not in VFS
       let existingContent = {};
       if (this.vfs.fileExists(fullPath)) {
         const content = this.vfs.readFile(fullPath);
         existingContent = JSON.parse(content);
+      } else {
+        // File not in VFS, try to read from disk and load into VFS
+        try {
+          const diskContent = await fs.readFile(fullPath, 'utf-8');
+          existingContent = JSON.parse(diskContent);
+          // Load the file into VFS so future operations can work with it
+          this.vfs.overwriteFile(fullPath, diskContent);
+        } catch (diskError) {
+          // File doesn't exist on disk either, start with empty object
+          existingContent = {};
+        }
       }
       
       // Deep merge
@@ -253,6 +267,21 @@ export class FileModificationEngine {
    * Check if file exists in VFS
    */
   fileExists(filePath: string): boolean {
-    return this.vfs.fileExists(filePath);
+    const resolvedPath = this.resolvePath(filePath);
+    return this.vfs.fileExists(resolvedPath);
+  }
+
+  /**
+   * Get the VFS instance
+   */
+  getVFS(): VirtualFileSystem {
+    return this.vfs;
+  }
+
+  /**
+   * Get the project root
+   */
+  getProjectRoot(): string {
+    return this.projectRoot;
   }
 }

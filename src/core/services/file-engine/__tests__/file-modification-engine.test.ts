@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { FileModificationEngine } from '../file-modification-engine.js';
+import { VirtualFileSystem } from '../virtual-file-system.js';
 
 describe('FileModificationEngine', () => {
   let engine: FileModificationEngine;
@@ -22,7 +23,7 @@ describe('FileModificationEngine', () => {
     }
     
     await fs.mkdir(testDir, { recursive: true });
-    engine = new FileModificationEngine(testDir);
+    engine = new FileModificationEngine(new VirtualFileSystem(), testDir);
   });
 
   afterEach(async () => {

@@ -1,0 +1,3312 @@
+ℹ️  INFO: 🚀 Creating new project from recipe: test-full-app.yaml
+ℹ️  INFO: 📋 Recipe: Full Stack Test App
+ℹ️  INFO: 📁 Project path: ./test-full-app
+ℹ️  INFO: 🔧 Modules: 12
+ℹ️  INFO: 🎯 Starting project creation...
+[2025-09-10T11:06:09.736Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=recipe_execution]: Starting execution trace: recipe_execution
+[2025-09-10T11:06:09.736Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=recipe_execution module=Full Stack Test App]: 🎯 Orchestrator Agent executing recipe: Full Stack Test App
+🏗️ Loading framework adapter: framework/nextjs
+📁 Framework paths configured: {
+  source_root: 'src/',
+  app_root: 'src/app/',
+  shared_library: 'src/lib/',
+  ui_components: 'src/components/ui/',
+  api_routes: 'src/app/api/',
+  database_config: 'src/lib/db',
+  auth_config: 'src/lib/auth',
+  payment_config: 'src/lib/payment',
+  email_config: 'src/lib/email',
+  observability_config: 'src/lib/observability',
+  state_config: 'src/lib/state',
+  testing_config: 'src/lib/testing',
+  deployment_config: 'src/lib/deployment',
+  content_config: 'src/lib/content',
+  blockchain_config: 'src/lib/blockchain'
+}
+📁 Initializing project: Full Stack Test App
+✅ Project directory created
+[2025-09-10T11:06:09.741Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=project_initialization]: 📋 Project directory created - framework modules will handle setup
+[2025-09-10T11:06:09.741Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=framework/nextjs agent=framework]: 🚀 [1/12] Executing module: framework/nextjs (framework)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: RUN_COMMAND, RUN_COMMAND, RUN_COMMAND, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: framework/nextjs (direct to disk)
+  📋 [1/7] RUN_COMMAND
+🔧 Executing command: rm -rf /tmp/temp-nextjs && mkdir -p /tmp/temp-nextjs && cd /tmp/temp-nextjs && npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --yes
+🔧 Working directory: /Users/antoine/Documents/Code/demo/test-full-app
+✅ Command completed successfully: rm -rf /tmp/temp-nextjs && mkdir -p /tmp/temp-nextjs && cd /tmp/temp-nextjs && npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --yes
+📤 Exit code: 0
+📤 stdout: Creating a new Next.js app in /private/tmp/temp-nextjs.
+
+Using npm.
+
+Initializing project with template: app-tw 
+
+
+Installing dependencies:
+- react
+- react-dom
+- next
+
+Installing devDependencies:
+- typescript
+- @types/node
+- @types/react
+- @types/react-dom
+- @tailwindcss/postcss
+- tailwindcss
+- eslint
+- eslint-config-next
+- @eslint/eslintrc
+
+
+added 335 packages, and audited 336 packages in 15s
+
+137 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+Initialized a git repository.
+
+Success! Created temp-nextjs at /private/tmp/temp-nextjs
+
+
+  📋 [2/7] RUN_COMMAND
+🔧 Executing command: cp -r /tmp/temp-nextjs/* . && cp /tmp/temp-nextjs/.* . 2>/dev/null || true && rm -rf /tmp/temp-nextjs
+🔧 Working directory: /Users/antoine/Documents/Code/demo/test-full-app
+✅ Command completed successfully: cp -r /tmp/temp-nextjs/* . && cp /tmp/temp-nextjs/.* . 2>/dev/null || true && rm -rf /tmp/temp-nextjs
+📤 Exit code: 0
+  📋 [3/7] RUN_COMMAND
+🔧 Executing command: npm install @tailwindcss/typography@^0.5.0 --save-dev
+🔧 Working directory: /Users/antoine/Documents/Code/demo/test-full-app
+✅ Command completed successfully: npm install @tailwindcss/typography@^0.5.0 --save-dev
+📤 Exit code: 0
+📤 stdout: 
+added 6 packages, and audited 342 packages in 4s
+
+137 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+  📋 [4/7] CREATE_FILE
+  📋 [5/7] CREATE_FILE
+  📋 [6/7] CREATE_FILE
+  📋 [7/7] CREATE_FILE
+[2025-09-10T11:07:17.622Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=framework/nextjs agent=framework duration=67880ms]: ✅ Module framework/nextjs completed successfully
+[2025-09-10T11:07:17.622Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=database/drizzle agent=database]: 🚀 [2/12] Executing module: database/drizzle (database)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, INSTALL_PACKAGES, CREATE_FILE, CREATE_FILE, CREATE_FILE, ADD_ENV_VAR, ADD_SCRIPT, ADD_SCRIPT, ADD_SCRIPT, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: database/drizzle (direct to disk)
+  📋 [1/9] INSTALL_PACKAGES
+  📋 [2/9] INSTALL_PACKAGES
+  📋 [3/9] CREATE_FILE
+  📋 [4/9] CREATE_FILE
+  📋 [5/9] CREATE_FILE
+  📋 [6/9] ADD_ENV_VAR
+  📋 [7/9] ADD_SCRIPT
+  📋 [8/9] ADD_SCRIPT
+  📋 [9/9] ADD_SCRIPT
+[2025-09-10T11:07:19.246Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=database/drizzle agent=database duration=1622ms]: ✅ Module database/drizzle completed successfully
+[2025-09-10T11:07:19.246Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=auth/better-auth agent=auth]: 🚀 [3/12] Executing module: auth/better-auth (auth)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, CREATE_FILE, CREATE_FILE, CREATE_FILE, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, CREATE_FILE, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: auth/better-auth (direct to disk)
+  📋 [1/9] INSTALL_PACKAGES
+  📋 [2/9] CREATE_FILE
+  📋 [3/9] CREATE_FILE
+  📋 [4/9] CREATE_FILE
+  📋 [5/9] ADD_ENV_VAR
+  📋 [6/9] ADD_ENV_VAR
+  📋 [7/9] ADD_ENV_VAR
+  📋 [8/9] ADD_ENV_VAR
+  📋 [9/9] CREATE_FILE
+[2025-09-10T11:07:20.040Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=auth/better-auth agent=auth duration=791ms]: ✅ Module auth/better-auth completed successfully
+[2025-09-10T11:07:20.040Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=payment/stripe agent=payment]: 🚀 [4/12] Executing module: payment/stripe (payment)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, ADD_SCRIPT, ADD_SCRIPT, CREATE_FILE, CREATE_FILE, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, CREATE_FILE, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: payment/stripe (direct to disk)
+  📋 [1/14] INSTALL_PACKAGES
+  📋 [2/14] ADD_SCRIPT
+  📋 [3/14] ADD_SCRIPT
+  📋 [4/14] CREATE_FILE
+  📋 [5/14] CREATE_FILE
+  📋 [6/14] ADD_ENV_VAR
+  📋 [7/14] ADD_ENV_VAR
+  📋 [8/14] ADD_ENV_VAR
+  📋 [9/14] ADD_ENV_VAR
+  📋 [10/14] ADD_ENV_VAR
+  📋 [11/14] ADD_ENV_VAR
+  📋 [12/14] ADD_ENV_VAR
+  📋 [13/14] ADD_ENV_VAR
+  📋 [14/14] CREATE_FILE
+[2025-09-10T11:07:24.615Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=payment/stripe agent=payment duration=4573ms]: ✅ Module payment/stripe completed successfully
+[2025-09-10T11:07:24.615Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=email/resend agent=email]: 🚀 [5/12] Executing module: email/resend (email)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: email/resend (direct to disk)
+  📋 [1/13] INSTALL_PACKAGES
+  📋 [2/13] CREATE_FILE
+  📋 [3/13] CREATE_FILE
+  📋 [4/13] CREATE_FILE
+  📋 [5/13] CREATE_FILE
+  📋 [6/13] CREATE_FILE
+  📋 [7/13] CREATE_FILE
+  📋 [8/13] CREATE_FILE
+  📋 [9/13] CREATE_FILE
+  📋 [10/13] ADD_ENV_VAR
+  📋 [11/13] ADD_ENV_VAR
+  📋 [12/13] ADD_ENV_VAR
+  📋 [13/13] ADD_ENV_VAR
+[2025-09-10T11:07:26.791Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=email/resend agent=email duration=2162ms]: ✅ Module email/resend completed successfully
+[2025-09-10T11:07:26.791Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=observability/sentry agent=observability]: 🚀 [6/12] Executing module: observability/sentry (observability)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: observability/sentry (direct to disk)
+  📋 [1/11] INSTALL_PACKAGES
+  📋 [2/11] CREATE_FILE
+  📋 [3/11] CREATE_FILE
+  📋 [4/11] CREATE_FILE
+  📋 [5/11] CREATE_FILE
+  📋 [6/11] CREATE_FILE
+  📋 [7/11] ADD_ENV_VAR
+  📋 [8/11] ADD_ENV_VAR
+  📋 [9/11] ADD_ENV_VAR
+  📋 [10/11] ADD_ENV_VAR
+  📋 [11/11] ADD_ENV_VAR
+[2025-09-10T11:07:30.564Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=observability/sentry agent=observability duration=3771ms]: ✅ Module observability/sentry completed successfully
+[2025-09-10T11:07:30.564Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=state/zustand agent=state]: 🚀 [7/12] Executing module: state/zustand (state)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, CREATE_FILE, CREATE_FILE, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: state/zustand (direct to disk)
+  📋 [1/3] INSTALL_PACKAGES
+  📋 [2/3] CREATE_FILE
+  📋 [3/3] CREATE_FILE
+[2025-09-10T11:07:33.763Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=state/zustand agent=state duration=3195ms]: ✅ Module state/zustand completed successfully
+[2025-09-10T11:07:33.763Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=ui/shadcn-ui agent=ui]: 🚀 [8/12] Executing module: ui/shadcn-ui (ui)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: RUN_COMMAND, RUN_COMMAND, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: ui/shadcn-ui (direct to disk)
+  📋 [1/2] RUN_COMMAND
+🔧 Executing command: npx shadcn@latest init --yes --defaults
+🔧 Working directory: /Users/antoine/Documents/Code/demo/test-full-app
+✅ Command completed successfully: npx shadcn@latest init --yes --defaults
+📤 Exit code: 0
+📤 stdout:   - src/lib/utils.ts
+
+Success! Project initialization completed.
+You may now add components.
+
+
+⚠️ stderr: - Preflight checks.
+✔ Preflight checks.
+- Verifying framework.
+✔ Verifying framework. Found Next.js.
+- Validating Tailwind CSS config. Found v4.
+✔ Validating Tailwind CSS config. Found v4.
+- Validating import alias.
+✔ Validating import alias.
+- Writing components.json.
+✔ Writing components.json.
+- Checking registry.
+✔ Checking registry.
+- Updating CSS variables in src/app/globals.css
+✔ Updating CSS variables in src/app/globals.css
+- Installing dependencies.
+- Installing dependencies.
+✔ Installing dependencies.
+- Updating files.
+✔ Created 1 file:
+
+  📋 [2/2] RUN_COMMAND
+🔧 Executing command: npx shadcn@latest add button input card dialog form
+🔧 Working directory: /Users/antoine/Documents/Code/demo/test-full-app
+✅ Command completed successfully: npx shadcn@latest add button input card dialog form
+📤 Exit code: 0
+📤 stdout:   - src/components/ui/button.tsx
+  - src/components/ui/input.tsx
+  - src/components/ui/card.tsx
+  - src/components/ui/dialog.tsx
+  - src/components/ui/label.tsx
+  - src/components/ui/form.tsx
+
+
+⚠️ stderr: - Checking registry.
+✔ Checking registry.
+- Installing dependencies.
+- Installing dependencies.
+✔ Installing dependencies.
+- Updating files.
+✔ Created 6 files:
+
+[2025-09-10T11:08:44.364Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=ui/shadcn-ui agent=ui duration=70595ms]: ✅ Module ui/shadcn-ui completed successfully
+[2025-09-10T11:08:44.364Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=testing/vitest agent=testing]: 🚀 [9/12] Executing module: testing/vitest (testing)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, ADD_SCRIPT, ADD_SCRIPT, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: testing/vitest (direct to disk)
+  📋 [1/7] INSTALL_PACKAGES
+  📋 [2/7] CREATE_FILE
+  📋 [3/7] CREATE_FILE
+  📋 [4/7] CREATE_FILE
+  📋 [5/7] CREATE_FILE
+  📋 [6/7] ADD_SCRIPT
+  📋 [7/7] ADD_SCRIPT
+[2025-09-10T11:08:45.841Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=testing/vitest agent=testing duration=1470ms]: ✅ Module testing/vitest completed successfully
+[2025-09-10T11:08:45.842Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=deployment/docker agent=deployment]: 🚀 [10/12] Executing module: deployment/docker (deployment)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: CREATE_FILE, CREATE_FILE, ADD_SCRIPT, ADD_SCRIPT, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: deployment/docker (direct to disk)
+  📋 [1/4] CREATE_FILE
+  📋 [2/4] CREATE_FILE
+  📋 [3/4] ADD_SCRIPT
+  📋 [4/4] ADD_SCRIPT
+[2025-09-10T11:08:48.167Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=deployment/docker agent=deployment duration=2322ms]: ✅ Module deployment/docker completed successfully
+[2025-09-10T11:08:48.167Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=content/next-intl agent=content]: 🚀 [11/12] Executing module: content/next-intl (content)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, CREATE_FILE, CREATE_FILE, CREATE_FILE, CREATE_FILE, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: content/next-intl (direct to disk)
+  📋 [1/5] INSTALL_PACKAGES
+  📋 [2/5] CREATE_FILE
+  📋 [3/5] CREATE_FILE
+  📋 [4/5] CREATE_FILE
+  📋 [5/5] CREATE_FILE
+[2025-09-10T11:08:49.807Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=content/next-intl agent=content duration=1637ms]: ✅ Module content/next-intl completed successfully
+[2025-09-10T11:08:49.807Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=blockchain/web3 agent=blockchain]: 🚀 [12/12] Executing module: blockchain/web3 (blockchain)
+🔍 Blueprint analysis: simple complexity, VFS needed: false
+📋 Reasons: Only contains simple operations: INSTALL_PACKAGES, INSTALL_PACKAGES, CREATE_FILE, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, ADD_ENV_VAR, Can execute directly to disk for optimal performance
+⚡ Executing simple blueprint: blockchain/web3 (direct to disk)
+  📋 [1/9] INSTALL_PACKAGES
+  📋 [2/9] INSTALL_PACKAGES
+  📋 [3/9] CREATE_FILE
+  📋 [4/9] ADD_ENV_VAR
+  📋 [5/9] ADD_ENV_VAR
+  📋 [6/9] ADD_ENV_VAR
+  📋 [7/9] ADD_ENV_VAR
+  📋 [8/9] ADD_ENV_VAR
+  📋 [9/9] ADD_ENV_VAR
+[2025-09-10T11:08:51.029Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=module_execution module=blockchain/web3 agent=blockchain duration=1219ms]: ✅ Module blockchain/web3 completed successfully
+[2025-09-10T11:08:51.029Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=recipe_execution]: 🎉 Recipe orchestrated successfully! 40 files created
+[2025-09-10T11:08:51.029Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=execution_stats]: 📊 Execution stats: 12/12 modules successful
+[2025-09-10T11:08:51.029Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=integration_execution]: 🔗 Executing 20 integration adapters...
+🔗 Executing integration adapter: drizzle-nextjs-integration
+Executing integration adapter: Drizzle Next.js Integration
+🔍 Integration features: {
+  apiRoutes: true,
+  middleware: true,
+  queries: true,
+  transactions: true,
+  migrations: true,
+  seeding: false,
+  validators: true,
+  adminPanel: false,
+  healthChecks: true,
+  connectionPooling: true
+}
+🔍 Integration sub_features: {
+  apiRoutes: {
+    name: 'API Routes',
+    description: 'Database API routes for health checks, migrations, and seeding',
+    type: 'boolean',
+    default: true
+  },
+  middleware: {
+    name: 'Middleware',
+    description: 'Database connection middleware and error handling',
+    type: 'boolean',
+    default: true
+  },
+  queries: {
+    name: 'Query Utilities',
+    description: 'Pre-built query utilities and helpers',
+    type: 'boolean',
+    default: true
+  },
+  transactions: {
+    name: 'Transactions',
+    description: 'Transaction management and utilities',
+    type: 'boolean',
+    default: true
+  },
+  migrations: {
+    name: 'Migrations',
+    description: 'Database migration management and utilities',
+    type: 'boolean',
+    default: true
+  },
+  seeding: {
+    name: 'Seeding',
+    description: 'Database seeding utilities and sample data',
+    type: 'boolean',
+    default: false
+  },
+  validators: {
+    name: 'Validators',
+    description: 'Database schema validation utilities',
+    type: 'boolean',
+    default: true
+  },
+  adminPanel: {
+    name: 'Admin Panel',
+    description: 'Database administration interface',
+    type: 'boolean',
+    default: false
+  },
+  healthChecks: {
+    name: 'Health Checks',
+    description: 'Database health monitoring and status checks',
+    type: 'boolean',
+    default: true
+  },
+  connectionPooling: {
+    name: 'Connection Pooling',
+    description: 'Database connection pooling and management',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "drizzle-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "drizzle-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "drizzle-nextjs-integration",
+    "features": {
+      "apiRoutes": true,
+      "middleware": true,
+      "queries": true,
+      "transactions": true,
+      "migrations": true,
+      "seeding": false,
+      "validators": true,
+      "adminPanel": false,
+      "healthChecks": true,
+      "connectionPooling": true
+    }
+  }
+}
+🎯 Executing blueprint: Drizzle Next.js Integration
+  📋 [1/3] ENHANCE_FILE
+  🔍 Action path: src/lib/db/index.ts
+  🔍 Action condition: {{#if integration.features.apiRoutes}}
+  🔍 Action condition evaluation: {{#if integration.features.apiRoutes}} = true
+[action_execution] Action ENHANCE_FILE failed in module drizzle-nextjs-integration: Modifier 'drizzle-config-merger' not found
+  📋 [2/3] CREATE_FILE
+  🔍 Action path: src/app/api/db/migrate/route.ts
+  🔍 Action condition: {{#if integration.features.apiRoutes}}
+  🔍 Action condition evaluation: {{#if integration.features.apiRoutes}} = true
+  🔧 Creating file: src/app/api/db/migrate/route.ts
+  🔧 Content length: 418 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/db/migrate/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/db/migrate/route.ts
+  📋 [3/3] CREATE_FILE
+  🔍 Action path: src/app/api/db/seed/route.ts
+  🔍 Action condition: {{#if integration.features.apiRoutes}}
+  🔍 Action condition evaluation: {{#if integration.features.apiRoutes}} = true
+  🔧 Creating file: src/app/api/db/seed/route.ts
+  🔧 Content length: 407 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/db/seed/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/db/seed/route.ts
+Integration adapter completed: Drizzle Next.js Integration
+✅ Integration adapter drizzle-nextjs-integration completed successfully
+🔗 Executing integration adapter: better-auth-nextjs-integration
+Executing integration adapter: Better Auth Next.js Integration
+🔍 Integration features: {
+  apiRoutes: true,
+  middleware: true,
+  uiComponents: 'shadcn',
+  adminPanel: false,
+  emailVerification: true,
+  mfa: false,
+  passwordReset: true
+}
+🔍 Integration sub_features: {
+  apiRoutes: {
+    name: 'API Routes',
+    description: 'Next.js API routes for authentication endpoints',
+    type: 'boolean',
+    default: true
+  },
+  middleware: {
+    name: 'Middleware',
+    description: 'Next.js middleware for authentication and route protection',
+    type: 'boolean',
+    default: true
+  },
+  uiComponents: {
+    name: 'UI Components',
+    description: 'React components for authentication UI',
+    type: 'string',
+    default: 'shadcn',
+    options: [ 'shadcn', 'chakra', 'mui', 'none' ]
+  },
+  adminPanel: {
+    name: 'Admin Panel',
+    description: 'Admin API routes for user management',
+    type: 'boolean',
+    default: false
+  },
+  emailVerification: {
+    name: 'Email Verification',
+    description: 'Email verification API routes and components',
+    type: 'boolean',
+    default: false
+  },
+  mfa: {
+    name: 'Multi-Factor Authentication',
+    description: 'MFA API routes and components',
+    type: 'boolean',
+    default: false
+  },
+  passwordReset: {
+    name: 'Password Reset',
+    description: 'Password reset API routes and components',
+    type: 'boolean',
+    default: false
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "better-auth-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "better-auth-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "better-auth-nextjs-integration",
+    "features": {
+      "apiRoutes": true,
+      "middleware": true,
+      "uiComponents": "shadcn",
+      "adminPanel": false,
+      "emailVerification": true,
+      "mfa": false,
+      "passwordReset": true
+    }
+  }
+}
+🎯 Executing blueprint: Better Auth Next.js Integration
+  📋 [1/15] INSTALL_PACKAGES
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/package.json (1 total files)
+Added dependencies: better-auth
+  📋 [2/15] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [3/15] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [4/15] CREATE_FILE
+  🔍 Action path: src/app/api/auth/[...all]/route.ts
+  🔍 Action condition: {{#if integration.features.apiRoutes}}
+  🔍 Action condition evaluation: {{#if integration.features.apiRoutes}} = true
+  🔧 Creating file: src/app/api/auth/[...all]/route.ts
+  🔧 Content length: 526 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/auth/[...all]/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/auth/[...all]/route.ts
+  📋 [5/15] CREATE_FILE
+  🔍 Action path: src/lib/auth/nextjs-handler.ts
+  🔍 Action condition: {{#if integration.features.apiRoutes}}
+  🔍 Action condition evaluation: {{#if integration.features.apiRoutes}} = true
+  🔧 Creating file: src/lib/auth/nextjs-handler.ts
+  🔧 Content length: 404 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/auth/nextjs-handler.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/auth/nextjs-handler.ts
+  📋 [6/15] CREATE_FILE
+  🔍 Action path: src/middleware.ts
+  🔍 Action condition: {{#if integration.features.middleware}}
+  🔍 Action condition evaluation: {{#if integration.features.middleware}} = true
+  🔧 Creating file: src/middleware.ts
+  🔧 Content length: 295 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/middleware.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/middleware.ts
+  📋 [7/15] CREATE_FILE
+  🔍 Action path: src/lib/auth/middleware.ts
+  🔍 Action condition: {{#if integration.features.middleware}}
+  🔍 Action condition evaluation: {{#if integration.features.middleware}} = true
+  🔧 Creating file: src/lib/auth/middleware.ts
+  🔧 Content length: 759 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/auth/middleware.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/auth/middleware.ts
+  📋 [8/15] CREATE_FILE
+  🔍 Action path: src/components/auth/auth-provider.tsx
+  🔍 Action condition: {{#if integration.features.uiComponents}}
+  🔍 Action condition evaluation: {{#if integration.features.uiComponents}} = true
+  🔧 Creating file: src/components/auth/auth-provider.tsx
+  🔧 Content length: 2658 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/auth/auth-provider.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/auth/auth-provider.tsx
+  📋 [9/15] CREATE_FILE
+  🔍 Action path: src/components/auth/login-form.tsx
+  🔍 Action condition: {{#if integration.features.uiComponents}}
+  🔍 Action condition evaluation: {{#if integration.features.uiComponents}} = true
+  🔧 Creating file: src/components/auth/login-form.tsx
+  🔧 Content length: 2330 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/auth/login-form.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/auth/login-form.tsx
+  📋 [10/15] CREATE_FILE
+  🔍 Action path: src/components/auth/register-form.tsx
+  🔍 Action condition: {{#if integration.features.uiComponents}}
+  🔍 Action condition evaluation: {{#if integration.features.uiComponents}} = true
+  🔧 Creating file: src/components/auth/register-form.tsx
+  🔧 Content length: 2846 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/auth/register-form.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/auth/register-form.tsx
+  📋 [11/15] CREATE_FILE
+  🔍 Action path: src/components/auth/user-menu.tsx
+  🔍 Action condition: {{#if integration.features.uiComponents}}
+  🔍 Action condition evaluation: {{#if integration.features.uiComponents}} = true
+  🔧 Creating file: src/components/auth/user-menu.tsx
+  🔧 Content length: 1152 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/auth/user-menu.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/auth/user-menu.tsx
+  📋 [12/15] CREATE_FILE
+  🔍 Action path: src/app/api/admin/users/route.ts
+  🔍 Action condition: {{#if integration.features.adminPanel}}
+  🔍 Action condition evaluation: {{#if integration.features.adminPanel}} = true
+  🔧 Creating file: src/app/api/admin/users/route.ts
+  🔧 Content length: 715 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/admin/users/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/admin/users/route.ts
+  📋 [13/15] CREATE_FILE
+  🔍 Action path: src/app/api/auth/verify-email/route.ts
+  🔍 Action condition: {{#if integration.features.emailVerification}}
+  🔍 Action condition evaluation: {{#if integration.features.emailVerification}} = true
+  🔧 Creating file: src/app/api/auth/verify-email/route.ts
+  🔧 Content length: 852 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/auth/verify-email/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/auth/verify-email/route.ts
+  📋 [14/15] CREATE_FILE
+  🔍 Action path: src/app/api/auth/mfa/setup/route.ts
+  🔍 Action condition: {{#if integration.features.mfa}}
+  🔍 Action condition evaluation: {{#if integration.features.mfa}} = true
+  🔧 Creating file: src/app/api/auth/mfa/setup/route.ts
+  🔧 Content length: 667 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/auth/mfa/setup/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/auth/mfa/setup/route.ts
+  📋 [15/15] CREATE_FILE
+  🔍 Action path: src/app/api/auth/reset-password/route.ts
+  🔍 Action condition: {{#if integration.features.passwordReset}}
+  🔍 Action condition evaluation: {{#if integration.features.passwordReset}} = true
+  🔧 Creating file: src/app/api/auth/reset-password/route.ts
+  🔧 Content length: 644 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/auth/reset-password/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/auth/reset-password/route.ts
+Integration adapter completed: Better Auth Next.js Integration
+✅ Integration adapter better-auth-nextjs-integration completed successfully
+🔗 Executing integration adapter: better-auth-drizzle-integration
+Executing integration adapter: Better Auth Drizzle Integration
+🔍 Integration features: {
+  userSchema: true,
+  adapterLogic: true,
+  migrations: true,
+  indexes: true,
+  seedData: false
+}
+🔍 Integration sub_features: {
+  userSchema: {
+    name: 'User Schema',
+    description: 'Drizzle schema for users, sessions, and accounts tables',
+    type: 'boolean',
+    default: true
+  },
+  adapterLogic: {
+    name: 'Adapter Logic',
+    description: 'Drizzle adapter implementation for Better Auth',
+    type: 'boolean',
+    default: true
+  },
+  migrations: {
+    name: 'Database Migrations',
+    description: 'SQL migrations for auth tables',
+    type: 'boolean',
+    default: true
+  },
+  indexes: {
+    name: 'Database Indexes',
+    description: 'Performance indexes for auth queries',
+    type: 'boolean',
+    default: true
+  },
+  seedData: {
+    name: 'Seed Data',
+    description: 'Sample data for development and testing',
+    type: 'boolean',
+    default: false
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "better-auth-drizzle-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "better-auth-drizzle-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "better-auth-drizzle-integration",
+    "features": {
+      "userSchema": true,
+      "adapterLogic": true,
+      "migrations": true,
+      "indexes": true,
+      "seedData": false
+    }
+  }
+}
+🎯 Executing blueprint: Better Auth Drizzle Integration
+  📋 [1/5] CREATE_FILE
+  🔍 Action path: src/lib/auth/drizzle-adapter.ts
+  🔍 Action condition: {{#if integration.features.adapterLogic}}
+  🔍 Action condition evaluation: {{#if integration.features.adapterLogic}} = true
+  🔧 Creating file: src/lib/auth/drizzle-adapter.ts
+  🔧 Content length: 297 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/auth/drizzle-adapter.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/auth/drizzle-adapter.ts
+  📋 [2/5] CREATE_FILE
+  🔍 Action path: src/lib/db/schema/auth.ts
+  🔍 Action condition: {{#if integration.features.userSchema}}
+  🔍 Action condition evaluation: {{#if integration.features.userSchema}} = true
+  🔧 Creating file: src/lib/db/schema/auth.ts
+  🔧 Content length: 2312 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/schema/auth.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/schema/auth.ts
+  📋 [3/5] ADD_TS_IMPORT
+  🔍 Action path: src/lib/auth/config.ts
+  🔍 Action condition: {{#if integration.features.adapterLogic}}
+  🔍 Action condition evaluation: {{#if integration.features.adapterLogic}} = true
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/auth/config.ts (1 total files)
+  📋 [4/5] ENHANCE_FILE
+  🔍 Action path: src/lib/auth/config.ts
+  🔍 Action condition: {{#if integration.features.adapterLogic}}
+  🔍 Action condition evaluation: {{#if integration.features.adapterLogic}} = true
+[action_execution] Action ENHANCE_FILE failed in module better-auth-drizzle-integration: Modifier 'drizzle-config-merger' not found
+  📋 [5/5] ENHANCE_FILE
+  🔍 Action path: src/lib/db/schema.ts
+  🔍 Action condition: {{#if integration.features.userSchema}}
+  🔍 Action condition evaluation: {{#if integration.features.userSchema}} = true
+[action_execution] Action ENHANCE_FILE failed in module better-auth-drizzle-integration: Modifier 'drizzle-schema-adder' not found
+Integration adapter completed: Better Auth Drizzle Integration
+✅ Integration adapter better-auth-drizzle-integration completed successfully
+🔗 Executing integration adapter: stripe-nextjs-integration
+Executing integration adapter: Stripe Next.js Integration
+🔍 Integration features: {
+  webhooks: true,
+  checkout: true,
+  subscriptions: true,
+  invoices: true,
+  refunds: false,
+  apiRoutes: true
+}
+🔍 Integration sub_features: {
+  webhooks: {
+    name: 'Webhooks',
+    description: 'Stripe webhook handlers for payment events',
+    type: 'boolean',
+    default: true
+  },
+  checkout: {
+    name: 'Checkout',
+    description: 'Stripe Checkout integration for payments',
+    type: 'boolean',
+    default: true
+  },
+  subscriptions: {
+    name: 'Subscriptions',
+    description: 'Subscription management and billing',
+    type: 'boolean',
+    default: false
+  },
+  invoices: {
+    name: 'Invoices',
+    description: 'Invoice generation and management',
+    type: 'boolean',
+    default: false
+  },
+  refunds: {
+    name: 'Refunds',
+    description: 'Refund processing and management',
+    type: 'boolean',
+    default: false
+  },
+  apiRoutes: {
+    name: 'API Routes',
+    description: 'Next.js API routes for Stripe operations',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "stripe-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "stripe-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "stripe-nextjs-integration",
+    "features": {
+      "webhooks": true,
+      "checkout": true,
+      "subscriptions": true,
+      "invoices": true,
+      "refunds": false,
+      "apiRoutes": true
+    }
+  }
+}
+🎯 Executing blueprint: Stripe Next.js Integration
+  📋 [1/6] INSTALL_PACKAGES
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/package.json (1 total files)
+Added dependencies: stripe, @stripe/stripe-js
+  📋 [2/6] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [3/6] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [4/6] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [5/6] ENHANCE_FILE
+  🔍 Action path: src/lib/payment/stripe.ts
+  🔍 Action condition: undefined
+[action_execution] Action ENHANCE_FILE failed in module stripe-nextjs-integration: Modifier 'stripe-config-merger' not found
+  📋 [6/6] CREATE_FILE
+  🔍 Action path: src/app/api/stripe/webhooks/route.ts
+  🔍 Action condition: undefined
+  🔧 Creating file: src/app/api/stripe/webhooks/route.ts
+  🔧 Content length: 709 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/stripe/webhooks/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/stripe/webhooks/route.ts
+Integration adapter completed: Stripe Next.js Integration
+✅ Integration adapter stripe-nextjs-integration completed successfully
+🔗 Executing integration adapter: stripe-shadcn-integration
+Executing integration adapter: Stripe Shadcn Integration
+🔍 Integration features: {
+  paymentForms: true,
+  subscriptionCards: true,
+  invoiceTables: false,
+  paymentButtons: true,
+  adminPanels: false,
+  pricingCards: true
+}
+🔍 Integration sub_features: {
+  paymentForms: {
+    name: 'Payment Forms',
+    description: 'Payment form components with validation',
+    type: 'boolean',
+    default: true
+  },
+  subscriptionCards: {
+    name: 'Subscription Cards',
+    description: 'Subscription management UI components',
+    type: 'boolean',
+    default: false
+  },
+  invoiceTables: {
+    name: 'Invoice Tables',
+    description: 'Invoice display and management components',
+    type: 'boolean',
+    default: false
+  },
+  paymentButtons: {
+    name: 'Payment Buttons',
+    description: 'Payment action buttons and CTAs',
+    type: 'boolean',
+    default: true
+  },
+  adminPanels: {
+    name: 'Admin Panels',
+    description: 'Payment admin interfaces and dashboards',
+    type: 'boolean',
+    default: false
+  },
+  pricingCards: {
+    name: 'Pricing Cards',
+    description: 'Pricing display and selection components',
+    type: 'boolean',
+    default: false
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "stripe-shadcn-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "stripe-shadcn-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "stripe-shadcn-integration",
+    "features": {
+      "paymentForms": true,
+      "subscriptionCards": true,
+      "invoiceTables": false,
+      "paymentButtons": true,
+      "adminPanels": false,
+      "pricingCards": true
+    }
+  }
+}
+🎯 Executing blueprint: Stripe Shadcn Integration
+  📋 [1/5] CREATE_FILE
+  🔍 Action path: src/components/stripe/payment-form.tsx
+  🔍 Action condition: {{#if integration.features.paymentForms}}
+  🔍 Action condition evaluation: {{#if integration.features.paymentForms}} = true
+  🔧 Creating file: src/components/stripe/payment-form.tsx
+  🔧 Content length: 4331 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/payment-form.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/payment-form.tsx
+  📋 [2/5] CREATE_FILE
+  🔍 Action path: src/components/stripe/subscription-card.tsx
+  🔍 Action condition: {{#if integration.features.subscriptionCards}}
+  🔍 Action condition evaluation: {{#if integration.features.subscriptionCards}} = true
+  🔧 Creating file: src/components/stripe/subscription-card.tsx
+  🔧 Content length: 3563 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/subscription-card.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/subscription-card.tsx
+  📋 [3/5] CREATE_FILE
+  🔍 Action path: src/components/stripe/invoice-table.tsx
+  🔍 Action condition: {{#if integration.features.invoiceTables}}
+  🔍 Action condition evaluation: {{#if integration.features.invoiceTables}} = true
+  🔧 Creating file: src/components/stripe/invoice-table.tsx
+  🔧 Content length: 4595 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/invoice-table.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/invoice-table.tsx
+  📋 [4/5] CREATE_FILE
+  🔍 Action path: src/components/stripe/payment-button.tsx
+  🔍 Action condition: {{#if integration.features.paymentButtons}}
+  🔍 Action condition evaluation: {{#if integration.features.paymentButtons}} = true
+  🔧 Creating file: src/components/stripe/payment-button.tsx
+  🔧 Content length: 2300 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/payment-button.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/payment-button.tsx
+  📋 [5/5] CREATE_FILE
+  🔍 Action path: src/components/stripe/pricing-card.tsx
+  🔍 Action condition: {{#if integration.features.pricingCards}}
+  🔍 Action condition evaluation: {{#if integration.features.pricingCards}} = true
+  🔧 Creating file: src/components/stripe/pricing-card.tsx
+  🔧 Content length: 3030 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/pricing-card.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/stripe/pricing-card.tsx
+Integration adapter completed: Stripe Shadcn Integration
+✅ Integration adapter stripe-shadcn-integration completed successfully
+🔗 Executing integration adapter: stripe-drizzle-integration
+Executing integration adapter: Stripe Drizzle Integration
+🔍 Integration features: {
+  paymentSchema: true,
+  subscriptionSchema: true,
+  webhookLogs: true,
+  migrations: true,
+  indexes: true,
+  paymentTracking: false
+}
+🔍 Integration sub_features: {
+  paymentSchema: {
+    name: 'Payment Schema',
+    description: 'Database schema for payments, customers, and transactions',
+    type: 'boolean',
+    default: true
+  },
+  subscriptionSchema: {
+    name: 'Subscription Schema',
+    description: 'Database schema for subscriptions and billing',
+    type: 'boolean',
+    default: false
+  },
+  webhookLogs: {
+    name: 'Webhook Logs',
+    description: 'Webhook event logging and tracking',
+    type: 'boolean',
+    default: true
+  },
+  migrations: {
+    name: 'Database Migrations',
+    description: 'SQL migrations for Stripe tables',
+    type: 'boolean',
+    default: true
+  },
+  indexes: {
+    name: 'Database Indexes',
+    description: 'Performance indexes for Stripe queries',
+    type: 'boolean',
+    default: true
+  },
+  paymentTracking: {
+    name: 'Payment Tracking',
+    description: 'Payment status tracking and analytics',
+    type: 'boolean',
+    default: false
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "stripe-drizzle-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "stripe-drizzle-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "stripe-drizzle-integration",
+    "features": {
+      "paymentSchema": true,
+      "subscriptionSchema": true,
+      "webhookLogs": true,
+      "migrations": true,
+      "indexes": true,
+      "paymentTracking": false
+    }
+  }
+}
+🎯 Executing blueprint: Stripe Drizzle Integration
+  📋 [1/5] CREATE_FILE
+  🔍 Action path: src/lib/db/schema/stripe.ts
+  🔍 Action condition: {{#if integration.features.paymentSchema}}
+  🔍 Action condition evaluation: {{#if integration.features.paymentSchema}} = true
+  🔧 Creating file: src/lib/db/schema/stripe.ts
+  🔧 Content length: 4842 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/schema/stripe.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/schema/stripe.ts
+  📋 [2/5] CREATE_FILE
+  🔍 Action path: src/lib/db/migrations/stripe.sql
+  🔍 Action condition: {{#if integration.features.migrations}}
+  🔍 Action condition evaluation: {{#if integration.features.migrations}} = true
+  🔧 Creating file: src/lib/db/migrations/stripe.sql
+  🔧 Content length: 4240 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/migrations/stripe.sql (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/migrations/stripe.sql
+  📋 [3/5] CREATE_FILE
+  🔍 Action path: src/lib/stripe/drizzle-adapter.ts
+  🔍 Action condition: {{#if integration.features.paymentSchema}}
+  🔍 Action condition evaluation: {{#if integration.features.paymentSchema}} = true
+  🔧 Creating file: src/lib/stripe/drizzle-adapter.ts
+  🔧 Content length: 5554 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stripe/drizzle-adapter.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stripe/drizzle-adapter.ts
+  📋 [4/5] CREATE_FILE
+  🔍 Action path: src/lib/stripe/webhook-logger.ts
+  🔍 Action condition: {{#if integration.features.webhookLogs}}
+  🔍 Action condition evaluation: {{#if integration.features.webhookLogs}} = true
+  🔧 Creating file: src/lib/stripe/webhook-logger.ts
+  🔧 Content length: 2816 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stripe/webhook-logger.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stripe/webhook-logger.ts
+  📋 [5/5] CREATE_FILE
+  🔍 Action path: src/lib/stripe/payment-tracker.ts
+  🔍 Action condition: {{#if integration.features.paymentTracking}}
+  🔍 Action condition evaluation: {{#if integration.features.paymentTracking}} = true
+  🔧 Creating file: src/lib/stripe/payment-tracker.ts
+  🔧 Content length: 5744 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stripe/payment-tracker.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stripe/payment-tracker.ts
+Integration adapter completed: Stripe Drizzle Integration
+✅ Integration adapter stripe-drizzle-integration completed successfully
+🔗 Executing integration adapter: resend-nextjs-integration
+Executing integration adapter: Resend Next.js Integration
+🔍 Integration features: {
+  apiRoutes: true,
+  webhooks: true,
+  templates: true,
+  analytics: false,
+  batchSending: false,
+  middleware: true,
+  adminPanel: false
+}
+🔍 Integration sub_features: {
+  apiRoutes: {
+    name: 'API Routes',
+    description: 'Next.js API routes for email sending and management',
+    type: 'boolean',
+    default: true
+  },
+  webhooks: {
+    name: 'Webhooks',
+    description: 'Resend webhook handlers for email events',
+    type: 'boolean',
+    default: true
+  },
+  templates: {
+    name: 'Email Templates',
+    description: 'React-based email templates with preview',
+    type: 'boolean',
+    default: true
+  },
+  analytics: {
+    name: 'Analytics Dashboard',
+    description: 'Email analytics and tracking dashboard',
+    type: 'boolean',
+    default: false
+  },
+  batchSending: {
+    name: 'Batch Sending',
+    description: 'Bulk email sending and campaign management',
+    type: 'boolean',
+    default: false
+  },
+  middleware: {
+    name: 'Middleware',
+    description: 'Email rate limiting and security middleware',
+    type: 'boolean',
+    default: true
+  },
+  adminPanel: {
+    name: 'Admin Panel',
+    description: 'Email management admin interface',
+    type: 'boolean',
+    default: false
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "resend-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "resend-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "resend-nextjs-integration",
+    "features": {
+      "apiRoutes": true,
+      "webhooks": true,
+      "templates": true,
+      "analytics": false,
+      "batchSending": false,
+      "middleware": true,
+      "adminPanel": false
+    }
+  }
+}
+🎯 Executing blueprint: Resend Next.js Integration
+  📋 [1/14] INSTALL_PACKAGES
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/package.json (1 total files)
+Added dependencies: resend
+  📋 [2/14] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [3/14] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [4/14] CREATE_FILE
+  🔍 Action path: src/app/api/email/send/route.ts
+  🔍 Action condition: {{#if integration.features.apiRoutes}}
+  🔍 Action condition evaluation: {{#if integration.features.apiRoutes}} = true
+  🔧 Creating file: src/app/api/email/send/route.ts
+  🔧 Content length: 1002 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/email/send/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/email/send/route.ts
+  📋 [5/14] CREATE_FILE
+  🔍 Action path: src/app/api/email/webhooks/route.ts
+  🔍 Action condition: {{#if integration.features.webhooks}}
+  🔍 Action condition evaluation: {{#if integration.features.webhooks}} = true
+  🔧 Creating file: src/app/api/email/webhooks/route.ts
+  🔧 Content length: 838 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/email/webhooks/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/email/webhooks/route.ts
+  📋 [6/14] CREATE_FILE
+  🔍 Action path: src/app/api/email/templates/route.ts
+  🔍 Action condition: {{#if integration.features.templates}}
+  🔍 Action condition evaluation: {{#if integration.features.templates}} = true
+  🔧 Creating file: src/app/api/email/templates/route.ts
+  🔧 Content length: 1190 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/email/templates/route.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/api/email/templates/route.ts
+  📋 [7/14] CREATE_FILE
+  🔍 Action path: src/lib/email/server.ts
+  🔍 Action condition: {{#if integration.features.apiRoutes}}
+  🔍 Action condition evaluation: {{#if integration.features.apiRoutes}} = true
+  🔧 Creating file: src/lib/email/server.ts
+  🔧 Content length: 1237 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/email/server.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/email/server.ts
+  📋 [8/14] CREATE_FILE
+  🔍 Action path: src/lib/email/client.ts
+  🔍 Action condition: {{#if integration.features.apiRoutes}}
+  🔍 Action condition evaluation: {{#if integration.features.apiRoutes}} = true
+  🔧 Creating file: src/lib/email/client.ts
+  🔧 Content length: 1584 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/email/client.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/email/client.ts
+  📋 [9/14] CREATE_FILE
+  🔍 Action path: src/lib/email/templates.ts
+  🔍 Action condition: {{#if integration.features.templates}}
+  🔍 Action condition evaluation: {{#if integration.features.templates}} = true
+  🔧 Creating file: src/lib/email/templates.ts
+  🔧 Content length: 3303 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/email/templates.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/email/templates.ts
+  📋 [10/14] CREATE_FILE
+  🔍 Action path: src/lib/email/webhooks.ts
+  🔍 Action condition: {{#if integration.features.webhooks}}
+  🔍 Action condition evaluation: {{#if integration.features.webhooks}} = true
+  🔧 Creating file: src/lib/email/webhooks.ts
+  🔧 Content length: 2765 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/email/webhooks.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/email/webhooks.ts
+  📋 [11/14] CREATE_FILE
+  🔍 Action path: src/middleware.ts
+  🔍 Action condition: {{#if integration.features.middleware}}
+  🔍 Action condition evaluation: {{#if integration.features.middleware}} = true
+  🔧 Creating file: src/middleware.ts
+  🔧 Content length: 1051 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/middleware.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/middleware.ts
+  📋 [12/14] CREATE_FILE
+  🔍 Action path: src/components/email/EmailPreview.tsx
+  🔍 Action condition: {{#if integration.features.adminPanel}}
+  🔍 Action condition evaluation: {{#if integration.features.adminPanel}} = true
+  🔧 Creating file: src/components/email/EmailPreview.tsx
+  🔧 Content length: 3131 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailPreview.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailPreview.tsx
+  📋 [13/14] CREATE_FILE
+  🔍 Action path: src/components/email/EmailAnalytics.tsx
+  🔍 Action condition: {{#if integration.features.analytics}}
+  🔍 Action condition evaluation: {{#if integration.features.analytics}} = true
+  🔧 Creating file: src/components/email/EmailAnalytics.tsx
+  🔧 Content length: 3309 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailAnalytics.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailAnalytics.tsx
+  📋 [14/14] CREATE_FILE
+  🔍 Action path: src/app/admin/emails/page.tsx
+  🔍 Action condition: {{#if integration.features.adminPanel}}
+  🔍 Action condition evaluation: {{#if integration.features.adminPanel}} = true
+  🔧 Creating file: src/app/admin/emails/page.tsx
+  🔧 Content length: 1199 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/app/admin/emails/page.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/app/admin/emails/page.tsx
+Integration adapter completed: Resend Next.js Integration
+✅ Integration adapter resend-nextjs-integration completed successfully
+🔗 Executing integration adapter: resend-shadcn-integration
+Executing integration adapter: Resend Shadcn Integration
+🔍 Integration features: {
+  emailForm: true,
+  emailTemplates: true,
+  emailCampaigns: false,
+  emailList: false,
+  emailComposer: true,
+  emailSettings: true
+}
+🔍 Integration sub_features: {
+  emailForm: {
+    name: 'Email Form',
+    description: 'Beautiful email sending form with validation',
+    type: 'boolean',
+    default: true
+  },
+  emailTemplates: {
+    name: 'Email Templates',
+    description: 'Template management and preview components',
+    type: 'boolean',
+    default: true
+  },
+  emailCampaigns: {
+    name: 'Email Campaigns',
+    description: 'Campaign creation and management interface',
+    type: 'boolean',
+    default: false
+  },
+  emailList: {
+    name: 'Email List',
+    description: 'Email list management and subscriber interface',
+    type: 'boolean',
+    default: false
+  },
+  emailComposer: {
+    name: 'Email Composer',
+    description: 'Rich text email composer with template support',
+    type: 'boolean',
+    default: true
+  },
+  emailSettings: {
+    name: 'Email Settings',
+    description: 'Email configuration and preferences interface',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "resend-shadcn-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "resend-shadcn-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "resend-shadcn-integration",
+    "features": {
+      "emailForm": true,
+      "emailTemplates": true,
+      "emailCampaigns": false,
+      "emailList": false,
+      "emailComposer": true,
+      "emailSettings": true
+    }
+  }
+}
+🎯 Executing blueprint: Resend Shadcn Integration
+  📋 [1/4] CREATE_FILE
+  🔍 Action path: src/components/email/EmailForm.tsx
+  🔍 Action condition: {{#if integration.features.emailForm}}
+  🔍 Action condition evaluation: {{#if integration.features.emailForm}} = true
+  🔧 Creating file: src/components/email/EmailForm.tsx
+  🔧 Content length: 8200 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailForm.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailForm.tsx
+  📋 [2/4] CREATE_FILE
+  🔍 Action path: src/components/email/EmailTemplates.tsx
+  🔍 Action condition: {{#if integration.features.emailTemplates}}
+  🔍 Action condition evaluation: {{#if integration.features.emailTemplates}} = true
+  🔧 Creating file: src/components/email/EmailTemplates.tsx
+  🔧 Content length: 7619 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailTemplates.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailTemplates.tsx
+  📋 [3/4] CREATE_FILE
+  🔍 Action path: src/components/email/EmailComposer.tsx
+  🔍 Action condition: {{#if integration.features.emailComposer}}
+  🔍 Action condition evaluation: {{#if integration.features.emailComposer}} = true
+  🔧 Creating file: src/components/email/EmailComposer.tsx
+  🔧 Content length: 8700 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailComposer.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailComposer.tsx
+  📋 [4/4] CREATE_FILE
+  🔍 Action path: src/components/email/EmailSettings.tsx
+  🔍 Action condition: {{#if integration.features.emailSettings}}
+  🔍 Action condition evaluation: {{#if integration.features.emailSettings}} = true
+  🔧 Creating file: src/components/email/EmailSettings.tsx
+  🔧 Content length: 6763 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailSettings.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/email/EmailSettings.tsx
+Integration adapter completed: Resend Shadcn Integration
+✅ Integration adapter resend-shadcn-integration completed successfully
+🔗 Executing integration adapter: sentry-nextjs-integration
+Executing integration adapter: Sentry Next.js Integration
+🔍 Integration features: {
+  errorTracking: true,
+  performanceMonitoring: true,
+  userFeedback: true,
+  middleware: true,
+  profiling: false,
+  alerts: false,
+  releaseTracking: true
+}
+🔍 Integration sub_features: {
+  errorTracking: {
+    name: 'Error Tracking',
+    description: 'Comprehensive error tracking with breadcrumbs and context',
+    type: 'boolean',
+    default: true
+  },
+  performanceMonitoring: {
+    name: 'Performance Monitoring',
+    description: 'Web vitals, transactions, and performance tracking',
+    type: 'boolean',
+    default: true
+  },
+  userFeedback: {
+    name: 'User Feedback',
+    description: 'User feedback collection and error reporting',
+    type: 'boolean',
+    default: true
+  },
+  middleware: {
+    name: 'Middleware',
+    description: 'Sentry middleware for automatic error capture',
+    type: 'boolean',
+    default: true
+  },
+  profiling: {
+    name: 'Profiling',
+    description: 'Performance profiling and analysis',
+    type: 'boolean',
+    default: false
+  },
+  alerts: {
+    name: 'Alerts & Dashboard',
+    description: 'Custom alerts and monitoring dashboard',
+    type: 'boolean',
+    default: false
+  },
+  releaseTracking: {
+    name: 'Release Tracking',
+    description: 'Release tracking and deployment monitoring',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "sentry-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "sentry-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "sentry-nextjs-integration",
+    "features": {
+      "errorTracking": true,
+      "performanceMonitoring": true,
+      "userFeedback": true,
+      "middleware": true,
+      "profiling": false,
+      "alerts": false,
+      "releaseTracking": true
+    }
+  }
+}
+🎯 Executing blueprint: Sentry Next.js Integration
+  📋 [1/10] INSTALL_PACKAGES
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/package.json (1 total files)
+Added dependencies: @sentry/nextjs
+  📋 [2/10] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [3/10] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [4/10] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [5/10] ADD_ENV_VAR
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.env.example (1 total files)
+  📋 [6/10] ENHANCE_FILE
+  🔍 Action path: next.config.js
+  🔍 Action condition: {{#if integration.features.errorTracking}}
+  🔍 Action condition evaluation: {{#if integration.features.errorTracking}} = true
+[action_execution] Action ENHANCE_FILE failed in module sentry-nextjs-integration: Modifier 'nextjs-config-wrapper' not found
+  📋 [7/10] ENHANCE_FILE
+  🔍 Action path: sentry.client.config.ts
+  🔍 Action condition: {{#if integration.features.errorTracking}}
+  🔍 Action condition evaluation: {{#if integration.features.errorTracking}} = true
+[action_execution] Action ENHANCE_FILE failed in module sentry-nextjs-integration: Modifier 'sentry-config-merger' not found
+  📋 [8/10] ENHANCE_FILE
+  🔍 Action path: sentry.server.config.ts
+  🔍 Action condition: {{#if integration.features.errorTracking}}
+  🔍 Action condition evaluation: {{#if integration.features.errorTracking}} = true
+[action_execution] Action ENHANCE_FILE failed in module sentry-nextjs-integration: Modifier 'sentry-config-merger' not found
+  📋 [9/10] ENHANCE_FILE
+  🔍 Action path: sentry.edge.config.ts
+  🔍 Action condition: {{#if integration.features.errorTracking}}
+  🔍 Action condition evaluation: {{#if integration.features.errorTracking}} = true
+[action_execution] Action ENHANCE_FILE failed in module sentry-nextjs-integration: Modifier 'sentry-config-merger' not found
+  📋 [10/10] CREATE_FILE
+  🔍 Action path: src/middleware.ts
+  🔍 Action condition: {{#if integration.features.middleware}}
+  🔍 Action condition evaluation: {{#if integration.features.middleware}} = true
+  🔧 Creating file: src/middleware.ts
+  🔧 Content length: 685 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/middleware.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/middleware.ts
+Integration adapter completed: Sentry Next.js Integration
+✅ Integration adapter sentry-nextjs-integration completed successfully
+🔗 Executing integration adapter: sentry-drizzle-integration
+Executing integration adapter: Sentry Drizzle Integration
+🔍 Integration features: {
+  errorLogging: true,
+  performanceTracking: true,
+  queryMonitoring: true,
+  userFeedback: false,
+  migrations: true,
+  indexes: true
+}
+🔍 Integration sub_features: {
+  errorLogging: {
+    name: 'Error Logging',
+    description: 'Database schema and logging for Sentry errors',
+    type: 'boolean',
+    default: true
+  },
+  performanceTracking: {
+    name: 'Performance Tracking',
+    description: 'Database performance metrics and monitoring',
+    type: 'boolean',
+    default: true
+  },
+  queryMonitoring: {
+    name: 'Query Monitoring',
+    description: 'Database query performance and error tracking',
+    type: 'boolean',
+    default: true
+  },
+  userFeedback: {
+    name: 'User Feedback Storage',
+    description: 'Database storage for user feedback and reports',
+    type: 'boolean',
+    default: false
+  },
+  migrations: {
+    name: 'Database Migrations',
+    description: 'SQL migrations for Sentry tables',
+    type: 'boolean',
+    default: true
+  },
+  indexes: {
+    name: 'Database Indexes',
+    description: 'Performance indexes for Sentry queries',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "sentry-drizzle-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "sentry-drizzle-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "sentry-drizzle-integration",
+    "features": {
+      "errorLogging": true,
+      "performanceTracking": true,
+      "queryMonitoring": true,
+      "userFeedback": false,
+      "migrations": true,
+      "indexes": true
+    }
+  }
+}
+🎯 Executing blueprint: Sentry Drizzle Integration
+  📋 [1/6] CREATE_FILE
+  🔍 Action path: src/lib/db/schema/sentry.ts
+  🔍 Action condition: {{#if integration.features.errorLogging}}
+  🔍 Action condition evaluation: {{#if integration.features.errorLogging}} = true
+  🔧 Creating file: src/lib/db/schema/sentry.ts
+  🔧 Content length: 6709 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/schema/sentry.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/schema/sentry.ts
+  📋 [2/6] CREATE_FILE
+  🔍 Action path: src/lib/db/migrations/sentry.sql
+  🔍 Action condition: {{#if integration.features.migrations}}
+  🔍 Action condition evaluation: {{#if integration.features.migrations}} = true
+  🔧 Creating file: src/lib/db/migrations/sentry.sql
+  🔧 Content length: 5159 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/migrations/sentry.sql (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/db/migrations/sentry.sql
+  📋 [3/6] CREATE_FILE
+  🔍 Action path: src/lib/sentry/drizzle-adapter.ts
+  🔍 Action condition: {{#if integration.features.errorLogging}}
+  🔍 Action condition evaluation: {{#if integration.features.errorLogging}} = true
+  🔧 Creating file: src/lib/sentry/drizzle-adapter.ts
+  🔧 Content length: 7277 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/sentry/drizzle-adapter.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/sentry/drizzle-adapter.ts
+  📋 [4/6] CREATE_FILE
+  🔍 Action path: src/lib/sentry/error-logger.ts
+  🔍 Action condition: {{#if integration.features.errorLogging}}
+  🔍 Action condition evaluation: {{#if integration.features.errorLogging}} = true
+  🔧 Creating file: src/lib/sentry/error-logger.ts
+  🔧 Content length: 4446 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/sentry/error-logger.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/sentry/error-logger.ts
+  📋 [5/6] CREATE_FILE
+  🔍 Action path: src/lib/sentry/performance-tracker.ts
+  🔍 Action condition: {{#if integration.features.performanceTracking}}
+  🔍 Action condition evaluation: {{#if integration.features.performanceTracking}} = true
+  🔧 Creating file: src/lib/sentry/performance-tracker.ts
+  🔧 Content length: 5350 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/sentry/performance-tracker.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/sentry/performance-tracker.ts
+  📋 [6/6] CREATE_FILE
+  🔍 Action path: src/lib/sentry/query-monitor.ts
+  🔍 Action condition: {{#if integration.features.queryMonitoring}}
+  🔍 Action condition evaluation: {{#if integration.features.queryMonitoring}} = true
+  🔧 Creating file: src/lib/sentry/query-monitor.ts
+  🔧 Content length: 4759 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/sentry/query-monitor.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/sentry/query-monitor.ts
+Integration adapter completed: Sentry Drizzle Integration
+✅ Integration adapter sentry-drizzle-integration completed successfully
+🔗 Executing integration adapter: zustand-nextjs-integration
+Executing integration adapter: Zustand Next.js Integration
+🔍 Integration features: {
+  authStore: true,
+  uiStore: true,
+  cartStore: false,
+  userStore: false,
+  themeStore: true,
+  notificationStore: true,
+  ssrSupport: true,
+  devtools: true,
+  persistence: true,
+  middleware: true
+}
+🔍 Integration sub_features: {
+  authStore: {
+    name: 'Auth Store',
+    description: 'Authentication state management with user data and session handling',
+    type: 'boolean',
+    default: true
+  },
+  uiStore: {
+    name: 'UI Store',
+    description: 'UI state management for modals, loading states, and UI preferences',
+    type: 'boolean',
+    default: true
+  },
+  cartStore: {
+    name: 'Cart Store',
+    description: 'Shopping cart state management with persistence',
+    type: 'boolean',
+    default: false
+  },
+  userStore: {
+    name: 'User Store',
+    description: 'User profile and preferences state management',
+    type: 'boolean',
+    default: false
+  },
+  themeStore: {
+    name: 'Theme Store',
+    description: 'Theme and appearance state management with persistence',
+    type: 'boolean',
+    default: true
+  },
+  notificationStore: {
+    name: 'Notification Store',
+    description: 'Notification and toast state management',
+    type: 'boolean',
+    default: true
+  },
+  ssrSupport: {
+    name: 'SSR Support',
+    description: 'Server-side rendering support with hydration',
+    type: 'boolean',
+    default: true
+  },
+  devtools: {
+    name: 'DevTools',
+    description: 'Redux DevTools integration for debugging',
+    type: 'boolean',
+    default: true
+  },
+  persistence: {
+    name: 'Persistence',
+    description: 'State persistence to localStorage/sessionStorage',
+    type: 'boolean',
+    default: true
+  },
+  middleware: {
+    name: 'Middleware',
+    description: 'Custom middleware for logging, analytics, and state management',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "zustand-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "zustand-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "zustand-nextjs-integration",
+    "features": {
+      "authStore": true,
+      "uiStore": true,
+      "cartStore": false,
+      "userStore": false,
+      "themeStore": true,
+      "notificationStore": true,
+      "ssrSupport": true,
+      "devtools": true,
+      "persistence": true,
+      "middleware": true
+    }
+  }
+}
+🎯 Executing blueprint: Zustand Next.js Integration
+  📋 [1/3] ENHANCE_FILE
+  🔍 Action path: src/lib/stores/index.ts
+  🔍 Action condition: {{#if integration.features.authStore}}
+  🔍 Action condition evaluation: {{#if integration.features.authStore}} = true
+[action_execution] Action ENHANCE_FILE failed in module zustand-nextjs-integration: Modifier 'drizzle-config-merger' not found
+  📋 [2/3] CREATE_FILE
+  🔍 Action path: src/lib/stores/ssr.ts
+  🔍 Action condition: {{#if integration.features.ssr}}
+  🔍 Action condition evaluation: {{#if integration.features.ssr}} = true
+  🔧 Creating file: src/lib/stores/ssr.ts
+  🔧 Content length: 305 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stores/ssr.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stores/ssr.ts
+  📋 [3/3] CREATE_FILE
+  🔍 Action path: src/lib/stores/hydration.ts
+  🔍 Action condition: {{#if integration.features.hydration}}
+  🔍 Action condition evaluation: {{#if integration.features.hydration}} = true
+  🔧 Creating file: src/lib/stores/hydration.ts
+  🔧 Content length: 272 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stores/hydration.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/stores/hydration.ts
+Integration adapter completed: Zustand Next.js Integration
+✅ Integration adapter zustand-nextjs-integration completed successfully
+🔗 Executing integration adapter: shadcn-zustand-integration
+Integration shadcn-zustand-integration does not support feature: formComponents
+❌ Integration shadcn-zustand-integration features validation failed
+🔗 Executing integration adapter: shadcn-nextjs-integration
+Executing integration adapter: Shadcn Next.js Integration
+🔍 Integration features: {
+  coreComponents: true,
+  advancedComponents: true,
+  layoutComponents: true,
+  themeSystem: true,
+  accessibility: true,
+  responsiveDesign: true,
+  animations: true,
+  icons: true,
+  forms: true,
+  dataDisplay: true
+}
+🔍 Integration sub_features: {
+  coreComponents: {
+    name: 'Core Components',
+    description: 'Essential UI components (Button, Input, Card, etc.)',
+    type: 'boolean',
+    default: true
+  },
+  advancedComponents: {
+    name: 'Advanced Components',
+    description: 'Complex UI components (Table, Form, Dialog, etc.)',
+    type: 'boolean',
+    default: true
+  },
+  layoutComponents: {
+    name: 'Layout Components',
+    description: 'Layout and navigation components (Header, Footer, Sidebar)',
+    type: 'boolean',
+    default: true
+  },
+  themeSystem: {
+    name: 'Theme System',
+    description: 'Complete theming system with dark mode and custom themes',
+    type: 'boolean',
+    default: true
+  },
+  accessibility: {
+    name: 'Accessibility',
+    description: 'WCAG compliance and accessibility features',
+    type: 'boolean',
+    default: true
+  },
+  responsiveDesign: {
+    name: 'Responsive Design',
+    description: 'Mobile-first responsive design utilities',
+    type: 'boolean',
+    default: true
+  },
+  animations: {
+    name: 'Animations',
+    description: 'Smooth animations and transitions',
+    type: 'boolean',
+    default: true
+  },
+  icons: {
+    name: 'Icons',
+    description: 'Lucide React icons integration',
+    type: 'boolean',
+    default: true
+  },
+  forms: {
+    name: 'Forms',
+    description: 'Form components with validation',
+    type: 'boolean',
+    default: true
+  },
+  dataDisplay: {
+    name: 'Data Display',
+    description: 'Tables, lists, and data visualization components',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "shadcn-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "shadcn-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "shadcn-nextjs-integration",
+    "features": {
+      "coreComponents": true,
+      "advancedComponents": true,
+      "layoutComponents": true,
+      "themeSystem": true,
+      "accessibility": true,
+      "responsiveDesign": true,
+      "animations": true,
+      "icons": true,
+      "forms": true,
+      "dataDisplay": true
+    }
+  }
+}
+🎯 Executing blueprint: Shadcn Next.js Integration
+  📋 [1/3] INSTALL_PACKAGES
+  🔍 Action path: undefined
+  🔍 Action condition: undefined
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/package.json (1 total files)
+Added dependencies: @radix-ui/react-slot, class-variance-authority, clsx, tailwind-merge
+  📋 [2/3] ENHANCE_FILE
+  🔍 Action path: tailwind.config.js
+  🔍 Action condition: undefined
+[action_execution] Action ENHANCE_FILE failed in module shadcn-nextjs-integration: Modifier 'tailwind-config-enhancer' not found
+  📋 [3/3] ENHANCE_FILE
+  🔍 Action path: tsconfig.json
+  🔍 Action condition: undefined
+[action_execution] Action ENHANCE_FILE failed in module shadcn-nextjs-integration: Modifier 'tsconfig-enhancer' not found
+Integration adapter completed: Shadcn Next.js Integration
+✅ Integration adapter shadcn-nextjs-integration completed successfully
+🔗 Executing integration adapter: vitest-nextjs-integration
+Executing integration adapter: Vitest Next.js Integration
+🔍 Integration features: {
+  unitTesting: true,
+  integrationTesting: true,
+  e2eTesting: false,
+  coverageReporting: true,
+  watchMode: true,
+  uiMode: false,
+  mocking: true,
+  snapshots: true,
+  parallelTesting: true,
+  typescriptSupport: true
+}
+🔍 Integration sub_features: {
+  unitTesting: {
+    name: 'Unit Testing',
+    description: 'Unit tests for components, hooks, and utilities',
+    type: 'boolean',
+    default: true
+  },
+  integrationTesting: {
+    name: 'Integration Testing',
+    description: 'Integration tests for pages and API routes',
+    type: 'boolean',
+    default: true
+  },
+  e2eTesting: {
+    name: 'E2E Testing',
+    description: 'End-to-end tests with Playwright',
+    type: 'boolean',
+    default: false
+  },
+  coverageReporting: {
+    name: 'Coverage Reporting',
+    description: 'Code coverage reporting with HTML and LCOV reports',
+    type: 'boolean',
+    default: true
+  },
+  watchMode: {
+    name: 'Watch Mode',
+    description: 'Watch mode for development testing',
+    type: 'boolean',
+    default: true
+  },
+  uiMode: {
+    name: 'UI Mode',
+    description: 'Vitest UI for interactive testing',
+    type: 'boolean',
+    default: false
+  },
+  mocking: {
+    name: 'Mocking',
+    description: 'Mock utilities for Next.js, APIs, and external services',
+    type: 'boolean',
+    default: true
+  },
+  snapshots: {
+    name: 'Snapshots',
+    description: 'Snapshot testing for components',
+    type: 'boolean',
+    default: true
+  },
+  parallelTesting: {
+    name: 'Parallel Testing',
+    description: 'Parallel test execution for faster runs',
+    type: 'boolean',
+    default: true
+  },
+  typescriptSupport: {
+    name: 'TypeScript Support',
+    description: 'Full TypeScript support for tests',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "vitest-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "vitest-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "vitest-nextjs-integration",
+    "features": {
+      "unitTesting": true,
+      "integrationTesting": true,
+      "e2eTesting": false,
+      "coverageReporting": true,
+      "watchMode": true,
+      "uiMode": false,
+      "mocking": true,
+      "snapshots": true,
+      "parallelTesting": true,
+      "typescriptSupport": true
+    }
+  }
+}
+🎯 Executing blueprint: Vitest Next.js Integration
+  📋 [1/8] CREATE_FILE
+  🔍 Action path: vitest.config.ts
+  🔍 Action condition: {{#if integration.features.unitTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.unitTesting}} = true
+  🔧 Creating file: vitest.config.ts
+  🔧 Content length: 1157 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/vitest.config.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/vitest.config.ts
+  📋 [2/8] CREATE_FILE
+  🔍 Action path: vitest.setup.ts
+  🔍 Action condition: {{#if integration.features.unitTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.unitTesting}} = true
+  🔧 Creating file: vitest.setup.ts
+  🔧 Content length: 1427 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/vitest.setup.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/vitest.setup.ts
+  📋 [3/8] CREATE_FILE
+  🔍 Action path: test-utils/test-utils.tsx
+  🔍 Action condition: {{#if integration.features.unitTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.unitTesting}} = true
+  🔧 Creating file: test-utils/test-utils.tsx
+  🔧 Content length: 581 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/test-utils/test-utils.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/test-utils/test-utils.tsx
+  📋 [4/8] CREATE_FILE
+  🔍 Action path: test-utils/mock-next-router.ts
+  🔍 Action condition: {{#if integration.features.mocking}}
+  🔍 Action condition evaluation: {{#if integration.features.mocking}} = true
+  🔧 Creating file: test-utils/mock-next-router.ts
+  🔧 Content length: 351 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/test-utils/mock-next-router.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/test-utils/mock-next-router.ts
+  📋 [5/8] CREATE_FILE
+  🔍 Action path: test-utils/mock-fetch.ts
+  🔍 Action condition: {{#if integration.features.mocking}}
+  🔍 Action condition evaluation: {{#if integration.features.mocking}} = true
+  🔧 Creating file: test-utils/mock-fetch.ts
+  🔧 Content length: 481 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/test-utils/mock-fetch.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/test-utils/mock-fetch.ts
+  📋 [6/8] CREATE_FILE
+  🔍 Action path: tests/unit/components/Button.test.tsx
+  🔍 Action condition: {{#if integration.features.unitTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.unitTesting}} = true
+  🔧 Creating file: tests/unit/components/Button.test.tsx
+  🔧 Content length: 1135 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/tests/unit/components/Button.test.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/tests/unit/components/Button.test.tsx
+  📋 [7/8] CREATE_FILE
+  🔍 Action path: tests/integration/pages/home.test.tsx
+  🔍 Action condition: {{#if integration.features.integrationTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.integrationTesting}} = true
+  🔧 Creating file: tests/integration/pages/home.test.tsx
+  🔧 Content length: 597 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/tests/integration/pages/home.test.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/tests/integration/pages/home.test.tsx
+  📋 [8/8] CREATE_FILE
+  🔍 Action path: tests/e2e/auth.spec.ts
+  🔍 Action condition: {{#if integration.features.e2eTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.e2eTesting}} = true
+  🔧 Creating file: tests/e2e/auth.spec.ts
+  🔧 Content length: 881 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/tests/e2e/auth.spec.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/tests/e2e/auth.spec.ts
+Integration adapter completed: Vitest Next.js Integration
+✅ Integration adapter vitest-nextjs-integration completed successfully
+🔗 Executing integration adapter: vitest-zustand-integration
+Executing integration adapter: Vitest Zustand Integration
+🔍 Integration features: {
+  storeTesting: true,
+  middlewareTesting: true,
+  persistenceTesting: true,
+  integrationTesting: true,
+  mocking: true,
+  fixtures: true,
+  coverageReporting: true,
+  watchMode: true,
+  parallelTesting: true,
+  typescriptSupport: true
+}
+🔍 Integration sub_features: {
+  storeTesting: {
+    name: 'Store Testing',
+    description: 'Unit tests for Zustand stores and actions',
+    type: 'boolean',
+    default: true
+  },
+  middlewareTesting: {
+    name: 'Middleware Testing',
+    description: 'Tests for Zustand middleware (persist, devtools, etc.)',
+    type: 'boolean',
+    default: true
+  },
+  persistenceTesting: {
+    name: 'Persistence Testing',
+    description: 'Tests for state persistence across storage types',
+    type: 'boolean',
+    default: true
+  },
+  integrationTesting: {
+    name: 'Integration Testing',
+    description: 'Integration tests for store interactions',
+    type: 'boolean',
+    default: true
+  },
+  mocking: {
+    name: 'Mocking',
+    description: 'Mock utilities for stores, storage, and middleware',
+    type: 'boolean',
+    default: true
+  },
+  fixtures: {
+    name: 'Fixtures',
+    description: 'Test fixtures and sample data for stores',
+    type: 'boolean',
+    default: true
+  },
+  coverageReporting: {
+    name: 'Coverage Reporting',
+    description: 'Code coverage reporting for store logic',
+    type: 'boolean',
+    default: true
+  },
+  watchMode: {
+    name: 'Watch Mode',
+    description: 'Watch mode for development testing',
+    type: 'boolean',
+    default: true
+  },
+  parallelTesting: {
+    name: 'Parallel Testing',
+    description: 'Parallel test execution for faster runs',
+    type: 'boolean',
+    default: true
+  },
+  typescriptSupport: {
+    name: 'TypeScript Support',
+    description: 'Full TypeScript support for store tests',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "vitest-zustand-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "vitest-zustand-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "vitest-zustand-integration",
+    "features": {
+      "storeTesting": true,
+      "middlewareTesting": true,
+      "persistenceTesting": true,
+      "integrationTesting": true,
+      "mocking": true,
+      "fixtures": true,
+      "coverageReporting": true,
+      "watchMode": true,
+      "parallelTesting": true,
+      "typescriptSupport": true
+    }
+  }
+}
+🎯 Executing blueprint: Vitest Zustand Integration
+  📋 [1/7] CREATE_FILE
+  🔍 Action path: vitest.config.zustand.ts
+  🔍 Action condition: {{#if integration.features.storeTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.storeTesting}} = true
+  🔧 Creating file: vitest.config.zustand.ts
+  🔧 Content length: 937 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/vitest.config.zustand.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/vitest.config.zustand.ts
+  📋 [2/7] CREATE_FILE
+  🔍 Action path: vitest.setup.zustand.ts
+  🔍 Action condition: {{#if integration.features.storeTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.storeTesting}} = true
+  🔧 Creating file: vitest.setup.zustand.ts
+  🔧 Content length: 1111 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/vitest.setup.zustand.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/vitest.setup.zustand.ts
+  📋 [3/7] CREATE_FILE
+  🔍 Action path: test-utils/store-test-utils.ts
+  🔍 Action condition: {{#if integration.features.storeTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.storeTesting}} = true
+  🔧 Creating file: test-utils/store-test-utils.ts
+  🔧 Content length: 1127 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/test-utils/store-test-utils.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/test-utils/store-test-utils.ts
+  📋 [4/7] CREATE_FILE
+  🔍 Action path: test-utils/mock-storage.ts
+  🔍 Action condition: {{#if integration.features.mocking}}
+  🔍 Action condition evaluation: {{#if integration.features.mocking}} = true
+  🔧 Creating file: test-utils/mock-storage.ts
+  🔧 Content length: 980 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/test-utils/mock-storage.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/test-utils/mock-storage.ts
+  📋 [5/7] CREATE_FILE
+  🔍 Action path: tests/stores/auth-store.test.ts
+  🔍 Action condition: {{#if integration.features.storeTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.storeTesting}} = true
+  🔧 Creating file: tests/stores/auth-store.test.ts
+  🔧 Content length: 1773 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/tests/stores/auth-store.test.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/tests/stores/auth-store.test.ts
+  📋 [6/7] CREATE_FILE
+  🔍 Action path: tests/middleware/persist.test.ts
+  🔍 Action condition: {{#if integration.features.middlewareTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.middlewareTesting}} = true
+  🔧 Creating file: tests/middleware/persist.test.ts
+  🔧 Content length: 1552 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/tests/middleware/persist.test.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/tests/middleware/persist.test.ts
+  📋 [7/7] CREATE_FILE
+  🔍 Action path: tests/persistence/localStorage.test.ts
+  🔍 Action condition: {{#if integration.features.persistenceTesting}}
+  🔍 Action condition evaluation: {{#if integration.features.persistenceTesting}} = true
+  🔧 Creating file: tests/persistence/localStorage.test.ts
+  🔧 Content length: 1727 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/tests/persistence/localStorage.test.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/tests/persistence/localStorage.test.ts
+Integration adapter completed: Vitest Zustand Integration
+✅ Integration adapter vitest-zustand-integration completed successfully
+🔗 Executing integration adapter: docker-nextjs-integration
+Executing integration adapter: Docker Next.js Integration
+🔍 Integration features: {
+  multiStageBuild: true,
+  developmentMode: true,
+  productionMode: true,
+  nginxReverseProxy: true,
+  sslSupport: false,
+  healthChecks: true,
+  environmentConfig: true,
+  volumeManagement: true,
+  networking: true,
+  monitoring: false,
+  backupRestore: false,
+  securityHardening: true
+}
+🔍 Integration sub_features: {
+  multiStageBuild: {
+    name: 'Multi-Stage Build',
+    description: 'Optimized multi-stage Docker builds for production',
+    type: 'boolean',
+    default: true
+  },
+  developmentMode: {
+    name: 'Development Mode',
+    description: 'Docker setup for development with hot reloading',
+    type: 'boolean',
+    default: true
+  },
+  productionMode: {
+    name: 'Production Mode',
+    description: 'Production-ready Docker configuration with optimization',
+    type: 'boolean',
+    default: true
+  },
+  nginxReverseProxy: {
+    name: 'Nginx Reverse Proxy',
+    description: 'Nginx configuration for reverse proxy and static file serving',
+    type: 'boolean',
+    default: true
+  },
+  sslSupport: {
+    name: 'SSL Support',
+    description: 'SSL/TLS configuration and certificate management',
+    type: 'boolean',
+    default: false
+  },
+  healthChecks: {
+    name: 'Health Checks',
+    description: 'Docker health checks and monitoring endpoints',
+    type: 'boolean',
+    default: true
+  },
+  environmentConfig: {
+    name: 'Environment Configuration',
+    description: 'Environment-specific configuration management',
+    type: 'boolean',
+    default: true
+  },
+  volumeManagement: {
+    name: 'Volume Management',
+    description: 'Docker volumes for persistent data and logs',
+    type: 'boolean',
+    default: true
+  },
+  networking: {
+    name: 'Networking',
+    description: 'Docker networking configuration and service discovery',
+    type: 'boolean',
+    default: true
+  },
+  monitoring: {
+    name: 'Monitoring',
+    description: 'Docker monitoring with Prometheus and Grafana',
+    type: 'boolean',
+    default: false
+  },
+  backupRestore: {
+    name: 'Backup & Restore',
+    description: 'Backup and restore scripts for data persistence',
+    type: 'boolean',
+    default: false
+  },
+  securityHardening: {
+    name: 'Security Hardening',
+    description: 'Security hardening and best practices',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "docker-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "docker-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "docker-nextjs-integration",
+    "features": {
+      "multiStageBuild": true,
+      "developmentMode": true,
+      "productionMode": true,
+      "nginxReverseProxy": true,
+      "sslSupport": false,
+      "healthChecks": true,
+      "environmentConfig": true,
+      "volumeManagement": true,
+      "networking": true,
+      "monitoring": false,
+      "backupRestore": false,
+      "securityHardening": true
+    }
+  }
+}
+🎯 Executing blueprint: Docker Next.js Integration
+  📋 [1/2] CREATE_FILE
+  🔍 Action path: Dockerfile
+  🔍 Action condition: undefined
+  🔧 Creating file: Dockerfile
+  🔧 Content length: 1614 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/Dockerfile (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/Dockerfile
+  📋 [2/2] CREATE_FILE
+  🔍 Action path: .dockerignore
+  🔍 Action condition: undefined
+  🔧 Creating file: .dockerignore
+  🔧 Content length: 133 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/.dockerignore (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/.dockerignore
+Integration adapter completed: Docker Next.js Integration
+✅ Integration adapter docker-nextjs-integration completed successfully
+🔗 Executing integration adapter: docker-drizzle-integration
+Executing integration adapter: Docker Drizzle Integration
+🔍 Integration features: {
+  postgresService: true,
+  migrationService: true,
+  backupService: true,
+  monitoringService: false,
+  seedData: false,
+  sslSupport: false,
+  replication: false,
+  clustering: false,
+  performanceTuning: true,
+  securityHardening: true,
+  volumeManagement: true,
+  networking: true
+}
+🔍 Integration sub_features: {
+  postgresService: {
+    name: 'PostgreSQL Service',
+    description: 'PostgreSQL database service with Docker',
+    type: 'boolean',
+    default: true
+  },
+  migrationService: {
+    name: 'Migration Service',
+    description: 'Drizzle migration service with Docker',
+    type: 'boolean',
+    default: true
+  },
+  backupService: {
+    name: 'Backup Service',
+    description: 'Database backup and restore service',
+    type: 'boolean',
+    default: true
+  },
+  monitoringService: {
+    name: 'Monitoring Service',
+    description: 'Database monitoring with Prometheus and Grafana',
+    type: 'boolean',
+    default: false
+  },
+  seedData: {
+    name: 'Seed Data',
+    description: 'Database seeding with sample data',
+    type: 'boolean',
+    default: false
+  },
+  sslSupport: {
+    name: 'SSL Support',
+    description: 'SSL/TLS encryption for database connections',
+    type: 'boolean',
+    default: false
+  },
+  replication: {
+    name: 'Replication',
+    description: 'Database replication setup',
+    type: 'boolean',
+    default: false
+  },
+  clustering: {
+    name: 'Clustering',
+    description: 'Database clustering configuration',
+    type: 'boolean',
+    default: false
+  },
+  performanceTuning: {
+    name: 'Performance Tuning',
+    description: 'Database performance optimization',
+    type: 'boolean',
+    default: true
+  },
+  securityHardening: {
+    name: 'Security Hardening',
+    description: 'Database security hardening and best practices',
+    type: 'boolean',
+    default: true
+  },
+  volumeManagement: {
+    name: 'Volume Management',
+    description: 'Docker volumes for database persistence',
+    type: 'boolean',
+    default: true
+  },
+  networking: {
+    name: 'Networking',
+    description: 'Database networking and service discovery',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "docker-drizzle-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "docker-drizzle-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "docker-drizzle-integration",
+    "features": {
+      "postgresService": true,
+      "migrationService": true,
+      "backupService": true,
+      "monitoringService": false,
+      "seedData": false,
+      "sslSupport": false,
+      "replication": false,
+      "clustering": false,
+      "performanceTuning": true,
+      "securityHardening": true,
+      "volumeManagement": true,
+      "networking": true
+    }
+  }
+}
+🎯 Executing blueprint: Docker Drizzle Integration
+  📋 [1/9] CREATE_FILE
+  🔍 Action path: docker-compose.database.yml
+  🔍 Action condition: {{#if integration.features.postgresService}}
+  🔍 Action condition evaluation: {{#if integration.features.postgresService}} = true
+  🔧 Creating file: docker-compose.database.yml
+  🔧 Content length: 1121 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/docker-compose.database.yml (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/docker-compose.database.yml
+  📋 [2/9] CREATE_FILE
+  🔍 Action path: database/Dockerfile.postgres
+  🔍 Action condition: {{#if integration.features.postgresService}}
+  🔍 Action condition evaluation: {{#if integration.features.postgresService}} = true
+  🔧 Creating file: database/Dockerfile.postgres
+  🔧 Content length: 378 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/database/Dockerfile.postgres (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/database/Dockerfile.postgres
+  📋 [3/9] CREATE_FILE
+  🔍 Action path: database/Dockerfile.migration
+  🔍 Action condition: {{#if integration.features.migrationService}}
+  🔍 Action condition evaluation: {{#if integration.features.migrationService}} = true
+  🔧 Creating file: database/Dockerfile.migration
+  🔧 Content length: 344 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/database/Dockerfile.migration (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/database/Dockerfile.migration
+  📋 [4/9] CREATE_FILE
+  🔍 Action path: database/init.sql
+  🔍 Action condition: {{#if integration.features.postgresService}}
+  🔍 Action condition evaluation: {{#if integration.features.postgresService}} = true
+  🔧 Creating file: database/init.sql
+  🔧 Content length: 640 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/database/init.sql (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/database/init.sql
+  📋 [5/9] CREATE_FILE
+  🔍 Action path: database/seed.sql
+  🔍 Action condition: {{#if integration.features.seedData}}
+  🔍 Action condition evaluation: {{#if integration.features.seedData}} = true
+  🔧 Creating file: database/seed.sql
+  🔧 Content length: 353 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/database/seed.sql (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/database/seed.sql
+  📋 [6/9] CREATE_FILE
+  🔍 Action path: scripts/db-setup.sh
+  🔍 Action condition: {{#if integration.features.postgresService}}
+  🔍 Action condition evaluation: {{#if integration.features.postgresService}} = true
+  🔧 Creating file: scripts/db-setup.sh
+  🔧 Content length: 400 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/scripts/db-setup.sh (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/scripts/db-setup.sh
+  📋 [7/9] CREATE_FILE
+  🔍 Action path: scripts/db-migrate.sh
+  🔍 Action condition: {{#if integration.features.migrationService}}
+  🔍 Action condition evaluation: {{#if integration.features.migrationService}} = true
+  🔧 Creating file: scripts/db-migrate.sh
+  🔧 Content length: 231 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/scripts/db-migrate.sh (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/scripts/db-migrate.sh
+  📋 [8/9] CREATE_FILE
+  🔍 Action path: scripts/db-backup.sh
+  🔍 Action condition: {{#if integration.features.backupService}}
+  🔍 Action condition evaluation: {{#if integration.features.backupService}} = true
+  🔧 Creating file: scripts/db-backup.sh
+  🔧 Content length: 254 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/scripts/db-backup.sh (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/scripts/db-backup.sh
+  📋 [9/9] CREATE_FILE
+  🔍 Action path: scripts/db-health.sh
+  🔍 Action condition: {{#if integration.features.postgresService}}
+  🔍 Action condition evaluation: {{#if integration.features.postgresService}} = true
+  🔧 Creating file: scripts/db-health.sh
+  🔧 Content length: 543 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/scripts/db-health.sh (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/scripts/db-health.sh
+Integration adapter completed: Docker Drizzle Integration
+✅ Integration adapter docker-drizzle-integration completed successfully
+🔗 Executing integration adapter: next-intl-nextjs-integration
+❌ Integration adapter not found: next-intl-nextjs-integration
+🔗 Executing integration adapter: web3-nextjs-integration
+Executing integration adapter: Web3 Next.js Integration
+🔍 Integration features: {
+  walletConnection: true,
+  smartContracts: true,
+  transactions: true,
+  networkSwitching: true,
+  eventListening: true,
+  apiRoutes: true,
+  middleware: true,
+  uiComponents: true,
+  typeScript: true,
+  errorHandling: true
+}
+🔍 Integration sub_features: {
+  walletConnection: {
+    name: 'Wallet Connection',
+    description: 'Connect to various Web3 wallets (MetaMask, WalletConnect, etc.)',
+    type: 'boolean',
+    default: true
+  },
+  smartContracts: {
+    name: 'Smart Contracts',
+    description: 'Smart contract interaction and deployment utilities',
+    type: 'boolean',
+    default: true
+  },
+  transactions: {
+    name: 'Transactions',
+    description: 'Transaction management and status tracking',
+    type: 'boolean',
+    default: true
+  },
+  networkSwitching: {
+    name: 'Network Switching',
+    description: 'Switch between different blockchain networks',
+    type: 'boolean',
+    default: true
+  },
+  eventListening: {
+    name: 'Event Listening',
+    description: 'Listen to blockchain events and contract events',
+    type: 'boolean',
+    default: true
+  },
+  apiRoutes: {
+    name: 'API Routes',
+    description: 'Next.js API routes for Web3 operations',
+    type: 'boolean',
+    default: true
+  },
+  middleware: {
+    name: 'Middleware',
+    description: 'Web3 middleware for authentication and validation',
+    type: 'boolean',
+    default: true
+  },
+  uiComponents: {
+    name: 'UI Components',
+    description: 'React components for Web3 interactions',
+    type: 'boolean',
+    default: true
+  },
+  typeScript: {
+    name: 'TypeScript Support',
+    description: 'Full TypeScript support for Web3 operations',
+    type: 'boolean',
+    default: true
+  },
+  errorHandling: {
+    name: 'Error Handling',
+    description: 'Comprehensive error handling for Web3 operations',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "web3-nextjs-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "web3-nextjs-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "web3-nextjs-integration",
+    "features": {
+      "walletConnection": true,
+      "smartContracts": true,
+      "transactions": true,
+      "networkSwitching": true,
+      "eventListening": true,
+      "apiRoutes": true,
+      "middleware": true,
+      "uiComponents": true,
+      "typeScript": true,
+      "errorHandling": true
+    }
+  }
+}
+🎯 Executing blueprint: Web3 Next.js Integration
+  📋 [1/7] CREATE_FILE
+  🔍 Action path: src/lib/web3/wallet.ts
+  🔍 Action condition: undefined
+  🔧 Creating file: src/lib/web3/wallet.ts
+  🔧 Content length: 1924 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/web3/wallet.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/web3/wallet.ts
+  📋 [2/7] CREATE_FILE
+  🔍 Action path: src/lib/web3/contracts.ts
+  🔍 Action condition: undefined
+  🔧 Creating file: src/lib/web3/contracts.ts
+  🔧 Content length: 2522 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/web3/contracts.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/web3/contracts.ts
+  📋 [3/7] CREATE_FILE
+  🔍 Action path: src/lib/web3/transactions.ts
+  🔍 Action condition: undefined
+  🔧 Creating file: src/lib/web3/transactions.ts
+  🔧 Content length: 2574 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/web3/transactions.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/web3/transactions.ts
+  📋 [4/7] CREATE_FILE
+  🔍 Action path: src/lib/web3/network.ts
+  🔍 Action condition: undefined
+  🔧 Creating file: src/lib/web3/network.ts
+  🔧 Content length: 3425 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/lib/web3/network.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/lib/web3/network.ts
+  📋 [5/7] CREATE_FILE
+  🔍 Action path: src/hooks/useWallet.ts
+  🔍 Action condition: undefined
+  🔧 Creating file: src/hooks/useWallet.ts
+  🔧 Content length: 2626 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/hooks/useWallet.ts (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/hooks/useWallet.ts
+  📋 [6/7] CREATE_FILE
+  🔍 Action path: src/components/web3/WalletProvider.tsx
+  🔍 Action condition: undefined
+  🔧 Creating file: src/components/web3/WalletProvider.tsx
+  🔧 Content length: 964 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/WalletProvider.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/WalletProvider.tsx
+  📋 [7/7] CREATE_FILE
+  🔍 Action path: src/components/web3/WalletButton.tsx
+  🔍 Action condition: undefined
+  🔧 Creating file: src/components/web3/WalletButton.tsx
+  🔧 Content length: 1444 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/WalletButton.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/WalletButton.tsx
+Integration adapter completed: Web3 Next.js Integration
+✅ Integration adapter web3-nextjs-integration completed successfully
+🔗 Executing integration adapter: web3-shadcn-integration
+Executing integration adapter: Web3 Shadcn Integration
+🔍 Integration features: {
+  walletComponents: true,
+  transactionComponents: true,
+  contractComponents: true,
+  networkComponents: true,
+  tokenComponents: true,
+  nftComponents: false,
+  dashboardComponents: false,
+  chartComponents: false,
+  alertComponents: true,
+  settingsComponents: true
+}
+🔍 Integration sub_features: {
+  walletComponents: {
+    name: 'Wallet Components',
+    description: 'Beautiful wallet management UI components',
+    type: 'boolean',
+    default: true
+  },
+  transactionComponents: {
+    name: 'Transaction Components',
+    description: 'Transaction display and management components',
+    type: 'boolean',
+    default: true
+  },
+  contractComponents: {
+    name: 'Contract Components',
+    description: 'Smart contract interaction components',
+    type: 'boolean',
+    default: true
+  },
+  networkComponents: {
+    name: 'Network Components',
+    description: 'Network switching and display components',
+    type: 'boolean',
+    default: true
+  },
+  tokenComponents: {
+    name: 'Token Components',
+    description: 'Token display and management components',
+    type: 'boolean',
+    default: true
+  },
+  nftComponents: {
+    name: 'NFT Components',
+    description: 'NFT display and gallery components',
+    type: 'boolean',
+    default: false
+  },
+  dashboardComponents: {
+    name: 'Dashboard Components',
+    description: 'Web3 dashboard and analytics components',
+    type: 'boolean',
+    default: false
+  },
+  chartComponents: {
+    name: 'Chart Components',
+    description: 'Data visualization and chart components',
+    type: 'boolean',
+    default: false
+  },
+  alertComponents: {
+    name: 'Alert Components',
+    description: 'Notification and alert components',
+    type: 'boolean',
+    default: true
+  },
+  settingsComponents: {
+    name: 'Settings Components',
+    description: 'Configuration and settings components',
+    type: 'boolean',
+    default: true
+  }
+}
+🔍 Enhanced context: {
+  "project": {
+    "name": "Full Stack Test App",
+    "description": "Complete test application with all adapters and integrations",
+    "version": "1.0.0",
+    "framework": "nextjs",
+    "path": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "module": {
+    "id": "web3-shadcn-integration",
+    "category": "integration",
+    "version": "1.0.0",
+    "parameters": {}
+  },
+  "pathHandler": {
+    "projectRoot": "/Users/antoine/Documents/Code/demo/test-full-app",
+    "projectName": "test-full-app",
+    "pathMap": {
+      "source_root": "src/",
+      "app_root": "src/app/",
+      "shared_library": "src/lib/",
+      "ui_components": "src/components/ui/",
+      "api_routes": "src/app/api/",
+      "database_config": "src/lib/db",
+      "auth_config": "src/lib/auth",
+      "payment_config": "src/lib/payment",
+      "email_config": "src/lib/email",
+      "observability_config": "src/lib/observability",
+      "state_config": "src/lib/state",
+      "testing_config": "src/lib/testing",
+      "deployment_config": "src/lib/deployment",
+      "content_config": "src/lib/content",
+      "blockchain_config": "src/lib/blockchain"
+    },
+    "frameworkProjectRoot": "/Users/antoine/Documents/Code/demo/test-full-app"
+  },
+  "adapter": {
+    "id": "web3-shadcn-integration"
+  },
+  "framework": "nextjs",
+  "integration": {
+    "id": "web3-shadcn-integration",
+    "features": {
+      "walletComponents": true,
+      "transactionComponents": true,
+      "contractComponents": true,
+      "networkComponents": true,
+      "tokenComponents": true,
+      "nftComponents": false,
+      "dashboardComponents": false,
+      "chartComponents": false,
+      "alertComponents": true,
+      "settingsComponents": true
+    }
+  }
+}
+🎯 Executing blueprint: Web3 Shadcn Integration
+  📋 [1/5] CREATE_FILE
+  🔍 Action path: src/components/web3/WalletCard.tsx
+  🔍 Action condition: undefined
+  🔧 Creating file: src/components/web3/WalletCard.tsx
+  🔧 Content length: 2814 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/WalletCard.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/WalletCard.tsx
+  📋 [2/5] CREATE_FILE
+  🔍 Action path: src/components/web3/TransactionCard.tsx
+  🔍 Action condition: undefined
+  🔧 Creating file: src/components/web3/TransactionCard.tsx
+  🔧 Content length: 4705 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/TransactionCard.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/TransactionCard.tsx
+  📋 [3/5] CREATE_FILE
+  🔍 Action path: src/components/web3/NetworkSwitcher.tsx
+  🔍 Action condition: undefined
+  🔧 Creating file: src/components/web3/NetworkSwitcher.tsx
+  🔧 Content length: 1703 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/NetworkSwitcher.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/NetworkSwitcher.tsx
+  📋 [4/5] CREATE_FILE
+  🔍 Action path: src/components/web3/BalanceCard.tsx
+  🔍 Action condition: undefined
+  🔧 Creating file: src/components/web3/BalanceCard.tsx
+  🔧 Content length: 2632 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/BalanceCard.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/BalanceCard.tsx
+  📋 [5/5] CREATE_FILE
+  🔍 Action path: src/components/web3/Web3Dashboard.tsx
+  🔍 Action condition: undefined
+  🔧 Creating file: src/components/web3/Web3Dashboard.tsx
+  🔧 Content length: 3318 characters
+  🗂️ VFS: Created file /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/Web3Dashboard.tsx (1 total files)
+  ✅ File created successfully: /Users/antoine/Documents/Code/demo/test-full-app/src/components/web3/Web3Dashboard.tsx
+Integration adapter completed: Web3 Shadcn Integration
+✅ Integration adapter web3-shadcn-integration completed successfully
+📋 Created architech.json configuration file
+[2025-09-10T11:08:53.464Z] INFO [trace=c4e8543e-ed31-4f65-a4f0-b2e953dce6d4 op=recipe_execution duration=163728ms]: Completed execution trace: recipe_execution
+✅ SUCCESS: 🎉 Project created successfully!
+ℹ️  INFO: ✅ 12 modules executed

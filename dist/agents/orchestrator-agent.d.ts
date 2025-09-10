@@ -10,18 +10,18 @@ export declare class OrchestratorAgent {
     private projectManager;
     private pathHandler;
     private decentralizedPathHandler;
-    private adapterLoader;
+    private moduleLoader;
+    private agentExecutor;
     private agents;
     private integrationRegistry;
     private integrationExecutor?;
-    private vfsManager;
     constructor(projectManager: ProjectManager);
     /**
      * Initialize all agents
      */
     private initializeAgents;
     /**
-     * Reconfigure all agents with the decentralized path handler and shared VFS
+     * Reconfigure all agents with the decentralized path handler
      */
     private reconfigureAgents;
     /**
@@ -35,7 +35,7 @@ export declare class OrchestratorAgent {
     /**
      * Get agent by category
      */
-    getAgent(category: string): any;
+    getAgent(category: string): unknown;
     /**
      * Create architech.json configuration file
      */

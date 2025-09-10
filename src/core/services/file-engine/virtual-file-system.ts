@@ -40,6 +40,8 @@ export class VirtualFileSystem {
       content,
       timestamp: new Date()
     });
+    
+    console.log(`  🗂️ VFS: Created file ${normalizedPath} (${this.files.size} total files)`);
   }
 
   /**
@@ -139,7 +141,9 @@ export class VirtualFileSystem {
    * Get all files in VFS
    */
   getAllFiles(): VFSFile[] {
-    return Array.from(this.files.values()).filter(file => file.exists);
+    const files = Array.from(this.files.values()).filter(file => file.exists);
+    console.log(`  🗂️ VFS: getAllFiles() returning ${files.length} files (${this.files.size} total in map)`);
+    return files;
   }
 
   /**

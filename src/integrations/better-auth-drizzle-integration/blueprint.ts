@@ -6,7 +6,7 @@ export const blueprint: Blueprint = {
   description: 'Complete Drizzle ORM integration for Better Auth',
   version: '1.0.0',
   actions: [
-    // Drizzle Adapter
+    // Drizzle Adapter - only create if it doesn't exist
     {
       type: 'CREATE_FILE',
       path: 'src/lib/auth/drizzle-adapter.ts',
@@ -24,7 +24,7 @@ export const drizzleAdapterConfig = drizzleAdapter(db, {
       condition: '{{#if integration.features.adapterLogic}}'
     },
 
-    // Auth Schema
+    // Auth Schema - only create if it doesn't exist
     {
       type: 'CREATE_FILE',
       path: 'src/lib/db/schema/auth.ts',
@@ -88,147 +88,6 @@ export const verificationTokensTokenIndex = pgIndex('verification_tokens_token_i
       condition: '{{#if integration.features.userSchema}}'
     },
 
-    // Database Migrations
-    {
-      type: 'CREATE_FILE',
-      path: 'src/lib/db/migrations/auth.sql',
-      content: `-- Better Auth Database Schema Migration
--- Run this migration to set up the authentication tables
-
--- Create users table
-CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
-  email_verified BOOLEAN NOT NULL DEFAULT false,
-  image TEXT,
-  role TEXT NOT NULL DEFAULT 'user',
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Create accounts table
-CREATE TABLE IF NOT EXISTS accounts (
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL,
-  provider TEXT NOT NULL,
-  provider_account_id TEXT NOT NULL,
-  refresh_token TEXT,
-  access_token TEXT,
-  expires_at INTEGER,
-  token_type TEXT,
-  scope TEXT,
-  id_token TEXT,
-  session_state TEXT,
-  PRIMARY KEY (provider, provider_account_id)
-);
-
--- Create sessions table
-CREATE TABLE IF NOT EXISTS sessions (
-  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  session_token TEXT NOT NULL UNIQUE,
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  expires TIMESTAMP NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Create verification_tokens table
-CREATE TABLE IF NOT EXISTS verification_tokens (
-  identifier TEXT NOT NULL,
-  token TEXT NOT NULL,
-  expires TIMESTAMP NOT NULL,
-  PRIMARY KEY (identifier, token)
-);
-
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS users_email_idx ON users(email);
-CREATE INDEX IF NOT EXISTS sessions_token_idx ON sessions(session_token);
-CREATE INDEX IF NOT EXISTS accounts_user_id_idx ON accounts(user_id);
-CREATE INDEX IF NOT EXISTS verification_tokens_token_idx ON verification_tokens(token);
-`,
-      condition: '{{#if integration.features.migrations}}'
-    },
-
-    // Database Connection
-    {
-      type: 'CREATE_FILE',
-      path: 'src/lib/auth/database.ts',
-      content: `import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { drizzleAdapterConfig } from './drizzle-adapter';
-import { users, sessions, accounts, verificationTokens } from '@/lib/db/schema/auth';
-
-// Database connection
-const connectionString = process.env.DATABASE_URL!;
-const client = postgres(connectionString);
-export const db = drizzle(client);
-
-// Export schema for use in Better Auth config
-export { users, sessions, accounts, verificationTokens };
-
-// Export the adapter configuration
-export { drizzleAdapterConfig };
-`,
-      condition: '{{#if integration.features.adapterLogic}}'
-    },
-
-    // Seed Data
-    {
-      type: 'CREATE_FILE',
-      path: 'src/lib/db/seeds/auth.ts',
-      content: `import { db } from '@/lib/db';
-import { users, sessions, accounts } from '@/lib/db/schema/auth';
-import { createId } from '@paralleldrive/cuid2';
-
-export async function seedAuthData() {
-  console.log('Seeding auth data...');
-
-  // Create a test user
-  const testUser = await db.insert(users).values({
-    id: createId(),
-    name: 'Test User',
-    email: 'test@example.com',
-    emailVerified: true,
-    role: 'user',
-  }).returning();
-
-  console.log('Created test user:', testUser[0]);
-
-  // Create a test session
-  const testSession = await db.insert(sessions).values({
-    id: createId(),
-    sessionToken: 'test-session-token',
-    userId: testUser[0].id,
-    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-  }).returning();
-
-  console.log('Created test session:', testSession[0]);
-
-  // Create a test account
-  const testAccount = await db.insert(accounts).values({
-    userId: testUser[0].id,
-    type: 'oauth',
-    provider: 'google',
-    providerAccountId: 'google-123456',
-    access_token: 'test-access-token',
-    token_type: 'Bearer',
-    expires_at: Math.floor(Date.now() / 1000) + 3600, // 1 hour
-  }).returning();
-
-  console.log('Created test account:', testAccount[0]);
-
-  console.log('Auth data seeded successfully!');
-}
-
-// Run seed if this file is executed directly
-if (require.main === module) {
-  seedAuthData().catch(console.error);
-}
-`,
-      condition: '{{#if integration.features.seedData}}'
-    },
-
     // Add Drizzle import to auth config
     {
       type: 'ADD_TS_IMPORT',
@@ -246,7 +105,7 @@ if (require.main === module) {
     {
       type: 'ENHANCE_FILE',
       path: 'src/lib/auth/config.ts',
-      modifier: 'drizzle-config-merge',
+      modifier: 'drizzle-config-merger',
       params: {
         configObjectName: 'auth',
         payload: {

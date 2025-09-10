@@ -18,3 +18,18 @@ export * from './project/project-manager.js';
 
 // Genome System
 export * from './genome/genome-registry.js';
+
+// Template System
+export * from './template/index.js';
+
+// Error Handling System
+export * from './error/index.js';
+
+// Module Loader System
+export * from './module-loader/index.js';
+
+// Agent Execution System
+export * from './agent-execution/index.js';
+
+// Logging System
+export * from './logging/index.js';

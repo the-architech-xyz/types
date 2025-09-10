@@ -71,7 +71,7 @@ import { users, sessions, accounts, verificationTokens } from "@/lib/db/schema";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: "{{module.parameters.databaseType}}", // or "mysql", "sqlite"
+    provider: "postgresql", // or "mysql", "sqlite"
     schema: { users, sessions, accounts, verificationTokens }
   }),
   // ... rest of your configuration

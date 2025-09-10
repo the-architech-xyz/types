@@ -30,32 +30,32 @@ export const NETWORKS = {
   mainnet: {
     chainId: 1,
     name: 'Ethereum Mainnet',
-    rpcUrl: process.env.NEXT_PUBLIC_MAINNET_RPC_URL || 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID',
+    rpcUrl: process.env.MAINNET_RPC_URL || 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID',
     blockExplorer: 'https://etherscan.io'
   },
   sepolia: {
     chainId: 11155111,
     name: 'Sepolia Testnet',
-    rpcUrl: process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/YOUR_PROJECT_ID',
+    rpcUrl: process.env.SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/YOUR_PROJECT_ID',
     blockExplorer: 'https://sepolia.etherscan.io'
   },
   polygon: {
     chainId: 137,
     name: 'Polygon Mainnet',
-    rpcUrl: process.env.NEXT_PUBLIC_POLYGON_RPC_URL || 'https://polygon-rpc.com',
+    rpcUrl: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
     blockExplorer: 'https://polygonscan.com'
   },
   bsc: {
     chainId: 56,
     name: 'BSC Mainnet',
-    rpcUrl: process.env.NEXT_PUBLIC_BSC_RPC_URL || 'https://bsc-dataseed.binance.org',
+    rpcUrl: process.env.BSC_RPC_URL || 'https://bsc-dataseed.binance.org',
     blockExplorer: 'https://bscscan.com'
   }
 };
 
 // Current network configuration
 export const getCurrentNetwork = () => {
-  const chainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '1');
+  const chainId = parseInt(process.env.CHAIN_ID || '1');
   return Object.values(NETWORKS).find(network => network.chainId === chainId) || NETWORKS.mainnet;
 };
 
@@ -67,37 +67,37 @@ export const createWeb3Instance = (rpcUrl?: string) => {
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_RPC_URL',
+      key: 'RPC_URL',
       value: 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID',
       description: 'Primary RPC URL for Web3 connection'
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_CHAIN_ID',
+      key: 'CHAIN_ID',
       value: '1',
       description: 'Default chain ID (1 for Ethereum mainnet)'
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_MAINNET_RPC_URL',
+      key: 'MAINNET_RPC_URL',
       value: 'https://mainnet.infura.io/v3/YOUR_PROJECT_ID',
       description: 'Ethereum mainnet RPC URL'
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_SEPOLIA_RPC_URL',
+      key: 'SEPOLIA_RPC_URL',
       value: 'https://sepolia.infura.io/v3/YOUR_PROJECT_ID',
       description: 'Ethereum Sepolia testnet RPC URL'
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_POLYGON_RPC_URL',
+      key: 'POLYGON_RPC_URL',
       value: 'https://polygon-rpc.com',
       description: 'Polygon network RPC URL'
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_BSC_RPC_URL',
+      key: 'BSC_RPC_URL',
       value: 'https://bsc-dataseed.binance.org',
       description: 'Binance Smart Chain RPC URL'
     }

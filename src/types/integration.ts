@@ -37,8 +37,6 @@ export interface IntegrationAdapter {
   blueprint: Blueprint;
 }
 
-// Legacy alias for backward compatibility
-export type IntegrationFeature = IntegrationAdapter;
 
 export interface IntegrationFeatureConfig {
   id: string;
@@ -62,5 +60,5 @@ export interface IntegrationFeatureConfig {
 }
 
 export interface IntegrationFeatureRegistry {
-  [key: string]: IntegrationFeature;
+  [key: string]: IntegrationAdapter;
 }

@@ -1,7 +1,7 @@
 /**
  * Docker Deployment Blueprint
  * 
- * Sets up Docker containerization for Next.js applications
+ * Sets up Docker containerization for web applications
  * Creates Dockerfile, docker-compose.yml, and deployment configuration
  */
 
@@ -43,16 +43,16 @@ ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN adduser --system --uid 1001 appuser
 
 COPY --from=builder /app/public ./public
 RUN mkdir .next
-RUN chown nextjs:nodejs .next
+RUN chown appuser:nodejs .next
 
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=appuser:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=appuser:nodejs /app/.next/static ./.next/static
 
-USER nextjs
+USER appuser
 
 EXPOSE 3000
 ENV PORT 3000
@@ -69,7 +69,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Next.js
+# Web Application
 .next/
 out/
 

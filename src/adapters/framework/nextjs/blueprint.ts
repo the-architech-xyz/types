@@ -13,7 +13,38 @@ export const nextjsBlueprint: Blueprint = {
   actions: [
     {
       type: 'RUN_COMMAND',
-      command: 'npx create-next-app@latest . --typescript{{#if module.parameters.tailwind}} --tailwind{{/if}} --eslint --app --src-dir --import-alias "{{module.parameters.importAlias}}" --yes'
+      command: 'rm -rf /tmp/temp-nextjs && mkdir -p /tmp/temp-nextjs && cd /tmp/temp-nextjs && npx create-next-app@latest . --typescript{{#if module.parameters.tailwind}} --tailwind{{/if}} --eslint --app --src-dir --import-alias "{{module.parameters.importAlias}}" --yes'
+    },
+    {
+      type: 'RUN_COMMAND',
+      command: 'cp -r /tmp/temp-nextjs/* . && cp /tmp/temp-nextjs/.* . 2>/dev/null || true && rm -rf /tmp/temp-nextjs'
+    },
+    {
+      type: 'RUN_COMMAND',
+      command: 'npm install @tailwindcss/typography@^0.5.0 --save-dev',
+      condition: '{{#if module.parameters.tailwind}}'
+    },
+    {
+      type: 'CREATE_FILE',
+      path: 'tailwind.config.js',
+      content: `/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+      },
+    },
+  },
+  plugins: [],
+}`,
+      condition: '{{#if module.parameters.tailwind}}'
     },
     {
       type: 'CREATE_FILE',
@@ -40,6 +71,32 @@ export default function RootLayout({
     </html>
   )
 }`
+    },
+    {
+      type: 'CREATE_FILE',
+      path: '{{paths.app_root}}globals.css',
+      content: `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}`,
+      condition: '{{#if module.parameters.tailwind}}'
     },
     {
       type: 'CREATE_FILE',

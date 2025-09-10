@@ -1,78 +1,28 @@
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from '@sentry/browser';
 
-export class SentryClient {
-  /**
-   * Capture an exception
-   */
-  static captureException(error: Error, context?: Record<string, any>) {
-    Sentry.withScope((scope) => {
-      if (context) {
-        Object.keys(context).forEach((key) => {
-          scope.setContext(key, context[key]);
-        });
-      }
-      Sentry.captureException(error);
-    });
-  }
-
-  /**
-   * Capture a message
-   */
-  static captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info') {
-    Sentry.captureMessage(message, level);
-  }
-
-  /**
-   * Add breadcrumb
-   */
-  static addBreadcrumb(breadcrumb: {
-    message: string;
-    category?: string;
-    level?: 'info' | 'warning' | 'error' | 'debug';
-    data?: Record<string, any>;
-  }) {
-    Sentry.addBreadcrumb(breadcrumb);
-  }
-
-  /**
-   * Set user context
-   */
-  static setUser(user: {
-    id?: string;
-    email?: string;
-    username?: string;
-    [key: string]: any;
-  }) {
-    Sentry.setUser(user);
-  }
-
-  /**
-   * Set tags
-   */
-  static setTags(tags: Record<string, string>) {
-    Sentry.setTags(tags);
-  }
-
-  /**
-   * Set context
-   */
-  static setContext(key: string, context: Record<string, any>) {
-    Sentry.setContext(key, context);
-  }
-
-  /**
-   * Start a transaction
-   */
-  static startTransaction(name: string, op: string) {
-    return Sentry.startTransaction({ name, op });
-  }
-
-  /**
-   * Capture performance data
-   */
-  static capturePerformance(transaction: any) {
-    transaction.finish();
-  }
-}
+// Initialize Sentry for client-side
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN,
+  
+  // Adjust this value in production, or use tracesSampler for greater control
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  
+  // Setting this option to true will print useful information to the console while you're setting up Sentry.
+  debug: process.env.NODE_ENV === 'development',
+  
+  // This sets the sample rate to be 10%. You may want this to be 100% while
+  // in development and sample at a lower rate in production
+  replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0.1,
+  replaysOnErrorSampleRate: 1.0,
+  
+  // You can remove this option if you're not planning to use the Sentry Session Replay feature:
+  integrations: [
+    Sentry.replayIntegration({
+      // Additional Replay configuration goes in here, for example:
+      maskAllText: true,
+      blockAllMedia: true,
+    }),
+  ],
+});
 
 export { Sentry };

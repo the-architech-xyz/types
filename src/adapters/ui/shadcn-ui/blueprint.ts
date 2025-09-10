@@ -15,9 +15,10 @@ export const shadcnUiBlueprint: Blueprint = {
       type: 'RUN_COMMAND',
       command: 'npx shadcn@latest init --yes --defaults'
     },
+    // Install all components in one command to avoid multiple dependency installations
     {
       type: 'RUN_COMMAND',
-      command: 'npx shadcn@latest add {{module.parameters.components}}'
+      command: 'npx shadcn@latest add button input card dialog form'
     }
   ]
 };

@@ -33,7 +33,7 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24, // 1 day
   },
   trustedOrigins: [
-    process.env.NEXTAUTH_URL || "http://localhost:3000",
+    process.env.AUTH_URL || "http://localhost:3000",
   ],
 });
 
@@ -68,7 +68,7 @@ export { auth, authHandler };
       content: `import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  baseURL: process.env.AUTH_URL || "http://localhost:3000",
 });
 
 export const {
@@ -87,15 +87,9 @@ export const {
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXTAUTH_URL',
+      key: 'AUTH_URL',
       value: 'http://localhost:3000',
-      description: 'NextAuth.js URL'
-    },
-    {
-      type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_APP_URL',
-      value: 'http://localhost:3000',
-      description: 'Public app URL'
+      description: 'Authentication base URL'
     },
     {
       type: 'ADD_ENV_VAR',

@@ -19,7 +19,7 @@ export const stripeBlueprint: Blueprint = {
     {
       type: 'ADD_SCRIPT',
       name: 'stripe:listen',
-      command: 'stripe listen --forward-to localhost:3000/api/stripe/webhook'
+      command: 'stripe listen --forward-to localhost:3000/api/payment/webhook'
     },
     {
       type: 'ADD_SCRIPT',
@@ -43,8 +43,8 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export const STRIPE_CONFIG = {
   publishableKey: process.env.STRIPE_PUBLISHABLE_KEY!,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-  successUrl: process.env.NEXT_PUBLIC_APP_URL + '/payment/success',
-  cancelUrl: process.env.NEXT_PUBLIC_APP_URL + '/payment/cancel',
+  successUrl: process.env.APP_URL + '/payment/success',
+  cancelUrl: process.env.APP_URL + '/payment/cancel',
   currency: '{{module.parameters.currency}}',
   mode: 'payment' as const,
 };
@@ -85,7 +85,7 @@ export const PRODUCTS = {
 
 // Initialize Stripe on the client side
 export const getStripe = () => {
-  return loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+  return loadStripe(process.env.STRIPE_PUBLISHABLE_KEY!);
 };
 
 // Payment intent creation
@@ -185,13 +185,13 @@ export const createCustomerPortalSession = async (customerId: string) => {
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_APP_URL',
+      key: 'APP_URL',
       value: 'http://localhost:3000',
-      description: 'Public app URL for Stripe redirects'
+      description: 'Application URL for Stripe redirects'
     },
     {
       type: 'ADD_ENV_VAR',
-      key: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+      key: 'STRIPE_PUBLISHABLE_KEY',
       value: 'pk_test_...',
       description: 'Public Stripe publishable key for client-side'
     },
@@ -245,7 +245,7 @@ No specific prerequisites required.
 STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+APP_URL=http://localhost:3000
 \`\`\`
 
 ### Framework Integration
@@ -264,7 +264,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
    - Use the Stripe client utilities provided in \`{{paths.payment_config}}/client.ts\`
    - Implement API routes using your framework's HTTP handling
    - Set up webhook endpoints using your framework's webhook handling
-   - For Next.js integration, use the \`stripe-nextjs-integration\` adapter
+   - For framework integration, use the appropriate \`stripe-{framework}-integration\` adapter
 
 ## Configuration Examples
 

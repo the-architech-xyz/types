@@ -8,7 +8,7 @@
  */
 
 export { CommandRunner } from './command-runner.js';
-export { AgentLogger as Logger } from './logger.js';
+export { AgentLogger } from './logger.js';
 export { 
   displayBanner, 
   displaySuccess, 

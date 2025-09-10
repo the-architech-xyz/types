@@ -4,8 +4,6 @@
  * Main orchestrator that coordinates all agents
  * Reads YAML recipe and delegates to appropriate agents
  */
-import { DecentralizedPathHandler } from '../core/services/path/decentralized-path-handler.js';
-import { AdapterLoader } from '../core/services/adapter/adapter-loader.js';
 import { IntegrationRegistry } from '../core/services/integration/integration-registry.js';
 import { IntegrationExecutor } from '../core/services/integration/integration-executor.js';
 import { BlueprintExecutor } from '../core/services/blueprint/blueprint-executor.js';
@@ -22,25 +20,30 @@ import { EmailAgent } from './core/email-agent.js';
 import { ObservabilityAgent } from './core/observability-agent.js';
 import { ContentAgent } from './core/content-agent.js';
 import { BlockchainAgent } from './core/blockchain-agent.js';
-import { VFSManager } from '../core/services/file-engine/vfs-manager.js';
+import { ModuleLoaderService } from '../core/services/module-loader/index.js';
+import { AgentExecutionService } from '../core/services/agent-execution/index.js';
+import { ErrorHandler } from '../core/services/error/index.js';
+import { Logger, ExecutionTracer } from '../core/services/logging/index.js';
 export class OrchestratorAgent {
     projectManager;
     pathHandler;
     decentralizedPathHandler = null;
-    adapterLoader;
+    moduleLoader;
+    agentExecutor;
     agents;
     integrationRegistry;
     integrationExecutor;
-    vfsManager = null;
     constructor(projectManager) {
         this.projectManager = projectManager;
         this.pathHandler = projectManager.getPathHandler();
-        this.adapterLoader = new AdapterLoader();
+        this.moduleLoader = new ModuleLoaderService();
         this.agents = new Map();
         // Initialize integration services
         this.integrationRegistry = new IntegrationRegistry();
         // Initialize agents (will be reconfigured with decentralized path handler)
         this.initializeAgents();
+        // Initialize agent executor after agents are set up
+        this.agentExecutor = new AgentExecutionService(this.agents);
     }
     /**
      * Initialize all agents
@@ -60,150 +63,200 @@ export class OrchestratorAgent {
         this.agents.set('blockchain', new BlockchainAgent(this.pathHandler));
     }
     /**
-     * Reconfigure all agents with the decentralized path handler and shared VFS
+     * Reconfigure all agents with the decentralized path handler
      */
     reconfigureAgents() {
         if (!this.decentralizedPathHandler) {
             throw new Error('Decentralized path handler not initialized');
         }
-        if (!this.vfsManager) {
-            throw new Error('VFS manager not initialized');
-        }
-        // Update all agents to use the decentralized path handler and shared VFS
-        this.agents.set('framework', new FrameworkAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('database', new DatabaseAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('auth', new AuthAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('ui', new UIAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('testing', new TestingAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('deployment', new DeploymentAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('state', new StateAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('payment', new PaymentAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('email', new EmailAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('observability', new ObservabilityAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('content', new ContentAgent(this.decentralizedPathHandler, this.vfsManager));
-        this.agents.set('blockchain', new BlockchainAgent(this.decentralizedPathHandler, this.vfsManager));
+        // Update all agents to use the decentralized path handler
+        this.agents.set('framework', new FrameworkAgent(this.decentralizedPathHandler));
+        this.agents.set('database', new DatabaseAgent(this.decentralizedPathHandler));
+        this.agents.set('auth', new AuthAgent(this.decentralizedPathHandler));
+        this.agents.set('ui', new UIAgent(this.decentralizedPathHandler));
+        this.agents.set('testing', new TestingAgent(this.decentralizedPathHandler));
+        this.agents.set('deployment', new DeploymentAgent(this.decentralizedPathHandler));
+        this.agents.set('state', new StateAgent(this.decentralizedPathHandler));
+        this.agents.set('payment', new PaymentAgent(this.decentralizedPathHandler));
+        this.agents.set('email', new EmailAgent(this.decentralizedPathHandler));
+        this.agents.set('observability', new ObservabilityAgent(this.decentralizedPathHandler));
+        this.agents.set('content', new ContentAgent(this.decentralizedPathHandler));
+        this.agents.set('blockchain', new BlockchainAgent(this.decentralizedPathHandler));
     }
     /**
      * Execute a complete recipe
      */
     async executeRecipe(recipe) {
-        console.log(`🎯 Orchestrator Agent executing recipe: ${recipe.project.name}`);
+        // Start execution trace
+        const traceId = ExecutionTracer.startTrace('recipe_execution', {
+            projectName: recipe.project.name,
+            moduleCount: recipe.modules.length,
+            hasIntegrations: !!(recipe.integrations && recipe.integrations.length > 0)
+        });
+        Logger.info(`🎯 Orchestrator Agent executing recipe: ${recipe.project.name}`, {
+            traceId,
+            operation: 'recipe_execution',
+            moduleId: recipe.project.name
+        });
         const results = [];
         const errors = [];
         const warnings = [];
         try {
-            // 1. Initialize shared VFS manager
-            this.vfsManager = VFSManager.getInstance(this.pathHandler.getProjectRoot());
-            console.log(`🗂️ Shared VFS initialized for project: ${this.pathHandler.getProjectRoot()}`);
-            // 2. Identify framework adapter and create decentralized path handler
-            const frameworkModule = recipe.modules.find(m => m.category === 'framework');
-            if (!frameworkModule) {
-                throw new Error('No framework module found in recipe. Framework adapter is required.');
+            // 1. Setup framework and create decentralized path handler
+            ExecutionTracer.logOperation(traceId, 'Setting up framework and path handler');
+            const frameworkSetup = await this.moduleLoader.setupFramework(recipe, this.pathHandler);
+            if (!frameworkSetup.success) {
+                throw new Error(frameworkSetup.error);
             }
-            console.log(`🏗️ Loading framework adapter: ${frameworkModule.id}`);
-            // Extract adapter ID from module ID (e.g., "framework/nextjs" -> "nextjs")
-            const adapterId = frameworkModule.id.split('/').pop() || frameworkModule.id;
-            const frameworkAdapter = await this.adapterLoader.loadAdapter(frameworkModule.category, adapterId);
-            // 3. Create decentralized path handler with framework's path declarations
-            this.decentralizedPathHandler = new DecentralizedPathHandler(frameworkAdapter.config, this.pathHandler.getProjectRoot());
-            console.log(`📁 Framework paths configured:`, this.decentralizedPathHandler.getAllPaths());
-            // 4. Reconfigure all agents with the new path handler and shared VFS
+            this.decentralizedPathHandler = frameworkSetup.pathHandler;
+            // 2. Reconfigure all agents with the new path handler
+            ExecutionTracer.logOperation(traceId, 'Reconfiguring agents with new path handler');
             this.reconfigureAgents();
-            // 4. Only create the project directory structure
-            // Framework modules will handle all project setup
+            // 3. Initialize project directory
+            ExecutionTracer.logOperation(traceId, 'Initializing project directory');
             await this.projectManager.initializeProject();
-            console.log('📋 Project directory created - framework modules will handle setup');
-            // 2. Execute modules sequentially
-            for (let i = 0; i < recipe.modules.length; i++) {
-                const module = recipe.modules[i];
+            Logger.info('📋 Project directory created - framework modules will handle setup', {
+                traceId,
+                operation: 'project_initialization'
+            });
+            // 4. Sort modules by execution order
+            ExecutionTracer.logOperation(traceId, 'Sorting modules by execution order');
+            const sortedModules = this.moduleLoader.sortModulesByExecutionOrder(recipe.modules);
+            // 5. Execute modules using the agent execution service
+            const moduleResults = [];
+            for (let i = 0; i < sortedModules.length; i++) {
+                const module = sortedModules[i];
                 if (!module) {
                     errors.push(`Module at index ${i} is undefined`);
                     break;
                 }
-                console.log(`🚀 [${i + 1}/${recipe.modules.length}] Executing module: ${module.id} (${module.category})`);
+                Logger.info(`🚀 [${i + 1}/${sortedModules.length}] Executing module: ${module.id} (${module.category})`, {
+                    traceId,
+                    operation: 'module_execution',
+                    moduleId: module.id,
+                    agentCategory: module.category
+                });
                 try {
-                    // Get the appropriate agent
-                    const agent = this.agents.get(module.category);
-                    if (!agent) {
-                        const error = `No agent found for category: ${module.category}`;
-                        errors.push(error);
-                        console.error(`❌ ${error}`);
+                    // Load adapter for this module
+                    const adapterResult = await this.moduleLoader.loadModuleAdapter(module);
+                    if (!adapterResult.success) {
+                        errors.push(adapterResult.error);
                         break;
                     }
-                    // Load adapter for this module
-                    // Extract adapter ID from module ID (e.g., "auth/better-auth" -> "better-auth")
-                    const moduleAdapterId = module.id.split('/').pop() || module.id;
-                    const adapter = await this.adapterLoader.loadAdapter(module.category, moduleAdapterId);
-                    // Create project context with decentralized path handler and adapter
-                    const context = {
-                        project: {
-                            ...recipe.project,
-                            path: this.pathHandler.getProjectRoot()
-                        },
-                        module: module,
-                        pathHandler: this.decentralizedPathHandler,
-                        adapter: adapter.config,
-                        framework: recipe.project.framework
-                    };
-                    // Execute the module with the agent
-                    const moduleResult = await agent.execute(module, context);
+                    // Create project context
+                    const context = this.moduleLoader.createProjectContext(recipe, module, adapterResult.adapter.config, this.decentralizedPathHandler);
+                    // Execute module using agent execution service
+                    const moduleResult = await this.agentExecutor.executeModule(module, context, adapterResult.adapter.blueprint, this.pathHandler.getProjectRoot());
+                    moduleResults.push(moduleResult);
                     if (moduleResult.success) {
                         results.push(...moduleResult.files);
                         warnings.push(...moduleResult.warnings);
-                        console.log(`✅ Module ${module.id} completed successfully`);
+                        Logger.info(`✅ Module ${module.id} completed successfully`, {
+                            traceId,
+                            operation: 'module_execution',
+                            moduleId: module.id,
+                            agentCategory: module.category,
+                            duration: moduleResult.executionTime,
+                            metadata: { filesCreated: moduleResult.files.length }
+                        });
                     }
                     else {
                         errors.push(...moduleResult.errors);
-                        console.error(`❌ Module ${module.id} failed: ${moduleResult.errors.join(', ')}`);
+                        Logger.error(`❌ Module ${module.id} failed: ${moduleResult.errors.join(', ')}`, {
+                            traceId,
+                            operation: 'module_execution',
+                            moduleId: module.id,
+                            agentCategory: module.category
+                        });
                         // Stop on first failure
                         break;
                     }
                 }
                 catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                    errors.push(`Module ${module.id}: ${errorMessage}`);
-                    console.error(`❌ Module ${module.id} failed: ${errorMessage}`);
+                    const errorResult = ErrorHandler.handleAgentError(error, module.category, module.id);
+                    errors.push(errorResult.error);
+                    Logger.error(`❌ Module ${module.id} failed: ${errorResult.error}`, {
+                        traceId,
+                        operation: 'module_execution',
+                        moduleId: module.id,
+                        agentCategory: module.category
+                    }, error instanceof Error ? error : undefined);
                     // Stop on first failure
                     break;
                 }
             }
             const success = errors.length === 0;
             if (success) {
-                console.log(`🎉 Recipe orchestrated successfully! ${results.length} files created`);
+                Logger.info(`🎉 Recipe orchestrated successfully! ${results.length} files created`, {
+                    traceId,
+                    operation: 'recipe_execution',
+                    metadata: {
+                        filesCreated: results.length,
+                        modulesExecuted: sortedModules.length
+                    }
+                });
+                // Log execution statistics
+                const stats = this.agentExecutor.getExecutionStats(moduleResults);
+                Logger.info(`📊 Execution stats: ${stats.successfulModules}/${stats.totalModules} modules successful`, {
+                    traceId,
+                    operation: 'execution_stats',
+                    metadata: {
+                        successfulModules: stats.successfulModules,
+                        totalModules: stats.totalModules,
+                        totalExecutionTime: stats.totalExecutionTime,
+                        vfsModules: stats.vfsModules,
+                        simpleModules: stats.simpleModules
+                    }
+                });
                 // Execute integration adapters if any are specified
                 if (recipe.integrations && recipe.integrations.length > 0) {
-                    console.log(`🔗 Executing ${recipe.integrations.length} integration adapters...`);
+                    Logger.info(`🔗 Executing ${recipe.integrations.length} integration adapters...`, {
+                        traceId,
+                        operation: 'integration_execution',
+                        metadata: { integrationCount: recipe.integrations.length }
+                    });
                     await this.executeIntegrationAdapters(recipe, results, errors, warnings);
                 }
                 // Create architech.json file
+                ExecutionTracer.logOperation(traceId, 'Creating architech.json configuration file');
                 await this.createArchitechConfig(recipe);
-                // Flush all VFS changes to disk
-                console.log('💾 Flushing all changes to disk...');
-                await this.vfsManager.flushToDisk();
-                console.log('✅ All files written to disk successfully');
                 // Final step: Install all dependencies
                 if (!recipe.options?.skipInstall) {
-                    console.log('📦 Installing dependencies...');
+                    Logger.info('📦 Installing dependencies...', {
+                        traceId,
+                        operation: 'dependency_installation'
+                    });
                     await this.installDependencies();
                 }
             }
             else {
-                console.error(`💥 Recipe orchestration failed with ${errors.length} errors`);
+                Logger.error(`💥 Recipe orchestration failed with ${errors.length} errors`, {
+                    traceId,
+                    operation: 'recipe_execution',
+                    metadata: { errorCount: errors.length }
+                });
             }
+            // End execution trace
+            ExecutionTracer.endTrace(traceId, success);
             return {
                 success,
-                modulesExecuted: success ? recipe.modules.length : 0,
+                modulesExecuted: success ? sortedModules.length : 0,
                 errors,
                 warnings
             };
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            console.error(`💥 Orchestration failed: ${errorMessage}`);
+            const errorResult = ErrorHandler.handleAgentError(error, 'orchestrator', 'recipe_execution');
+            Logger.error(`💥 Orchestration failed: ${errorResult.error}`, {
+                traceId,
+                operation: 'recipe_execution'
+            }, error instanceof Error ? error : undefined);
+            // End execution trace with failure
+            ExecutionTracer.endTrace(traceId, false, error instanceof Error ? error : undefined);
             return {
                 success: false,
                 modulesExecuted: 0,
-                errors: [errorMessage],
+                errors: [errorResult.error],
                 warnings: []
             };
         }
@@ -256,8 +309,8 @@ export class OrchestratorAgent {
      */
     async executeIntegrationAdapters(recipe, results, errors, warnings) {
         try {
-            // Initialize integration executor with shared VFS
-            const blueprintExecutor = new BlueprintExecutor(recipe.project.path || '.', this.vfsManager.getEngine());
+            // Initialize integration executor
+            const blueprintExecutor = new BlueprintExecutor(recipe.project.path || '.');
             this.integrationExecutor = new IntegrationExecutor(blueprintExecutor);
             // Get available modules for validation (extract adapter IDs)
             const availableModules = recipe.modules.map(m => m.id.split('/').pop() || m.id);

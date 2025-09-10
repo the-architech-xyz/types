@@ -1,112 +1,77 @@
-import { SentryClient } from './client';
-
+// Performance monitoring utilities
 export class PerformanceMonitor {
-  private static transactions: Map<string, any> = new Map();
+  private static transactions: Map<string, unknown> = new Map();
 
   /**
-   * Start monitoring a page load
+   * Start a performance transaction
    */
-  static startPageLoad(pageName: string) {
-    const transaction = SentryClient.startTransaction(`page-load-${pageName}`, 'navigation');
-    this.transactions.set(`page-${pageName}`, transaction);
-    return transaction;
+  static startSpan(name: string, op: string, description?: string) {
+    // This will be implemented by the framework-specific integration
+    return { name, op, description };
   }
 
   /**
-   * Finish monitoring a page load
+   * Finish a performance transaction
    */
-  static finishPageLoad(pageName: string) {
-    const transaction = this.transactions.get(`page-${pageName}`);
+  static finishTransaction(name: string) {
+    const transaction = this.transactions.get(name);
     if (transaction) {
-      SentryClient.capturePerformance(transaction);
-      this.transactions.delete(`page-${pageName}`);
+      // This will be implemented by the framework-specific integration
+      this.transactions.delete(name);
     }
   }
 
   /**
-   * Start monitoring an API call
+   * Add a span to a transaction
    */
-  static startApiCall(endpoint: string, method: string = 'GET') {
-    const transaction = SentryClient.startTransaction(`api-${method.toLowerCase()}-${endpoint}`, 'http.client');
-    this.transactions.set(`api-${endpoint}`, transaction);
-    return transaction;
-  }
-
-  /**
-   * Finish monitoring an API call
-   */
-  static finishApiCall(endpoint: string, statusCode?: number) {
-    const transaction = this.transactions.get(`api-${endpoint}`);
+  static addSpan(transactionName: string, spanName: string, op: string) {
+    const transaction = this.transactions.get(transactionName);
     if (transaction) {
-      if (statusCode) {
-        transaction.setData('http.status_code', statusCode);
-      }
-      SentryClient.capturePerformance(transaction);
-      this.transactions.delete(`api-${endpoint}`);
+      // This will be implemented by the framework-specific integration
+      return { name: spanName, op };
+    }
+    return null;
+  }
+
+  /**
+   * Monitor API call performance
+   */
+  static async monitorApiCall<T>(
+    apiName: string,
+    apiCall: () => Promise<T>
+  ): Promise<T> {
+    const span = this.startSpan(`api.${apiName}`, 'http.client');
+    
+    try {
+      const result = await apiCall();
+      // Span automatically handles status
+      return result;
+    } catch (error) {
+      // Span automatically handles error status
+      throw error;
+    } finally {
+      this.finishTransaction(`api.${apiName}`);
     }
   }
 
   /**
-   * Start monitoring a database query
+   * Monitor function execution time
    */
-  static startDatabaseQuery(query: string, table?: string) {
-    const transaction = SentryClient.startTransaction(`db-query-${table || 'unknown'}`, 'db');
-    transaction.setData('db.statement', query);
-    if (table) {
-      transaction.setData('db.table', table);
+  static async monitorFunction<T>(
+    functionName: string,
+    fn: () => Promise<T>
+  ): Promise<T> {
+    const span = this.startSpan(`function.${functionName}`, 'function');
+    
+    try {
+      const result = await fn();
+      // Span automatically handles status
+      return result;
+    } catch (error) {
+      // Span automatically handles error status
+      throw error;
+    } finally {
+      this.finishTransaction(`function.${functionName}`);
     }
-    this.transactions.set(`db-${query}`, transaction);
-    return transaction;
-  }
-
-  /**
-   * Finish monitoring a database query
-   */
-  static finishDatabaseQuery(query: string, rowCount?: number) {
-    const transaction = this.transactions.get(`db-${query}`);
-    if (transaction) {
-      if (rowCount !== undefined) {
-        transaction.setData('db.rows_affected', rowCount);
-      }
-      SentryClient.capturePerformance(transaction);
-      this.transactions.delete(`db-${query}`);
-    }
-  }
-
-  /**
-   * Track web vitals
-   */
-  static trackWebVitals(metric: {
-    name: string;
-    value: number;
-    delta: number;
-    id: string;
-  }) {
-    SentryClient.addBreadcrumb({
-      message: `Web Vital: ${metric.name}`,
-      category: 'web-vitals',
-      level: 'info',
-      data: {
-        value: metric.value,
-        delta: metric.delta,
-        id: metric.id,
-      },
-    });
-  }
-
-  /**
-   * Track custom performance metric
-   */
-  static trackCustomMetric(name: string, value: number, unit: string = 'ms') {
-    SentryClient.addBreadcrumb({
-      message: `Custom Metric: ${name}`,
-      category: 'performance',
-      level: 'info',
-      data: {
-        value,
-        unit,
-        timestamp: Date.now(),
-      },
-    });
   }
 }

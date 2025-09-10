@@ -6,29 +6,27 @@
  */
 
 import { Agent, Module, ProjectContext, AgentResult } from '../../types/agent.js';
+import { BlueprintContext } from '../../types/blueprint-context.js';
 import { AdapterLoader } from '../../core/services/adapter/adapter-loader.js';
 import { BlueprintExecutor } from '../../core/services/blueprint/blueprint-executor.js';
 import { PathHandler } from '../../core/services/path/path-handler.js';
-import { VFSManager } from '../../core/services/file-engine/vfs-manager.js';
 
 export abstract class SimpleAgent implements Agent {
   public category: string;
   protected adapterLoader: AdapterLoader;
   protected blueprintExecutor?: BlueprintExecutor;
   protected pathHandler: PathHandler;
-  protected vfsManager: VFSManager | undefined;
 
-  constructor(category: string, pathHandler: PathHandler, vfsManager?: VFSManager) {
+  constructor(category: string, pathHandler: PathHandler) {
     this.category = category;
     this.pathHandler = pathHandler;
-    this.vfsManager = vfsManager;
     this.adapterLoader = new AdapterLoader();
   }
 
   /**
    * Execute a module (implemented by subclasses)
    */
-  abstract execute(module: Module, context: ProjectContext): Promise<AgentResult>;
+  abstract execute(module: Module, context: ProjectContext, blueprintContext?: BlueprintContext): Promise<AgentResult>;
 
   /**
    * Get the category this agent handles
@@ -40,7 +38,7 @@ export abstract class SimpleAgent implements Agent {
   /**
    * Load and execute an adapter for a module
    */
-  protected async executeAdapter(module: Module, context: ProjectContext): Promise<AgentResult> {
+  protected async executeAdapter(module: Module, context: ProjectContext, blueprintContext?: BlueprintContext): Promise<AgentResult> {
     try {
       console.log(`  🔧 Loading adapter: ${module.category}/${module.id}`);
       
@@ -50,15 +48,11 @@ export abstract class SimpleAgent implements Agent {
       
       console.log(`  📋 Executing blueprint: ${adapter.blueprint.name}`);
       
-      // Use shared VFS if available, otherwise create new one
-      if (this.vfsManager) {
-        this.blueprintExecutor = new BlueprintExecutor(context.project.path || '.', this.vfsManager.getEngine());
-      } else {
-        this.blueprintExecutor = new BlueprintExecutor(context.project.path || '.');
-      }
+      // Create blueprint executor
+      this.blueprintExecutor = new BlueprintExecutor(context.project.path || '.');
       
-      // Execute the blueprint
-      const result = await this.blueprintExecutor!.executeBlueprint(adapter.blueprint, context);
+      // Execute the blueprint with blueprint context
+      const result = await this.blueprintExecutor!.executeBlueprint(adapter.blueprint, context, blueprintContext);
       
       if (result.success) {
         console.log(`  ✅ Adapter ${module.id} completed successfully`);

@@ -10,13 +10,12 @@ import { ProjectContext, AgentResult } from '../../types/agent.js';
 import { Module } from '../../types/recipe.js';
 import { AdapterLoader } from '../../core/services/adapter/adapter-loader.js';
 import { BlueprintExecutor } from '../../core/services/blueprint/blueprint-executor.js';
-import { VFSManager } from '../../core/services/file-engine/vfs-manager.js';
 
 export class ContentAgent extends SimpleAgent {
   public category = 'content';
 
-  constructor(pathHandler: any, vfsManager?: VFSManager) {
-    super('content', pathHandler, vfsManager);
+  constructor(pathHandler: any) {
+    super('content', pathHandler);
   }
 
   /**

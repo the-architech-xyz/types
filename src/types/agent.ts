@@ -4,9 +4,11 @@
  * Simple agent structure for sequential execution
  */
 
+import { BlueprintContext } from './blueprint-context.js';
+
 export interface Agent {
   category: string;
-  execute(module: Module, context: ProjectContext): Promise<AgentResult>;
+  execute(module: Module, context: ProjectContext, blueprintContext?: BlueprintContext): Promise<AgentResult>;
 }
 
 export interface Module {
@@ -14,6 +16,7 @@ export interface Module {
   category: string;
   version: string;
   parameters: Record<string, any>;
+  externalFiles?: string[];
 }
 
 export interface ProjectContext {
@@ -30,6 +33,21 @@ export interface ProjectContext {
   pathHandler?: any; // DecentralizedPathHandler - will be properly typed later
   adapter?: any; // AdapterConfig - will be properly typed later
   framework: string; // Framework being used (e.g., 'nextjs', 'react', 'vue')
+  cliArgs?: Record<string, any>;
+  projectRoot?: string;
+  // Cross-module access for template processing
+  modules?: Record<string, Module>;
+  databaseModule?: Module;
+  paymentModule?: Module;
+  authModule?: Module;
+  emailModule?: Module;
+  observabilityModule?: Module;
+  stateModule?: Module;
+  uiModule?: Module;
+  testingModule?: Module;
+  deploymentModule?: Module;
+  contentModule?: Module;
+  blockchainModule?: Module;
 }
 
 export interface AgentResult {
