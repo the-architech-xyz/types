@@ -1,63 +1,17 @@
 {
   "id": "stripe-drizzle-integration",
   "name": "Stripe Drizzle Integration",
-  "description": "Complete Drizzle ORM integration for Stripe with payment schema, webhook logging, and database management",
+  "description": "Integrates Stripe with Drizzle ORM for database operations",
+  "version": "1.0.0",
   "category": "integration",
-  "tech_stack": {
-    "framework": "agnostic",
-    "adapters": ["stripe", "drizzle"]
-  },
-  "requirements": {
-    "modules": ["stripe", "drizzle"],
-    "dependencies": []
-  },
-  "provides": {
-    "files": [
-      "src/lib/db/schema/stripe.ts",
-      "src/lib/db/migrations/stripe.sql",
-      "src/lib/stripe/drizzle-adapter.ts",
-      "src/lib/stripe/webhook-logger.ts",
-      "src/lib/stripe/payment-tracker.ts"
-    ],
-    "components": [],
-    "pages": []
-  },
-  "sub_features": {
-    "paymentSchema": {
-      "name": "Payment Schema",
-      "description": "Database schema for payments, customers, and transactions",
-      "type": "boolean",
-      "default": true
-    },
-    "subscriptionSchema": {
-      "name": "Subscription Schema",
-      "description": "Database schema for subscriptions and billing",
-      "type": "boolean",
-      "default": false
-    },
-    "webhookLogs": {
-      "name": "Webhook Logs",
-      "description": "Webhook event logging and tracking",
-      "type": "boolean",
-      "default": true
-    },
-    "migrations": {
-      "name": "Database Migrations",
-      "description": "SQL migrations for Stripe tables",
-      "type": "boolean",
-      "default": true
-    },
-    "indexes": {
-      "name": "Database Indexes",
-      "description": "Performance indexes for Stripe queries",
-      "type": "boolean",
-      "default": true
-    },
-    "paymentTracking": {
-      "name": "Payment Tracking",
-      "description": "Payment status tracking and analytics",
-      "type": "boolean",
-      "default": false
-    }
-  }
+  "type": "feature",
+  "dependencies": [
+    "stripe",
+    "drizzle"
+  ],
+  "features": [
+    "payment-tracking",
+    "subscription-management",
+    "webhook-logging"
+  ]
 }

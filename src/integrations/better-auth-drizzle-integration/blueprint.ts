@@ -4,34 +4,33 @@ export const blueprint: Blueprint = {
   id: 'better-auth-drizzle-integration',
   name: 'Better Auth Drizzle Integration',
   description: 'Complete Drizzle ORM integration for Better Auth',
-  version: '1.0.0',
+  version: '2.0.0',
   actions: [
-    // Drizzle Adapter - only create if it doesn't exist
+    // Install Better Auth Drizzle adapter
     {
-      type: 'CREATE_FILE',
-      path: 'src/lib/auth/drizzle-adapter.ts',
-      content: `import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from '@/lib/db';
-import { users, sessions, accounts, verificationTokens } from '@/lib/db/schema/auth';
-
-export const drizzleAdapterConfig = drizzleAdapter(db, {
-  users,
-  sessions,
-  accounts,
-  verificationTokens,
-});
-`,
-      condition: '{{#if integration.features.adapterLogic}}'
+      type: 'INSTALL_PACKAGES',
+      packages: ['better-auth'],
+      isDev: false
     },
-
-    // Auth Schema - only create if it doesn't exist
+    
+    // PURE MODIFIER: Enhance the Drizzle schema with auth tables
     {
-      type: 'CREATE_FILE',
-      path: 'src/lib/db/schema/auth.ts',
-      content: `import { pgTable, text, timestamp, boolean, integer, primaryKey } from 'drizzle-orm/pg-core';
-import { createId } from '@paralleldrive/cuid2';
-
-export const users = pgTable('users', {
+      type: 'ENHANCE_FILE',
+      path: 'src/lib/db/schema.ts',
+      condition: '{{#if integration.features.userSchema}}',
+      modifier: 'ts-module-enhancer',
+      params: {
+        importsToAdd: [
+          { name: 'boolean', from: 'drizzle-orm/pg-core', type: 'import' },
+          { name: 'integer', from: 'drizzle-orm/pg-core', type: 'import' },
+          { name: 'primaryKey', from: 'drizzle-orm/pg-core', type: 'import' },
+          { name: 'createId', from: '@paralleldrive/cuid2', type: 'import' }
+        ],
+        statementsToAppend: [
+          {
+            type: 'raw',
+            content: `// Better Auth tables
+export const authUsers = pgTable('auth_users', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
@@ -42,10 +41,21 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const accounts = pgTable('accounts', {
+export const authSessions = pgTable('auth_sessions', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  sessionToken: text('session_token').notNull().unique(),
   userId: text('user_id')
     .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const authAccounts = pgTable('auth_accounts', {
+  userId: text('user_id')
+    .notNull()
+    .references(() => authUsers.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
   provider: text('provider').notNull(),
   providerAccountId: text('provider_account_id').notNull(),
@@ -60,55 +70,57 @@ export const accounts = pgTable('accounts', {
   pk: primaryKey({ columns: [account.provider, account.providerAccountId] }),
 }));
 
-export const sessions = pgTable('sessions', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  sessionToken: text('session_token').notNull().unique(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  expires: timestamp('expires').notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
-
-export const verificationTokens = pgTable('verification_tokens', {
+export const authVerificationTokens = pgTable('auth_verification_tokens', {
   identifier: text('identifier').notNull(),
   token: text('token').notNull(),
   expires: timestamp('expires').notNull(),
 }, (vt) => ({
   pk: primaryKey({ columns: [vt.identifier, vt.token] }),
-}));
-
-// Indexes for better performance
-export const usersEmailIndex = pgIndex('users_email_idx').on(users.email);
-export const sessionsTokenIndex = pgIndex('sessions_token_idx').on(sessions.sessionToken);
-export const accountsUserIdIndex = pgIndex('accounts_user_id_idx').on(accounts.userId);
-export const verificationTokensTokenIndex = pgIndex('verification_tokens_token_idx').on(verificationTokens.token);
-`,
-      condition: '{{#if integration.features.userSchema}}'
+}));`
+          }
+        ]
+      }
     },
-
-    // Add Drizzle import to auth config
-    {
-      type: 'ADD_TS_IMPORT',
-      path: 'src/lib/auth/config.ts',
-      imports: [
-        {
-          moduleSpecifier: './drizzle-adapter',
-          namedImports: ['drizzleAdapterConfig']
-        }
-      ],
-      condition: '{{#if integration.features.adapterLogic}}'
-    },
-
-    // Merge database configuration into auth config
+    
+    // PURE MODIFIER: Enhance the auth config with Drizzle adapter
     {
       type: 'ENHANCE_FILE',
       path: 'src/lib/auth/config.ts',
-      modifier: 'drizzle-config-merger',
+      condition: '{{#if integration.features.adapterLogic}}',
+      modifier: 'ts-module-enhancer',
       params: {
-        configObjectName: 'auth',
-        payload: {
+        importsToAdd: [
+          { name: 'drizzleAdapter', from: 'better-auth/adapters/drizzle', type: 'import' },
+          { name: 'db', from: '@/lib/db', type: 'import' },
+          { name: 'authUsers', from: '@/lib/db/schema', type: 'import' },
+          { name: 'authSessions', from: '@/lib/db/schema', type: 'import' },
+          { name: 'authAccounts', from: '@/lib/db/schema', type: 'import' },
+          { name: 'authVerificationTokens', from: '@/lib/db/schema', type: 'import' }
+        ],
+        statementsToAppend: [
+          {
+            type: 'raw',
+            content: `// Drizzle adapter configuration
+const drizzleAdapterConfig = drizzleAdapter(db, {
+  users: authUsers,
+  sessions: authSessions,
+  accounts: authAccounts,
+  verificationTokens: authVerificationTokens,
+});`
+          }
+        ]
+      }
+    },
+    
+    // PURE MODIFIER: Enhance the auth config with database integration
+    {
+      type: 'ENHANCE_FILE',
+      path: 'src/lib/auth/config.ts',
+      condition: '{{#if integration.features.adapterLogic}}',
+      modifier: 'js-config-merger',
+      params: {
+        exportName: 'auth',
+        propertiesToMerge: {
           database: 'drizzleAdapterConfig',
           emailAndPassword: {
             enabled: true,
@@ -137,62 +149,35 @@ export const verificationTokensTokenIndex = pgIndex('verification_tokens_token_i
               },
             },
           },
-        }
-      },
-      condition: '{{#if integration.features.adapterLogic}}'
+        },
+        mergeStrategy: 'deep'
+      }
     },
-
-    // Add auth schema to Drizzle schema
+    
+    // Add environment variables for social providers
     {
-      type: 'ENHANCE_FILE',
-      path: 'src/lib/db/schema.ts',
-      modifier: 'drizzle-schema-adder',
-      params: {
-        schemaDefinitions: [
-          `export const users = pgTable('users', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  name: text('name').notNull(),
-  email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').notNull().default(false),
-  image: text('image'),
-  role: text('role').notNull().default('user'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});`,
-          `export const sessions = pgTable('sessions', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  sessionToken: text('session_token').notNull().unique(),
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expires: timestamp('expires').notNull(),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});`,
-          `export const accounts = pgTable('accounts', {
-  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(),
-  provider: text('provider').notNull(),
-  providerAccountId: text('provider_account_id').notNull(),
-  refresh_token: text('refresh_token'),
-  access_token: text('access_token'),
-  expires_at: integer('expires_at'),
-  token_type: text('token_type'),
-  scope: text('scope'),
-  id_token: text('id_token'),
-  session_state: text('session_state'),
-}, (account) => ({
-  pk: primaryKey({ columns: [account.provider, account.providerAccountId] }),
-}));`,
-          `export const verificationTokens = pgTable('verification_tokens', {
-  identifier: text('identifier').notNull(),
-  token: text('token').notNull(),
-  expires: timestamp('expires').notNull(),
-}, (vt) => ({
-  pk: primaryKey({ columns: [vt.identifier, vt.token] }),
-}));`
-        ],
-        imports: ['pgTable', 'text', 'timestamp', 'boolean', 'integer', 'primaryKey', 'createId']
-      },
-      condition: '{{#if integration.features.userSchema}}'
+      type: 'ADD_ENV_VAR',
+      key: 'GOOGLE_CLIENT_ID',
+      value: 'your-google-client-id',
+      description: 'Google OAuth client ID'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'GOOGLE_CLIENT_SECRET',
+      value: 'your-google-client-secret',
+      description: 'Google OAuth client secret'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'GITHUB_CLIENT_ID',
+      value: 'your-github-client-id',
+      description: 'GitHub OAuth client ID'
+    },
+    {
+      type: 'ADD_ENV_VAR',
+      key: 'GITHUB_CLIENT_SECRET',
+      value: 'your-github-client-secret',
+      description: 'GitHub OAuth client secret'
     }
   ]
 };

@@ -6,27 +6,68 @@ const zustandNextjsIntegrationBlueprint: Blueprint = {
   description: 'Complete state management integration for Next.js applications',
   version: '1.0.0',
   actions: [
-    // Enhance existing Zustand files with Next.js-specific functionality
+    // PURE MODIFIER: Enhance existing Zustand files with Next.js-specific functionality
     {
       type: 'ENHANCE_FILE',
       path: 'src/lib/stores/index.ts',
-      modifier: 'drizzle-config-merger',
+      modifier: 'ts-module-enhancer',
       params: {
-        configObjectName: 'stores',
-        payload: {
-          // Add Next.js-specific Zustand utilities
-          useAuthStore: '() => { /* Next.js auth store logic */ }',
-          useUIStore: '() => { /* Next.js UI store logic */ }',
-          useThemeStore: '() => { /* Next.js theme store logic */ }',
-          useNotificationStore: '() => { /* Next.js notification store logic */ }',
-          // Add Next.js-specific store utilities
-          createStore: '(initialState: any) => { /* Next.js store creation logic */ }',
-          withPersistence: '(store: any) => { /* Next.js persistence logic */ }',
-          withDevtools: '(store: any) => { /* Next.js devtools logic */ }',
-          // Add Next.js-specific SSR utilities
-          initializeStores: 'async () => { /* Next.js store initialization logic */ }',
-          getServerState: '() => { /* Next.js server state logic */ }'
-        }
+        importsToAdd: [
+          { name: 'useEffect', from: 'react', type: 'import' },
+          { name: 'useState', from: 'react', type: 'import' }
+        ],
+        statementsToAppend: [
+          {
+            type: 'raw',
+            content: `// Next.js specific Zustand utilities
+export const useAuthStore = () => {
+  // Next.js auth store logic
+  return { user: null, isAuthenticated: false };
+};
+
+export const useUIStore = () => {
+  // Next.js UI store logic
+  return { theme: 'light', sidebarOpen: false };
+};
+
+export const useThemeStore = () => {
+  // Next.js theme store logic
+  return { mode: 'light', toggleMode: () => {} };
+};
+
+export const useNotificationStore = () => {
+  // Next.js notification store logic
+  return { notifications: [], addNotification: () => {} };
+};
+
+// Next.js specific store utilities
+export const createStore = (initialState: any) => {
+  // Next.js store creation logic
+  return { ...initialState };
+};
+
+export const withPersistence = (store: any) => {
+  // Next.js persistence logic
+  return store;
+};
+
+export const withDevtools = (store: any) => {
+  // Next.js devtools logic
+  return store;
+};
+
+// Next.js specific SSR utilities
+export const initializeStores = async () => {
+  // Next.js store initialization logic
+  console.log('Initializing Zustand stores for SSR');
+};
+
+export const getServerState = () => {
+  // Next.js server state logic
+  return {};
+};`
+          }
+        ]
       },
       condition: '{{#if integration.features.authStore}}'
     },

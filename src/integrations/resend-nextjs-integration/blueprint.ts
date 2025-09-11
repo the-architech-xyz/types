@@ -25,17 +25,21 @@ const resendNextjsIntegrationBlueprint: Blueprint = {
       value: 'noreply@yourdomain.com',
       description: 'Default from email address'
     },
-    // API Routes
+    // PURE MODIFIER: Enhance email server with Next.js API routes
     {
-      type: 'CREATE_FILE',
-      path: 'src/app/api/email/send/route.ts',
+      type: 'ENHANCE_FILE',
+      path: 'src/lib/email/server.ts',
       condition: '{{#if integration.features.apiRoutes}}',
-      content: `import { NextRequest, NextResponse } from 'next/server';
-import { Resend } from 'resend';
-import { sendEmail } from '@/lib/email/server';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
+      modifier: 'ts-module-enhancer',
+      params: {
+        importsToAdd: [
+          { name: 'NextRequest', from: 'next/server', type: 'import' },
+          { name: 'NextResponse', from: 'next/server', type: 'import' }
+        ],
+        statementsToAppend: [
+          {
+            type: 'raw',
+            content: `// Next.js API route handlers for email functionality
 export async function POST(request: NextRequest) {
   try {
     const { to, subject, html, text, from } = await request.json();
@@ -68,6 +72,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }`
+          }
+        ]
+      }
     },
     {
       type: 'CREATE_FILE',

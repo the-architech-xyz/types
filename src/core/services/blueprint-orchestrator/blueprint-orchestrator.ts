@@ -10,7 +10,6 @@ import { ProjectContext } from '../../../types/agent.js';
 import { BlueprintContext } from '../../../types/blueprint-context.js';
 import { FileModificationEngine } from '../file-engine/index.js';
 import { getModifierRegistry } from '../modifiers/modifier-registry.js';
-import { registerAllModifiers } from '../modifiers/register-modifiers.js';
 import { TemplateService } from '../template/index.js';
 import { ErrorHandler, ErrorCode } from '../error/index.js';
 import { TsFileModifier, ImportStructure, DeepMergeTarget, DeepMergeSource } from '../../../types/common.js';

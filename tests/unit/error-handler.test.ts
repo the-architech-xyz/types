@@ -46,7 +46,7 @@ describe('ErrorHandler', () => {
       const success = ErrorHandler.createSuccess(
         { operation: 'test_operation' },
         'Test success message',
-        { data: 'test' }
+        'test'
       );
 
       expect(success.success).toBe(true);

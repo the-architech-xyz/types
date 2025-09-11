@@ -114,7 +114,8 @@ describe('TemplateService', () => {
     it('should skip variables when disabled', () => {
       const template = 'Hello {{project.name}}!';
       const result = TemplateService.processTemplate(template, mockContext, {
-        processVariables: false
+        processVariables: false,
+        processPathVariables: false
       });
       expect(result).toBe('Hello {{project.name}}!');
     });

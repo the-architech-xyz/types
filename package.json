@@ -74,9 +74,11 @@
     "@types/inquirer": "^9.0.8",
     "@types/node": "^20.19.11",
     "@types/pg": "^8.15.5",
+    "@vitest/ui": "^3.2.4",
     "drizzle-kit": "^0.31.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=16.0.0"

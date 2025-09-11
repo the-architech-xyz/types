@@ -14,6 +14,8 @@ import {
   ErrorHandlerOptions 
 } from './error-types.js';
 
+export { ErrorCode } from './error-types.js';
+
 export class ErrorHandler {
   private static options: Required<ErrorHandlerOptions> = {
     includeStackTraces: false,
@@ -275,7 +277,7 @@ export class ErrorHandler {
   private static determineActionErrorCode(error: unknown, actionType: string): ErrorCode {
     if (actionType.includes('ENHANCE_FILE')) return ErrorCode.MODIFIER_EXECUTION_ERROR;
     if (actionType.includes('MERGE_JSON')) return ErrorCode.BLUEPRINT_VALIDATION_ERROR;
-    if (actionType.includes('CREATE_FILE')) return ErrorCode.FILE_WRITE_ERROR;
+    // For general action execution errors, use ACTION_EXECUTION_ERROR
     return ErrorCode.ACTION_EXECUTION_ERROR;
   }
 
