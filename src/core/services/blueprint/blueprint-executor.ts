@@ -13,6 +13,7 @@ import { BlueprintContext } from '../../../types/blueprint-context.js';
 import { CommandRunner } from '../../cli/command-runner.js';
 import { logger } from '../../utils/logger.js';
 import { BlueprintOrchestrator } from '../blueprint-orchestrator/index.js';
+import { VirtualFileSystem } from '../file-engine/virtual-file-system.js';
 import { FileModificationEngine } from '../file-engine/file-modification-engine.js';
 import { TemplateService } from '../template/index.js';
 
@@ -35,6 +36,17 @@ export class BlueprintExecutor {
     const files: string[] = [];
     const errors: string[] = [];
     const warnings: string[] = [];
+    
+    // Create a new VFS for each blueprint execution (VFS per blueprint)
+    let vfs: VirtualFileSystem;
+    let shouldFlushVFS = false;
+    
+    if (blueprintContext) {
+      vfs = blueprintContext.vfs;
+    } else {
+      vfs = new (await import('../file-engine/virtual-file-system.js')).VirtualFileSystem(`blueprint-${blueprint.id}`, context.project.path || '.');
+      shouldFlushVFS = true;
+    }
     
     for (let i = 0; i < blueprint.actions.length; i++) {
       const action = blueprint.actions[i];
@@ -62,30 +74,18 @@ export class BlueprintExecutor {
       this.currentAction = action;
       
       try {
-        // Use orchestrator for all semantic actions
-        if (blueprintContext) {
-          const result = await this.orchestrator.executeSemanticAction(action, context, blueprintContext);
-          
-          if (result.success) {
-            files.push(...result.files);
-            warnings.push(...result.warnings);
-          } else {
-            errors.push(...result.errors);
-          }
+        // Use orchestrator for all semantic actions with the shared VFS
+        const result = await this.orchestrator.executeSemanticAction(action, context, {
+          vfs,
+          projectRoot: context.project.path || '.',
+          externalFiles: []
+        });
+        
+        if (result.success) {
+          files.push(...result.files);
+          warnings.push(...result.warnings);
         } else {
-          // Fallback for backward compatibility
-          const result = await this.orchestrator.executeSemanticAction(action, context, {
-            vfs: new (await import('../file-engine/virtual-file-system.js')).VirtualFileSystem(),
-            projectRoot: context.project.path || '.',
-            externalFiles: []
-          });
-          
-          if (result.success) {
-            files.push(...result.files);
-            warnings.push(...result.warnings);
-          } else {
-            errors.push(...result.errors);
-          }
+          errors.push(...result.errors);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -93,10 +93,18 @@ export class BlueprintExecutor {
       }
     }
     
-    const success = errors.length === 0;
+    // Flush VFS to disk if we created it (VFS per blueprint)
+    if (shouldFlushVFS) {
+      try {
+        await vfs.flushToDisk();
+        console.log(`✅ Blueprint VFS flushed to disk`);
+      } catch (error) {
+        console.error(`❌ Failed to flush VFS:`, error);
+        errors.push(`Failed to flush VFS: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
     
-    // VFS is now managed per-blueprint by the OrchestratorAgent
-    // No need to flush here as it's handled at the blueprint level
+    const success = errors.length === 0;
     
     return {
       success,
@@ -105,6 +113,7 @@ export class BlueprintExecutor {
       warnings
     };
   }
+
 
   /**
    * Process template variables in content

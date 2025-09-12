@@ -28,7 +28,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: '{{module.parameters.environment}}',
-    setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ['./tests/setup/setup.ts'],
     {{#if module.parameters.watch}}
     watch: true,
     {{/if}}
@@ -45,7 +45,7 @@ export default defineConfig({
       },
       exclude: [
         'node_modules/',
-        'src/test/',
+        'tests/setup/',
         '**/*.d.ts',
         '**/*.config.*',
         '**/coverage/**',
@@ -72,7 +72,7 @@ coverage/
     },
     {
       type: 'CREATE_FILE',
-      path: 'src/__tests__/coverage.test.ts',
+      path: 'tests/unit/coverage.test.ts',
       content: `import { describe, it, expect } from 'vitest'
 
 describe('Coverage Example', () => {

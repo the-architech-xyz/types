@@ -58,7 +58,7 @@ export class FileModificationEngine {
     
     // First check VFS
     if (this.vfs.fileExists(fullPath)) {
-      return this.vfs.readFile(fullPath);
+      return await this.vfs.readFile(fullPath);
     }
     
     // Fallback to disk
@@ -71,7 +71,7 @@ export class FileModificationEngine {
   async overwriteFile(filePath: string, content: string): Promise<FileModificationResult> {
     try {
       const fullPath = this.resolvePath(filePath);
-      this.vfs.overwriteFile(fullPath, content);
+      await this.vfs.writeFile(fullPath, content);
       
       return {
         success: true,
@@ -92,7 +92,7 @@ export class FileModificationEngine {
   async appendToFile(filePath: string, content: string): Promise<FileModificationResult> {
     try {
       const fullPath = this.resolvePath(filePath);
-      this.vfs.appendToFile(fullPath, content);
+      await this.vfs.appendToFile(fullPath, content);
       
       return {
         success: true,
@@ -113,7 +113,7 @@ export class FileModificationEngine {
   async prependToFile(filePath: string, content: string): Promise<FileModificationResult> {
     try {
       const fullPath = this.resolvePath(filePath);
-      this.vfs.prependToFile(fullPath, content);
+      await this.vfs.prependToFile(fullPath, content);
       
       return {
         success: true,
@@ -139,14 +139,14 @@ export class FileModificationEngine {
       let existingContent = {};
       if (this.vfs.fileExists(fullPath)) {
         const content = this.vfs.readFile(fullPath);
-        existingContent = JSON.parse(content);
+        existingContent = JSON.parse(await content);
       } else {
         // File not in VFS, try to read from disk and load into VFS
         try {
           const diskContent = await fs.readFile(fullPath, 'utf-8');
           existingContent = JSON.parse(diskContent);
           // Load the file into VFS so future operations can work with it
-          this.vfs.overwriteFile(fullPath, diskContent);
+          await this.vfs.writeFile(fullPath, diskContent);
         } catch (diskError) {
           // File doesn't exist on disk either, start with empty object
           existingContent = {};
@@ -157,7 +157,7 @@ export class FileModificationEngine {
       const mergedContent = merge(existingContent, contentToMerge);
       
       // Write back to VFS
-      this.vfs.overwriteFile(fullPath, JSON.stringify(mergedContent, null, 2));
+      await this.vfs.writeFile(fullPath, JSON.stringify(mergedContent, null, 2));
       
       return {
         success: true,
@@ -185,7 +185,7 @@ export class FileModificationEngine {
       // Read existing content
       let existingContent = '';
       if (this.vfs.fileExists(fullPath)) {
-        existingContent = this.vfs.readFile(fullPath);
+        existingContent = await this.vfs.readFile(fullPath);
       }
       
       // Create ts-morph project
@@ -199,7 +199,7 @@ export class FileModificationEngine {
       const modifiedContent = sourceFile.getFullText();
       
       // Write back to VFS
-      this.vfs.overwriteFile(fullPath, modifiedContent);
+      await this.vfs.writeFile(fullPath, modifiedContent);
       
       return {
         success: true,
@@ -243,7 +243,8 @@ export class FileModificationEngine {
    * Get operation history
    */
   getOperations() {
-    return this.vfs.getOperations();
+    // Return empty array since we removed operations tracking
+    return [];
   }
 
   /**

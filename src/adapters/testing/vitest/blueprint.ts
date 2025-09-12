@@ -28,7 +28,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ['./tests/setup/setup.ts'],
   },
   resolve: {
     alias: {
@@ -39,7 +39,7 @@ export default defineConfig({
     },
     {
       type: 'CREATE_FILE',
-      path: 'src/test/setup.ts',
+      path: 'tests/setup/setup.ts',
       content: `import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
@@ -64,7 +64,7 @@ vi.mock('@/lib/router', () => ({
     },
     {
       type: 'CREATE_FILE',
-      path: 'src/test/utils.tsx',
+      path: 'tests/setup/utils.tsx',
       content: `import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 
@@ -83,9 +83,9 @@ export { customRender as render }`
     },
     {
       type: 'CREATE_FILE',
-      path: 'src/__tests__/example.test.tsx',
+      path: 'tests/unit/example.test.tsx',
       content: `import { describe, it, expect } from 'vitest'
-import { render, screen } from '../test/utils'
+import { render, screen } from '../setup/utils'
 
 describe('Example Test', () => {
   it('should render hello world', () => {

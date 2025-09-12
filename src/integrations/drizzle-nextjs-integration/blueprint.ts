@@ -107,6 +107,7 @@ export const validateRecord = async (record: any) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/db/migrate/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },
@@ -136,6 +137,7 @@ export const validateRecord = async (record: any) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/db/seed/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },

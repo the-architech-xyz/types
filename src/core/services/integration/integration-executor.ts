@@ -7,6 +7,7 @@
 import { IntegrationAdapter } from '@/types/integration.js';
 import { ProjectContext } from '@/types/agent.js';
 import { BlueprintExecutor } from '../blueprint/blueprint-executor.js';
+import { VirtualFileSystem } from '../file-engine/virtual-file-system.js';
 
 export class IntegrationExecutor {
   private blueprintExecutor: BlueprintExecutor;
@@ -50,6 +51,7 @@ export class IntegrationExecutor {
     
     console.log(`Integration adapter completed: ${integration.name}`);
   }
+
 
   /**
    * Merge user features with integration defaults

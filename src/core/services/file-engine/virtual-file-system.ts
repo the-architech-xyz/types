@@ -1,9 +1,12 @@
 /**
- * Virtual File System (VFS)
+ * Simple & Robust Virtual File System (VFS)
  * 
- * In-memory file system that tracks all file operations before writing to disk.
- * This ensures atomic operations and prevents partial writes.
+ * Pragmatic VFS that handles lazy loading, blueprint isolation, and basic conflict resolution.
+ * Focuses on reliability over architectural purity.
  */
+
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 export interface VFSFile {
   path: string;
@@ -13,144 +16,150 @@ export interface VFSFile {
 }
 
 export class VirtualFileSystem {
-  private files: Map<string, VFSFile> = new Map();
-  private operations: VFSOperation[] = [];
+  private files: Map<string, string> = new Map();
+  private projectRoot: string;
+  private blueprintId: string;
+
+  constructor(blueprintId: string, projectRoot: string) {
+    this.blueprintId = blueprintId;
+    this.projectRoot = projectRoot;
+    console.log(`🗂️ Created VFS for blueprint: ${blueprintId} in ${projectRoot}`);
+  }
 
   /**
-   * Create a new file in the VFS
+   * Lazy loading - read file from VFS or load from disk
    */
-  createFile(path: string, content: string): void {
-    const normalizedPath = this.normalizePath(path);
+  async readFile(filePath: string): Promise<string> {
+    const normalizedPath = this.normalizePath(filePath);
+    
+    if (!this.files.has(normalizedPath)) {
+      // Lazy load from disk
+      const fullPath = path.join(this.projectRoot, normalizedPath);
+      try {
+        const content = await fs.readFile(fullPath, 'utf-8');
+        this.files.set(normalizedPath, content);
+        console.log(`📖 VFS: Lazy loaded ${normalizedPath}`);
+      } catch (error) {
+        throw new Error(`File not found: ${normalizedPath} (${error instanceof Error ? error.message : 'Unknown error'})`);
+      }
+    }
+    
+    return this.files.get(normalizedPath)!;
+  }
+
+  /**
+   * Write file with smart conflict resolution
+   */
+  async writeFile(filePath: string, content: string): Promise<void> {
+    const normalizedPath = this.normalizePath(filePath);
+    
+    if (this.files.has(normalizedPath) && normalizedPath.endsWith('.json')) {
+      // Smart JSON merge
+      try {
+        const existing = JSON.parse(this.files.get(normalizedPath)!);
+        const newContent = JSON.parse(content);
+        const merged = { ...existing, ...newContent };
+        this.files.set(normalizedPath, JSON.stringify(merged, null, 2));
+        console.log(`🔄 VFS: Merged JSON ${normalizedPath}`);
+      } catch (error) {
+        // If JSON merge fails, overwrite
+        this.files.set(normalizedPath, content);
+        console.log(`⚠️ VFS: JSON merge failed, overwrote ${normalizedPath}`);
+      }
+    } else {
+      // Simple overwrite for non-JSON files
+      this.files.set(normalizedPath, content);
+      console.log(`✏️ VFS: Wrote ${normalizedPath}`);
+    }
+  }
+
+  /**
+   * Create a new file
+   */
+  async createFile(filePath: string, content: string): Promise<void> {
+    const normalizedPath = this.normalizePath(filePath);
     
     if (this.files.has(normalizedPath)) {
       throw new Error(`File already exists: ${normalizedPath}`);
     }
 
-    const file: VFSFile = {
-      path: normalizedPath,
-      content,
-      exists: true,
-      lastModified: new Date()
-    };
-
-    this.files.set(normalizedPath, file);
-    this.operations.push({
-      type: 'create',
-      path: normalizedPath,
-      content,
-      timestamp: new Date()
-    });
-    
-    console.log(`  🗂️ VFS: Created file ${normalizedPath} (${this.files.size} total files)`);
-  }
-
-  /**
-   * Read file content from VFS
-   */
-  readFile(path: string): string {
-    const normalizedPath = this.normalizePath(path);
-    const file = this.files.get(normalizedPath);
-    
-    if (!file || !file.exists) {
-      throw new Error(`File not found: ${normalizedPath}`);
-    }
-
-    return file.content;
+    this.files.set(normalizedPath, content);
+    console.log(`📝 VFS: Created ${normalizedPath}`);
   }
 
   /**
    * Check if file exists in VFS
    */
-  fileExists(path: string): boolean {
-    const normalizedPath = this.normalizePath(path);
-    const file = this.files.get(normalizedPath);
-    return file?.exists ?? false;
+  fileExists(filePath: string): boolean {
+    const normalizedPath = this.normalizePath(filePath);
+    return this.files.has(normalizedPath);
   }
 
   /**
-   * Overwrite file content in VFS
+   * Append content to file
    */
-  overwriteFile(path: string, content: string): void {
-    const normalizedPath = this.normalizePath(path);
+  async appendToFile(filePath: string, content: string): Promise<void> {
+    const normalizedPath = this.normalizePath(filePath);
     
     if (!this.files.has(normalizedPath)) {
-      // Create file if it doesn't exist
-      this.createFile(normalizedPath, content);
+      await this.createFile(normalizedPath, content);
       return;
     }
 
-    const file = this.files.get(normalizedPath)!;
-    file.content = content;
-    file.lastModified = new Date();
-
-    this.operations.push({
-      type: 'overwrite',
-      path: normalizedPath,
-      content,
-      timestamp: new Date()
-    });
+    const existingContent = this.files.get(normalizedPath)!;
+    this.files.set(normalizedPath, existingContent + content);
+    console.log(`➕ VFS: Appended to ${normalizedPath}`);
   }
 
   /**
-   * Append content to file in VFS
+   * Prepend content to file
    */
-  appendToFile(path: string, content: string): void {
-    const normalizedPath = this.normalizePath(path);
+  async prependToFile(filePath: string, content: string): Promise<void> {
+    const normalizedPath = this.normalizePath(filePath);
     
     if (!this.files.has(normalizedPath)) {
-      this.createFile(normalizedPath, content);
+      await this.createFile(normalizedPath, content);
       return;
     }
 
-    const file = this.files.get(normalizedPath)!;
-    file.content += content;
-    file.lastModified = new Date();
-
-    this.operations.push({
-      type: 'append',
-      path: normalizedPath,
-      content,
-      timestamp: new Date()
-    });
-  }
-
-  /**
-   * Prepend content to file in VFS
-   */
-  prependToFile(path: string, content: string): void {
-    const normalizedPath = this.normalizePath(path);
-    
-    if (!this.files.has(normalizedPath)) {
-      this.createFile(normalizedPath, content);
-      return;
-    }
-
-    const file = this.files.get(normalizedPath)!;
-    file.content = content + file.content;
-    file.lastModified = new Date();
-
-    this.operations.push({
-      type: 'prepend',
-      path: normalizedPath,
-      content,
-      timestamp: new Date()
-    });
+    const existingContent = this.files.get(normalizedPath)!;
+    this.files.set(normalizedPath, content + existingContent);
+    console.log(`➕ VFS: Prepended to ${normalizedPath}`);
   }
 
   /**
    * Get all files in VFS
    */
-  getAllFiles(): VFSFile[] {
-    const files = Array.from(this.files.values()).filter(file => file.exists);
-    console.log(`  🗂️ VFS: getAllFiles() returning ${files.length} files (${this.files.size} total in map)`);
+  getAllFiles(): Array<{ path: string; content: string; exists: boolean; lastModified: Date }> {
+    const files = Array.from(this.files.entries()).map(([path, content]) => ({
+      path,
+      content,
+      exists: true,
+      lastModified: new Date()
+    }));
+    console.log(`📋 VFS: Returning ${files.length} files`);
     return files;
   }
 
   /**
-   * Get operation history
+   * Flush all files to disk
    */
-  getOperations(): VFSOperation[] {
-    return [...this.operations];
+  async flushToDisk(): Promise<void> {
+    console.log(`💾 VFS: Flushing ${this.files.size} files to disk...`);
+    
+    for (const [filePath, content] of this.files) {
+      try {
+        const fullPath = path.join(this.projectRoot, filePath);
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs.writeFile(fullPath, content, 'utf-8');
+        console.log(`✅ Flushed: ${filePath}`);
+      } catch (error) {
+        console.error(`❌ Failed to flush ${filePath}:`, error);
+        throw new Error(`Failed to flush file ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+    
+    console.log(`✅ VFS: Successfully flushed all files to disk`);
   }
 
   /**
@@ -158,20 +167,26 @@ export class VirtualFileSystem {
    */
   clear(): void {
     this.files.clear();
-    this.operations = [];
+    console.log(`🧹 VFS: Cleared all files`);
   }
 
   /**
-   * Normalize file path
+   * Normalize file path to be relative to project root
    */
-  private normalizePath(path: string): string {
-    return path.replace(/\\/g, '/').replace(/\/+/g, '/');
+  private normalizePath(filePath: string): string {
+    // First normalize the path
+    let normalized = filePath.replace(/\\/g, '/').replace(/\/+/g, '/');
+    
+    // If the path is absolute and starts with project root, make it relative
+    if (normalized.startsWith(this.projectRoot)) {
+      normalized = normalized.substring(this.projectRoot.length);
+      // Remove leading slash if present
+      if (normalized.startsWith('/')) {
+        normalized = normalized.substring(1);
+      }
+    }
+    
+    return normalized;
   }
 }
 
-export interface VFSOperation {
-  type: 'create' | 'overwrite' | 'append' | 'prepend';
-  path: string;
-  content: string;
-  timestamp: Date;
-}

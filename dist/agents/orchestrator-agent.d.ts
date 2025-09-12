@@ -15,6 +15,7 @@ export declare class OrchestratorAgent {
     private agents;
     private integrationRegistry;
     private integrationExecutor?;
+    private blueprintAnalyzer;
     constructor(projectManager: ProjectManager);
     /**
      * Initialize all agents
@@ -28,6 +29,10 @@ export declare class OrchestratorAgent {
      * Execute a complete recipe
      */
     executeRecipe(recipe: Recipe): Promise<ExecutionResult>;
+    /**
+     * Pre-populate VFS with required files from disk
+     */
+    private preloadFilesIntoVFS;
     /**
      * Get available agents
      */

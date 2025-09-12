@@ -13,6 +13,8 @@ import { AdapterConfig } from '../types/adapter.js';
 import { IntegrationRegistry } from '../core/services/integration/integration-registry.js';
 import { IntegrationExecutor } from '../core/services/integration/integration-executor.js';
 import { BlueprintExecutor } from '../core/services/blueprint/blueprint-executor.js';
+import { VirtualFileSystem } from '../core/services/file-engine/virtual-file-system.js';
+import { BlueprintAnalyzer } from '../core/services/blueprint-analyzer/index.js';
 import * as path from 'path';
 import { FrameworkAgent } from './core/framework-agent.js';
 import { DatabaseAgent } from './core/database-agent.js';
@@ -42,6 +44,7 @@ export class OrchestratorAgent {
   private agents: Map<string, unknown>;
   private integrationRegistry: IntegrationRegistry;
   private integrationExecutor?: IntegrationExecutor;
+  private blueprintAnalyzer: BlueprintAnalyzer;
 
   constructor(projectManager: ProjectManager) {
     this.projectManager = projectManager;
@@ -51,6 +54,9 @@ export class OrchestratorAgent {
     
     // Initialize integration services
     this.integrationRegistry = new IntegrationRegistry();
+    
+    // Initialize blueprint analyzer
+    this.blueprintAnalyzer = new BlueprintAnalyzer();
     
     // Initialize agents (will be reconfigured with decentralized path handler)
     this.initializeAgents();
@@ -143,11 +149,12 @@ export class OrchestratorAgent {
         operation: 'project_initialization'
       });
       
+      
       // 4. Sort modules by execution order
       ExecutionTracer.logOperation(traceId, 'Sorting modules by execution order');
       const sortedModules = this.moduleLoader.sortModulesByExecutionOrder(recipe.modules);
       
-      // 5. Execute modules using the agent execution service
+      // 5. Execute modules using the NEW Contextual, Isolated VFS architecture
       const moduleResults = [];
       
       for (let i = 0; i < sortedModules.length; i++) {
@@ -181,13 +188,82 @@ export class OrchestratorAgent {
             this.decentralizedPathHandler!
           );
 
-          // Execute module using agent execution service
-          const moduleResult = await this.agentExecutor.executeModule(
-            module,
-            context,
-            adapterResult.adapter!.blueprint,
-            this.pathHandler.getProjectRoot()
-          );
+          // NEW ARCHITECTURE: Contextual, Isolated VFS
+          const blueprint = adapterResult.adapter!.blueprint;
+          
+          // Step 1: Analyze blueprint to determine required files
+          Logger.info(`🔍 Analyzing blueprint: ${blueprint.name}`, {
+            traceId,
+            operation: 'blueprint_analysis',
+            moduleId: module.id
+          });
+          
+          const analysis = this.blueprintAnalyzer.analyzeBlueprint(blueprint);
+          
+          // Step 2: Validate required files exist on disk
+          const validation = await this.blueprintAnalyzer.validateRequiredFiles(analysis, this.pathHandler.getProjectRoot());
+          if (!validation.valid) {
+            const error = `Missing required files for ${module.id}: ${validation.missingFiles.join(', ')}`;
+            errors.push(error);
+            Logger.error(`❌ ${error}`, {
+              traceId,
+              operation: 'blueprint_validation',
+              moduleId: module.id
+            });
+            break;
+          }
+          
+          // Step 3: Create new VFS instance for this blueprint
+          const vfs = new VirtualFileSystem(`blueprint-${blueprint.id}`, this.pathHandler.getProjectRoot());
+          Logger.info(`🗂️ Created VFS for blueprint: ${blueprint.id}`, {
+            traceId,
+            operation: 'vfs_creation',
+            moduleId: module.id
+          });
+          
+          // Step 4: Pre-populate VFS with required files
+          Logger.info(`📂 Pre-loading ${analysis.allRequiredFiles.length} files into VFS`, {
+            traceId,
+            operation: 'vfs_preload',
+            moduleId: module.id,
+            fileCount: analysis.allRequiredFiles.length
+          });
+          
+          await this.preloadFilesIntoVFS(vfs, analysis.allRequiredFiles, this.pathHandler.getProjectRoot());
+          
+          // Step 5: Execute blueprint with pre-populated VFS
+          const blueprintExecutor = new BlueprintExecutor(this.pathHandler.getProjectRoot());
+          const blueprintContext = {
+            vfs,
+            projectRoot: this.pathHandler.getProjectRoot(),
+            externalFiles: []
+          };
+          
+          const blueprintResult = await blueprintExecutor.executeBlueprint(blueprint, context, blueprintContext);
+          
+          // Step 6: Flush VFS to disk (atomic commit)
+          if (blueprintResult.success) {
+            await vfs.flushToDisk();
+            Logger.info(`💾 VFS flushed to disk for blueprint: ${blueprint.id}`, {
+              traceId,
+              operation: 'vfs_flush',
+              moduleId: module.id
+            });
+          }
+          
+          // Create module result from blueprint result
+          const moduleResult = {
+            success: blueprintResult.success,
+            files: blueprintResult.files,
+            errors: blueprintResult.errors,
+            warnings: blueprintResult.warnings,
+            executionTime: 0, // TODO: Add timing
+            strategy: {
+              needsVFS: true,
+              complexity: 'complex' as const,
+              reasons: ['Uses Contextual, Isolated VFS architecture']
+            }
+          };
           
           moduleResults.push(moduleResult);
           
@@ -268,6 +344,7 @@ export class OrchestratorAgent {
         ExecutionTracer.logOperation(traceId, 'Creating architech.json configuration file');
         await this.createArchitechConfig(recipe);
         
+        
         // Final step: Install all dependencies
         if (!recipe.options?.skipInstall) {
           Logger.info('📦 Installing dependencies...', {
@@ -313,6 +390,30 @@ export class OrchestratorAgent {
     }
   }
 
+
+  /**
+   * Pre-populate VFS with required files from disk
+   */
+  private async preloadFilesIntoVFS(vfs: VirtualFileSystem, filePaths: string[], projectRoot: string): Promise<void> {
+    console.log(`📂 Pre-loading ${filePaths.length} files into VFS...`);
+    
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    for (const filePath of filePaths) {
+      try {
+        const fullPath = path.join(projectRoot, filePath);
+        const content = await fs.readFile(fullPath, 'utf-8');
+        await vfs.writeFile(filePath, content);
+        console.log(`✅ Pre-loaded: ${filePath}`);
+      } catch (error) {
+        console.warn(`⚠️ Failed to pre-load ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        // Continue with other files - some might not exist yet
+      }
+    }
+    
+    console.log(`✅ VFS pre-population complete`);
+  }
 
   /**
    * Get available agents
@@ -405,7 +506,7 @@ export class OrchestratorAgent {
           continue;
         }
 
-        // Create context for integration
+        // Create context for integration with shared VFS
         const context = {
           project: {
             ...recipe.project,
@@ -422,12 +523,49 @@ export class OrchestratorAgent {
           framework: recipe.project.framework
         };
 
-        // Execute integration with sub-features
-        await this.integrationExecutor!.executeIntegration(
-          integration, 
-          context, 
-          integrationConfig.features
-        );
+        // NEW ARCHITECTURE: Contextual, Isolated VFS for Integration
+        const blueprint = integration.blueprint;
+        
+        // Step 1: Analyze integration blueprint to determine required files
+        console.log(`🔍 Analyzing integration blueprint: ${blueprint.name}`);
+        const analysis = this.blueprintAnalyzer.analyzeBlueprint(blueprint);
+        
+        // Step 2: Validate required files exist on disk
+        const validation = await this.blueprintAnalyzer.validateRequiredFiles(analysis, this.pathHandler.getProjectRoot());
+        if (!validation.valid) {
+          const error = `Missing required files for integration ${integrationConfig.name}: ${validation.missingFiles.join(', ')}`;
+          errors.push(error);
+          console.error(`❌ ${error}`);
+          continue;
+        }
+        
+        // Step 3: Create new VFS instance for this integration blueprint
+        const vfs = new VirtualFileSystem(`integration-${blueprint.id}`, this.pathHandler.getProjectRoot());
+        console.log(`🗂️ Created VFS for integration blueprint: ${blueprint.id}`);
+        
+        // Step 4: Pre-populate VFS with required files
+        console.log(`📂 Pre-loading ${analysis.allRequiredFiles.length} files into VFS for integration`);
+        await this.preloadFilesIntoVFS(vfs, analysis.allRequiredFiles, this.pathHandler.getProjectRoot());
+        
+        // Step 5: Execute integration blueprint with pre-populated VFS
+        const blueprintExecutor = new BlueprintExecutor(recipe.project.path || '.');
+        const blueprintContext = {
+          vfs,
+          projectRoot: this.pathHandler.getProjectRoot(),
+          externalFiles: []
+        };
+        
+        const blueprintResult = await blueprintExecutor.executeBlueprint(blueprint, context, blueprintContext);
+        
+        // Step 6: Flush VFS to disk (atomic commit)
+        if (blueprintResult.success) {
+          await vfs.flushToDisk();
+          console.log(`💾 VFS flushed to disk for integration blueprint: ${blueprint.id}`);
+        } else {
+          errors.push(...blueprintResult.errors);
+          console.error(`❌ Integration blueprint failed: ${blueprintResult.errors.join(', ')}`);
+          continue;
+        }
 
         // Add created files to results
         results.push(...integration.provides.files);

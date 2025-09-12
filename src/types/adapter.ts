@@ -49,6 +49,7 @@ export interface Blueprint {
   name: string;
   description?: string;
   version?: string;
+  contextualFiles?: string[]; // Files that need to be pre-loaded into VFS
   actions: BlueprintAction[];
 }
 

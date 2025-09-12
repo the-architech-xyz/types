@@ -1,108 +1,165 @@
 /**
  * Blueprint Analyzer Service
  * 
- * Analyzes blueprints to determine execution strategy and complexity.
- * This service is the foundation for intelligent blueprint execution
- * and future AI-powered analysis capabilities.
+ * Analyzes blueprints to determine all files that need to be pre-loaded into VFS
+ * before execution. This is the critical component that enables the "Contextual, 
+ * Isolated VFS" architecture.
  */
 
-import { Blueprint } from '../../../types/adapter.js';
+import { Blueprint, BlueprintAction } from '../../../types/adapter.js';
 
 export interface BlueprintAnalysis {
-  needsVFS: boolean;
-  reasons: string[];
-  complexity: 'simple' | 'moderate' | 'complex';
-  actionTypes: string[];
-  vfsRequiredActions: string[];
+  filesToRead: string[];
+  filesToCreate: string[];
+  contextualFiles: string[];
+  allRequiredFiles: string[];
 }
 
 export class BlueprintAnalyzer {
-  private static readonly VFS_REQUIRED_ACTIONS = [
-    'ENHANCE_FILE',
-    'MERGE_JSON', 
-    'ADD_TS_IMPORT',
-    'APPEND_TO_FILE',
-    'PREPEND_TO_FILE',
-    'WRAP_CONFIG',
-    'EXTEND_SCHEMA'
-  ];
-
-  private static readonly SIMPLE_ACTIONS = [
-    'CREATE_FILE',
-    'RUN_COMMAND',
-    'INSTALL_PACKAGES',
-    'ADD_SCRIPT',
-    'ADD_ENV_VAR'
-  ];
-
   /**
-   * Analyze a blueprint to determine execution strategy
+   * Analyze a blueprint to determine all files that need to be pre-loaded
    */
-  analyze(blueprint: Blueprint): BlueprintAnalysis {
-    const actionTypes = blueprint.actions.map(action => action.type);
-    const vfsRequiredActions = actionTypes.filter(type => 
-      BlueprintAnalyzer.VFS_REQUIRED_ACTIONS.includes(type)
-    );
+  analyzeBlueprint(blueprint: Blueprint): BlueprintAnalysis {
+    console.log(`🔍 Analyzing blueprint: ${blueprint.name}`);
     
-    const needsVFS = vfsRequiredActions.length > 0;
+    const filesToRead: string[] = [];
+    const filesToCreate: string[] = [];
+    const contextualFiles: string[] = [];
     
-    let complexity: 'simple' | 'moderate' | 'complex';
-    if (needsVFS) {
-      complexity = vfsRequiredActions.length > 3 ? 'complex' : 'moderate';
-    } else {
-      complexity = 'simple';
+    // 1. Extract contextualFiles from blueprint definition
+    if (blueprint.contextualFiles && Array.isArray(blueprint.contextualFiles)) {
+      contextualFiles.push(...blueprint.contextualFiles);
+      console.log(`📋 Found ${contextualFiles.length} contextual files:`, contextualFiles);
     }
-
-    const reasons = this.generateReasons(needsVFS, vfsRequiredActions, actionTypes);
-
-    return {
-      needsVFS,
-      reasons,
-      complexity,
-      actionTypes,
-      vfsRequiredActions
+    
+    // 2. Analyze all actions to determine file dependencies
+    for (const action of blueprint.actions) {
+      if (!action) continue;
+      
+      switch (action.type) {
+        case 'CREATE_FILE':
+          if (action.path) {
+            filesToCreate.push(action.path);
+            console.log(`📝 Will create: ${action.path}`);
+          }
+          break;
+          
+        case 'ENHANCE_FILE':
+          if (action.path) {
+            filesToRead.push(action.path);
+            console.log(`🔧 Will enhance: ${action.path}`);
+          }
+          break;
+          
+        case 'MERGE_JSON':
+        case 'MERGE_CONFIG':
+          if (action.path) {
+            filesToRead.push(action.path);
+            console.log(`🔄 Will merge: ${action.path}`);
+          }
+          break;
+          
+        case 'APPEND_TO_FILE':
+        case 'PREPEND_TO_FILE':
+          if (action.path) {
+            filesToRead.push(action.path);
+            console.log(`➕ Will append/prepend to: ${action.path}`);
+          }
+          break;
+          
+        case 'ADD_TS_IMPORT':
+          if (action.path) {
+            filesToRead.push(action.path);
+            console.log(`📦 Will add imports to: ${action.path}`);
+          }
+          break;
+          
+        case 'EXTEND_SCHEMA':
+          if (action.path) {
+            filesToRead.push(action.path);
+            console.log(`🗄️ Will extend schema: ${action.path}`);
+          }
+          break;
+          
+        case 'WRAP_CONFIG':
+          if (action.path) {
+            filesToRead.push(action.path);
+            console.log(`📦 Will wrap config: ${action.path}`);
+          }
+          break;
+          
+        // Actions that don't require file access
+        case 'INSTALL_PACKAGES':
+        case 'ADD_SCRIPT':
+        case 'ADD_ENV_VAR':
+        case 'RUN_COMMAND':
+          console.log(`⚡ Action ${action.type} doesn't require file access`);
+          break;
+          
+        default:
+          console.warn(`⚠️ Unknown action type: ${action.type}`);
+      }
+    }
+    
+    // 3. Combine all required files (remove duplicates)
+    const allRequiredFiles = Array.from(new Set([
+      ...filesToRead,
+      ...contextualFiles
+    ]));
+    
+    const analysis: BlueprintAnalysis = {
+      filesToRead,
+      filesToCreate,
+      contextualFiles,
+      allRequiredFiles
     };
+    
+    console.log(`✅ Blueprint analysis complete:`, {
+      filesToRead: analysis.filesToRead.length,
+      filesToCreate: analysis.filesToCreate.length,
+      contextualFiles: analysis.contextualFiles.length,
+      totalRequiredFiles: analysis.allRequiredFiles.length
+    });
+    
+    return analysis;
   }
-
+  
   /**
-   * Generate human-readable reasons for the analysis
+   * Pre-validate that all required files exist on disk
    */
-  private generateReasons(
-    needsVFS: boolean, 
-    vfsRequiredActions: string[], 
-    allActionTypes: string[]
-  ): string[] {
-    const reasons: string[] = [];
-
-    if (needsVFS) {
-      reasons.push(`Contains ${vfsRequiredActions.length} file modification action(s): ${vfsRequiredActions.join(', ')}`);
-      reasons.push('Requires transactional VFS for safe file operations');
-    } else {
-      reasons.push('Only contains simple operations: ' + allActionTypes.join(', '));
-      reasons.push('Can execute directly to disk for optimal performance');
+  async validateRequiredFiles(analysis: BlueprintAnalysis, projectRoot: string): Promise<{
+    valid: boolean;
+    missingFiles: string[];
+    existingFiles: string[];
+  }> {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    const missingFiles: string[] = [];
+    const existingFiles: string[] = [];
+    
+    for (const filePath of analysis.allRequiredFiles) {
+      const fullPath = path.join(projectRoot, filePath);
+      try {
+        await fs.access(fullPath);
+        existingFiles.push(filePath);
+      } catch {
+        missingFiles.push(filePath);
+      }
     }
-
-    return reasons;
-  }
-
-  /**
-   * Check if a specific action type requires VFS
-   */
-  static requiresVFS(actionType: string): boolean {
-    return BlueprintAnalyzer.VFS_REQUIRED_ACTIONS.includes(actionType);
-  }
-
-  /**
-   * Get all VFS-required action types
-   */
-  static getVFSRequiredActions(): string[] {
-    return [...BlueprintAnalyzer.VFS_REQUIRED_ACTIONS];
-  }
-
-  /**
-   * Get all simple action types
-   */
-  static getSimpleActions(): string[] {
-    return [...BlueprintAnalyzer.SIMPLE_ACTIONS];
+    
+    const valid = missingFiles.length === 0;
+    
+    if (!valid) {
+      console.warn(`⚠️ Missing required files:`, missingFiles);
+    } else {
+      console.log(`✅ All required files exist on disk`);
+    }
+    
+    return {
+      valid,
+      missingFiles,
+      existingFiles
+    };
   }
 }

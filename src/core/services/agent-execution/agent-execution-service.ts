@@ -52,19 +52,19 @@ export class AgentExecutionService {
     
     try {
       // 1. Analyze blueprint to determine execution strategy
-      const analysis = this.blueprintAnalyzer.analyze(blueprint);
+      const analysis = this.blueprintAnalyzer.analyzeBlueprint(blueprint);
       const strategy: ExecutionStrategy = {
-        needsVFS: analysis.needsVFS,
-        complexity: analysis.complexity,
-        reasons: analysis.reasons
+        needsVFS: analysis.allRequiredFiles.length > 0,
+        complexity: analysis.allRequiredFiles.length > 5 ? 'complex' : analysis.allRequiredFiles.length > 2 ? 'moderate' : 'simple',
+        reasons: [`Requires ${analysis.allRequiredFiles.length} files`, ...(analysis.contextualFiles.length > 0 ? ['Uses contextual files'] : [])]
       };
 
-      console.log(`🔍 Blueprint analysis: ${analysis.complexity} complexity, VFS needed: ${analysis.needsVFS}`);
-      console.log(`📋 Reasons: ${analysis.reasons.join(', ')}`);
+      console.log(`🔍 Blueprint analysis: ${strategy.complexity} complexity, VFS needed: ${strategy.needsVFS}`);
+      console.log(`📋 Reasons: ${strategy.reasons.join(', ')}`);
 
       let result: AgentResult;
 
-      if (analysis.needsVFS) {
+      if (strategy.needsVFS) {
         // Complex execution path - use VFS
         result = await this.executeWithVFS(module, context, blueprint, projectRoot);
       } else {
@@ -113,9 +113,8 @@ export class AgentExecutionService {
     blueprint: Blueprint,
     projectRoot: string
   ): Promise<AgentResult> {
-    // Create new VFS for this blueprint
-    const vfs = new VirtualFileSystem();
-    console.log(`🗂️ Created VFS for blueprint: ${module.id}`);
+    // Create new VFS for this blueprint with proper isolation
+    const vfs = new VirtualFileSystem(module.id, projectRoot);
 
     // Pre-load external files if specified
     await this.preloadExternalFiles(vfs, module.externalFiles || [], projectRoot);
@@ -139,7 +138,7 @@ export class AgentExecutionService {
     if (moduleResult.success) {
       // Flush VFS to disk for this blueprint
       console.log(`💾 Flushing VFS to disk for ${module.id}...`);
-      await this.flushVfsToDisk(vfs, projectRoot);
+      await vfs.flushToDisk();
       console.log(`✅ VFS flushed for ${module.id}`);
     }
 
@@ -214,38 +213,13 @@ export class AgentExecutionService {
         const path = await import('path');
         const fullPath = path.join(projectRoot, filePath);
         const content = await fs.readFile(fullPath, 'utf-8');
-        vfs.overwriteFile(filePath, content);
+        await vfs.writeFile(filePath, content);
         console.log(`📁 Pre-loaded external file: ${filePath}`);
       } catch (error) {
         // File doesn't exist, skip silently
         console.log(`⚠️ External file not found: ${filePath}`);
       }
     }
-  }
-
-  /**
-   * Flush VFS to disk
-   */
-  private async flushVfsToDisk(vfs: VirtualFileSystem, projectRoot: string): Promise<void> {
-    const files = vfs.getAllFiles();
-    console.log(`  💾 Flushing ${files.length} files to disk`);
-
-    const fs = await import('fs/promises');
-    const path = await import('path');
-
-    for (const file of files) {
-      const fullPath = path.join(projectRoot, file.path);
-      console.log(`  💾 Writing file: ${file.path} -> ${fullPath}`);
-
-      // Ensure directory exists
-      const dir = path.dirname(fullPath);
-      await fs.mkdir(dir, { recursive: true });
-
-      // Write file
-      await fs.writeFile(fullPath, file.content, 'utf-8');
-    }
-
-    console.log(`  ✅ VFS flush completed: ${files.length} files written`);
   }
 
   /**

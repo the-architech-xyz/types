@@ -147,6 +147,7 @@ export const createNextjsCustomerPortalSession = async (customerId: string) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/stripe/webhooks/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },
@@ -168,6 +169,7 @@ export const createNextjsCustomerPortalSession = async (customerId: string) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/stripe/create-payment-intent/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },
@@ -205,6 +207,7 @@ export const createNextjsCustomerPortalSession = async (customerId: string) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/stripe/create-subscription/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },
@@ -245,6 +248,7 @@ export const createNextjsCustomerPortalSession = async (customerId: string) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/stripe/create-portal-session/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },
@@ -279,6 +283,7 @@ export const createNextjsCustomerPortalSession = async (customerId: string) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/stripe/create-payment-intent/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },
@@ -334,6 +339,7 @@ export const createNextjsCustomerPortalSession = async (customerId: string) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/stripe/create-subscription/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },
@@ -418,6 +424,7 @@ export const createNextjsCustomerPortalSession = async (customerId: string) => {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/stripe/webhook/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'NextRequest', from: 'next/server', type: 'import' },

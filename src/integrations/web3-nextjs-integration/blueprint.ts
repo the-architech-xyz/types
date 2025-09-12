@@ -85,7 +85,7 @@ export const walletManager = new WalletManager();`
       type: 'CREATE_FILE',
       path: 'src/lib/web3/contracts.ts',
       content: `import { ethers, Contract } from 'ethers';
-import { walletManager } from './wallet.js';
+import { walletManager } from './wallet';
 
 export interface ContractConfig {
   address: string;
@@ -173,7 +173,7 @@ export const contractManager = new ContractManager();`
       type: 'CREATE_FILE',
       path: 'src/lib/web3/transactions.ts',
       content: `import { ethers } from 'ethers';
-import { walletManager } from './wallet.js';
+import { walletManager } from './wallet';
 
 export interface TransactionState {
   hash: string;
@@ -402,7 +402,7 @@ export const networkManager = new NetworkManager();`
       type: 'CREATE_FILE',
       path: 'src/hooks/useWallet.ts',
       content: `import { useState, useEffect, useCallback } from 'react';
-import { walletManager, WalletState } from '@/lib/web3/wallet.js';
+import { walletManager, WalletState } from '@/lib/web3/wallet';
 
 export function useWallet() {
   const [walletState, setWalletState] = useState<WalletState>({
@@ -502,10 +502,10 @@ export function useWallet() {
     },
     {
       type: 'CREATE_FILE',
-      path: 'src/components/web3/WalletProvider.tsx',
+      path: 'src/lib/web3/WalletProvider.tsx',
       content: `import React, { createContext, useContext, ReactNode } from 'react';
-import { useWallet } from '@/hooks/useWallet.js';
-import { WalletState } from '@/lib/web3/wallet.js';
+import { useWallet } from '@/hooks/useWallet';
+import { WalletState } from '@/lib/web3/wallet';
 
 interface WalletContextType extends WalletState {
   isLoading: boolean;
@@ -543,7 +543,7 @@ export function useWalletContext() {
       type: 'CREATE_FILE',
       path: 'src/components/web3/WalletButton.tsx',
       content: `import React from 'react';
-import { useWalletContext } from './WalletProvider.js';
+import { useWalletContext } from '@/lib/web3/WalletProvider';
 
 interface WalletButtonProps {
   className?: string;

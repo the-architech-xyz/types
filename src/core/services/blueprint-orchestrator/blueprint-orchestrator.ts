@@ -13,7 +13,7 @@ import { getModifierRegistry } from '../modifiers/modifier-registry.js';
 import { TemplateService } from '../template/index.js';
 import { ErrorHandler, ErrorCode } from '../error/index.js';
 import { TsFileModifier, ImportStructure, DeepMergeTarget, DeepMergeSource } from '../../../types/common.js';
-import { SourceFile } from 'ts-morph';
+import { SourceFile, ImportDeclaration } from 'ts-morph';
 
 export interface OrchestrationResult {
   success: boolean;
@@ -123,9 +123,9 @@ export class BlueprintOrchestrator {
   // ============================================================================
 
   private async handleCreateFile(action: BlueprintAction, context: ProjectContext, blueprintContext: BlueprintContext, files: string[]): Promise<void> {
-    if (!action.path || !action.content) {
+    if (!action.path) {
       const errorResult = ErrorHandler.createError(
-        'CREATE_FILE requires path and content',
+        'CREATE_FILE requires path',
         { operation: 'create_file', actionType: 'CREATE_FILE' },
         ErrorCode.ACTION_EXECUTION_ERROR,
         false
@@ -134,33 +134,38 @@ export class BlueprintOrchestrator {
     }
 
     const processedPath = this.processTemplate(action.path, context);
-    const processedContent = this.processTemplate(action.content, context);
+    
+    // CRITICAL: Check if file already exists in VFS
+    if (blueprintContext.vfs.fileExists(processedPath)) {
+      throw new Error(`CREATE_FILE cannot overwrite an existing file: ${processedPath}`);
+    }
+    
+    let processedContent: string;
+    
+    // Handle different content sources
+    if (action.content) {
+      // Direct content
+      processedContent = this.processTemplate(action.content, context);
+    } else if (action.modifier === 'ts-module-enhancer' && action.params) {
+      // Generate content from ts-module-enhancer params (fallback from ENHANCE_FILE)
+      processedContent = await this.generateContentFromEnhancement(action, context);
+    } else {
+      const errorResult = ErrorHandler.createError(
+        'CREATE_FILE requires either content or valid enhancement parameters',
+        { operation: 'create_file', actionType: 'CREATE_FILE' },
+        ErrorCode.ACTION_EXECUTION_ERROR,
+        false
+      );
+      throw new Error(errorResult.error);
+    }
     
     console.log(`  🔧 Creating file: ${processedPath}`);
     console.log(`  🔧 Content length: ${processedContent.length} characters`);
     
-    // Create engine with blueprint's VFS
-    const engine = new FileModificationEngine(blueprintContext.vfs, blueprintContext.projectRoot);
-    
-    // Check if file already exists in VFS
-    if (engine.fileExists(processedPath)) {
-      console.log(`  ⚠️  File already exists: ${processedPath} - skipping creation`);
-      return;
-    }
-    
-    const result = await engine.createFile(processedPath, processedContent);
-    if (result.success) {
-      console.log(`  ✅ File created successfully: ${result.filePath}`);
-      files.push(result.filePath);
-    } else {
-      const errorResult = ErrorHandler.handleFileError(
-        new Error(result.error),
-        processedPath,
-        'create'
-      );
-      console.error(`  ❌ File creation failed: ${errorResult.error}`);
-      throw new Error(errorResult.error);
-    }
+    // Create file directly in VFS
+    await blueprintContext.vfs.createFile(processedPath, processedContent);
+    files.push(processedPath);
+    console.log(`  ✅ File created successfully: ${processedPath}`);
   }
 
   private async handleInstallPackages(action: BlueprintAction, context: ProjectContext, blueprintContext: BlueprintContext, files: string[]): Promise<void> {
@@ -356,29 +361,99 @@ export class BlueprintOrchestrator {
 
     const processedPath = this.processTemplate(action.path, context);
     
-    // Get modifier function from registry
-    const modifier = this.getModifier(action.modifier);
-    if (!modifier) {
+    // EXPLICIT FALLBACK HANDLING: Respect the fallback property
+    if (!blueprintContext.vfs.fileExists(processedPath)) {
+      const fallbackStrategy = action.fallback || 'error';
+      
+      switch (fallbackStrategy) {
+        case 'create':
+          console.log(`⚠️ File ${processedPath} doesn't exist, using fallback: CREATE`);
+          
+          // Check if we can create the file with the given content
+          if (this.canCreateFileFromEnhancement(action, context)) {
+            console.log(`✅ Fallback: Creating file ${processedPath} instead of enhancing`);
+            await this.handleCreateFile(action, context, blueprintContext, files);
+            return;
+          } else {
+            throw new Error(`ENHANCE_FILE with fallback: CREATE failed. File ${processedPath} cannot be created from enhancement content.`);
+          }
+          
+        case 'skip':
+          console.log(`⚠️ File ${processedPath} doesn't exist, using fallback: SKIP`);
+          return; // Skip this action silently
+          
+        case 'error':
+        default:
+          throw new Error(`ENHANCE_FILE cannot be used on a non-existent file: ${processedPath}. Use fallback: 'create' or 'skip' to handle missing files.`);
+      }
+    }
+    
+    // Handle different modifier types
+    if (action.modifier === 'ts-module-enhancer') {
+      // Use the TSModuleEnhancer directly with VFS content
+      const { TSModuleEnhancer } = await import('../modifiers/ts-module-enhancer.js');
+      const modifier = new TSModuleEnhancer();
+      
+      try {
+        // Read file content from VFS
+        const content = await blueprintContext.vfs.readFile(processedPath);
+        
+        // Create a temporary in-memory file for the modifier to work with
+        const tempFilePath = `temp_${Date.now()}_${processedPath.replace(/\//g, '_')}`;
+        
+        // Execute the modifier with the content directly
+        const params = action.params || {};
+        
+        // Create a temporary ts-morph project in memory
+        const { Project } = await import('ts-morph');
+        const project = new Project();
+        const sourceFile = project.createSourceFile(tempFilePath, content, { overwrite: true });
+        
+        // Apply the modifier transformations directly to the source file
+        if (params.importsToAdd && params.importsToAdd.length > 0) {
+          this.addImportsToSourceFile(sourceFile, params.importsToAdd);
+        }
+        
+        if (params.statementsToAppend && params.statementsToAppend.length > 0) {
+          this.addStatementsToSourceFile(sourceFile, params.statementsToAppend);
+        }
+        
+        if (params.exportsToAdd && params.exportsToAdd.length > 0) {
+          this.addExportsToSourceFile(sourceFile, params.exportsToAdd);
+        }
+        
+        // Get the modified content
+        const modifiedContent = sourceFile.getFullText();
+        
+        // Write back to VFS
+        await blueprintContext.vfs.writeFile(processedPath, modifiedContent);
+        
+        files.push(processedPath);
+        console.log(`✅ Enhanced file: ${processedPath}`);
+      } catch (error) {
+        if (action.fallback === 'skip') {
+          console.warn(`Modifier '${action.modifier}' failed, skipping enhancement of ${processedPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          return;
+        } else if (action.fallback === 'create') {
+          await blueprintContext.vfs.writeFile(processedPath, '// Enhanced file\n');
+          files.push(processedPath);
+          return;
+        } else {
+          throw new Error(`Modifier '${action.modifier}' failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+    } else {
+      // Fallback for other modifiers
       if (action.fallback === 'skip') {
-        console.warn(`Modifier '${action.modifier}' not found, skipping enhancement of ${processedPath}`);
+        console.warn(`Modifier '${action.modifier}' not supported, skipping enhancement of ${processedPath}`);
         return;
       } else if (action.fallback === 'create') {
-        // Create file with basic content if it doesn't exist
-        const engine = new FileModificationEngine(blueprintContext.vfs, blueprintContext.projectRoot);
-        await engine.createFile(processedPath, '// Enhanced file\n');
+        await blueprintContext.vfs.writeFile(processedPath, '// Enhanced file\n');
         files.push(processedPath);
         return;
       } else {
-        throw new Error(`Modifier '${action.modifier}' not found`);
+        throw new Error(`Modifier '${action.modifier}' not supported`);
       }
-    }
-
-    // Execute modifier function
-    try {
-      await modifier.handler(processedPath, action.params || {}, context);
-      files.push(processedPath);
-    } catch (error) {
-      throw new Error(`Modifier '${action.modifier}' failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -599,5 +674,161 @@ ${existingConfig}
 
 module.exports = ${wrapperName}(${existingConfigObject}, ${optionsString});
 `;
+  }
+
+  // ============================================================================
+  // HELPER METHODS FOR DIRECT TS-MORPH OPERATIONS
+  // ============================================================================
+
+  private addImportsToSourceFile(sourceFile: SourceFile, importsToAdd: Array<{
+    name: string | string[];
+    from: string;
+    type: 'import' | 'import type' | 'import * as';
+  }>): void {
+    for (const importItem of importsToAdd) {
+      // Check if import already exists
+      const existingImports = sourceFile.getImportDeclarations();
+      const existingImport = existingImports.find((imp: ImportDeclaration) => 
+        imp.getModuleSpecifierValue() === importItem.from
+      );
+      
+      if (existingImport) {
+        // Add to existing import
+        this.addToExistingImport(existingImport, importItem);
+      } else {
+        // Create new import
+        this.createNewImport(sourceFile, importItem);
+      }
+    }
+  }
+
+  private addToExistingImport(existingImport: ImportDeclaration, importItem: {
+    name: string | string[];
+    from: string;
+    type: 'import' | 'import type' | 'import * as';
+  }): void {
+    if (importItem.type === 'import * as') {
+      // Check if namespace import already exists
+      const namespaceImport = existingImport.getNamespaceImport();
+      const hasNamespace = namespaceImport?.getText() === importItem.name;
+      
+      if (!hasNamespace) {
+        existingImport.setNamespaceImport(importItem.name as string);
+      }
+    } else {
+      // Check if named imports already exist
+      const namedImports = existingImport.getNamedImports();
+      const names = Array.isArray(importItem.name) ? importItem.name : [importItem.name];
+      
+      for (const name of names) {
+        const hasImport = namedImports.some(imp => imp.getName() === name);
+        if (!hasImport) {
+          existingImport.addNamedImport(name);
+        }
+      }
+    }
+  }
+
+  private createNewImport(sourceFile: SourceFile, importItem: {
+    name: string | string[];
+    from: string;
+    type: 'import' | 'import type' | 'import * as';
+  }): void {
+    if (importItem.type === 'import * as') {
+      sourceFile.addImportDeclaration({
+        namespaceImport: importItem.name as string,
+        moduleSpecifier: importItem.from
+      });
+    } else {
+      const names = Array.isArray(importItem.name) ? importItem.name : [importItem.name];
+      sourceFile.addImportDeclaration({
+        namedImports: names,
+        moduleSpecifier: importItem.from
+      });
+    }
+  }
+
+  private addStatementsToSourceFile(sourceFile: SourceFile, statementsToAppend: Array<{
+    type: 'interface' | 'type' | 'const' | 'function' | 'class' | 'enum' | 'raw';
+    content: string;
+  }>): void {
+    for (const statement of statementsToAppend) {
+      if (statement.type === 'raw') {
+        // Add raw TypeScript code
+        sourceFile.addStatements(statement.content);
+      } else {
+        // Add structured statement
+        sourceFile.addStatements(statement.content);
+      }
+    }
+  }
+
+  private addExportsToSourceFile(sourceFile: SourceFile, exportsToAdd: Array<{
+    name: string;
+    content: string;
+  }>): void {
+    for (const exportItem of exportsToAdd) {
+      // Add the export statement
+      sourceFile.addStatements(`export ${exportItem.content};`);
+    }
+  }
+
+  /**
+   * Check if an ENHANCE_FILE action can be converted to CREATE_FILE
+   */
+  private canCreateFileFromEnhancement(action: BlueprintAction, context: ProjectContext): boolean {
+    // Only ts-module-enhancer can be converted to CREATE_FILE
+    if (action.modifier !== 'ts-module-enhancer' || !action.params) {
+      return false;
+    }
+
+    const params = action.params as any;
+    
+    // Check if we have the necessary parameters to generate standalone content
+    return !!(
+      params.importsToAdd || 
+      params.statementsToAppend || 
+      params.exportsToAdd ||
+      params.content
+    );
+  }
+
+  /**
+   * Generate content from enhancement parameters for CREATE_FILE fallback
+   */
+  private async generateContentFromEnhancement(action: BlueprintAction, context: ProjectContext): Promise<string> {
+    if (action.modifier !== 'ts-module-enhancer' || !action.params) {
+      throw new Error('Cannot generate content from non-ts-module-enhancer action');
+    }
+
+    const params = action.params as any;
+    const { Project } = await import('ts-morph');
+    
+    // Create a new source file
+    const project = new Project();
+    const sourceFile = project.createSourceFile('temp.ts', '', { overwrite: true });
+
+    // Add imports
+    if (params.importsToAdd && Array.isArray(params.importsToAdd)) {
+      this.addImportsToSourceFile(sourceFile, params.importsToAdd);
+    }
+
+    // Add statements
+    if (params.statementsToAppend && Array.isArray(params.statementsToAppend)) {
+      this.addStatementsToSourceFile(sourceFile, params.statementsToAppend);
+    }
+
+    // Add exports
+    if (params.exportsToAdd && Array.isArray(params.exportsToAdd)) {
+      this.addExportsToSourceFile(sourceFile, params.exportsToAdd);
+    }
+
+    // Get the generated content
+    const content = sourceFile.getFullText();
+    
+    // Clean up
+    project.removeSourceFile(sourceFile);
+    
+    return content;
   }
 }

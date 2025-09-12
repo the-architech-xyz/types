@@ -274,7 +274,7 @@ export function TransactionCard({
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { NetworkConfig } from '@/lib/web3/network.js';
+import { NetworkConfig } from '@/lib/web3/network';
 
 interface NetworkSwitcherProps {
   currentChainId: number | null;

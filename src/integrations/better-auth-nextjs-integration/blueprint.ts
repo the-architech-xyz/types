@@ -271,6 +271,7 @@ export function useAuth() {
       type: 'ENHANCE_FILE',
       path: 'src/app/api/auth/[...all]/route.ts',
       modifier: 'ts-module-enhancer',
+      fallback: 'create',
       params: {
         importsToAdd: [
           { name: 'toNextJsHandler', from: 'better-auth/next-js', type: 'import' },
