@@ -193,9 +193,9 @@ npm run dev
 ## 📚 Documentation
 
 ### Core Architecture
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed architecture documentation
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Complete architectural documentation
 - **[Architecture Layers](docs/ARCHITECTURE_LAYERS.md)** - Three-layer architecture details
-- **[Doctrine Architecturale](docs/doctrine-architecturale.md)** - Architectural principles and rationale
+- **[Design Choices](docs/CHOICES.md)** - Rationale behind design decisions
 
 ### Developer Guides
 - **[Adapter Development Guide](docs/ADAPTER_DEVELOPMENT_GUIDE.md)** - Creating custom adapters
@@ -206,8 +206,6 @@ npm run dev
 ### References
 - **[Recipe Format](docs/RECIPE_FORMAT.md)** - Complete recipe file reference
 - **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete CLI command reference
-- **[Design Choices](docs/CHOICES.md)** - Rationale behind design decisions
-- **[Changelog](docs/CHANGELOG.md)** - Documentation changes and updates
 
 ## 🛠️ CLI Commands
 
