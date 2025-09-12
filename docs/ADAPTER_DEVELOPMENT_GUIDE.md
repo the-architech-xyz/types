@@ -260,6 +260,60 @@ export type LogLevel = 'error' | 'warn' | 'info' | 'debug';`
 };
 ```
 
+## 📋 Blueprint Interface
+
+### Blueprint Structure
+
+```typescript
+export interface Blueprint {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  contextualFiles?: string[];  // NEW: Files to pre-load into VFS
+  actions: BlueprintAction[];
+}
+```
+
+### Contextual Files Property
+
+The `contextualFiles` property allows you to explicitly declare which files your blueprint needs to be pre-loaded into the VFS. This is especially useful for:
+
+- **ENHANCE_FILE actions** that need to modify existing files
+- **Integration blueprints** that depend on files created by other adapters
+- **Complex blueprints** that need specific file context
+
+#### Example Usage
+
+```typescript
+export const stripeNextjsBlueprint: Blueprint = {
+  id: 'stripe-nextjs-integration',
+  name: 'Stripe Next.js Integration',
+  contextualFiles: [
+    'src/lib/payment/stripe.ts',  // Created by stripe adapter
+    'package.json'                // For dependency checks
+  ],
+  actions: [
+    {
+      type: 'ENHANCE_FILE',
+      path: 'src/app/api/stripe/webhooks/route.ts',
+      modifier: 'ts-module-enhancer',
+      fallback: 'create',  // Auto-create if missing
+      params: { /* ... */ }
+    }
+  ]
+};
+```
+
+#### When to Use Contextual Files
+
+| Use Case | Example | Why |
+|----------|---------|-----|
+| **ENHANCE_FILE dependencies** | `src/lib/auth/config.ts` | ENHANCE_FILE needs the file to exist |
+| **Integration requirements** | `src/lib/payment/stripe.ts` | Integration needs adapter files |
+| **Configuration files** | `package.json`, `tsconfig.json` | For dependency/configuration checks |
+| **Schema files** | `src/db/schema.ts` | For database integration blueprints |
+
 ## ⚡ Blueprint Actions
 
 Blueprints use **high-level semantic actions** that express intent rather than implementation details. This makes blueprint creation simple, clear, and error-free.
@@ -363,6 +417,37 @@ stripe.log
 ```
 
 **What it does:** Executes shell commands
+
+#### 8. `ENHANCE_FILE` - Complex File Modifications
+
+```typescript
+{
+  type: 'ENHANCE_FILE',
+  path: 'src/app/api/auth/[...all]/route.ts',
+  modifier: 'ts-module-enhancer',
+  fallback: 'create',  // Smart fallback strategy
+  params: {
+    importsToAdd: [
+      { name: 'toNextJsHandler', from: 'better-auth/next-js', type: 'import' }
+    ],
+    statementsToAppend: [
+      {
+        type: 'raw',
+        content: `export const { GET, POST } = toNextJsHandler(authHandler);`
+      }
+    ]
+  }
+}
+```
+
+**What it does:** Performs complex file modifications using registered modifiers
+
+**Fallback Strategies:**
+- `'create'`: Auto-create missing files (recommended for API routes)
+- `'skip'`: Skip silently if file doesn't exist
+- `'error'`: Throw error if file doesn't exist (default)
+
+**When to use:** Complex file modifications that need AST manipulation or smart merging
 
 ### 🔧 **Legacy Actions (Advanced)**
 

@@ -26,6 +26,8 @@ Fix three critical problems in modern software development:
 - **⚡ CLI-First Approach** - Leverages existing tools like `create-next-app` and `shadcn init`
 - **🏗️ Three-Layer Architecture** - Clean separation of concerns with File Engine, Orchestrator, and Executor
 - **🎯 Semantic Actions** - High-level, intent-driven actions that abstract implementation complexity
+- **🗂️ Contextual, Isolated VFS** - Each blueprint runs in its own sandbox with pre-populated files
+- **🔄 Smart Fallback Mechanism** - ENHANCE_FILE can auto-create missing files (perfect for API routes)
 - **🛡️ Type-Safe** - Built with TypeScript for reliability and developer experience
 
 ### V2: Dynamic Module Management (Coming Soon)
@@ -150,10 +152,13 @@ npm run dev
 - **🔌 Three-Tier Adapter System** - Agnostic, Dependent, and Integration adapters
 - **🔗 Integration Registry** - Cross-adapter integration management
 - **📝 Blueprint System** - Declarative action lists with semantic actions
-- **🎯 Semantic Actions** - High-level, intent-driven actions (CREATE_FILE, INSTALL_PACKAGES, etc.)
+- **🎯 Semantic Actions** - High-level, intent-driven actions (CREATE_FILE, INSTALL_PACKAGES, ENHANCE_FILE, etc.)
+- **🗂️ Contextual, Isolated VFS** - Each blueprint runs in its own sandbox with pre-populated files
+- **🔍 BlueprintAnalyzer** - Analyzes blueprints to determine required files and execution strategy
+- **🔄 Smart Fallback Mechanism** - ENHANCE_FILE can auto-create missing files with fallback strategies
 - **🏗️ File Modification Engine** - Core file operations with Virtual File System
 
-### Supported Technologies
+### Currently Supported Technologies
 
 #### Frameworks
 - **Next.js** - React framework with App Router
@@ -187,15 +192,22 @@ npm run dev
 
 ## 📚 Documentation
 
+### Core Architecture
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed architecture documentation
+- **[Architecture Layers](docs/ARCHITECTURE_LAYERS.md)** - Three-layer architecture details
+- **[Doctrine Architecturale](docs/doctrine-architecturale.md)** - Architectural principles and rationale
+
+### Developer Guides
 - **[Adapter Development Guide](docs/ADAPTER_DEVELOPMENT_GUIDE.md)** - Creating custom adapters
 - **[Integration Development Guide](docs/INTEGRATION_DEVELOPMENT_GUIDE.md)** - Creating custom integrations
 - **[Semantic Actions Guide](docs/SEMANTIC_ACTIONS_GUIDE.md)** - High-level AST-based operations
 - **[File Update Strategies](docs/FILE_UPDATE_STRATEGIES.md)** - Intelligent file merging system
-- **[AST Migration Roadmap](docs/AST_MIGRATION_ROADMAP.md)** - Future AST-based system roadmap
+
+### References
 - **[Recipe Format](docs/RECIPE_FORMAT.md)** - Complete recipe file reference
-- **[Design Choices](docs/CHOICES.md)** - Rationale behind design decisions
 - **[CLI Reference](docs/CLI_REFERENCE.md)** - Complete CLI command reference
+- **[Design Choices](docs/CHOICES.md)** - Rationale behind design decisions
+- **[Changelog](docs/CHANGELOG.md)** - Documentation changes and updates
 
 ## 🛠️ CLI Commands
 
@@ -215,8 +227,8 @@ architech --version
 ### V2 Commands (Coming Soon)
 
 ```bash
-# Add modules to existing project
-architech add <module-id> [options]
+# Add features to existing project
+architech add <feature-id> [options]
 
 # Scale project to monorepo
 architech scale [options]
@@ -297,13 +309,13 @@ We welcome contributions! Please see our [Contributing Guide](docs/CONTRIBUTING.
 - ✅ Core technology adapters
 - ✅ CLI command structure
 
-### V2 (Q2 2024)
+### V2 (Q4 2025)
 - 🔄 Dynamic module addition
 - 🔄 Project state management
 - 🔄 AI-powered recommendations
 - 🔄 Intelligent dependency resolution
 
-### V3 (Q4 2024)
+### V3 (Q1 2026)
 - 🔮 Full AI development assistant
 - 🔮 Natural language project generation
 - 🔮 Automated testing and deployment
@@ -332,4 +344,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 **Built with ❤️ by The Architech Team**
 
-*Elevating developers from artisans to architects, one project at a time.*
+*Elevating developers from artisans to architects, one module at a time.*

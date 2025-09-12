@@ -338,7 +338,7 @@ export function useStripe() {
 
 ## ⚡ Blueprint Actions
 
-Integration blueprints use the same actions as regular adapters:
+Integration blueprints use the same actions as regular adapters, with special focus on ENHANCE_FILE for API routes and framework-specific modifications:
 
 ### 1. `RUN_COMMAND` Actions
 
@@ -358,6 +358,74 @@ Integration blueprints use the same actions as regular adapters:
   content: `// Component implementation`
 }
 ```
+
+### 3. `ENHANCE_FILE` Actions (Recommended for Integrations)
+
+Integration blueprints often need to create API routes and modify existing files. Use ENHANCE_FILE with smart fallback:
+
+#### API Route Creation
+
+```typescript
+{
+  type: 'ENHANCE_FILE',
+  path: 'src/app/api/stripe/webhooks/route.ts',
+  modifier: 'ts-module-enhancer',
+  fallback: 'create',  // Auto-create missing API routes
+  params: {
+    importsToAdd: [
+      { name: 'NextRequest', from: 'next/server', type: 'import' },
+      { name: 'stripe', from: '@/lib/payment/stripe', type: 'import' }
+    ],
+    statementsToAppend: [
+      {
+        type: 'raw',
+        content: `export async function POST(request: NextRequest) {
+  // Webhook handling logic
+}`
+      }
+    ]
+  }
+}
+```
+
+#### Configuration Enhancement
+
+```typescript
+{
+  type: 'ENHANCE_FILE',
+  path: 'next.config.js',
+  modifier: 'nextjs-config-wrapper',
+  fallback: 'skip',  // Skip if config doesn't exist
+  params: {
+    withStripe: true,
+    withWebhooks: true
+  }
+}
+```
+
+#### Critical File Modification
+
+```typescript
+{
+  type: 'ENHANCE_FILE',
+  path: 'src/lib/payment/stripe.ts',
+  modifier: 'ts-module-enhancer',
+  fallback: 'error',  // Fail if file doesn't exist
+  params: {
+    importsToAdd: [
+      { name: 'NextRequest', from: 'next/server', type: 'import' }
+    ]
+  }
+}
+```
+
+#### Fallback Strategy Guide
+
+| Strategy | Use Case | Example |
+|----------|----------|---------|
+| `'create'` | API routes, new endpoints | Stripe webhooks, auth API routes |
+| `'skip'` | Optional enhancements | Config file modifications |
+| `'error'` | Critical dependencies | Core file modifications |
 
 ## 🎛️ Sub-Features System
 

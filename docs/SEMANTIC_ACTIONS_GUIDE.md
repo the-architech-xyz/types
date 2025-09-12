@@ -119,20 +119,75 @@ Prepends content to existing files.
 ```
 
 ### 9. ENHANCE_FILE
-Performs complex file modifications using registered modifiers.
+Performs complex file modifications using registered modifiers with smart fallback mechanism.
 
 ```typescript
 {
   type: 'ENHANCE_FILE',
-  path: 'next.config.js',
-  modifier: 'nextjs-config-wrapper',
+  path: 'src/app/api/auth/[...all]/route.ts',
+  modifier: 'ts-module-enhancer',
+  fallback: 'create',  // Smart fallback strategy
   params: {
-    withSentry: true,
-    withAnalytics: false
-  },
-  fallback: 'skip'  // optional: 'skip' | 'error' | 'create'
+    importsToAdd: [
+      { name: 'toNextJsHandler', from: 'better-auth/next-js', type: 'import' },
+      { name: 'authHandler', from: '@/lib/auth/config', type: 'import' }
+    ],
+    statementsToAppend: [
+      {
+        type: 'raw',
+        content: `export const { GET, POST } = toNextJsHandler(authHandler);`
+      }
+    ]
+  }
 }
 ```
+
+#### Fallback Strategies
+
+The `fallback` property controls what happens when the target file doesn't exist:
+
+- **`'create'`** (Recommended for API routes): Auto-create the file if it doesn't exist
+- **`'skip'`**: Skip the action silently if file doesn't exist
+- **`'error'`** (Default): Throw an error if file doesn't exist
+
+#### Smart Fallback Examples
+
+```typescript
+// API Route Creation - Auto-create missing files
+{
+  type: 'ENHANCE_FILE',
+  path: 'src/app/api/stripe/webhooks/route.ts',
+  modifier: 'ts-module-enhancer',
+  fallback: 'create',  // Will create the file if it doesn't exist
+  params: { /* ... */ }
+}
+
+// Configuration Enhancement - Skip if file doesn't exist
+{
+  type: 'ENHANCE_FILE',
+  path: 'next.config.js',
+  modifier: 'nextjs-config-wrapper',
+  fallback: 'skip',  // Will skip if next.config.js doesn't exist
+  params: { /* ... */ }
+}
+
+// Critical Enhancement - Fail if file doesn't exist
+{
+  type: 'ENHANCE_FILE',
+  path: 'src/lib/auth/config.ts',
+  modifier: 'ts-module-enhancer',
+  fallback: 'error',  // Will throw error if file doesn't exist
+  params: { /* ... */ }
+}
+```
+
+#### When to Use Each Fallback Strategy
+
+| Strategy | Use Case | Example |
+|----------|----------|---------|
+| `'create'` | API routes, new files | Stripe webhook routes, auth API routes |
+| `'skip'` | Optional enhancements | Config file enhancements, optional features |
+| `'error'` | Critical modifications | Core file modifications, required features |
 
 ### 10. RUN_COMMAND
 Executes CLI commands.

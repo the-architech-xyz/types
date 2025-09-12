@@ -18,39 +18,85 @@ The Architech uses a clean three-layer architecture that separates concerns and 
 ┌─────────────────────▼───────────────────────────────────────┐
 │              Layer 1: File Modification Engine              │
 │                (Primitive File Operations)                  │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                Layer 0: Blueprint Analyzer                  │
+│              (File Analysis & VFS Pre-population)           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Layer 1: File Modification Engine
 
-**Purpose**: Core file operations with Virtual File System (VFS)
+**Purpose**: Core file operations with Contextual, Isolated Virtual File System (VFS)
 
 **Responsibilities**:
-- File creation, reading, writing
+- File creation, reading, writing in VFS
 - JSON merging with deep-merge
 - TypeScript AST manipulation with ts-morph
 - Atomic writes to disk
-- In-memory file tracking
+- In-memory file tracking per blueprint
+- VFS pre-population with required files
 
 **Key Components**:
 ```typescript
 FileModificationEngine {
-  createFile()      // Create new files
-  readFile()        // Read existing files
-  overwriteFile()   // Replace file content
-  appendToFile()    // Add to end of file
-  prependToFile()   // Add to beginning of file
-  mergeJsonFile()   // Deep merge JSON files
-  modifyTsFile()    // AST-based TypeScript modifications
-  flushToDisk()     // Atomic write to disk
+  createFile()      // Create new files in VFS
+  readFile()        // Read existing files from VFS
+  overwriteFile()   // Replace file content in VFS
+  appendToFile()    // Add to end of file in VFS
+  prependToFile()   // Add to beginning of file in VFS
+  mergeJsonFile()   // Deep merge JSON files in VFS
+  modifyTsFile()    // AST-based TypeScript modifications in VFS
+  flushToDisk()     // Atomic write VFS to disk
+}
+
+VirtualFileSystem {
+  constructor(blueprintId, projectRoot)  // Isolated per blueprint
+  readFile(path)                         // Lazy loading from disk
+  writeFile(path, content)               // Write to VFS
+  fileExists(path)                       // Check VFS for file
+  flushToDisk()                          // Atomic commit to disk
 }
 ```
 
-**Virtual File System**:
-- In-memory file representation
-- Operation tracking and history
-- Atomic writes (all-or-nothing)
-- Conflict detection
+**Contextual, Isolated VFS**:
+- Each blueprint gets its own VFS instance
+- Pre-populated with required files from disk
+- In-memory file representation per blueprint
+- Atomic writes (all-or-nothing per blueprint)
+- Perfect blueprint isolation
+
+## Layer 0: Blueprint Analyzer
+
+**Purpose**: File analysis and VFS pre-population
+
+**Responsibilities**:
+- Analyze blueprints to determine required files
+- Scan actions for file references
+- Extract contextualFiles property
+- Validate required files exist on disk
+- Determine execution strategy (VFS vs simple)
+
+**Key Components**:
+```typescript
+BlueprintAnalyzer {
+  analyzeBlueprint(blueprint)           // Analyze blueprint for required files
+  validateRequiredFiles(analysis, root) // Validate files exist on disk
+}
+
+BlueprintAnalysis {
+  allRequiredFiles: string[];    // All files needed by blueprint
+  contextualFiles: string[];     // Files to pre-load into VFS
+}
+```
+
+**Analysis Process**:
+1. Scan all blueprint actions for file references
+2. Extract files from ENHANCE_FILE, MERGE_JSON, etc.
+3. Include files from contextualFiles property
+4. Validate all required files exist on disk
+5. Return complete file list for VFS pre-population
 
 ## Layer 2: Blueprint Orchestrator
 
@@ -110,14 +156,38 @@ BlueprintExecutor {
 ## Data Flow
 
 ```
-1. Blueprint Executor receives blueprint
-2. For each action:
+1. Blueprint Analyzer analyzes blueprint for required files
+2. VFS is created and pre-populated with required files
+3. Blueprint Executor receives blueprint with VFS context
+4. For each action:
    a. Process template variables
    b. Evaluate conditions
    c. Delegate to Orchestrator
-3. Orchestrator translates to primitives
-4. File Engine performs operations in VFS
-5. All changes flushed to disk atomically
+5. Orchestrator translates to primitives
+6. File Engine performs operations in VFS
+7. All changes flushed to disk atomically
+```
+
+### Detailed VFS Workflow
+
+```
+1. Analysis Phase:
+   BlueprintAnalyzer.analyzeBlueprint(blueprint)
+   → { allRequiredFiles: string[], contextualFiles: string[] }
+
+2. VFS Initialization:
+   new VirtualFileSystem(blueprintId, projectRoot)
+
+3. Pre-population Phase:
+   preloadFilesIntoVFS(vfs, analysis.allRequiredFiles, projectRoot)
+
+4. Execution Phase:
+   BlueprintExecutor.executeBlueprint(blueprint, context, blueprintContext)
+   → All operations happen in VFS
+
+5. Commit Phase:
+   vfs.flushToDisk()
+   → Atomic write to disk
 ```
 
 ## Benefits

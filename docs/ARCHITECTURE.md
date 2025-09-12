@@ -1,257 +1,156 @@
-# The Architech - Architecture Documentation
+## **1. Philosophie & Objectifs**
 
-## Overview
+<aside>
+💡
 
-The Architech is a **Code Supply Chain** platform that elevates developers from "artisans" to "architects" by providing a declarative, agent-based approach to project generation and management.
+**Notre Mission:** Fournir aux développeurs un outil qui élimine la friction de la configuration de projet pour qu'ils puissent se concentrer sur l'essentiel : la création de valeur. The Architech n'est pas un simple générateur de "boilerplate", c'est un **architecte de fondations logicielles** robustes, maintenables et prêtes pour la production.
 
-## Core Mission
+</aside>
 
-Fix three critical problems in modern software development:
+### Nos choix architecturaux sont guidés par 3 principes :
 
-1. **Disposable Code Syndrome** - Projects that can't be maintained or extended
-2. **Organizational Amnesia** - Loss of architectural knowledge over time  
-3. **The AI-Assistant Paradox** - AI tools that create more problems than they solve
+1. **Simplicité pour le Créateur :** La complexité doit être dans la CLI, jamais dans le Blueprint.
+2. **Sécurité par Défaut :** Ne jamais corrompre le projet d'un utilisateur. Chaque opération doit être sûre et prévisible.
+3. **Extensibilité Ouverte :** L'architecture doit encourager et faciliter la contribution de la communauté.
 
-## V1 Architecture: Agent-Based Recipe Executor
+## **2. Le "Génome de Projet" : Le Cœur Déclaratif**
 
-### Flow Architecture
+Toute génération commence par un fichier de configuration, le **"Génome"** (genome.yaml). C'est un fichier déclaratif qui décrit l'**état désiré** du projet, et non les étapes pour y parvenir.
 
-```
-architech.yaml → Orchestrator → Agents → Adapters → Blueprints
-```
-
-### Core Components
-
-#### 1. Recipe System (`architech.yaml`)
-- **Single Source of Truth** for project definition
-- Declarative YAML format
-- Defines project metadata, modules, and execution options
+- Cliquez pour voir un exemple de  genome.yaml
 
 ```yaml
-version: "1.0"
+# genome.yaml
 project:
-  name: "my-saas"
-  framework: "nextjs"
-  path: "./my-saas"
-modules:
-  - id: "nextjs"
-    category: "framework"
-    version: "latest"
-    parameters:
-      typescript: true
-      tailwind: true
-      appRouter: true
-  - id: "shadcn-ui"
-    category: "ui"
-    version: "latest"
-    parameters:
-      components: ["button", "input", "card"]
-options:
-  skipInstall: false
+name: my-awesome-app
+root: '.'
+
+# Les briques technologiques de base
+adapters:
+- id: framework/nextjs
+version: '1.0.0'
+- id: database/drizzle
+version: '1.0.0'
+- id: auth/better-auth
+version: '1.0.0'
+
+# Les ponts qui connectent les briques
+integrators:
+- id: connect/better-auth-nextjs
+version: '1.0.0'
+
+# Options spécifiques à cette intégration
+features:
+enableTwoFactorAuth: true
+enableMagicLink: false
 ```
 
-#### 2. Orchestrator Agent
-- **Central Coordinator** that manages the entire execution flow
-- Reads and validates recipes
-- Delegates module execution to specialized agents
-- Manages project initialization and final dependency installation
+## **3. L'Architecture en 3 Couches : De l'Intention à l'Exécution**
 
-#### 3. Specialized Agents
-Each agent is a "Chef de Partie" responsible for their domain:
+Pour transformer un Génome en un projet fonctionnel, la CLI utilise une architecture stricte à 3 couches.
 
-- **FrameworkAgent** - Handles framework setup (Next.js, React, Vue)
-- **DatabaseAgent** - Manages database configuration (Drizzle, Prisma)
-- **AuthAgent** - Sets up authentication (Better Auth, NextAuth)
-- **UIAgent** - Configures UI libraries (Shadcn/ui, Chakra UI)
-- **TestingAgent** - Sets up testing frameworks (Vitest, Jest)
-
-#### 4. Three-Tier Adapter System
-- **Agnostic Adapters** - Technology-agnostic implementations (e.g., Stripe, Drizzle)
-- **Dependent Adapters** - Framework-specific implementations (e.g., next-intl, vitest)
-- **Integration Adapters** - Cross-adapter integrations using "Requester-Provider" pattern
-- Each adapter contains:
-  - `adapter.json`/`integration.json` - Metadata and configuration
-  - `blueprint.ts` - Declarative action list
-  - `main.ts` - Implementation logic (V2)
-
-#### 5. Integration System
-- **Integration Registry** - Manages cross-adapter integrations
-- **Requester-Provider Pattern** - Clear naming convention (e.g., `stripe-nextjs-integration`)
-- **Sub-Features** - Configurable integration features
-- **Framework, UI, Database Integrations** - Organized by integration type
-
-#### 6. Blueprint System
-- **Declarative Action Lists** using standardized actions:
-  - `ADD_CONTENT` - Add or merge file content
-  - `RUN_COMMAND` - Execute CLI commands
-  - `CREATE_DIRECTORY` - Create directory structure
-  - `INSTALL_DEPENDENCY` - Add package dependencies
-
-### CLI Commands
-
-#### V1 Commands
-- `architech new <recipe.yaml>` - Create new project from recipe
-
-#### V2 Commands (Planned)
-- `architech add <module-id>` - Add modules to existing project
-- `architech scale [options]` - Scale to monorepo structure
-
-### Service Layer
-
-#### Core Services
-- **PathHandler** - Centralized path management and file operations
-- **ProjectManager** - Project structure initialization and state management
-- **AdapterLoader** - Dynamic adapter loading and validation
-- **BlueprintExecutor** - Action execution engine
-
-#### CLI Services
-- **CommandRunner** - Safe command execution with error handling
-- **Logger** - Structured logging with verbosity levels
-- **Banner** - User-friendly output formatting
-
-## Design Principles
-
-### 1. Declarative Over Imperative
-- Everything is defined in YAML recipes
-- No complex logic in configuration files
-- Clear separation between "what" and "how"
-
-### 2. Agent-Based Architecture
-- Each agent is responsible for their domain
-- Agents don't know about other agents
-- Orchestrator coordinates without implementing
-
-### 3. Three-Tier Adapter System
-- **Agnostic Adapters**: Technology-agnostic, can work with any framework
-- **Dependent Adapters**: Framework-specific, inherently tied to specific technologies  
-- **Integration Adapters**: Cross-adapter integrations using "Requester-Provider" pattern
-- Clear separation of concerns and naming conventions
-
-### 4. CLI-First Approach
-- Blueprints prioritize CLI commands over file operations
-- Leverages existing tooling (create-next-app, shadcn init)
-- Reduces maintenance burden
-
-### 5. Progressive Enhancement
-- V1: Simple recipe execution
-- V2: Dynamic module addition and AI integration
-- V3: Full AI-powered development assistant
-
-## File Structure
-
-```
-src/
-├── agents/                 # Agent system
-│   ├── base/              # Base agent class
-│   ├── core/              # Specialized agents
-│   └── orchestrator-agent.ts
-├── adapters/              # Technology adapters
-│   ├── framework/         # Framework adapters
-│   ├── database/          # Database adapters
-│   ├── auth/              # Auth adapters
-│   ├── ui/                # UI adapters
-│   └── testing/           # Testing adapters
-├── integrations/          # Integration adapters
-│   ├── stripe-nextjs-integration/
-│   ├── drizzle-nextjs-integration/
-│   └── web3-shadcn-integration/
-├── commands/              # CLI commands
-│   ├── new.ts             # Project creation
-│   ├── add.ts             # Module addition (V2)
-│   └── scale.ts           # Monorepo scaling (V2)
-├── core/                  # Core services
-│   ├── services/          # Service layer
-│   └── cli/               # CLI utilities
-└── types/                 # Type definitions
+```mermaid
+graph TD
+A[Couche 3: API des Blueprints] --> B[Couche 2: Orchestrateur]
+B --> C[Couche 1: Moteur de Fichiers]
+C --> D[Système de Fichiers]
 ```
 
-## Technology Stack
+### **Couche 3 : L'API des** Blueprints **(Le "Langage")**
 
-### Core Technologies
-- **TypeScript** - Type-safe development
-- **Commander.js** - CLI framework
-- **js-yaml** - YAML parsing
-- **Chalk** - Terminal styling
+C'est l'interface publique pour les contributeurs. Elle est conçue pour être de haut niveau et sémantique.
 
-### Package Managers
-- **npm** - Default package manager
-- **yarn** - Alternative package manager
-- **pnpm** - Fast package manager
-- **bun** - Modern package manager
+Un ⁠Blueprint est une simple liste d'actions. Voici l'ensemble des actions disponibles en V1 :
 
-### Supported Frameworks
-- **Next.js** - React framework with App Router
-- **React** - Component library
-- **Vue** - Progressive framework
-- **Svelte** - Compile-time framework
+| Action | Description |
+| --- | --- |
+| ⁠CREATE_FILE | Crée un nouveau fichier. Échoue s'il existe. |
+| ⁠INSTALL_PACKAGES | Ajoute des dépendances (dev ou non) à ⁠package.json. |
+| ⁠ADD_SCRIPT | Ajoute un script à ⁠package.json. |
+| ⁠ADD_ENV_VAR | Ajoute des variables à ⁠.env et ⁠.env.example (avec déduplication). |
+| ⁠ADD_TS_IMPORT | Ajoute un import à un fichier ⁠.ts/⁠.tsx. |
+| ⁠MERGE_JSON | Fusionne un objet JSON dans un fichier ⁠.json existant. |
+| ⁠ENHANCE_FILE | L'action avancée. Applique une modification complexe et prédéfinie. |
+| ⁠RUN_COMMAND | Exécute une commande shell. |
 
-## Execution Flow
+### **Couche 2 : L'Orchestrateur (Le "Cerveau")**
 
-### 1. Recipe Validation
-- Parse and validate YAML structure
-- Check module compatibility
-- Validate parameters
+C'est le traducteur intelligent. Il prend les actions sémantiques et les convertit en opérations de bas niveau.
 
-### 2. Project Initialization
-- Create project directory structure
-- Initialize basic files (package.json, tsconfig.json)
-- Set up environment configuration
+- **Détail du fonctionnement de l'Orchestrateur**
+    1. **Analyse Préliminaire :** L'Orchestrateur reçoit un Blueprint. Il le passe d'abord à un BlueprintAnalyzer.
+    2. **Décision Stratégique :** L'Analyzer détermine si le blueprint est "Simple" (ne contenant que des actions non-modificatives) ou "Complexe" (contenant au moins une action comme ENHANCE_FILE ou MERGE_JSON).
+    3. **Choix du Mode d'Exécution :**
+        - **Mode Rapide (Simple) :** Les actions sont exécutées séquentiellement et écrivent directement sur le disque. C'est optimisé pour les Adapters.
+        - **Mode Sécurisé (Complexe) :** Un **VFS (Virtual File System) "par blueprint"** est instancié. C'est optimisé pour les Integrators.
+    4. **Traduction des Actions :** L'Orchestrateur convertit chaque action sémantique en un ou plusieurs appels aux primitives de la Couche 1.
+        - INSTALL_PACKAGES devient un appel à engine.mergeJsonFile('package.json', ...).
+        - ENHANCE_FILE devient un appel à engine.modifyTsFile(...) en utilisant un "Modifier" enregistré.
 
-### 3. Module Execution
-- For each module in recipe:
-  - Load appropriate agent
-  - Validate module parameters
-  - Execute adapter blueprint
-  - Handle errors gracefully
+### **Couche 1 : Le Moteur de Fichiers (Les "Mains")**
 
-### 4. Finalization
-- Install all dependencies
-- Generate project documentation
-- Create project genome (architech.json)
+Cette couche assure la sécurité et la fiabilité.
 
-## Error Handling
+- **Le VFS "à la Demande" :** C'est un bac à sable transactionnel.
+    
+    Il est **créé vide** au début d'un blueprint complexe.
+    
+    Il utilise le **Lazy Loading** : un fichier n'est lu depuis le disque que la première fois qu'il est nécessaire.
+    
+    Toutes les modifications sont faites en mémoire.
+    
+    Le flushToDisk() à la fin garantit une **écriture atomique**.
+    
 
-### Graceful Degradation
-- Stop on first module failure
-- Provide clear error messages
-- Maintain partial project state
+- **La Primitive** modifyTsFile **:** C'est le cœur de l'intelligence pour les modifications complexes. Elle utilise ts-morph pour parser le code en AST et appliquer des transformations chirurgicales, garantissant que le formatage et les commentaires de l'utilisateur sont préservés.
 
-### Validation Layers
-- Recipe structure validation
-- Module parameter validation
-- Agent-specific validation
-- Adapter execution validation
+## **4. L'Écosystème Modulaire :** Adapters **vs.** Integrators
 
-## Future Roadmap
+La compréhension de cette distinction est **fondamentale** pour contribuer au projet.
 
-### V2 Features
-- Dynamic module addition
-- Project state management
-- AI-powered recommendations
-- Intelligent dependency resolution
+> 💬 "Les Adapters construisent les piliers. Les Integrators construisent les ponts."
+> 
 
-### V3 Features
-- Full AI development assistant
-- Natural language project generation
-- Automated testing and deployment
-- Cross-project knowledge sharing
+|  | ⁠Adapters | ⁠Integrators |
+| --- | --- | --- |
+| **Objectif** | Installer une technologie **isolée**. | **Connecter** 2 ou plusieurs technologies. |
+| **Exemple** | ⁠adapter-drizzle | ⁠integrator-drizzle-nextjs |
+| **Actions Typiques** | ⁠CREATE_FILE, ⁠INSTALL_PACKAGES | ⁠ENHANCE_FILE, ⁠ADD_TS_IMPORT |
+| **Complexité** | Faible à Moyenne | Élevée |
+| **Dépendances** | Idéalement aucune sur d'autres adapters. | Toujours dépendant d'au moins 2 adapters. |
 
-## Contributing
+Ce modèle de "séparation des responsabilités" garantit que la logique est bien organisée, que les Adapters sont réutilisables et que la complexité est contenue uniquement là où elle est nécessaire : dans les Integrators.
 
-### Adding New Adapters
-1. Create adapter directory in `src/adapters/<category>/<id>/`
-2. Implement `adapter.json` and `blueprint.ts`
-3. Add validation to appropriate agent
-4. Test with sample recipe
+## **5. Le Futur : La Vision de l'IA et de la Personnalisation**
 
-### Adding New Agents
-1. Extend `SimpleAgent` base class
-2. Implement domain-specific validation
-3. Register in `OrchestratorAgent`
-4. Add to agent exports
+Cette architecture a été conçue pour l'avenir.
 
-### Adding New Commands
-1. Create command file in `src/commands/`
-2. Implement command logic
-3. Register in main CLI
-4. Add help documentation
+•	**Le** BlueprintAnalyzer est la première brique d'une IA d'assistance. Demain, il pourra valider la sémantique d'un blueprint, suggérer des optimisations ou détecter des conflits potentiels.
+
+•	**L'action** ENHANCE_FILE **avec son** ModifierRegistry crée une bibliothèque d'opérations de refactoring complexes. Une future IA pourra composer ces "modifiers" pour exécuter des changements de grande envergure demandés en langage naturel par l'utilisateur.
+
+•	**Le** Génome est la représentation parfaite de l'état d'un projet. Une IA pourra lire le Génome d'un projet existant pour comprendre sa stack et proposer des migrations ou des mises à jour intelligentes.
+
+Ce document fournit les fondations conceptuelles. Pour les détails d'implémentation de chaque action ou service, veuillez vous référer à la documentation de code JSDoc correspondante.
+
+---
+
+Prompt:
+
+ok parfait. pendant qu'il travaille je suis en train d'update un document d'architecture technique. on a eu beaucoup de changements de puis et j'aimerais donc que tu m'aide a lister tous nos changement, notre nouvelle structure COMPLETE (vraiment complet !) et a rgarder comment on sturcture généralement ce genre de document pour un projet "complexe" et open source.
+le document seras utilisé en interne mais seras la base de la creation d'autres documents pour la com externe (comme le whitepaper)
+pret ? @web besoin d'autres précisions ?
+
+ok super interressant, mais je pensais faire un document specifique a la CLI the architech, pas un document sur la vision long terme. mais merci pour ceci, je le garde !
+
+maintenant place a ce sujet plus concret => comment marche la CLI ! (et expliquer vraiment tous nos doutes, nos choix, pourquoi, comment, etc...), et faire un chapitre complet sur la modularité via les blueprints, puis sur les adapters et integrators et pourquoi cette différences, puis sur les "features", et evidemment pas mal de data sur comment la CLI:
+
+•	récupère, lit, comprend, lance et fait fonctionner chaque blueprints.
+
+•	fait marcher le systme de génération globale
+
+- ne pas oublier de parler du génome aussi
+- etc...
+- n'oublie rien !
+
+PS: ce document seras sur un notion, alors n'hesite pas a proposer du layout propre a cet outil
