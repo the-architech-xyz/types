@@ -194,14 +194,12 @@ npm run dev
 
 ### Core Architecture
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Complete architectural documentation
-- **[Architecture Layers](docs/ARCHITECTURE_LAYERS.md)** - Three-layer architecture details
 - **[Design Choices](docs/CHOICES.md)** - Rationale behind design decisions
 
 ### Developer Guides
 - **[Adapter Development Guide](docs/ADAPTER_DEVELOPMENT_GUIDE.md)** - Creating custom adapters
 - **[Integration Development Guide](docs/INTEGRATION_DEVELOPMENT_GUIDE.md)** - Creating custom integrations
 - **[Semantic Actions Guide](docs/SEMANTIC_ACTIONS_GUIDE.md)** - High-level AST-based operations
-- **[File Update Strategies](docs/FILE_UPDATE_STRATEGIES.md)** - Intelligent file merging system
 
 ### References
 - **[Recipe Format](docs/RECIPE_FORMAT.md)** - Complete recipe file reference
