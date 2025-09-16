@@ -13,6 +13,9 @@ export * from './feature.js';
 export * from './integration.js';
 export * from './marketplace.js';
 
+// Global Context & State Management
+export * from './global-context.js';
+
 // Agent types (avoiding Module conflict)
 export * from './agent.js';
 export * from './agent-base.js';

@@ -10,6 +10,7 @@ export * from './core.js';
 export * from './feature.js';
 export * from './integration.js';
 export * from './marketplace.js';
+export * from './global-context.js';
 export * from './agent.js';
 export * from './agent-base.js';
 export { Recipe, ProjectConfig, ExecutionResult, ExecutionOptions, IntegrationConfig } from './recipe.js';
