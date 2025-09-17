@@ -26,6 +26,24 @@ export interface AdapterConfig {
   engine?: {
     cliVersion: string; // Required CLI version
   };
+  
+  // NEW: Intelligent Prerequisite & Capability System
+  provides?: CapabilityDeclaration[]; // What capabilities this adapter provides
+  prerequisites?: {
+    capabilities: CapabilityRequirement[]; // What capabilities this adapter needs
+  };
+}
+
+export interface CapabilityDeclaration {
+  name: string; // Capability name (e.g., "tailwind", "react", "typescript")
+  version: string; // Version of the capability provided (e.g., "3.4.1")
+  description?: string; // Optional description of the capability
+}
+
+export interface CapabilityRequirement {
+  name: string; // Required capability name (e.g., "tailwind")
+  version?: string; // Version constraint (e.g., ">=3.0.0", "~3.4.0", "^3.0.0")
+  description?: string; // Optional description of the requirement
 }
 
 export interface ParameterDefinition {
@@ -142,4 +160,31 @@ export interface BlueprintExecutionResult {
   files: string[];
   errors: string[];
   warnings: string[];
+}
+
+// NEW: Prerequisite Validation Types
+export interface PrerequisiteValidationResult {
+  isValid: boolean;
+  error?: string;
+  warnings?: string[];
+  details?: {
+    providedCapabilities: CapabilityDeclaration[];
+    missingCapabilities: CapabilityRequirement[];
+    conflictingCapabilities: CapabilityConflict[];
+    versionMismatches: VersionMismatch[];
+  };
+}
+
+export interface CapabilityConflict {
+  capability: string;
+  providers: string[]; // Adapter IDs that provide this capability
+  message: string;
+}
+
+export interface VersionMismatch {
+  capability: string;
+  required: string;
+  provided: string;
+  provider: string; // Adapter ID that provides this capability
+  message: string;
 }

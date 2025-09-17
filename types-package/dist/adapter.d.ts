@@ -24,6 +24,20 @@ export interface AdapterConfig {
     engine?: {
         cliVersion: string;
     };
+    provides?: CapabilityDeclaration[];
+    prerequisites?: {
+        capabilities: CapabilityRequirement[];
+    };
+}
+export interface CapabilityDeclaration {
+    name: string;
+    version: string;
+    description?: string;
+}
+export interface CapabilityRequirement {
+    name: string;
+    version?: string;
+    description?: string;
 }
 export interface ParameterDefinition {
     type: 'string' | 'boolean' | 'number' | 'select' | 'array' | 'object';
@@ -100,4 +114,27 @@ export interface BlueprintExecutionResult {
     files: string[];
     errors: string[];
     warnings: string[];
+}
+export interface PrerequisiteValidationResult {
+    isValid: boolean;
+    error?: string;
+    warnings?: string[];
+    details?: {
+        providedCapabilities: CapabilityDeclaration[];
+        missingCapabilities: CapabilityRequirement[];
+        conflictingCapabilities: CapabilityConflict[];
+        versionMismatches: VersionMismatch[];
+    };
+}
+export interface CapabilityConflict {
+    capability: string;
+    providers: string[];
+    message: string;
+}
+export interface VersionMismatch {
+    capability: string;
+    required: string;
+    provided: string;
+    provider: string;
+    message: string;
 }
