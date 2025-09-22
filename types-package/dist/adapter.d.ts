@@ -68,6 +68,7 @@ export interface Blueprint {
 export interface BlueprintAction {
     type: 'INSTALL_PACKAGES' | 'ADD_SCRIPT' | 'ADD_ENV_VAR' | 'CREATE_FILE' | 'APPEND_TO_FILE' | 'PREPEND_TO_FILE' | 'RUN_COMMAND' | 'MERGE_JSON' | 'ADD_TS_IMPORT' | 'ENHANCE_FILE' | 'MERGE_CONFIG' | 'WRAP_CONFIG' | 'EXTEND_SCHEMA';
     condition?: string;
+    forEach?: string;
     packages?: string[];
     isDev?: boolean;
     name?: string;

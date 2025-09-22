@@ -81,6 +81,7 @@ export interface BlueprintAction {
   
   // Common properties
   condition?: string; // Template condition for conditional execution
+  forEach?: string; // Path to array in context for dynamic action generation
   
   // INSTALL_PACKAGES parameters
   packages?: string[]; // Array of package names
