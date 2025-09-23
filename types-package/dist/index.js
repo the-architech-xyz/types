@@ -16,3 +16,5 @@ export * from './global-context.js';
 // Agent types (avoiding Module conflict)
 export * from './agent.js';
 export * from './agent-base.js';
+// Schema-driven blueprint types
+export * from './schema-driven-blueprint.js';

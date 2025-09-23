@@ -26,3 +26,6 @@ export { Module as RecipeModule } from './recipe.js';
 
 // Parameter schema types (avoiding conflict with adapter.ts)
 export { ParameterDefinition as ParameterSchemaDefinition } from './parameter-schema.js';
+
+// Schema-driven blueprint types
+export * from './schema-driven-blueprint.js';

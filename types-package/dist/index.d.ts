@@ -16,3 +16,4 @@ export * from './agent-base.js';
 export { Recipe, ProjectConfig, ExecutionResult, ExecutionOptions, IntegrationConfig } from './recipe.js';
 export { Module as RecipeModule } from './recipe.js';
 export { ParameterDefinition as ParameterSchemaDefinition } from './parameter-schema.js';
+export * from './schema-driven-blueprint.js';

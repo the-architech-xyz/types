@@ -17,10 +17,12 @@ npm install @the-architech/types
 
 ## Usage
 
+### Legacy Blueprint
+
 ```typescript
 import { Blueprint, AdapterConfig, BlueprintAction } from '@the-architech/types';
 
-// Define a blueprint
+// Define a blueprint (legacy style)
 const myBlueprint: Blueprint = {
   id: 'my-blueprint',
   name: 'My Blueprint',
@@ -32,6 +34,57 @@ const myBlueprint: Blueprint = {
     }
   ]
 };
+```
+
+### Schema-Driven Blueprint (New)
+
+```typescript
+import { defineBlueprint } from '@the-architech/types';
+
+// Define valid options with 'as const' for type inference
+const VALID_THEMES = ['light', 'dark', 'system'] as const;
+
+// Create a schema-driven blueprint with type validation
+export const blueprint = defineBlueprint({
+  id: 'my-blueprint',
+  name: 'My Blueprint',
+  
+  // Define the schema for parameters
+  schema: {
+    parameters: {
+      theme: {
+        type: 'string',
+        enum: VALID_THEMES,
+        default: 'light',
+        description: 'UI theme to use'
+      },
+      features: {
+        type: 'array',
+        items: {
+          type: 'string',
+          enum: ['auth', 'api', 'database'] as const
+        },
+        default: ['auth'],
+        description: 'Features to enable'
+      }
+    }
+  },
+  
+  // Actions function receives typed parameters
+  actions: (params) => [
+    {
+      type: 'CREATE_FILE',
+      path: `src/theme/${params.theme}/config.ts`,
+      template: 'templates/theme-config.ts.tpl'
+    },
+    // Dynamic actions based on parameters
+    ...params.features.map(feature => ({
+      type: 'CREATE_FILE' as const,
+      path: `src/features/${feature}/index.ts`,
+      template: `templates/${feature}.ts.tpl`
+    }))
+  ]
+});
 
 // Define an adapter config
 const adapterConfig: AdapterConfig = {
@@ -67,6 +120,12 @@ const adapterConfig: AdapterConfig = {
 - `ParameterDefinition` - Parameter schema definition
 - `FeatureDefinition` - Feature definition structure
 - `VirtualFileSystem` - VFS interface
+
+### Schema-Driven Blueprint Types (New in v1.1.0)
+- `defineBlueprint` - Helper function for creating schema-driven blueprints
+- `BlueprintSchema` - Schema definition for blueprint parameters
+- `SchemaDrivenBlueprint` - Type-safe blueprint with schema validation
+- `InferParams<T>` - Type utility to infer parameter types from schema
 
 ## Development
 
