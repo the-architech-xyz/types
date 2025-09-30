@@ -80,6 +80,7 @@ export interface BlueprintAction {
   // CREATE_FILE parameters
   path?: string; // File path
   content?: string; // File content
+  template?: string; // Template file path
   overwrite?: boolean; // Whether to overwrite existing files
   
   // APPEND_TO_FILE / PREPEND_TO_FILE parameters
