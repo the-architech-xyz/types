@@ -13,7 +13,8 @@ export function isValidModifier(value) {
         'tsconfig-enhancer',
         'css-enhancer',
         'js-config-merger',
-        'ts-module-enhancer' // ✅ NEW
+        'ts-module-enhancer',
+        'jsx-wrapper' // 🚧 TODO: Not implemented yet
     ];
     return validModifiers.includes(value);
 }

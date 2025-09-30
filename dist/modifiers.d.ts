@@ -10,7 +10,7 @@
  * Each modifier is a pure function that transforms a file's AST or content.
  * Add new modifiers to this union type to enable them across the system.
  */
-export type AvailableModifier = 'package-json-merger' | 'tsconfig-enhancer' | 'css-enhancer' | 'js-config-merger' | 'ts-module-enhancer';
+export type AvailableModifier = 'package-json-merger' | 'tsconfig-enhancer' | 'css-enhancer' | 'js-config-merger' | 'ts-module-enhancer' | 'jsx-wrapper';
 /**
  * Modifier parameter schemas for each modifier type.
  * This provides intellisense for modifier-specific parameters.
