@@ -52,7 +52,7 @@ export interface CssEnhancerParams extends ModifierParams {
  * JS Config Merger Parameters
  */
 export interface JsConfigMergerParams extends ModifierParams {
-    content: string;
+    content?: string;
     exportName?: 'default' | 'module.exports' | 'named';
     namedExport?: string;
     mergeStrategy?: 'merge' | 'replace' | 'append';
