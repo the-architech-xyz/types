@@ -12,6 +12,7 @@ export * from './core.js';
 export * from './feature.js';
 export * from './integration.js';
 export * from './marketplace.js';
+export * from './modifiers.js';
 
 // Agent types (avoiding Module conflict)
 export * from './agent.js';

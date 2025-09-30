@@ -67,7 +67,7 @@ export interface BlueprintAction {
     overwrite?: boolean;
     workingDir?: string;
     imports?: ImportDefinition[];
-    modifier?: string;
+    modifier?: import('./modifiers.js').AvailableModifier;
     params?: Record<string, any>;
     fallback?: 'skip' | 'error' | 'create';
     strategy?: 'deep-merge' | 'shallow-merge' | 'replace';
