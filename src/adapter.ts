@@ -59,10 +59,11 @@ export interface Blueprint {
 
 export interface BlueprintAction {
   // High-level semantic actions
-  type: 'INSTALL_PACKAGES' | 'ADD_SCRIPT' | 'ADD_ENV_VAR' | 'CREATE_FILE' | 'APPEND_TO_FILE' | 'PREPEND_TO_FILE' | 'RUN_COMMAND' | 'MERGE_JSON' | 'ADD_TS_IMPORT' | 'ENHANCE_FILE' | 'MERGE_CONFIG' | 'WRAP_CONFIG' | 'EXTEND_SCHEMA';
+  type: 'INSTALL_PACKAGES' | 'ADD_SCRIPT' | 'ADD_ENV_VAR' | 'CREATE_FILE' | 'APPEND_TO_FILE' | 'PREPEND_TO_FILE' | 'RUN_COMMAND' | 'MERGE_JSON' | 'ADD_TS_IMPORT' | 'ENHANCE_FILE' | 'MERGE_CONFIG' | 'WRAP_CONFIG' | 'EXTEND_SCHEMA' | 'ADD_DEPENDENCY' | 'ADD_DEV_DEPENDENCY';
   
   // Common properties
   condition?: string; // Template condition for conditional execution
+  forEach?: string; // Path to array in context (e.g., "module.parameters.components") - expands action for each item with {{item}} placeholder
   
   // INSTALL_PACKAGES parameters
   packages?: string[]; // Array of package names
