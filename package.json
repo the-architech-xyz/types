@@ -1,6 +1,6 @@
 {
   "name": "@thearchitech.xyz/types",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Shared TypeScript types for The Architech CLI and Marketplace",
   "main": "dist/index.js",
   "module": "dist/index.js",
