@@ -96,7 +96,7 @@ export interface BlueprintAction {
   imports?: ImportDefinition[];
   
   // ENHANCE_FILE parameters
-  modifier?: string; // Modifier function name
+  modifier?: import('./modifiers.js').AvailableModifier; // Modifier function name (type-safe)
   params?: Record<string, any>; // Parameters for modifier function
   fallback?: 'skip' | 'error' | 'create'; // Fallback strategy
   
