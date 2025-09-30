@@ -10,7 +10,7 @@
  * Each modifier is a pure function that transforms a file's AST or content.
  * Add new modifiers to this union type to enable them across the system.
  */
-export type AvailableModifier = 'package-json-merger' | 'tsconfig-enhancer' | 'css-enhancer' | 'js-config-merger' | 'ts-module-enhancer' | 'jsx-wrapper';
+export type AvailableModifier = 'package-json-merger' | 'tsconfig-enhancer' | 'css-enhancer' | 'js-config-merger' | 'ts-module-enhancer' | 'json-merger' | 'js-export-wrapper' | 'jsx-children-wrapper';
 /**
  * Modifier parameter schemas for each modifier type.
  * This provides intellisense for modifier-specific parameters.
@@ -75,6 +75,41 @@ export interface TsModuleEnhancerParams extends ModifierParams {
         content: string;
     }>;
     preserveExisting?: boolean;
+}
+/**
+ * JSON Merger Parameters
+ */
+export interface JsonMergerParams extends ModifierParams {
+    merge: Record<string, any>;
+    strategy?: 'deep' | 'shallow';
+    arrayMergeStrategy?: 'concat' | 'replace' | 'unique';
+}
+/**
+ * JS Export Wrapper Parameters
+ */
+export interface JsExportWrapperParams extends ModifierParams {
+    wrapperFunction: string;
+    wrapperImport: {
+        name: string;
+        from: string;
+        isDefault?: boolean;
+    };
+    wrapperOptions?: Record<string, any>;
+}
+/**
+ * JSX Children Wrapper Parameters
+ */
+export interface JsxChildrenWrapperParams extends ModifierParams {
+    providers: Array<{
+        component: string;
+        import: {
+            name: string;
+            from: string;
+            isDefault?: boolean;
+        };
+        props?: Record<string, string | boolean | number>;
+    }>;
+    targetElement?: string;
 }
 /**
  * Type guard to check if a string is a valid modifier name

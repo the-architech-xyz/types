@@ -14,7 +14,9 @@ export function isValidModifier(value) {
         'css-enhancer',
         'js-config-merger',
         'ts-module-enhancer',
-        'jsx-wrapper' // 🚧 TODO: Not implemented yet
+        'json-merger',
+        'js-export-wrapper',
+        'jsx-children-wrapper'
     ];
     return validModifiers.includes(value);
 }

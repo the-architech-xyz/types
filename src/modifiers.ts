@@ -17,7 +17,9 @@ export type AvailableModifier =
   | 'css-enhancer'            // Appends CSS styles to existing stylesheets (text-based)
   | 'js-config-merger'        // Deep-merges JavaScript/TypeScript config objects using AST (AST-based)
   | 'ts-module-enhancer'      // Adds imports and top-level exports to TypeScript modules (AST-based)
-  | 'jsx-wrapper';            // 🚧 TODO: Wraps JSX components with provider components (AST-based) - NOT IMPLEMENTED YET
+  | 'json-merger'             // Generic deep merge for any JSON file (JSON-based)
+  | 'js-export-wrapper'       // Wraps module.exports or export default with HOC functions (AST-based)
+  | 'jsx-children-wrapper';   // Wraps {children} in JSX with provider components (AST-based)
 
 /**
  * Modifier parameter schemas for each modifier type.
@@ -92,6 +94,44 @@ export interface TsModuleEnhancerParams extends ModifierParams {
 }
 
 /**
+ * JSON Merger Parameters
+ */
+export interface JsonMergerParams extends ModifierParams {
+  merge: Record<string, any>; // Object to merge into target JSON
+  strategy?: 'deep' | 'shallow'; // Default: 'deep'
+  arrayMergeStrategy?: 'concat' | 'replace' | 'unique'; // Default: 'concat'
+}
+
+/**
+ * JS Export Wrapper Parameters
+ */
+export interface JsExportWrapperParams extends ModifierParams {
+  wrapperFunction: string; // Name of wrapper function (e.g., 'withSentryConfig')
+  wrapperImport: {
+    name: string;
+    from: string;
+    isDefault?: boolean;
+  };
+  wrapperOptions?: Record<string, any>; // Options to pass as second argument
+}
+
+/**
+ * JSX Children Wrapper Parameters
+ */
+export interface JsxChildrenWrapperParams extends ModifierParams {
+  providers: Array<{
+    component: string;
+    import: {
+      name: string;
+      from: string;
+      isDefault?: boolean;
+    };
+    props?: Record<string, string | boolean | number>;
+  }>;
+  targetElement?: string; // Default: 'body'
+}
+
+/**
  * Type guard to check if a string is a valid modifier name
  */
 export function isValidModifier(value: string): value is AvailableModifier {
@@ -101,7 +141,9 @@ export function isValidModifier(value: string): value is AvailableModifier {
     'css-enhancer',
     'js-config-merger',
     'ts-module-enhancer',
-    'jsx-wrapper'  // 🚧 TODO: Not implemented yet
+    'json-merger',
+    'js-export-wrapper',
+    'jsx-children-wrapper'
   ];
   return validModifiers.includes(value as AvailableModifier);
 }
