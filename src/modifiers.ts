@@ -16,7 +16,8 @@ export type AvailableModifier =
   | 'tsconfig-enhancer'       // Enhances tsconfig.json with compiler options, paths, includes (JSON-based)
   | 'css-enhancer'            // Appends CSS styles to existing stylesheets (text-based)
   | 'js-config-merger'        // Deep-merges JavaScript/TypeScript config objects using AST (AST-based)
-  | 'ts-module-enhancer';     // ✅ NEW: Adds imports and top-level exports to TypeScript modules (AST-based)
+  | 'ts-module-enhancer'      // Adds imports and top-level exports to TypeScript modules (AST-based)
+  | 'jsx-wrapper';            // 🚧 TODO: Wraps JSX components with provider components (AST-based) - NOT IMPLEMENTED YET
 
 /**
  * Modifier parameter schemas for each modifier type.
@@ -99,7 +100,8 @@ export function isValidModifier(value: string): value is AvailableModifier {
     'tsconfig-enhancer',
     'css-enhancer',
     'js-config-merger',
-    'ts-module-enhancer'  // ✅ NEW
+    'ts-module-enhancer',
+    'jsx-wrapper'  // 🚧 TODO: Not implemented yet
   ];
   return validModifiers.includes(value as AvailableModifier);
 }
