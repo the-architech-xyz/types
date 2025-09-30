@@ -17,6 +17,14 @@ export interface AdapterConfig {
   version: string;
   blueprint: string;
   dependencies?: string[]; // Other adapters this adapter depends on
+  prerequisites?: {
+    modules?: string[]; // Required modules
+    capabilities?: Array<{
+      name: string;
+      version?: string;
+      description?: string;
+    }>;
+  }; // Prerequisites for this adapter
   capabilities?: string[]; // What this adapter can do
   limitations?: string; // Textual description of limitations
   parameters?: Record<string, ParameterDefinition>; // Parameter definitions
@@ -126,7 +134,7 @@ export interface ConflictResolution {
 }
 
 export interface MergeInstructions {
-  modifier?: string;
+  modifier?: import('./modifiers.js').AvailableModifier;
   params?: Record<string, any>;
   strategy?: 'deep-merge' | 'shallow-merge' | 'replace';
 }
