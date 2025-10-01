@@ -19,7 +19,16 @@ export type AvailableModifier =
   | 'ts-module-enhancer'      // Adds imports and top-level exports to TypeScript modules (AST-based)
   | 'json-merger'             // Generic deep merge for any JSON file (JSON-based)
   | 'js-export-wrapper'       // Wraps module.exports or export default with HOC functions (AST-based)
-  | 'jsx-children-wrapper';   // Wraps {children} in JSX with provider components (AST-based)
+  | 'jsx-children-wrapper'    // Wraps {children} in JSX with provider components (AST-based)
+  | 'yaml-merger'             // Merges YAML files (YAML-based)
+  | 'dockerignore-merger'     // Merges .dockerignore files (text-based)
+  | 'dockerfile-merger'       // Merges Dockerfile content (text-based)
+  | 'env-merger'              // Merges .env files (text-based)
+  | 'readme-merger'           // Merges README files (markdown-based)
+  | 'ts-interface-merger'     // Merges TypeScript interfaces (AST-based)
+  | 'ts-import-merger'        // Merges TypeScript imports (AST-based)
+  | 'css-class-merger'        // Merges CSS classes (text-based)
+  | 'html-attribute-merger';  // Merges HTML attributes (text-based)
 
 /**
  * Modifier parameter schemas for each modifier type.
@@ -143,7 +152,16 @@ export function isValidModifier(value: string): value is AvailableModifier {
     'ts-module-enhancer',
     'json-merger',
     'js-export-wrapper',
-    'jsx-children-wrapper'
+    'jsx-children-wrapper',
+    'yaml-merger',
+    'dockerignore-merger',
+    'dockerfile-merger',
+    'env-merger',
+    'readme-merger',
+    'ts-interface-merger',
+    'ts-import-merger',
+    'css-class-merger',
+    'html-attribute-merger'
   ];
   return validModifiers.includes(value as AvailableModifier);
 }
