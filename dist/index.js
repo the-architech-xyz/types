@@ -5,6 +5,8 @@
  */
 // Core types
 export * from './adapter.js';
+export * from './artifacts.js';
+export * from './blueprint-actions.js';
 export * from './blueprint-context.js';
 export * from './common.js';
 export * from './core.js';
@@ -12,6 +14,6 @@ export * from './feature.js';
 export * from './integration.js';
 export * from './marketplace.js';
 export * from './modifiers.js';
-// Agent types (avoiding Module conflict)
+// Agent types
 export * from './agent.js';
 export * from './agent-base.js';

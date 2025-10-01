@@ -27,10 +27,12 @@ export interface ProjectConfig {
 }
 export interface Module {
     id: string;
-    category: string;
-    version: string;
+    category?: string;
+    version?: string;
     parameters: Record<string, any>;
-    features?: string[];
+    features?: {
+        [key: string]: boolean | string | string[];
+    };
     externalFiles?: string[];
 }
 export interface ExecutionOptions {

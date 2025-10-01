@@ -4,16 +4,10 @@
  * Simple agent structure for sequential execution
  */
 import { BlueprintContext } from './blueprint-context.js';
+import { Module } from './recipe.js';
 export interface Agent {
     category: string;
     execute(module: Module, context: ProjectContext, blueprintContext?: BlueprintContext): Promise<AgentResult>;
-}
-export interface Module {
-    id: string;
-    category: string;
-    version: string;
-    parameters: Record<string, any>;
-    externalFiles?: string[];
 }
 export interface ProjectContext {
     project: {

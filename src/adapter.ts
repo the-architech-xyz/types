@@ -65,67 +65,29 @@ export interface Blueprint {
   actions: BlueprintAction[];
 }
 
-export interface BlueprintAction {
-  // High-level semantic actions
-  type: 'INSTALL_PACKAGES' | 'ADD_SCRIPT' | 'ADD_ENV_VAR' | 'CREATE_FILE' | 'APPEND_TO_FILE' | 'PREPEND_TO_FILE' | 'RUN_COMMAND' | 'MERGE_JSON' | 'ADD_TS_IMPORT' | 'ENHANCE_FILE' | 'MERGE_CONFIG' | 'WRAP_CONFIG' | 'EXTEND_SCHEMA' | 'ADD_DEPENDENCY' | 'ADD_DEV_DEPENDENCY';
-  
-  // Common properties
-  condition?: string; // Template condition for conditional execution
-  forEach?: string; // Path to array in context (e.g., "module.parameters.components") - expands action for each item with {{item}} placeholder
-  
-  // INSTALL_PACKAGES parameters
-  packages?: string[]; // Array of package names
-  isDev?: boolean; // Whether to install as dev dependencies
-  
-  // ADD_SCRIPT parameters
-  name?: string; // Script name
-  command?: string; // Script command
-  
-  // ADD_ENV_VAR parameters
-  key?: string; // Environment variable key
-  value?: string; // Environment variable value
-  description?: string; // Optional description
-  
-  // CREATE_FILE parameters
-  path?: string; // File path
-  content?: string; // File content
-  template?: string; // Template file path
-  overwrite?: boolean; // Whether to overwrite existing files
-  
-  // APPEND_TO_FILE / PREPEND_TO_FILE parameters
-  // (uses path and content from above)
-  
-  // RUN_COMMAND parameters
-  workingDir?: string; // Working directory for command
-  
-  // MERGE_JSON parameters
-  // (uses path from CREATE_FILE and content as object)
-  
-  // ADD_TS_IMPORT parameters
-  imports?: ImportDefinition[];
-  
-  // ENHANCE_FILE parameters
-  modifier?: import('./modifiers.js').AvailableModifier; // Modifier function name (type-safe)
-  params?: Record<string, any>; // Parameters for modifier function
-  fallback?: 'skip' | 'error' | 'create'; // Fallback strategy
-  
-  // MERGE_CONFIG parameters
-  strategy?: 'deep-merge' | 'shallow-merge' | 'replace'; // Merge strategy
-  config?: Record<string, any>; // Configuration object to merge
-  
-  // WRAP_CONFIG parameters
-  wrapper?: string; // Wrapper function name
-  options?: Record<string, any>; // Options for wrapper function
-  
-  // EXTEND_SCHEMA parameters
-  tables?: SchemaTable[]; // Tables to add to schema
-  additionalImports?: string[]; // Additional imports needed (if any)
-  
-  // Conflict resolution parameters
-  conflictResolution?: ConflictResolution; // How to handle file conflicts
-  mergeInstructions?: MergeInstructions; // Instructions for smart merging
-  
-}
+// Import the new discriminated union type
+import { BlueprintAction } from './blueprint-actions.js';
+
+// Re-export for backward compatibility
+export { BlueprintAction } from './blueprint-actions.js';
+export type { 
+  InstallPackagesAction,
+  AddScriptAction,
+  AddEnvVarAction,
+  CreateFileAction,
+  AppendToFileAction,
+  PrependToFileAction,
+  RunCommandAction,
+  MergeJsonAction,
+  AddTsImportAction,
+  EnhanceFileAction,
+  MergeConfigAction,
+  WrapConfigAction,
+  ExtendSchemaAction,
+  AddDependencyAction,
+  AddDevDependencyAction,
+  SchemaColumn
+} from './blueprint-actions.js';
 
 export interface ConflictResolution {
   strategy: 'error' | 'skip' | 'replace' | 'merge';
