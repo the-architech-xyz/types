@@ -16,7 +16,16 @@ export function isValidModifier(value) {
         'ts-module-enhancer',
         'json-merger',
         'js-export-wrapper',
-        'jsx-children-wrapper'
+        'jsx-children-wrapper',
+        'yaml-merger',
+        'dockerignore-merger',
+        'dockerfile-merger',
+        'env-merger',
+        'readme-merger',
+        'ts-interface-merger',
+        'ts-import-merger',
+        'css-class-merger',
+        'html-attribute-merger'
     ];
     return validModifiers.includes(value);
 }
