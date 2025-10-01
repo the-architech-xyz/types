@@ -31,10 +31,12 @@ export interface ProjectConfig {
 
 export interface Module {
   id: string;
-  category: string;
-  version: string;
+  category?: string; // Optional for genome modules
+  version?: string; // Optional for genome modules
   parameters: Record<string, any>;
-  features?: string[]; // V2: Activated features for this module
+  features?: {
+    [key: string]: boolean | string | string[];
+  }; // V2: Activated features for this module
   externalFiles?: string[]; // Files to pre-load into VFS
 }
 

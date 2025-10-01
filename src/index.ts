@@ -6,6 +6,8 @@
 
 // Core types
 export * from './adapter.js';
+export * from './artifacts.js';
+export * from './blueprint-actions.js';
 export * from './blueprint-context.js';
 export * from './common.js';
 export * from './core.js';
@@ -14,13 +16,12 @@ export * from './integration.js';
 export * from './marketplace.js';
 export * from './modifiers.js';
 
-// Agent types (avoiding Module conflict)
+// Agent types
 export * from './agent.js';
 export * from './agent-base.js';
 
-// Recipe types (avoiding Module conflict)
-export { Recipe, ProjectConfig, ExecutionResult, ExecutionOptions, IntegrationConfig } from './recipe.js';
-export { Module as RecipeModule } from './recipe.js';
+// Recipe types
+export { Recipe, ProjectConfig, ExecutionResult, ExecutionOptions, IntegrationConfig, Module } from './recipe.js';
 
 // Parameter schema types (avoiding conflict with adapter.ts)
 export { ParameterDefinition as ParameterSchemaDefinition } from './parameter-schema.js';

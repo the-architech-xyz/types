@@ -59,35 +59,9 @@ export interface Blueprint {
     contextualFiles?: string[];
     actions: BlueprintAction[];
 }
-export interface BlueprintAction {
-    type: 'INSTALL_PACKAGES' | 'ADD_SCRIPT' | 'ADD_ENV_VAR' | 'CREATE_FILE' | 'APPEND_TO_FILE' | 'PREPEND_TO_FILE' | 'RUN_COMMAND' | 'MERGE_JSON' | 'ADD_TS_IMPORT' | 'ENHANCE_FILE' | 'MERGE_CONFIG' | 'WRAP_CONFIG' | 'EXTEND_SCHEMA' | 'ADD_DEPENDENCY' | 'ADD_DEV_DEPENDENCY';
-    condition?: string;
-    forEach?: string;
-    packages?: string[];
-    isDev?: boolean;
-    name?: string;
-    command?: string;
-    key?: string;
-    value?: string;
-    description?: string;
-    path?: string;
-    content?: string;
-    template?: string;
-    overwrite?: boolean;
-    workingDir?: string;
-    imports?: ImportDefinition[];
-    modifier?: import('./modifiers.js').AvailableModifier;
-    params?: Record<string, any>;
-    fallback?: 'skip' | 'error' | 'create';
-    strategy?: 'deep-merge' | 'shallow-merge' | 'replace';
-    config?: Record<string, any>;
-    wrapper?: string;
-    options?: Record<string, any>;
-    tables?: SchemaTable[];
-    additionalImports?: string[];
-    conflictResolution?: ConflictResolution;
-    mergeInstructions?: MergeInstructions;
-}
+import { BlueprintAction } from './blueprint-actions.js';
+export { BlueprintAction } from './blueprint-actions.js';
+export type { InstallPackagesAction, AddScriptAction, AddEnvVarAction, CreateFileAction, AppendToFileAction, PrependToFileAction, RunCommandAction, MergeJsonAction, AddTsImportAction, EnhanceFileAction, MergeConfigAction, WrapConfigAction, ExtendSchemaAction, AddDependencyAction, AddDevDependencyAction, SchemaColumn } from './blueprint-actions.js';
 export interface ConflictResolution {
     strategy: 'error' | 'skip' | 'replace' | 'merge';
     mergeStrategy?: 'json' | 'css' | 'js' | 'append';
