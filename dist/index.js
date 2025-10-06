@@ -10,10 +10,17 @@ export * from './blueprint-actions.js';
 export * from './blueprint-context.js';
 export * from './common.js';
 export * from './core.js';
-export * from './feature.js';
-export * from './integration.js';
-export * from './marketplace.js';
 export * from './modifiers.js';
+export * from './dependency-resolver.js';
+// New enum types
+export * from './blueprint-action-types.js';
+export * from './modifier-types.js';
+export * from './fallback-strategies.js';
+export * from './conflict-resolution.js';
 // Agent types
 export * from './agent.js';
 export * from './agent-base.js';
+// Marketplace types (tech-agnostic interface)
+export * from './marketplace.js';
+export * from './feature.js';
+export * from './integration.js';

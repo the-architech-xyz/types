@@ -123,6 +123,12 @@ export interface ModuleConfig {
   };
   parameters: Record<string, any>;
   features?: Record<string, boolean | string | string[]>;
+  provides?: {
+    capabilities?: string[];
+    files?: string[];
+    components?: string[];
+    pages?: string[];
+  };
 }
 
 export interface ResolutionOptions {

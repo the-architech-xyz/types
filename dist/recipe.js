@@ -1,6 +1,6 @@
 /**
- * Recipe Types - V1 YAML Schema
+ * Core CLI Types
  *
- * The architech.yaml file schema for declarative project generation
+ * Essential types for The Architech CLI orchestration
  */
 export {};

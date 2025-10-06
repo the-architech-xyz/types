@@ -4,33 +4,39 @@
  * Discriminated union types for all blueprint actions with strict type safety.
  * Each action type has its own interface with required properties.
  */
-import { ImportDefinition, SchemaTable } from './adapter.js';
+import { ImportDefinition, SchemaTable, ConflictResolution, MergeInstructions } from './adapter.js';
+import { BlueprintActionType } from './blueprint-action-types.js';
+import { ModifierType } from './modifier-types.js';
+import { EnhanceFileFallbackStrategy } from './fallback-strategies.js';
 export interface BaseAction {
     condition?: string;
     forEach?: string;
 }
 export interface InstallPackagesAction extends BaseAction {
-    type: 'INSTALL_PACKAGES';
+    type: BlueprintActionType.INSTALL_PACKAGES;
     packages: string[];
     isDev?: boolean;
 }
 export interface AddScriptAction extends BaseAction {
-    type: 'ADD_SCRIPT';
+    type: BlueprintActionType.ADD_SCRIPT;
     name: string;
     command: string;
 }
 export interface AddEnvVarAction extends BaseAction {
-    type: 'ADD_ENV_VAR';
+    type: BlueprintActionType.ADD_ENV_VAR;
     key: string;
     value: string;
+    path?: string;
     description?: string;
 }
 export interface CreateFileAction extends BaseAction {
-    type: 'CREATE_FILE';
+    type: BlueprintActionType.CREATE_FILE;
     path: string;
     content?: string;
     template?: string;
     overwrite?: boolean;
+    conflictResolution?: ConflictResolution;
+    mergeInstructions?: MergeInstructions;
 }
 export interface AppendToFileAction extends BaseAction {
     type: 'APPEND_TO_FILE';
@@ -43,7 +49,7 @@ export interface PrependToFileAction extends BaseAction {
     content: string;
 }
 export interface RunCommandAction extends BaseAction {
-    type: 'RUN_COMMAND';
+    type: BlueprintActionType.RUN_COMMAND;
     command: string;
     workingDir?: string;
 }
@@ -58,11 +64,11 @@ export interface AddTsImportAction extends BaseAction {
     imports: ImportDefinition[];
 }
 export interface EnhanceFileAction extends BaseAction {
-    type: 'ENHANCE_FILE';
+    type: BlueprintActionType.ENHANCE_FILE;
     path: string;
-    modifier: string;
+    modifier: ModifierType;
     params?: Record<string, any>;
-    fallback?: 'skip' | 'error' | 'create';
+    fallback?: EnhanceFileFallbackStrategy;
 }
 export interface MergeConfigAction extends BaseAction {
     type: 'MERGE_CONFIG';
@@ -83,12 +89,12 @@ export interface ExtendSchemaAction extends BaseAction {
     additionalImports?: string[];
 }
 export interface AddDependencyAction extends BaseAction {
-    type: 'ADD_DEPENDENCY';
+    type: BlueprintActionType.ADD_DEPENDENCY;
     packages: string[];
     isDev?: boolean;
 }
 export interface AddDevDependencyAction extends BaseAction {
-    type: 'ADD_DEV_DEPENDENCY';
+    type: BlueprintActionType.ADD_DEV_DEPENDENCY;
     packages: string[];
 }
 export interface SchemaColumn {

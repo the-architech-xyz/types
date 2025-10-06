@@ -17,13 +17,18 @@ export interface AdapterConfig {
     dependencies?: string[];
     prerequisites?: {
         modules?: string[];
-        capabilities?: Array<{
-            name: string;
+        capabilities?: string[];
+        adapters?: string[];
+        integrators?: string[];
+    };
+    capabilities?: {
+        [capabilityName: string]: {
             version?: string;
             description?: string;
-        }>;
+            provides?: string[];
+            requires?: string[];
+        };
     };
-    capabilities?: string[];
     limitations?: string;
     parameters?: Record<string, ParameterDefinition>;
     features?: Record<string, FeatureDefinition>;
@@ -62,9 +67,10 @@ export interface Blueprint {
 import { BlueprintAction } from './blueprint-actions.js';
 export { BlueprintAction } from './blueprint-actions.js';
 export type { InstallPackagesAction, AddScriptAction, AddEnvVarAction, CreateFileAction, AppendToFileAction, PrependToFileAction, RunCommandAction, MergeJsonAction, AddTsImportAction, EnhanceFileAction, MergeConfigAction, WrapConfigAction, ExtendSchemaAction, AddDependencyAction, AddDevDependencyAction, SchemaColumn } from './blueprint-actions.js';
+import { ConflictResolutionStrategy, ConflictMergeStrategy } from './conflict-resolution.js';
 export interface ConflictResolution {
-    strategy: 'error' | 'skip' | 'replace' | 'merge';
-    mergeStrategy?: 'json' | 'css' | 'js' | 'append';
+    strategy: ConflictResolutionStrategy;
+    mergeStrategy?: ConflictMergeStrategy;
     priority?: number;
 }
 export interface MergeInstructions {

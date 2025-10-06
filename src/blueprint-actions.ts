@@ -6,7 +6,13 @@
  */
 
 // Import existing types from adapter.ts
-import { ImportDefinition, SchemaTable } from './adapter.js';
+import { ImportDefinition, SchemaTable, ConflictResolution, MergeInstructions } from './adapter.js';
+
+// Import new enums
+import { BlueprintActionType } from './blueprint-action-types.js';
+import { ModifierType } from './modifier-types.js';
+import { EnhanceFileFallbackStrategy, CreateFileFallbackStrategy } from './fallback-strategies.js';
+import { ConflictResolutionStrategy, ConflictMergeStrategy } from './conflict-resolution.js';
 
 // Common properties shared by all actions
 export interface BaseAction {
@@ -16,33 +22,36 @@ export interface BaseAction {
 
 // INSTALL_PACKAGES Action
 export interface InstallPackagesAction extends BaseAction {
-  type: 'INSTALL_PACKAGES';
+  type: BlueprintActionType.INSTALL_PACKAGES;
   packages: string[]; // Required: Array of package names
   isDev?: boolean; // Whether to install as dev dependencies
 }
 
 // ADD_SCRIPT Action
 export interface AddScriptAction extends BaseAction {
-  type: 'ADD_SCRIPT';
+  type: BlueprintActionType.ADD_SCRIPT;
   name: string; // Required: Script name
   command: string; // Required: Script command
 }
 
 // ADD_ENV_VAR Action
 export interface AddEnvVarAction extends BaseAction {
-  type: 'ADD_ENV_VAR';
+  type: BlueprintActionType.ADD_ENV_VAR;
   key: string; // Required: Environment variable key
   value: string; // Required: Environment variable value
+  path?: string; // Optional: Environment file path (defaults to .env)
   description?: string; // Optional description
 }
 
 // CREATE_FILE Action
 export interface CreateFileAction extends BaseAction {
-  type: 'CREATE_FILE';
+  type: BlueprintActionType.CREATE_FILE;
   path: string; // Required: File path
   content?: string; // File content
   template?: string; // Template file path
   overwrite?: boolean; // Whether to overwrite existing files
+  conflictResolution?: ConflictResolution; // Conflict resolution strategy
+  mergeInstructions?: MergeInstructions; // Merge instructions for file content
 }
 
 // APPEND_TO_FILE Action
@@ -61,7 +70,7 @@ export interface PrependToFileAction extends BaseAction {
 
 // RUN_COMMAND Action
 export interface RunCommandAction extends BaseAction {
-  type: 'RUN_COMMAND';
+  type: BlueprintActionType.RUN_COMMAND;
   command: string; // Required: Command to run
   workingDir?: string; // Working directory for command
 }
@@ -82,11 +91,11 @@ export interface AddTsImportAction extends BaseAction {
 
 // ENHANCE_FILE Action
 export interface EnhanceFileAction extends BaseAction {
-  type: 'ENHANCE_FILE';
+  type: BlueprintActionType.ENHANCE_FILE;
   path: string; // Required: File path
-  modifier: string; // Required: Modifier function name
+  modifier: ModifierType; // Required: Modifier function name
   params?: Record<string, any>; // Parameters for modifier function
-  fallback?: 'skip' | 'error' | 'create'; // Fallback strategy
+  fallback?: EnhanceFileFallbackStrategy; // Fallback strategy
 }
 
 // MERGE_CONFIG Action
@@ -115,14 +124,14 @@ export interface ExtendSchemaAction extends BaseAction {
 
 // ADD_DEPENDENCY Action
 export interface AddDependencyAction extends BaseAction {
-  type: 'ADD_DEPENDENCY';
+  type: BlueprintActionType.ADD_DEPENDENCY;
   packages: string[]; // Required: Array of package names
   isDev?: boolean; // Whether to install as dev dependencies
 }
 
 // ADD_DEV_DEPENDENCY Action
 export interface AddDevDependencyAction extends BaseAction {
-  type: 'ADD_DEV_DEPENDENCY';
+  type: BlueprintActionType.ADD_DEV_DEPENDENCY;
   packages: string[]; // Required: Array of package names
 }
 

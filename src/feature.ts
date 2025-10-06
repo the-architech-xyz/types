@@ -4,6 +4,9 @@
  * Feature configuration for intelligent dependency resolution
  */
 
+// Import shared types from adapter
+import type { BlueprintAction, Blueprint, ParameterDefinition } from './adapter.js';
+
 export interface FeatureConfig {
   id: string;
   name: string;
@@ -26,28 +29,10 @@ export interface FeatureConfig {
   };
 }
 
-export interface ParameterDefinition {
-  type: 'string' | 'boolean' | 'number' | 'select' | 'array' | 'object';
-  required: boolean;
-  default?: any;
-  choices?: string[];
-  description: string;
-  validation?: (value: any) => boolean;
-}
-
 export interface Feature {
   config: FeatureConfig;
   blueprint: Blueprint;
 }
 
-export interface Blueprint {
-  id: string;
-  name: string;
-  description?: string;
-  version?: string;
-  contextualFiles?: string[];
-  actions: BlueprintAction[];
-}
-
-// Import blueprint actions from adapter types
-export type { BlueprintAction } from './adapter.js';
+// Re-export shared types for convenience
+export type { BlueprintAction, Blueprint, ParameterDefinition };

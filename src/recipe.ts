@@ -1,23 +1,8 @@
 /**
- * Recipe Types - V1 YAML Schema
+ * Core CLI Types
  * 
- * The architech.yaml file schema for declarative project generation
+ * Essential types for The Architech CLI orchestration
  */
-
-export interface IntegrationConfig {
-  name: string;
-  features?: {
-    [key: string]: boolean | string | string[];
-  };
-}
-
-export interface Recipe {
-  version: string;
-  project: ProjectConfig;
-  modules: Module[];
-  integrations?: IntegrationConfig[]; // Integration adapters with sub-features
-  options?: ExecutionOptions;
-}
 
 export interface ProjectConfig {
   name: string;
@@ -29,15 +14,36 @@ export interface ProjectConfig {
   license?: string;
 }
 
+export type ModuleType = 'adapter' | 'integrator' | 'feature';
+
 export interface Module {
   id: string;
-  category?: string; // Optional for genome modules
-  version?: string; // Optional for genome modules
+  category?: string;
+  version?: string;
   parameters: Record<string, any>;
   features?: {
     [key: string]: boolean | string | string[];
-  }; // V2: Activated features for this module
-  externalFiles?: string[]; // Files to pre-load into VFS
+  };
+  externalFiles?: string[];
+  config?: {
+    id: string;
+    name: string;
+    description: string;
+    version: string;
+    category: string;
+    capabilities?: Record<string, any>;
+    prerequisites?: {
+      modules?: string[];
+      capabilities?: string[];
+    };
+    provides?: {
+      capabilities?: string[];
+      files?: string[];
+      components?: string[];
+      pages?: string[];
+    };
+    [key: string]: any; // Allow additional config properties
+  };
 }
 
 export interface ExecutionOptions {
@@ -51,4 +57,13 @@ export interface ExecutionResult {
   modulesExecuted: number;
   errors?: string[];
   warnings?: string[];
+}
+
+// Core Genome interface - the primary type for CLI orchestration
+export interface Genome {
+  version: string;
+  project: ProjectConfig;
+  modules: Module[];
+  features?: string[]; // Feature IDs to resolve
+  options?: ExecutionOptions; // Execution options
 }

@@ -1,6 +1,6 @@
 /**
- * Feature Types - V2 Feature System
+ * Feature Types - V1 Enhanced with Capability Resolution
  *
- * Types for the modular feature system
+ * Feature configuration for intelligent dependency resolution
  */
 export {};

@@ -11,18 +11,26 @@ export * from './blueprint-actions.js';
 export * from './blueprint-context.js';
 export * from './common.js';
 export * from './core.js';
-export * from './feature.js';
-export * from './integration.js';
-export * from './marketplace.js';
 export * from './modifiers.js';
 export * from './dependency-resolver.js';
+
+// New enum types
+export * from './blueprint-action-types.js';
+export * from './modifier-types.js';
+export * from './fallback-strategies.js';
+export * from './conflict-resolution.js';
 
 // Agent types
 export * from './agent.js';
 export * from './agent-base.js';
 
-// Recipe types
-export { Recipe, ProjectConfig, ExecutionResult, ExecutionOptions, IntegrationConfig, Module } from './recipe.js';
+// Core CLI types
+export { ProjectConfig, ExecutionResult, ExecutionOptions, Module, ModuleType, Genome } from './recipe.js';
+
+// Marketplace types (tech-agnostic interface)
+export * from './marketplace.js';
+export * from './feature.js';
+export * from './integration.js';
 
 // Parameter schema types (avoiding conflict with adapter.ts)
 export { ParameterDefinition as ParameterSchemaDefinition } from './parameter-schema.js';

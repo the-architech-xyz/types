@@ -1,36 +1,32 @@
 /**
- * Feature Types - V2 Feature System
+ * Feature Types - V1 Enhanced with Capability Resolution
  *
- * Types for the modular feature system
+ * Feature configuration for intelligent dependency resolution
  */
-export interface FeatureSpec {
-    type: 'adapter-feature' | 'cross-adapter-feature';
-    adapterId?: string;
-    featureId: string;
-    fullSpec: string;
-}
+import type { BlueprintAction, Blueprint, ParameterDefinition } from './adapter.js';
 export interface FeatureConfig {
     id: string;
     name: string;
     description: string;
-    category: 'core' | 'premium' | 'integration' | 'cross-adapter';
     version: string;
+    category: 'feature';
     blueprint: string;
-    dependencies?: string[];
-    parameters?: Record<string, any>;
-    compatibility?: string[];
+    prerequisites: {
+        capabilities: string[];
+        adapters?: string[];
+        integrators?: string[];
+        modules?: string[];
+    };
+    provides: {
+        capabilities: string[];
+    };
+    parameters?: Record<string, ParameterDefinition>;
+    constraints?: {
+        [key: string]: string;
+    };
 }
-export interface InstalledFeature {
-    id: string;
-    spec: string;
-    addedAt: string;
-    type: 'adapter-feature' | 'cross-adapter-feature';
-    parameters?: Record<string, any>;
+export interface Feature {
+    config: FeatureConfig;
+    blueprint: Blueprint;
 }
-export interface FeatureExecutionResult {
-    success: boolean;
-    filesCreated: string[];
-    filesModified: string[];
-    errors?: string[];
-    warnings?: string[];
-}
+export type { BlueprintAction, Blueprint, ParameterDefinition };

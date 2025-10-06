@@ -94,9 +94,11 @@ export type {
   SchemaColumn
 } from './blueprint-actions.js';
 
+import { ConflictResolutionStrategy, ConflictMergeStrategy } from './conflict-resolution.js';
+
 export interface ConflictResolution {
-  strategy: 'error' | 'skip' | 'replace' | 'merge';
-  mergeStrategy?: 'json' | 'css' | 'js' | 'append';
+  strategy: ConflictResolutionStrategy;
+  mergeStrategy?: ConflictMergeStrategy;
   priority?: number;
 }
 
