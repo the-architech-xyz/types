@@ -103,7 +103,7 @@ export interface ConflictResolution {
 }
 
 export interface MergeInstructions {
-  modifier?: import('./modifiers.js').AvailableModifier;
+  modifier?: import('./modifiers.js').ModifierType;
   params?: Record<string, any>;
   strategy?: 'deep-merge' | 'shallow-merge' | 'replace';
 }

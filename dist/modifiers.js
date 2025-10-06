@@ -4,6 +4,8 @@
  * This is the SINGLE SOURCE OF TRUTH for all available modifiers in The Architech.
  * Any modifier referenced in a blueprint MUST be listed here to ensure type safety.
  */
+// Re-export ModifierType for backward compatibility
+export { ModifierType } from './modifier-types.js';
 /**
  * Type guard to check if a string is a valid modifier name
  */

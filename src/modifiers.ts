@@ -10,6 +10,8 @@
  * 
  * Each modifier is a pure function that transforms a file's AST or content.
  * Add new modifiers to this union type to enable them across the system.
+ * 
+ * @deprecated Use ModifierType enum instead
  */
 export type AvailableModifier = 
   | 'package-json-merger'     // Merges dependencies, scripts, and properties into package.json (JSON-based)
@@ -29,6 +31,9 @@ export type AvailableModifier =
   | 'ts-import-merger'        // Merges TypeScript imports (AST-based)
   | 'css-class-merger'        // Merges CSS classes (text-based)
   | 'html-attribute-merger';  // Merges HTML attributes (text-based)
+
+// Re-export ModifierType for backward compatibility
+export { ModifierType } from './modifier-types.js';
 
 /**
  * Modifier parameter schemas for each modifier type.
