@@ -12,7 +12,7 @@ export interface Agent {
 export interface ProjectContext {
     project: {
         name: string;
-        path: string;
+        path?: string;
         framework: string;
         description?: string;
         author?: string;
