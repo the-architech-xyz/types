@@ -19,6 +19,7 @@ export var ModifierType;
     ModifierType["JSON_MERGER"] = "json-merger";
     ModifierType["JSX_CHILDREN_WRAPPER"] = "jsx-children-wrapper";
     ModifierType["TS_MODULE_ENHANCER"] = "ts-module-enhancer";
+    ModifierType["YAML_MERGER"] = "yaml-merger";
 })(ModifierType || (ModifierType = {}));
 /**
  * Type guard to check if a string is a valid modifier type
