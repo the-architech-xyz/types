@@ -22,6 +22,8 @@ export var ModifierType;
     ModifierType["YAML_MERGER"] = "yaml-merger";
     ModifierType["ENV_MERGER"] = "env-merger";
     ModifierType["CSS_ENHANCER"] = "css-enhancer";
+    ModifierType["DOCKERFILE_MERGER"] = "dockerfile-merger";
+    ModifierType["DOCKERIGNORE_MERGER"] = "dockerignore-merger";
 })(ModifierType || (ModifierType = {}));
 /**
  * Type guard to check if a string is a valid modifier type

@@ -21,7 +21,9 @@ export enum ModifierType {
   TS_MODULE_ENHANCER = 'ts-module-enhancer',
   YAML_MERGER = 'yaml-merger',
   ENV_MERGER = 'env-merger',
-  CSS_ENHANCER = 'css-enhancer'
+  CSS_ENHANCER = 'css-enhancer',
+  DOCKERFILE_MERGER = 'dockerfile-merger',
+  DOCKERIGNORE_MERGER = 'dockerignore-merger'
 }
 
 /**
