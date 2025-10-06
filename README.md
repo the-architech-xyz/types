@@ -26,7 +26,7 @@ const myBlueprint: Blueprint = {
   name: 'My Blueprint',
   actions: [
     {
-      type: 'CREATE_FILE',
+      type: BlueprintActionType.CREATE_FILE,
       path: 'src/index.ts',
       content: 'console.log("Hello World");'
     }
