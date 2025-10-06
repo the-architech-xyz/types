@@ -18,7 +18,9 @@ export declare enum ModifierType {
     JSON_MERGER = "json-merger",
     JSX_CHILDREN_WRAPPER = "jsx-children-wrapper",
     TS_MODULE_ENHANCER = "ts-module-enhancer",
-    YAML_MERGER = "yaml-merger"
+    YAML_MERGER = "yaml-merger",
+    ENV_MERGER = "env-merger",
+    CSS_ENHANCER = "css-enhancer"
 }
 /**
  * Type guard to check if a string is a valid modifier type

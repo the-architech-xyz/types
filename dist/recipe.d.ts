@@ -6,7 +6,7 @@
 export interface ProjectConfig {
     name: string;
     framework: string;
-    path: string;
+    path?: string;
     description?: string;
     version?: string;
     author?: string;

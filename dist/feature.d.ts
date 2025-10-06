@@ -24,6 +24,14 @@ export interface FeatureConfig {
     constraints?: {
         [key: string]: string;
     };
+    contract?: {
+        hooks: Record<string, string>;
+        api?: {
+            endpoints: string[];
+            methods: string[];
+        };
+        types?: string[];
+    };
 }
 export interface Feature {
     config: FeatureConfig;

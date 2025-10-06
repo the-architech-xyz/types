@@ -20,7 +20,8 @@ export enum ModifierType {
   JSX_CHILDREN_WRAPPER = 'jsx-children-wrapper',
   TS_MODULE_ENHANCER = 'ts-module-enhancer',
   YAML_MERGER = 'yaml-merger',
-  ENV_MERGER = 'env-merger'
+  ENV_MERGER = 'env-merger',
+  CSS_ENHANCER = 'css-enhancer'
 }
 
 /**

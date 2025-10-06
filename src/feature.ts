@@ -27,6 +27,14 @@ export interface FeatureConfig {
   constraints?: {
     [key: string]: string; // Version constraints (e.g., "minReactVersion": ">=18.0.0")
   };
+  contract?: {
+    hooks: Record<string, string>; // Hook signatures: { "useSendEmail": "UseMutationResult<...>" }
+    api?: {
+      endpoints: string[]; // API endpoints this feature provides
+      methods: string[]; // HTTP methods supported
+    };
+    types?: string[]; // TypeScript types this feature provides
+  };
 }
 
 export interface Feature {

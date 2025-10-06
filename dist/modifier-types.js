@@ -20,6 +20,8 @@ export var ModifierType;
     ModifierType["JSX_CHILDREN_WRAPPER"] = "jsx-children-wrapper";
     ModifierType["TS_MODULE_ENHANCER"] = "ts-module-enhancer";
     ModifierType["YAML_MERGER"] = "yaml-merger";
+    ModifierType["ENV_MERGER"] = "env-merger";
+    ModifierType["CSS_ENHANCER"] = "css-enhancer";
 })(ModifierType || (ModifierType = {}));
 /**
  * Type guard to check if a string is a valid modifier type
