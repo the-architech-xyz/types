@@ -19,13 +19,18 @@ export interface AdapterConfig {
   dependencies?: string[]; // Other adapters this adapter depends on
   prerequisites?: {
     modules?: string[]; // Required modules
-    capabilities?: Array<{
-      name: string;
+    capabilities?: string[]; // Required capabilities (kebab-case)
+    adapters?: string[]; // Required adapter categories
+    integrators?: string[]; // Required integrator types
+  };
+  capabilities?: {
+    [capabilityName: string]: {
       version?: string;
       description?: string;
-    }>;
-  }; // Prerequisites for this adapter
-  capabilities?: string[]; // What this adapter can do
+      provides?: string[]; // What this capability provides
+      requires?: string[]; // What this capability requires
+    };
+  };
   limitations?: string; // Textual description of limitations
   parameters?: Record<string, ParameterDefinition>; // Parameter definitions
   features?: Record<string, FeatureDefinition>; // V2: Modular features

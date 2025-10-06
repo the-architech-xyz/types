@@ -1,40 +1,53 @@
 /**
- * Feature Types - V2 Feature System
+ * Feature Types - V1 Enhanced with Capability Resolution
  * 
- * Types for the modular feature system
+ * Feature configuration for intelligent dependency resolution
  */
-
-export interface FeatureSpec {
-  type: 'adapter-feature' | 'cross-adapter-feature';
-  adapterId?: string;
-  featureId: string;
-  fullSpec: string;
-}
 
 export interface FeatureConfig {
   id: string;
   name: string;
   description: string;
-  category: 'core' | 'premium' | 'integration' | 'cross-adapter';
   version: string;
+  category: 'feature';
   blueprint: string;
-  dependencies?: string[];
-  parameters?: Record<string, any>;
-  compatibility?: string[];
+  prerequisites: {
+    capabilities: string[]; // Required capabilities (kebab-case)
+    adapters?: string[]; // Required adapter categories
+    integrators?: string[]; // Required integrator types
+    modules?: string[]; // Direct module dependencies
+  };
+  provides: {
+    capabilities: string[]; // Capabilities this feature provides
+  };
+  parameters?: Record<string, ParameterDefinition>;
+  constraints?: {
+    [key: string]: string; // Version constraints (e.g., "minReactVersion": ">=18.0.0")
+  };
 }
 
-export interface InstalledFeature {
+export interface ParameterDefinition {
+  type: 'string' | 'boolean' | 'number' | 'select' | 'array' | 'object';
+  required: boolean;
+  default?: any;
+  choices?: string[];
+  description: string;
+  validation?: (value: any) => boolean;
+}
+
+export interface Feature {
+  config: FeatureConfig;
+  blueprint: Blueprint;
+}
+
+export interface Blueprint {
   id: string;
-  spec: string;
-  addedAt: string;
-  type: 'adapter-feature' | 'cross-adapter-feature';
-  parameters?: Record<string, any>;
+  name: string;
+  description?: string;
+  version?: string;
+  contextualFiles?: string[];
+  actions: BlueprintAction[];
 }
 
-export interface FeatureExecutionResult {
-  success: boolean;
-  filesCreated: string[];
-  filesModified: string[];
-  errors?: string[];
-  warnings?: string[];
-}
+// Import blueprint actions from adapter types
+export type { BlueprintAction } from './adapter.js';

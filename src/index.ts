@@ -15,6 +15,7 @@ export * from './feature.js';
 export * from './integration.js';
 export * from './marketplace.js';
 export * from './modifiers.js';
+export * from './dependency-resolver.js';
 
 // Agent types
 export * from './agent.js';
