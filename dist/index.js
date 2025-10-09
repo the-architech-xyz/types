@@ -24,3 +24,5 @@ export * from './agent-base.js';
 export * from './marketplace.js';
 export * from './feature.js';
 export * from './integration.js';
+// Constitutional Architecture types
+export * from './constitutional-architecture.js';

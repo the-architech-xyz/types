@@ -22,3 +22,4 @@ export * from './marketplace.js';
 export * from './feature.js';
 export * from './integration.js';
 export { ParameterDefinition as ParameterSchemaDefinition } from './parameter-schema.js';
+export * from './constitutional-architecture.js';

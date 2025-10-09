@@ -8,16 +8,16 @@
  * Fallback strategies for ENHANCE_FILE action
  */
 export declare enum EnhanceFileFallbackStrategy {
-    CREATE = "create",// Create empty file if doesn't exist
-    SKIP = "skip",// Skip if file doesn't exist (implicit)
+    CREATE = "create",
+    SKIP = "skip",
     ERROR = "error"
 }
 /**
  * Fallback strategies for CREATE_FILE action
  */
 export declare enum CreateFileFallbackStrategy {
-    OVERWRITE = "overwrite",// Overwrite existing file
-    SKIP = "skip",// Skip if file exists
+    OVERWRITE = "overwrite",
+    SKIP = "skip",
     ERROR = "error"
 }
 /**

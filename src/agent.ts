@@ -6,6 +6,7 @@
 
 import { BlueprintContext } from './blueprint-context.js';
 import { Module } from './recipe.js';
+import { ConstitutionalExecutionContext } from './constitutional-architecture.js';
 
 export interface Agent {
   category: string;
@@ -41,6 +42,8 @@ export interface ProjectContext {
   deploymentModule?: Module;
   contentModule?: Module;
   blockchainModule?: Module;
+  // Constitutional Architecture support
+  constitutional?: ConstitutionalExecutionContext;
 }
 
 export interface AgentResult {
