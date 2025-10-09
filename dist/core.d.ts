@@ -503,6 +503,55 @@ export declare enum LogLevel {
     SUCCESS = "success"
 }
 /**
+ * Standardized Path Keys - Framework-Agnostic Path Resolution
+ *
+ * These semantic path keys are used in blueprints with {{paths.key}} syntax
+ * to create framework-agnostic file paths. Each framework adapter must provide
+ * concrete implementations for all these path keys in their adapter.json.
+ */
+export declare enum PathKey {
+    SOURCE_ROOT = "source_root",
+    APP_ROOT = "app_root",
+    PAGES_ROOT = "pages_root",
+    SHARED_LIBRARY = "shared_library",
+    UTILS = "utils",
+    TYPES = "types",
+    HOOKS = "hooks",
+    STORES = "stores",
+    COMPONENTS = "components",
+    UI_COMPONENTS = "ui_components",
+    LAYOUTS = "layouts",
+    PROVIDERS = "providers",
+    API_ROUTES = "api_routes",
+    API_HANDLERS = "api_handlers",
+    MIDDLEWARE = "middleware",
+    CONFIG = "config",
+    ENV = "env",
+    SCRIPTS = "scripts",
+    DATABASE_CONFIG = "database_config",
+    AUTH_CONFIG = "auth_config",
+    PAYMENT_CONFIG = "payment_config",
+    EMAIL_CONFIG = "email_config",
+    OBSERVABILITY_CONFIG = "observability_config",
+    STATE_CONFIG = "state_config",
+    TESTING_CONFIG = "testing_config",
+    DEPLOYMENT_CONFIG = "deployment_config",
+    CONTENT_CONFIG = "content_config",
+    BLOCKCHAIN_CONFIG = "blockchain_config",
+    ASSETS = "assets",
+    PUBLIC = "public",
+    STATIC = "static",
+    STYLES = "styles",
+    TESTS = "tests",
+    TEST_UTILS = "test_utils",
+    MOCKS = "mocks",
+    BUILD = "build",
+    DIST = "dist",
+    OUT = "out",
+    DOCS = "docs",
+    README = "readme"
+}
+/**
  * Validation Result - Used by both agents and plugins
  */
 export interface ValidationResult {

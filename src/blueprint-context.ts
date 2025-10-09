@@ -5,10 +5,13 @@
  * Each blueprint gets its own isolated VFS instance.
  */
 
+import { ConstitutionalExecutionContext } from './constitutional-architecture.js';
+
 export interface BlueprintContext {
   vfs: any; // VFS is implementation-specific, not shared
   projectRoot: string;
   externalFiles: string[];
+  constitutional?: ConstitutionalExecutionContext; // Constitutional Architecture support
 }
 
 export interface BlueprintContextOptions {

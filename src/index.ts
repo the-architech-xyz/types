@@ -34,3 +34,6 @@ export * from './integration.js';
 
 // Parameter schema types (avoiding conflict with adapter.ts)
 export { ParameterDefinition as ParameterSchemaDefinition } from './parameter-schema.js';
+
+// Constitutional Architecture types
+export * from './constitutional-architecture.js';

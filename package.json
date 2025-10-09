@@ -25,7 +25,8 @@
   "author": "The Architech Team <team@thearchitech.xyz>",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "@types/node": "^24.7.0",
+    "typescript": "^5.9.3"
   },
   "repository": {
     "type": "git",

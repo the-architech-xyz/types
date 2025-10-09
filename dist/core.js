@@ -471,6 +471,66 @@ export var LogLevel;
     LogLevel["ERROR"] = "error";
     LogLevel["SUCCESS"] = "success";
 })(LogLevel || (LogLevel = {}));
+/**
+ * Standardized Path Keys - Framework-Agnostic Path Resolution
+ *
+ * These semantic path keys are used in blueprints with {{paths.key}} syntax
+ * to create framework-agnostic file paths. Each framework adapter must provide
+ * concrete implementations for all these path keys in their adapter.json.
+ */
+export var PathKey;
+(function (PathKey) {
+    // Core Framework Paths
+    PathKey["SOURCE_ROOT"] = "source_root";
+    PathKey["APP_ROOT"] = "app_root";
+    PathKey["PAGES_ROOT"] = "pages_root";
+    // Library and Utility Paths
+    PathKey["SHARED_LIBRARY"] = "shared_library";
+    PathKey["UTILS"] = "utils";
+    PathKey["TYPES"] = "types";
+    PathKey["HOOKS"] = "hooks";
+    PathKey["STORES"] = "stores";
+    // Component Paths
+    PathKey["COMPONENTS"] = "components";
+    PathKey["UI_COMPONENTS"] = "ui_components";
+    PathKey["LAYOUTS"] = "layouts";
+    PathKey["PROVIDERS"] = "providers";
+    // API and Route Paths
+    PathKey["API_ROUTES"] = "api_routes";
+    PathKey["API_HANDLERS"] = "api_handlers";
+    PathKey["MIDDLEWARE"] = "middleware";
+    // Configuration Paths
+    PathKey["CONFIG"] = "config";
+    PathKey["ENV"] = "env";
+    PathKey["SCRIPTS"] = "scripts";
+    // Feature-Specific Configuration Paths
+    PathKey["DATABASE_CONFIG"] = "database_config";
+    PathKey["AUTH_CONFIG"] = "auth_config";
+    PathKey["PAYMENT_CONFIG"] = "payment_config";
+    PathKey["EMAIL_CONFIG"] = "email_config";
+    PathKey["OBSERVABILITY_CONFIG"] = "observability_config";
+    PathKey["STATE_CONFIG"] = "state_config";
+    PathKey["TESTING_CONFIG"] = "testing_config";
+    PathKey["DEPLOYMENT_CONFIG"] = "deployment_config";
+    PathKey["CONTENT_CONFIG"] = "content_config";
+    PathKey["BLOCKCHAIN_CONFIG"] = "blockchain_config";
+    // Asset and Static Paths
+    PathKey["ASSETS"] = "assets";
+    PathKey["PUBLIC"] = "public";
+    PathKey["STATIC"] = "static";
+    PathKey["STYLES"] = "styles";
+    // Testing Paths
+    PathKey["TESTS"] = "tests";
+    PathKey["TEST_UTILS"] = "test_utils";
+    PathKey["MOCKS"] = "mocks";
+    // Build and Output Paths
+    PathKey["BUILD"] = "build";
+    PathKey["DIST"] = "dist";
+    PathKey["OUT"] = "out";
+    // Documentation Paths
+    PathKey["DOCS"] = "docs";
+    PathKey["README"] = "readme";
+})(PathKey || (PathKey = {}));
 // ============================================================================
 // CONSTANTS
 // ============================================================================
