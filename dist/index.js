@@ -8,6 +8,7 @@ export * from './adapter.js';
 export * from './artifacts.js';
 export * from './blueprint-actions.js';
 export * from './blueprint-context.js';
+export * from './blueprint.js';
 export * from './common.js';
 export * from './core.js';
 export * from './modifiers.js';
@@ -26,3 +27,5 @@ export * from './feature.js';
 export * from './integration.js';
 // Constitutional Architecture types
 export * from './constitutional-architecture.js';
+// Define Genome function with type safety
+export * from './define-genome.js';

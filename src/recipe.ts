@@ -63,7 +63,34 @@ export interface ExecutionResult {
 export interface Genome {
   version: string;
   project: ProjectConfig;
-  modules: Module[];
+  modules: GenomeModule[];
   features?: string[]; // Feature IDs to resolve
   options?: ExecutionOptions; // Execution options
+}
+
+// Enhanced Genome module interface with Constitutional Architecture support
+export interface GenomeModule {
+  id: string; // Will be constrained by ModuleId type in generated types
+  parameters?: Record<string, any>; // Constitutional Architecture parameters
+  features?: Record<string, boolean | string | string[]>; // Legacy features support
+  externalFiles?: string[];
+  config?: {
+    id: string;
+    name: string;
+    description: string;
+    version: string;
+    category: string;
+    capabilities?: Record<string, any>;
+    prerequisites?: {
+      modules?: string[];
+      capabilities?: string[];
+    };
+    provides?: {
+      capabilities?: string[];
+      files?: string[];
+      components?: string[];
+      pages?: string[];
+    };
+    [key: string]: any; // Allow additional config properties
+  };
 }

@@ -11,6 +11,7 @@ import { EnhanceFileFallbackStrategy } from './fallback-strategies.js';
 export interface BaseAction {
     condition?: string;
     forEach?: string;
+    context?: Record<string, any>;
 }
 export interface InstallPackagesAction extends BaseAction {
     type: BlueprintActionType.INSTALL_PACKAGES;
@@ -39,12 +40,12 @@ export interface CreateFileAction extends BaseAction {
     mergeInstructions?: MergeInstructions;
 }
 export interface AppendToFileAction extends BaseAction {
-    type: 'APPEND_TO_FILE';
+    type: BlueprintActionType.APPEND_TO_FILE;
     path: string;
     content: string;
 }
 export interface PrependToFileAction extends BaseAction {
-    type: 'PREPEND_TO_FILE';
+    type: BlueprintActionType.PREPEND_TO_FILE;
     path: string;
     content: string;
 }
@@ -54,12 +55,12 @@ export interface RunCommandAction extends BaseAction {
     workingDir?: string;
 }
 export interface MergeJsonAction extends BaseAction {
-    type: 'MERGE_JSON';
+    type: BlueprintActionType.MERGE_JSON;
     path: string;
     content: Record<string, any>;
 }
 export interface AddTsImportAction extends BaseAction {
-    type: 'ADD_TS_IMPORT';
+    type: BlueprintActionType.ADD_TS_IMPORT;
     path: string;
     imports: ImportDefinition[];
 }
@@ -71,19 +72,19 @@ export interface EnhanceFileAction extends BaseAction {
     fallback?: EnhanceFileFallbackStrategy;
 }
 export interface MergeConfigAction extends BaseAction {
-    type: 'MERGE_CONFIG';
+    type: BlueprintActionType.MERGE_CONFIG;
     path: string;
     strategy: 'deep-merge' | 'shallow-merge' | 'replace';
     config: Record<string, any>;
 }
 export interface WrapConfigAction extends BaseAction {
-    type: 'WRAP_CONFIG';
+    type: BlueprintActionType.WRAP_CONFIG;
     path: string;
     wrapper: string;
     options?: Record<string, any>;
 }
 export interface ExtendSchemaAction extends BaseAction {
-    type: 'EXTEND_SCHEMA';
+    type: BlueprintActionType.EXTEND_SCHEMA;
     path: string;
     tables: SchemaTable[];
     additionalImports?: string[];

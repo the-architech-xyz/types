@@ -56,7 +56,32 @@ export interface ExecutionResult {
 export interface Genome {
     version: string;
     project: ProjectConfig;
-    modules: Module[];
+    modules: GenomeModule[];
     features?: string[];
     options?: ExecutionOptions;
+}
+export interface GenomeModule {
+    id: string;
+    parameters?: Record<string, any>;
+    features?: Record<string, boolean | string | string[]>;
+    externalFiles?: string[];
+    config?: {
+        id: string;
+        name: string;
+        description: string;
+        version: string;
+        category: string;
+        capabilities?: Record<string, any>;
+        prerequisites?: {
+            modules?: string[];
+            capabilities?: string[];
+        };
+        provides?: {
+            capabilities?: string[];
+            files?: string[];
+            components?: string[];
+            pages?: string[];
+        };
+        [key: string]: any;
+    };
 }

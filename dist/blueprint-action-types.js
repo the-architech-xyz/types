@@ -20,6 +20,13 @@ export var BlueprintActionType;
     BlueprintActionType["ADD_SCRIPT"] = "ADD_SCRIPT";
     BlueprintActionType["ADD_DEPENDENCY"] = "ADD_DEPENDENCY";
     BlueprintActionType["ADD_DEV_DEPENDENCY"] = "ADD_DEV_DEPENDENCY";
+    BlueprintActionType["APPEND_TO_FILE"] = "APPEND_TO_FILE";
+    BlueprintActionType["PREPEND_TO_FILE"] = "PREPEND_TO_FILE";
+    BlueprintActionType["MERGE_JSON"] = "MERGE_JSON";
+    BlueprintActionType["ADD_TS_IMPORT"] = "ADD_TS_IMPORT";
+    BlueprintActionType["MERGE_CONFIG"] = "MERGE_CONFIG";
+    BlueprintActionType["WRAP_CONFIG"] = "WRAP_CONFIG";
+    BlueprintActionType["EXTEND_SCHEMA"] = "EXTEND_SCHEMA";
 })(BlueprintActionType || (BlueprintActionType = {}));
 /**
  * Type guard to check if a string is a valid action type

@@ -41,6 +41,7 @@ export interface MergedConfiguration {
   resolvedCapabilities: string[];
   executionOrder: string[];
   conflicts: ConfigurationConflict[];
+  templateContext?: Record<string, any>; // Global template context
 }
 
 export interface ConfigurationConflict {
@@ -54,4 +55,16 @@ export interface ConstitutionalExecutionContext {
   activeFeatures: Map<string, string[]>; // moduleId -> active features
   mergedConfigurations: Map<string, MergedConfiguration>; // moduleId -> merged config
   capabilityRegistry: Map<string, CapabilityDefinition>; // capability -> definition
+}
+
+// Template context merging helper
+export interface BlueprintTemplateContext {
+  features: string[]; // Active features for this template
+  [key: string]: any; // Additional context properties
+}
+
+// Enhanced action context for template rendering
+export interface ActionTemplateContext extends BlueprintTemplateContext {
+  actionContext?: Record<string, any>; // Action-specific context
+  globalContext?: Record<string, any>; // Global project context
 }

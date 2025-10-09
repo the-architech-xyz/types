@@ -37,6 +37,7 @@ export interface MergedConfiguration {
     resolvedCapabilities: string[];
     executionOrder: string[];
     conflicts: ConfigurationConflict[];
+    templateContext?: Record<string, any>;
 }
 export interface ConfigurationConflict {
     type: 'missing_prerequisite' | 'circular_dependency' | 'version_mismatch';
@@ -48,4 +49,12 @@ export interface ConstitutionalExecutionContext {
     activeFeatures: Map<string, string[]>;
     mergedConfigurations: Map<string, MergedConfiguration>;
     capabilityRegistry: Map<string, CapabilityDefinition>;
+}
+export interface BlueprintTemplateContext {
+    features: string[];
+    [key: string]: any;
+}
+export interface ActionTemplateContext extends BlueprintTemplateContext {
+    actionContext?: Record<string, any>;
+    globalContext?: Record<string, any>;
 }

@@ -18,7 +18,14 @@ export declare enum BlueprintActionType {
     ADD_ENV_VAR = "ADD_ENV_VAR",
     ADD_SCRIPT = "ADD_SCRIPT",
     ADD_DEPENDENCY = "ADD_DEPENDENCY",
-    ADD_DEV_DEPENDENCY = "ADD_DEV_DEPENDENCY"
+    ADD_DEV_DEPENDENCY = "ADD_DEV_DEPENDENCY",
+    APPEND_TO_FILE = "APPEND_TO_FILE",
+    PREPEND_TO_FILE = "PREPEND_TO_FILE",
+    MERGE_JSON = "MERGE_JSON",
+    ADD_TS_IMPORT = "ADD_TS_IMPORT",
+    MERGE_CONFIG = "MERGE_CONFIG",
+    WRAP_CONFIG = "WRAP_CONFIG",
+    EXTEND_SCHEMA = "EXTEND_SCHEMA"
 }
 /**
  * Type guard to check if a string is a valid action type

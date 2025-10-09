@@ -18,6 +18,7 @@ import { ConflictResolutionStrategy, ConflictMergeStrategy } from './conflict-re
 export interface BaseAction {
   condition?: string; // Template condition for conditional execution
   forEach?: string; // Path to array in context (e.g., "module.parameters.components") - expands action for each item with {{item}} placeholder
+  context?: Record<string, any>; // Template context for conditional rendering
 }
 
 // INSTALL_PACKAGES Action
@@ -56,14 +57,14 @@ export interface CreateFileAction extends BaseAction {
 
 // APPEND_TO_FILE Action
 export interface AppendToFileAction extends BaseAction {
-  type: 'APPEND_TO_FILE';
+  type: BlueprintActionType.APPEND_TO_FILE;
   path: string; // Required: File path
   content: string; // Required: Content to append
 }
 
 // PREPEND_TO_FILE Action
 export interface PrependToFileAction extends BaseAction {
-  type: 'PREPEND_TO_FILE';
+  type: BlueprintActionType.PREPEND_TO_FILE;
   path: string; // Required: File path
   content: string; // Required: Content to prepend
 }
@@ -77,14 +78,14 @@ export interface RunCommandAction extends BaseAction {
 
 // MERGE_JSON Action
 export interface MergeJsonAction extends BaseAction {
-  type: 'MERGE_JSON';
+  type: BlueprintActionType.MERGE_JSON;
   path: string; // Required: File path
   content: Record<string, any>; // Required: JSON content to merge
 }
 
 // ADD_TS_IMPORT Action
 export interface AddTsImportAction extends BaseAction {
-  type: 'ADD_TS_IMPORT';
+  type: BlueprintActionType.ADD_TS_IMPORT;
   path: string; // Required: File path
   imports: ImportDefinition[]; // Required: Import definitions
 }
@@ -100,7 +101,7 @@ export interface EnhanceFileAction extends BaseAction {
 
 // MERGE_CONFIG Action
 export interface MergeConfigAction extends BaseAction {
-  type: 'MERGE_CONFIG';
+  type: BlueprintActionType.MERGE_CONFIG;
   path: string; // Required: File path
   strategy: 'deep-merge' | 'shallow-merge' | 'replace'; // Required: Merge strategy
   config: Record<string, any>; // Required: Configuration object to merge
@@ -108,7 +109,7 @@ export interface MergeConfigAction extends BaseAction {
 
 // WRAP_CONFIG Action
 export interface WrapConfigAction extends BaseAction {
-  type: 'WRAP_CONFIG';
+  type: BlueprintActionType.WRAP_CONFIG;
   path: string; // Required: File path
   wrapper: string; // Required: Wrapper function name
   options?: Record<string, any>;
@@ -116,7 +117,7 @@ export interface WrapConfigAction extends BaseAction {
 
 // EXTEND_SCHEMA Action
 export interface ExtendSchemaAction extends BaseAction {
-  type: 'EXTEND_SCHEMA';
+  type: BlueprintActionType.EXTEND_SCHEMA;
   path: string; // Required: File path
   tables: SchemaTable[]; // Required: Tables to add to schema
   additionalImports?: string[]; // Additional imports needed (if any)
