@@ -4,6 +4,19 @@
  * Feature configuration for intelligent dependency resolution
  */
 import type { BlueprintAction, Blueprint, ParameterDefinition } from './adapter.js';
+export interface InternalFeatureStructure {
+    core?: {
+        provides: string[];
+        templates: string[];
+    };
+    optional?: Record<string, {
+        prerequisites?: string[];
+        requires_capabilities?: string[];
+        requires_features?: string[];
+        provides: string[];
+        templates: string[];
+    }>;
+}
 export interface FeatureConfig {
     id: string;
     name: string;
@@ -20,6 +33,7 @@ export interface FeatureConfig {
     provides: {
         capabilities: string[];
     };
+    internal_structure?: InternalFeatureStructure;
     parameters?: Record<string, ParameterDefinition>;
     constraints?: {
         [key: string]: string;

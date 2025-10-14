@@ -12,7 +12,7 @@ export interface ProjectConfig {
     author?: string;
     license?: string;
 }
-export type ModuleType = 'adapter' | 'integrator' | 'feature';
+export type ModuleType = 'adapter' | 'connector' | 'feature';
 export interface Module {
     id: string;
     category?: string;

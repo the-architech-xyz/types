@@ -7,6 +7,20 @@
 // Import shared types from adapter
 import type { BlueprintAction, Blueprint, ParameterDefinition } from './adapter.js';
 
+export interface InternalFeatureStructure {
+  core?: {
+    provides: string[];
+    templates: string[];
+  };
+  optional?: Record<string, {
+    prerequisites?: string[]; // Internal prerequisites (other capabilities in same module)
+    requires_capabilities?: string[]; // Cross-feature capability dependencies
+    requires_features?: string[]; // Cross-feature module dependencies  
+    provides: string[];
+    templates: string[];
+  }>;
+}
+
 export interface FeatureConfig {
   id: string;
   name: string;
@@ -23,6 +37,7 @@ export interface FeatureConfig {
   provides: {
     capabilities: string[]; // Capabilities this feature provides
   };
+  internal_structure?: InternalFeatureStructure; // Constitutional Architecture capability hierarchy
   parameters?: Record<string, ParameterDefinition>;
   constraints?: {
     [key: string]: string; // Version constraints (e.g., "minReactVersion": ">=18.0.0")

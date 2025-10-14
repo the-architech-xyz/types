@@ -46,8 +46,8 @@ export interface ModuleArtifacts {
 export interface BlueprintAnalysisResult {
     /** Module ID */
     moduleId: string;
-    /** Module type (adapter/integration) */
-    moduleType: 'adapter' | 'integration';
+    /** Module type (adapter/connector/feature) */
+    moduleType: 'adapter' | 'connector' | 'feature';
     /** Extracted artifacts */
     artifacts: ModuleArtifacts;
     /** Analysis metadata */

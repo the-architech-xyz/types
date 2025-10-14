@@ -12,6 +12,7 @@ export * from './common.js';
 export * from './core.js';
 export * from './modifiers.js';
 export * from './dependency-resolver.js';
+export * from './project-context.js';
 export * from './blueprint-action-types.js';
 export * from './modifier-types.js';
 export * from './fallback-strategies.js';
