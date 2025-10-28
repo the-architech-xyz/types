@@ -12,6 +12,19 @@ export interface ProjectConfig {
   version?: string;
   author?: string;
   license?: string;
+  structure?: 'monorepo' | 'single-app'; // Project structure type
+  monorepo?: MonorepoConfig; // Monorepo configuration
+}
+
+export interface MonorepoConfig {
+  tool: 'turborepo' | 'nx' | 'pnpm-workspaces' | 'yarn-workspaces';
+  packages: {
+    api?: string;      // e.g., 'packages/api'
+    web?: string;      // e.g., 'apps/web'
+    mobile?: string;   // e.g., 'apps/mobile'
+    shared?: string;   // e.g., 'packages/shared'
+    [key: string]: string | undefined; // Allow custom packages
+  };
 }
 
 export type ModuleType = 'adapter' | 'connector' | 'feature';
@@ -71,6 +84,7 @@ export interface Genome {
 // Enhanced Genome module interface with Constitutional Architecture support
 export interface GenomeModule {
   id: string; // Will be constrained by ModuleId type in generated types
+  targetPackage?: string; // For monorepo: which package this module should be executed in
   parameters?: Record<string, any>; // Constitutional Architecture parameters
   features?: Record<string, boolean | string | string[]>; // Legacy features support
   externalFiles?: string[];

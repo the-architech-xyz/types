@@ -44,3 +44,6 @@ export * from './constitutional-architecture.js';
 
 // Define Genome function with type safety
 export * from './define-genome.js';
+
+// Path keys for import resolution
+export * from './path-keys.js';

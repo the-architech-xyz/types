@@ -11,6 +11,18 @@ export interface ProjectConfig {
     version?: string;
     author?: string;
     license?: string;
+    structure?: 'monorepo' | 'single-app';
+    monorepo?: MonorepoConfig;
+}
+export interface MonorepoConfig {
+    tool: 'turborepo' | 'nx' | 'pnpm-workspaces' | 'yarn-workspaces';
+    packages: {
+        api?: string;
+        web?: string;
+        mobile?: string;
+        shared?: string;
+        [key: string]: string | undefined;
+    };
 }
 export type ModuleType = 'adapter' | 'connector' | 'feature';
 export interface Module {
@@ -62,6 +74,7 @@ export interface Genome {
 }
 export interface GenomeModule {
     id: string;
+    targetPackage?: string;
     parameters?: Record<string, any>;
     features?: Record<string, boolean | string | string[]>;
     externalFiles?: string[];

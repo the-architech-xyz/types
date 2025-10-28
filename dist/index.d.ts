@@ -26,3 +26,4 @@ export * from './integration.js';
 export { ParameterDefinition as ParameterSchemaDefinition } from './parameter-schema.js';
 export * from './constitutional-architecture.js';
 export * from './define-genome.js';
+export * from './path-keys.js';
