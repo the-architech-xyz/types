@@ -5,7 +5,6 @@
  */
 export interface ProjectConfig {
     name: string;
-    framework: string;
     path?: string;
     description?: string;
     version?: string;
@@ -13,16 +12,27 @@ export interface ProjectConfig {
     license?: string;
     structure?: 'monorepo' | 'single-app';
     monorepo?: MonorepoConfig;
+    apps?: FrameworkApp[];
 }
 export interface MonorepoConfig {
-    tool: 'turborepo' | 'nx' | 'pnpm-workspaces' | 'yarn-workspaces';
-    packages: {
+    tool: 'turborepo' | 'nx' | 'pnpm' | 'yarn';
+    packages?: {
         api?: string;
         web?: string;
         mobile?: string;
         shared?: string;
+        ui?: string;
         [key: string]: string | undefined;
     };
+}
+export interface FrameworkApp {
+    id: string;
+    type: 'web' | 'mobile' | 'api' | 'desktop' | 'worker';
+    framework: string;
+    package?: string;
+    router?: 'app' | 'pages';
+    alias?: string;
+    parameters?: Record<string, unknown>;
 }
 export type ModuleType = 'adapter' | 'connector' | 'feature';
 export interface Module {
@@ -74,7 +84,6 @@ export interface Genome {
 }
 export interface GenomeModule {
     id: string;
-    targetPackage?: string;
     parameters?: Record<string, any>;
     features?: Record<string, boolean | string | string[]>;
     externalFiles?: string[];

@@ -6,7 +6,6 @@
 
 export interface ProjectConfig {
   name: string;
-  framework: string;
   path?: string;
   description?: string;
   version?: string;
@@ -14,17 +13,30 @@ export interface ProjectConfig {
   license?: string;
   structure?: 'monorepo' | 'single-app'; // Project structure type
   monorepo?: MonorepoConfig; // Monorepo configuration
+  // Multiple apps (frameworks) per project. Single source of truth.
+  apps?: FrameworkApp[];
 }
 
 export interface MonorepoConfig {
-  tool: 'turborepo' | 'nx' | 'pnpm-workspaces' | 'yarn-workspaces';
-  packages: {
+  tool: 'turborepo' | 'nx' | 'pnpm' | 'yarn';
+  packages?: {
     api?: string;      // e.g., 'packages/api'
     web?: string;      // e.g., 'apps/web'
     mobile?: string;   // e.g., 'apps/mobile'
     shared?: string;   // e.g., 'packages/shared'
+    ui?: string;       // e.g., 'packages/ui'
     [key: string]: string | undefined; // Allow custom packages
   };
+}
+
+export interface FrameworkApp {
+  id: string;                       // 'web' | 'mobile' | 'api' | custom
+  type: 'web' | 'mobile' | 'api' | 'desktop' | 'worker';
+  framework: string;                // e.g., 'nextjs', 'expo'
+  package?: string;                 // monorepo package path
+  router?: 'app' | 'pages';         // Next.js specific
+  alias?: string;                   // e.g., '@/'
+  parameters?: Record<string, unknown>; // framework-specific parameters
 }
 
 export type ModuleType = 'adapter' | 'connector' | 'feature';
@@ -84,7 +96,6 @@ export interface Genome {
 // Enhanced Genome module interface with Constitutional Architecture support
 export interface GenomeModule {
   id: string; // Will be constrained by ModuleId type in generated types
-  targetPackage?: string; // For monorepo: which package this module should be executed in
   parameters?: Record<string, any>; // Constitutional Architecture parameters
   features?: Record<string, boolean | string | string[]>; // Legacy features support
   externalFiles?: string[];
