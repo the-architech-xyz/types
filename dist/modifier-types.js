@@ -24,6 +24,12 @@ export var ModifierType;
     ModifierType["CSS_ENHANCER"] = "css-enhancer";
     ModifierType["DOCKERFILE_MERGER"] = "dockerfile-merger";
     ModifierType["DOCKERIGNORE_MERGER"] = "dockerignore-merger";
+    // Additional modifiers from deprecated AvailableModifier type
+    ModifierType["README_MERGER"] = "readme-merger";
+    ModifierType["TS_INTERFACE_MERGER"] = "ts-interface-merger";
+    ModifierType["TS_IMPORT_MERGER"] = "ts-import-merger";
+    ModifierType["CSS_CLASS_MERGER"] = "css-class-merger";
+    ModifierType["HTML_ATTRIBUTE_MERGER"] = "html-attribute-merger";
 })(ModifierType || (ModifierType = {}));
 /**
  * Type guard to check if a string is a valid modifier type

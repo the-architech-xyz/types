@@ -480,56 +480,43 @@ export var LogLevel;
  */
 export var PathKey;
 (function (PathKey) {
-    // Core Framework Paths
-    PathKey["SOURCE_ROOT"] = "source_root";
-    PathKey["APP_ROOT"] = "app_root";
-    PathKey["PAGES_ROOT"] = "pages_root";
-    // Library and Utility Paths
-    PathKey["SHARED_LIBRARY"] = "shared_library";
-    PathKey["UTILS"] = "utils";
-    PathKey["TYPES"] = "types";
-    PathKey["HOOKS"] = "hooks";
-    PathKey["STORES"] = "stores";
-    // Component Paths
-    PathKey["COMPONENTS"] = "components";
-    PathKey["UI_COMPONENTS"] = "ui_components";
-    PathKey["LAYOUTS"] = "layouts";
-    PathKey["PROVIDERS"] = "providers";
-    // API and Route Paths
-    PathKey["API_ROUTES"] = "api_routes";
-    PathKey["API_HANDLERS"] = "api_handlers";
-    PathKey["MIDDLEWARE"] = "middleware";
-    // Configuration Paths
-    PathKey["CONFIG"] = "config";
-    PathKey["ENV"] = "env";
-    PathKey["SCRIPTS"] = "scripts";
-    // Feature-Specific Configuration Paths
-    PathKey["DATABASE_CONFIG"] = "database_config";
-    PathKey["AUTH_CONFIG"] = "auth_config";
-    PathKey["PAYMENT_CONFIG"] = "payment_config";
-    PathKey["EMAIL_CONFIG"] = "email_config";
-    PathKey["OBSERVABILITY_CONFIG"] = "observability_config";
-    PathKey["STATE_CONFIG"] = "state_config";
-    PathKey["TESTING_CONFIG"] = "testing_config";
-    PathKey["DEPLOYMENT_CONFIG"] = "deployment_config";
-    PathKey["CONTENT_CONFIG"] = "content_config";
-    PathKey["BLOCKCHAIN_CONFIG"] = "blockchain_config";
-    // Asset and Static Paths
-    PathKey["ASSETS"] = "assets";
-    PathKey["PUBLIC"] = "public";
-    PathKey["STATIC"] = "static";
-    PathKey["STYLES"] = "styles";
-    // Testing Paths
-    PathKey["TESTS"] = "tests";
-    PathKey["TEST_UTILS"] = "test_utils";
-    PathKey["MOCKS"] = "mocks";
-    // Build and Output Paths
-    PathKey["BUILD"] = "build";
-    PathKey["DIST"] = "dist";
-    PathKey["OUT"] = "out";
-    // Documentation Paths
-    PathKey["DOCS"] = "docs";
-    PathKey["README"] = "readme";
+    // Workspace level
+    PathKey["WORKSPACE_ROOT"] = "workspace.root";
+    PathKey["WORKSPACE_SCRIPTS"] = "workspace.scripts";
+    PathKey["WORKSPACE_DOCS"] = "workspace.docs";
+    PathKey["WORKSPACE_ENV"] = "workspace.env";
+    PathKey["WORKSPACE_CONFIG"] = "workspace.config";
+    // Web app (Next.js)
+    PathKey["APPS_WEB_ROOT"] = "apps.web.root";
+    PathKey["APPS_WEB_SRC"] = "apps.web.src";
+    PathKey["APPS_WEB_APP"] = "apps.web.app";
+    PathKey["APPS_WEB_COMPONENTS"] = "apps.web.components";
+    PathKey["APPS_WEB_PUBLIC"] = "apps.web.public";
+    PathKey["APPS_WEB_MIDDLEWARE"] = "apps.web.middleware";
+    PathKey["APPS_WEB_SERVER"] = "apps.web.server";
+    PathKey["APPS_WEB_COLLECTIONS"] = "apps.web.collections";
+    // API app
+    PathKey["APPS_API_ROOT"] = "apps.api.root";
+    PathKey["APPS_API_SRC"] = "apps.api.src";
+    PathKey["APPS_API_ROUTES"] = "apps.api.routes";
+    // Shared package
+    PathKey["PACKAGES_SHARED_ROOT"] = "packages.shared.root";
+    PathKey["PACKAGES_SHARED_SRC"] = "packages.shared.src";
+    PathKey["PACKAGES_SHARED_COMPONENTS"] = "packages.shared.src.components";
+    PathKey["PACKAGES_SHARED_HOOKS"] = "packages.shared.src.hooks";
+    PathKey["PACKAGES_SHARED_PROVIDERS"] = "packages.shared.src.providers";
+    PathKey["PACKAGES_SHARED_STORES"] = "packages.shared.src.stores";
+    PathKey["PACKAGES_SHARED_TYPES"] = "packages.shared.src.types";
+    PathKey["PACKAGES_SHARED_UTILS"] = "packages.shared.src.utils";
+    PathKey["PACKAGES_SHARED_SCRIPTS"] = "packages.shared.src.scripts";
+    PathKey["PACKAGES_SHARED_ROUTES"] = "packages.shared.src.routes";
+    PathKey["PACKAGES_SHARED_JOBS"] = "packages.shared.src.jobs";
+    // Database package
+    PathKey["PACKAGES_DATABASE_ROOT"] = "packages.database.root";
+    PathKey["PACKAGES_DATABASE_SRC"] = "packages.database.src";
+    // UI package
+    PathKey["PACKAGES_UI_ROOT"] = "packages.ui.root";
+    PathKey["PACKAGES_UI_SRC"] = "packages.ui.src";
 })(PathKey || (PathKey = {}));
 // ============================================================================
 // CONSTANTS

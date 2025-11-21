@@ -1,63 +1,78 @@
-/**
- * Path Keys for Template Import Resolution
- *
- * Extensible path keys system with override support.
- * Allows both standardized keys (enum) and custom keys (string).
- */
-/**
- * Smart path keys for common import patterns
- *
- * These keys are pre-computed in FrameworkContextService and available
- * in templates via `paths.{key}` and `importPath(paths.{key})`.
- */
-export declare enum SmartPathKey {
-    TRPC_ROUTER = "trpcRouter",
-    TRPC_CLIENT = "trpcClient",
-    TRPC_SERVER = "trpcServer",
-    SHARED_SCHEMAS = "sharedSchemas",
-    SHARED_TYPES = "sharedTypes",
-    SHARED_UTILS = "sharedUtils",
-    AUTH_CONFIG = "authConfig",
-    AUTH_HOOKS = "authHooks",
-    AUTH_TYPES = "authTypes",
-    PAYMENT_CONFIG = "paymentConfig",
-    PAYMENT_HOOKS = "paymentHooks",
-    PAYMENT_TYPES = "paymentTypes",
-    TEAMS_CONFIG = "teamsConfig",
-    TEAMS_HOOKS = "teamsHooks",
-    TEAMS_TYPES = "teamsTypes",
-    EMAIL_CONFIG = "emailConfig",
-    EMAIL_HOOKS = "emailHooks",
-    EMAIL_TYPES = "emailTypes",
-    DATABASE_CONFIG = "databaseConfig",
-    DATABASE_SCHEMA = "databaseSchema",
-    DATABASE_CLIENT = "databaseClient",
-    STATE_STORES = "stateStores",
-    STATE_PROVIDERS = "stateProviders",
-    API_ROUTES = "apiRoutes",
-    API_HANDLERS = "apiHandlers",
-    API_MIDDLEWARE = "apiMiddleware"
+import type { Genome, ProjectConfig } from './recipe.js';
+export type PathKeyStructure = 'single-app' | 'monorepo' | 'both';
+export interface MarketplacePathKeyDefinition {
+    /** Canonical path key identifier, e.g. packages.database.src or packages.{packageName}.src */
+    key: string;
+    /** Human readable description for documentation */
+    description?: string;
+    /** Whether the key must be populated by the adapter */
+    required?: boolean;
+    /** Which project structures the key applies to */
+    structure?: PathKeyStructure;
+    /** If true, adapter should compute from genome; otherwise defaultValue can be used */
+    computed?: boolean;
+    /** Static default when computed is false. Can be a string or object with framework-specific values */
+    defaultValue?: string | Record<string, string>;
+    /** Optional grouping for docs / IDE */
+    group?: string;
+    /** Mark key as deprecated */
+    deprecated?: boolean;
+    /** Suggested replacement key when deprecated */
+    replacement?: string;
+    /**
+     * Dynamic variables that can be used in the key or defaultValue
+     * Example: ["packageName", "appId"] for keys like "packages.{packageName}.src"
+     * Variables will be replaced at runtime with actual values
+     */
+    variables?: string[];
+    /**
+     * Whether this path key is semantic (expands to multiple apps)
+     * Semantic keys expand based on resolveToApps metadata
+     *
+     * Example: apps.frontend.components (semantic: true) expands to:
+     * - apps.web.components
+     * - apps.mobile.components
+     */
+    semantic?: boolean;
+    /**
+     * For semantic keys: which apps this key resolves to
+     * - Array of app types: ["web", "mobile"]
+     * - "all" for all apps
+     *
+     * Only used when semantic: true
+     */
+    resolveToApps?: string[] | "all";
+    /**
+     * For semantic keys: resolution strategy (optional)
+     * Used for complex resolution (e.g., backend.api, backend.server)
+     *
+     * Example:
+     * {
+     *   priority: ["api", "web"],  // Try API first, then web
+     *   fallback: "web"  // Fallback to web if API not available
+     * }
+     */
+    resolutionStrategy?: {
+        priority?: string[];
+        fallback?: string;
+    };
 }
-/**
- * Smart path key type - allows both standard enum values and custom strings
- */
-export type SmartPath = SmartPathKey | string;
-/**
- * Smart path override configuration
- *
- * Allows frameworks, adapters, or users to override path values.
- * Warnings are issued when overrides occur.
- */
-export interface SmartPathOverride {
-    key: SmartPath;
-    value: string;
-    source: 'user' | 'framework' | 'adapter' | 'genome';
-    reason?: string;
+export interface MarketplacePathKeys {
+    version: string;
+    marketplace: string;
+    pathKeys: MarketplacePathKeyDefinition[];
 }
-/**
- * Smart path registry for managing overrides
- */
-export interface SmartPathRegistry {
-    paths: Record<string, string>;
-    overrides: SmartPathOverride[];
+/** Resolved map of path key -> absolute/relative directory string. */
+export type PathKeyValueSet = Record<string, string>;
+export interface PathResolutionContext {
+    /** Genome supplied by the CLI – adapters can inspect modules/options. */
+    genome: Genome;
+    /** Convenience access to the normalized project configuration. */
+    project?: ProjectConfig;
+    /** Workspace root on disk (resolved by the CLI). */
+    workspaceRoot?: string;
+    /** User supplied overrides to honour when computing defaults. */
+    overrides?: Record<string, string>;
+    /** Extra metadata or adapter-specific context. */
+    metadata?: Record<string, unknown>;
 }

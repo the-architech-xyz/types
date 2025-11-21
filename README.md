@@ -1,4 +1,4 @@
-# @the-architech/types
+# @the-architech-xyz/types
 
 Shared TypeScript type definitions for The Architech CLI and Marketplace ecosystem.
 
@@ -12,13 +12,13 @@ This package provides centralized type definitions that are used across:
 ## Installation
 
 ```bash
-npm install @the-architech/types
+npm install @the-architech-xyz/types
 ```
 
 ## Usage
 
 ```typescript
-import { Blueprint, AdapterConfig, BlueprintAction } from '@the-architech/types';
+import { Blueprint, AdapterConfig, BlueprintAction } from '@the-architech-xyz/types';
 
 // Define a blueprint
 const myBlueprint: Blueprint = {

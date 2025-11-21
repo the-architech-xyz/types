@@ -5,15 +5,17 @@
  * Any modifier referenced in a blueprint MUST be listed here to ensure type safety.
  */
 /**
- * Available Modifiers - Type-Safe Contract
- *
- * Each modifier is a pure function that transforms a file's AST or content.
- * Add new modifiers to this union type to enable them across the system.
- *
- * @deprecated Use ModifierType enum instead
+ * Re-export ModifierType enum as the single source of truth for modifier types
  */
-export type AvailableModifier = 'package-json-merger' | 'tsconfig-enhancer' | 'css-enhancer' | 'js-config-merger' | 'ts-module-enhancer' | 'json-merger' | 'js-export-wrapper' | 'jsx-children-wrapper' | 'yaml-merger' | 'dockerignore-merger' | 'dockerfile-merger' | 'env-merger' | 'readme-merger' | 'ts-interface-merger' | 'ts-import-merger' | 'css-class-merger' | 'html-attribute-merger';
 export { ModifierType } from './modifier-types.js';
+/**
+ * @deprecated Use ModifierType enum instead. This string union type is kept for backward compatibility.
+ * Will be removed in a future version.
+ *
+ * This type matches all ModifierType enum values to maintain compatibility with existing code
+ * that uses string literals instead of enum values.
+ */
+export type AvailableModifier = 'package-json-merger' | 'tsconfig-enhancer' | 'js-config-merger' | 'js-export-wrapper' | 'json-merger' | 'jsx-children-wrapper' | 'ts-module-enhancer' | 'yaml-merger' | 'env-merger' | 'css-enhancer' | 'dockerfile-merger' | 'dockerignore-merger' | 'readme-merger' | 'ts-interface-merger' | 'ts-import-merger' | 'css-class-merger' | 'html-attribute-merger';
 /**
  * Modifier parameter schemas for each modifier type.
  * This provides intellisense for modifier-specific parameters.
@@ -114,7 +116,4 @@ export interface JsxChildrenWrapperParams extends ModifierParams {
     }>;
     targetElement?: string;
 }
-/**
- * Type guard to check if a string is a valid modifier name
- */
 export declare function isValidModifier(value: string): value is AvailableModifier;

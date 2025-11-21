@@ -35,5 +35,14 @@
  * ```
  */
 export function defineGenome(genome) {
+    genome.modules = genome.modules.map((module) => {
+        const normalized = { ...module };
+        normalized.category = normalized.category || normalized.id.split('/')[0] || 'module';
+        normalized.version = normalized.version || 'latest';
+        normalized.parameters = normalized.parameters || {};
+        normalized.features = normalized.features || {};
+        normalized.externalFiles = normalized.externalFiles || [];
+        return normalized;
+    });
     return genome;
 }

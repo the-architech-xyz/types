@@ -5,18 +5,13 @@
  * for genome definitions, including autocompletion for module IDs and parameter validation.
  */
 
-import { Genome, GenomeModule } from './recipe.js';
+import { Genome, GenomeModule, Module, GenomeMarketplace } from './recipe.js';
 
-// This will be replaced by the generated ModuleId type from the marketplace
-export type ModuleId = string;
+// ModuleId is marketplace-specific and should come from marketplace-generated types
+// Removed: export type ModuleId = string;
 
 // Enhanced Genome interface with type safety
-export interface TypedGenomeModule {
-  id: ModuleId;
-  parameters?: Record<string, any>;
-  features?: Record<string, boolean | string | string[]>;
-  externalFiles?: string[];
-}
+export type TypedGenomeModule = Module;
 
 export interface TypedGenome {
   version: string;
@@ -31,6 +26,7 @@ export interface TypedGenome {
   };
   modules: TypedGenomeModule[];
   options?: Record<string, any>;
+  marketplace?: GenomeMarketplace;
 }
 
 /**
@@ -64,6 +60,16 @@ export interface TypedGenome {
  * ```
  */
 export function defineGenome<T extends TypedGenome>(genome: T): T {
+  genome.modules = genome.modules.map((module) => {
+    const normalized: Module = { ...module };
+    normalized.category = normalized.category || normalized.id.split('/')[0] || 'module';
+    normalized.version = normalized.version || 'latest';
+    normalized.parameters = normalized.parameters || {};
+    normalized.features = normalized.features || {};
+    normalized.externalFiles = normalized.externalFiles || [];
+    return normalized;
+  });
+
   return genome;
 }
 

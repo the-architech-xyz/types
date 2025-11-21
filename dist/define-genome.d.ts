@@ -4,13 +4,8 @@
  * This module provides the defineGenome function with complete type safety
  * for genome definitions, including autocompletion for module IDs and parameter validation.
  */
-export type ModuleId = string;
-export interface TypedGenomeModule {
-    id: ModuleId;
-    parameters?: Record<string, any>;
-    features?: Record<string, boolean | string | string[]>;
-    externalFiles?: string[];
-}
+import { Module, GenomeMarketplace } from './recipe.js';
+export type TypedGenomeModule = Module;
 export interface TypedGenome {
     version: string;
     project: {
@@ -24,6 +19,7 @@ export interface TypedGenome {
     };
     modules: TypedGenomeModule[];
     options?: Record<string, any>;
+    marketplace?: GenomeMarketplace;
 }
 /**
  * Define a genome with full type safety

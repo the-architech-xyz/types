@@ -38,6 +38,12 @@ export interface CreateFileAction extends BaseAction {
     overwrite?: boolean;
     conflictResolution?: ConflictResolution;
     mergeInstructions?: MergeInstructions;
+    sharedRoutes?: {
+        enabled?: boolean;
+        apps?: ('web' | 'mobile')[];
+        routePath?: string;
+        componentName?: string;
+    };
 }
 export interface AppendToFileAction extends BaseAction {
     type: BlueprintActionType.APPEND_TO_FILE;

@@ -53,6 +53,12 @@ export interface CreateFileAction extends BaseAction {
   overwrite?: boolean; // Whether to overwrite existing files
   conflictResolution?: ConflictResolution; // Conflict resolution strategy
   mergeInstructions?: MergeInstructions; // Merge instructions for file content
+  sharedRoutes?: {
+    enabled?: boolean;              // Auto-enable if true, or auto-detect if undefined
+    apps?: ('web' | 'mobile')[];     // Which apps (default: all frontend apps)
+    routePath?: string;              // Route path (auto-extracted if not provided)
+    componentName?: string;          // Component name (auto-extracted if not provided)
+  };
 }
 
 // APPEND_TO_FILE Action

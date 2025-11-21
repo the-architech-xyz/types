@@ -629,66 +629,54 @@ export enum LogLevel {
  * concrete implementations for all these path keys in their adapter.json.
  */
 export enum PathKey {
-  // Core Framework Paths
-  SOURCE_ROOT = 'source_root',
-  APP_ROOT = 'app_root',
-  PAGES_ROOT = 'pages_root',
-  
-  // Library and Utility Paths
-  SHARED_LIBRARY = 'shared_library',
-  UTILS = 'utils',
-  TYPES = 'types',
-  HOOKS = 'hooks',
-  STORES = 'stores',
-  
-  // Component Paths
-  COMPONENTS = 'components',
-  UI_COMPONENTS = 'ui_components',
-  LAYOUTS = 'layouts',
-  PROVIDERS = 'providers',
-  
-  // API and Route Paths
-  API_ROUTES = 'api_routes',
-  API_HANDLERS = 'api_handlers',
-  MIDDLEWARE = 'middleware',
-  
-  // Configuration Paths
-  CONFIG = 'config',
-  ENV = 'env',
-  SCRIPTS = 'scripts',
-  
-  // Feature-Specific Configuration Paths
-  DATABASE_CONFIG = 'database_config',
-  AUTH_CONFIG = 'auth_config',
-  PAYMENT_CONFIG = 'payment_config',
-  EMAIL_CONFIG = 'email_config',
-  OBSERVABILITY_CONFIG = 'observability_config',
-  STATE_CONFIG = 'state_config',
-  TESTING_CONFIG = 'testing_config',
-  DEPLOYMENT_CONFIG = 'deployment_config',
-  CONTENT_CONFIG = 'content_config',
-  BLOCKCHAIN_CONFIG = 'blockchain_config',
-  
-  // Asset and Static Paths
-  ASSETS = 'assets',
-  PUBLIC = 'public',
-  STATIC = 'static',
-  STYLES = 'styles',
-  
-  // Testing Paths
-  TESTS = 'tests',
-  TEST_UTILS = 'test_utils',
-  MOCKS = 'mocks',
-  
-  // Build and Output Paths
-  BUILD = 'build',
-  DIST = 'dist',
-  OUT = 'out',
-  
-  // Documentation Paths
-  DOCS = 'docs',
-  README = 'readme'
+  // Workspace level
+  WORKSPACE_ROOT = 'workspace.root',
+  WORKSPACE_SCRIPTS = 'workspace.scripts',
+  WORKSPACE_DOCS = 'workspace.docs',
+  WORKSPACE_ENV = 'workspace.env',
+  WORKSPACE_CONFIG = 'workspace.config',
+
+  // Web app (Next.js)
+  APPS_WEB_ROOT = 'apps.web.root',
+  APPS_WEB_SRC = 'apps.web.src',
+  APPS_WEB_APP = 'apps.web.app',
+  APPS_WEB_COMPONENTS = 'apps.web.components',
+  APPS_WEB_PUBLIC = 'apps.web.public',
+  APPS_WEB_MIDDLEWARE = 'apps.web.middleware',
+  APPS_WEB_SERVER = 'apps.web.server',
+  APPS_WEB_COLLECTIONS = 'apps.web.collections',
+
+  // API app
+  APPS_API_ROOT = 'apps.api.root',
+  APPS_API_SRC = 'apps.api.src',
+  APPS_API_ROUTES = 'apps.api.routes',
+
+  // Shared package
+  PACKAGES_SHARED_ROOT = 'packages.shared.root',
+  PACKAGES_SHARED_SRC = 'packages.shared.src',
+  PACKAGES_SHARED_COMPONENTS = 'packages.shared.src.components',
+  PACKAGES_SHARED_HOOKS = 'packages.shared.src.hooks',
+  PACKAGES_SHARED_PROVIDERS = 'packages.shared.src.providers',
+  PACKAGES_SHARED_STORES = 'packages.shared.src.stores',
+  PACKAGES_SHARED_TYPES = 'packages.shared.src.types',
+  PACKAGES_SHARED_UTILS = 'packages.shared.src.utils',
+  PACKAGES_SHARED_SCRIPTS = 'packages.shared.src.scripts',
+  PACKAGES_SHARED_ROUTES = 'packages.shared.src.routes',
+  PACKAGES_SHARED_JOBS = 'packages.shared.src.jobs',
+
+  // Database package
+  PACKAGES_DATABASE_ROOT = 'packages.database.root',
+  PACKAGES_DATABASE_SRC = 'packages.database.src',
+
+  // UI package
+  PACKAGES_UI_ROOT = 'packages.ui.root',
+  PACKAGES_UI_SRC = 'packages.ui.src'
 }
+
+import type { MarketplacePathKeyDefinition, MarketplacePathKeys as MarketplacePathKeysSchema } from './path-keys.js';
+
+export type PathKeyDefinition = MarketplacePathKeyDefinition;
+export type MarketplacePathKeys = MarketplacePathKeysSchema;
 
 // ============================================================================
 // SHARED INTERFACES

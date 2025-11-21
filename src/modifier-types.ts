@@ -23,7 +23,13 @@ export enum ModifierType {
   ENV_MERGER = 'env-merger',
   CSS_ENHANCER = 'css-enhancer',
   DOCKERFILE_MERGER = 'dockerfile-merger',
-  DOCKERIGNORE_MERGER = 'dockerignore-merger'
+  DOCKERIGNORE_MERGER = 'dockerignore-merger',
+  // Additional modifiers from deprecated AvailableModifier type
+  README_MERGER = 'readme-merger',
+  TS_INTERFACE_MERGER = 'ts-interface-merger',
+  TS_IMPORT_MERGER = 'ts-import-merger',
+  CSS_CLASS_MERGER = 'css-class-merger',
+  HTML_ATTRIBUTE_MERGER = 'html-attribute-merger'
 }
 
 /**
